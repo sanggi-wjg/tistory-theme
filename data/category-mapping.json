@@ -7,7 +7,7 @@
       "subs": [
         {
           "name": "쿠버네티스",
-          "count": 8
+          "count": 5
         },
         {
           "name": "모니터링",
@@ -33,7 +33,7 @@
       "subs": [
         {
           "name": null,
-          "count": 9
+          "count": 12
         }
       ]
     },
@@ -43,7 +43,7 @@
       "subs": [
         {
           "name": "분산 시스템",
-          "count": 12
+          "count": 13
         },
         {
           "name": "원칙",
@@ -75,7 +75,7 @@
       "subs": [
         {
           "name": null,
-          "count": 16
+          "count": 15
         }
       ]
     },
@@ -95,7 +95,7 @@
       "subs": [
         {
           "name": null,
-          "count": 20
+          "count": 19
         }
       ]
     },
@@ -179,7 +179,7 @@
       "subs": [
         {
           "name": null,
-          "count": 7
+          "count": 8
         }
       ]
     }
@@ -192,7 +192,8 @@
       "from": "IT",
       "to": "보안",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 1,
@@ -201,7 +202,8 @@
       "from": "IT",
       "to": "코드 품질/테스트",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 2,
@@ -210,7 +212,8 @@
       "from": "IT",
       "to": "코드 품질/테스트",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 3,
@@ -219,7 +222,8 @@
       "from": "IT",
       "to": "코드 품질/테스트",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 4,
@@ -228,7 +232,8 @@
       "from": "일상",
       "to": "기록",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 5,
@@ -237,7 +242,8 @@
       "from": "일상",
       "to": "기록",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 6,
@@ -246,34 +252,38 @@
       "from": "IT",
       "to": "보안",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 7,
       "title": "K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 3편: HikariCP 설정으로인한 Socket 메모리 누수",
       "date": "2026.05.09",
       "from": "Kotlin & Java/Spring",
-      "to": "인프라/쿠버네티스",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": "OOMKilled 3부작 — Spring Boot 앱 문제이지만 K8s 운영 트러블슈팅으로 판단"
+      "review": null,
+      "verified": "원문 확인 — 3편이 90% HikariCP 설정이고 해결도 Spring 쪽이라 쿠버네티스에서 옮겨왔다"
     },
     {
       "index": 8,
       "title": "K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 2편: K8s 팟 힙 덤프 추출과 논힙 메모리 추적",
       "date": "2026.04.21",
       "from": "Kotlin & Java/Spring",
-      "to": "인프라/쿠버네티스",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 9,
       "title": "K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 1편: OOM 레벨 구분과 QoS 확인",
       "date": "2026.04.06",
       "from": "Kotlin & Java/Spring",
-      "to": "인프라/쿠버네티스",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 10,
@@ -282,7 +292,8 @@
       "from": "IT",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 11,
@@ -291,7 +302,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "인프라/쿠버네티스",
       "hasThumbnail": true,
-      "review": "Argo 전환 3부작 — Spring Batch 설계가 절반이지만 K8s 스케줄링이 주제"
+      "review": null,
+      "verified": "원문 확인 — 85%가 Argo/K8s YAML이고 Spring 코드는 없다. 쿠버네티스가 맞다"
     },
     {
       "index": 12,
@@ -300,7 +312,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "인프라/쿠버네티스",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 13,
@@ -309,7 +322,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "인프라/쿠버네티스",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 14,
@@ -318,7 +332,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 15,
@@ -327,7 +342,8 @@
       "from": "책책책 책을 읽읍시다",
       "to": "기록",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 16,
@@ -336,16 +352,18 @@
       "from": "IT",
       "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 17,
       "title": "속도의 병목이 이동하고 있다",
       "date": "2026.02.10",
       "from": "IT/AI",
-      "to": "AI",
+      "to": "기록",
       "hasThumbnail": false,
-      "review": "'속도의 병목이 이동하고 있다' — 에세이라 기록으로 볼 수도"
+      "review": null,
+      "verified": "원문 확인 — 코드 없는 1인칭 에세이라 AI에서 옮겨왔다"
     },
     {
       "index": 18,
@@ -354,7 +372,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 19,
@@ -363,7 +382,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 20,
@@ -372,7 +392,8 @@
       "from": "IT",
       "to": "보안",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 21,
@@ -381,7 +402,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 22,
@@ -390,7 +412,8 @@
       "from": "IT",
       "to": "보안",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 23,
@@ -399,7 +422,8 @@
       "from": "책책책 책을 읽읍시다",
       "to": "기록",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 24,
@@ -408,7 +432,8 @@
       "from": "IT",
       "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 25,
@@ -417,7 +442,8 @@
       "from": "IT",
       "to": "기록",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 26,
@@ -426,7 +452,8 @@
       "from": "IT",
       "to": "인프라/CI·CD",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 27,
@@ -435,7 +462,8 @@
       "from": "Kotlin & Java",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 28,
@@ -444,7 +472,8 @@
       "from": "Kotlin & Java",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 29,
@@ -453,7 +482,8 @@
       "from": "Kotlin & Java",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 30,
@@ -462,7 +492,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 31,
@@ -471,7 +502,8 @@
       "from": "IT/알고리즘",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 32,
@@ -480,7 +512,8 @@
       "from": "Infrastructure",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 33,
@@ -489,7 +522,8 @@
       "from": "Infrastructure",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 34,
@@ -498,7 +532,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 35,
@@ -507,7 +542,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 36,
@@ -516,7 +552,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 37,
@@ -525,7 +562,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 38,
@@ -534,7 +572,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 39,
@@ -543,7 +582,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 40,
@@ -552,7 +592,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 41,
@@ -561,7 +602,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 42,
@@ -570,7 +612,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 43,
@@ -579,7 +622,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 44,
@@ -588,7 +632,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 45,
@@ -597,7 +642,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 46,
@@ -606,7 +652,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 47,
@@ -615,7 +662,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 48,
@@ -624,7 +672,8 @@
       "from": "IT/Langchain",
       "to": "AI",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 49,
@@ -633,7 +682,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 50,
@@ -642,7 +692,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 51,
@@ -651,7 +702,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 52,
@@ -660,7 +712,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 53,
@@ -669,7 +722,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 54,
@@ -678,7 +732,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 55,
@@ -687,7 +742,8 @@
       "from": "Kotlin & Java",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 56,
@@ -696,7 +752,8 @@
       "from": "Infrastructure/CDC",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": false,
-      "review": "CDC 4편 — 전부 'MySQL Debezium'이라 데이터베이스/MySQL에 붙을 수도. 지금은 Kafka·Airflow와 같은 파이프라인으로 묶었다"
+      "review": null,
+      "verified": "원문 확인 — 90%가 Spring Kafka 클라이언트 구성이고 MySQL 설정은 없다. MySQL이 아니라 파이프라인이 맞다"
     },
     {
       "index": 57,
@@ -705,7 +762,8 @@
       "from": "IT",
       "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 58,
@@ -714,7 +772,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 59,
@@ -723,7 +782,8 @@
       "from": "Infrastructure/CDC",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 60,
@@ -732,7 +792,8 @@
       "from": "Infrastructure/CDC",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 61,
@@ -741,7 +802,8 @@
       "from": "Infrastructure/CDC",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 62,
@@ -750,7 +812,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "Kotlin·Java",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 63,
@@ -759,7 +822,8 @@
       "from": "IT/AI",
       "to": "AI",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 64,
@@ -768,7 +832,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 65,
@@ -777,7 +842,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 66,
@@ -786,7 +852,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 67,
@@ -795,7 +862,8 @@
       "from": "IT/수학",
       "to": "알고리즘",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 68,
@@ -804,7 +872,8 @@
       "from": "Infrastructure/Docker",
       "to": "인프라/쿠버네티스",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 69,
@@ -813,7 +882,8 @@
       "from": "Kotlin & Java",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 70,
@@ -822,7 +892,8 @@
       "from": "Infrastructure/Kafka",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 71,
@@ -831,7 +902,8 @@
       "from": "Infrastructure/Kafka",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 72,
@@ -840,7 +912,8 @@
       "from": "Infrastructure/Kafka",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 73,
@@ -849,7 +922,8 @@
       "from": "Infrastructure/Kafka",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 74,
@@ -858,7 +932,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 75,
@@ -867,7 +942,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 76,
@@ -876,7 +952,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 77,
@@ -885,7 +962,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 78,
@@ -894,7 +972,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 79,
@@ -903,7 +982,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 80,
@@ -912,7 +992,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 81,
@@ -921,7 +1002,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 82,
@@ -930,7 +1012,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 83,
@@ -939,7 +1022,8 @@
       "from": "IT/Web",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 84,
@@ -948,7 +1032,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 85,
@@ -957,7 +1042,8 @@
       "from": "Python/Open Source",
       "to": "Python/라이브러리",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 86,
@@ -966,7 +1052,8 @@
       "from": "Kotlin & Java/Spring",
       "to": "Kotlin·Java",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 87,
@@ -975,7 +1062,8 @@
       "from": "Python/Open Source",
       "to": "코드 품질/테스트",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 88,
@@ -984,7 +1072,8 @@
       "from": "Python/Open Source",
       "to": "코드 품질/테스트",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 89,
@@ -993,7 +1082,8 @@
       "from": "Python/Open Source",
       "to": "Python/라이브러리",
       "hasThumbnail": true,
-      "review": "ChatGPT + streamlit 웹앱 — AI로 볼 수도"
+      "review": null,
+      "verified": "원문 확인 — streamlit UI 사용법이 중심이고 ChatGPT는 토큰 입력만. AI가 아니라 라이브러리가 맞다"
     },
     {
       "index": 90,
@@ -1002,7 +1092,8 @@
       "from": "Infrastructure/Kafka",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 91,
@@ -1011,7 +1102,8 @@
       "from": "Infrastructure/VPN",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 92,
@@ -1020,7 +1112,8 @@
       "from": "IT",
       "to": "인프라/쿠버네티스",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 93,
@@ -1029,7 +1122,8 @@
       "from": "IT",
       "to": "코드 품질/테스트",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 94,
@@ -1038,7 +1132,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 95,
@@ -1047,7 +1142,8 @@
       "from": "IT",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 96,
@@ -1056,7 +1152,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 97,
@@ -1065,7 +1162,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 98,
@@ -1074,7 +1172,8 @@
       "from": "OS/Mac",
       "to": "개발 도구/에디터·터미널",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 99,
@@ -1083,7 +1182,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 100,
@@ -1092,7 +1192,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 101,
@@ -1101,7 +1202,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 102,
@@ -1110,7 +1212,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 103,
@@ -1119,7 +1222,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 104,
@@ -1128,7 +1232,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 105,
@@ -1137,7 +1242,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 106,
@@ -1146,7 +1252,8 @@
       "from": "Python/Python",
       "to": "Python/라이브러리",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 107,
@@ -1155,7 +1262,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 108,
@@ -1164,7 +1272,8 @@
       "from": "Database/Redis",
       "to": "데이터베이스/NoSQL·검색",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 109,
@@ -1173,7 +1282,8 @@
       "from": "Database/Redis",
       "to": "데이터베이스/NoSQL·검색",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 110,
@@ -1182,7 +1292,8 @@
       "from": "Database/Redis",
       "to": "데이터베이스/NoSQL·검색",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 111,
@@ -1191,7 +1302,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 112,
@@ -1200,7 +1312,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 113,
@@ -1209,7 +1322,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 114,
@@ -1218,7 +1332,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 115,
@@ -1227,7 +1342,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 116,
@@ -1236,7 +1352,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 117,
@@ -1245,7 +1362,8 @@
       "from": "Python/Python",
       "to": "Python/라이브러리",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 118,
@@ -1254,7 +1372,8 @@
       "from": "Python/Python",
       "to": "Python/라이브러리",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 119,
@@ -1263,7 +1382,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 120,
@@ -1272,7 +1392,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 121,
@@ -1281,7 +1402,8 @@
       "from": "OS/Ubuntu",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 122,
@@ -1290,7 +1412,8 @@
       "from": "Python/Python",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 123,
@@ -1299,7 +1422,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 124,
@@ -1308,7 +1432,8 @@
       "from": "Python/Python",
       "to": "Python/라이브러리",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 125,
@@ -1317,7 +1442,8 @@
       "from": "IT/Git",
       "to": "인프라/CI·CD",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 126,
@@ -1326,7 +1452,8 @@
       "from": "Go",
       "to": "Go",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 127,
@@ -1335,7 +1462,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 128,
@@ -1344,7 +1472,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 129,
@@ -1353,7 +1482,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 130,
@@ -1362,7 +1492,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 131,
@@ -1371,7 +1502,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 132,
@@ -1380,7 +1512,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 133,
@@ -1389,7 +1522,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 134,
@@ -1398,7 +1532,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 135,
@@ -1407,7 +1542,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 136,
@@ -1416,7 +1552,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 137,
@@ -1425,7 +1562,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 138,
@@ -1434,7 +1572,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 139,
@@ -1443,7 +1582,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 140,
@@ -1452,7 +1592,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 141,
@@ -1461,7 +1602,8 @@
       "from": "Python/Python",
       "to": "Python/성능과 동시성",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 142,
@@ -1470,7 +1612,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 143,
@@ -1479,7 +1622,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 144,
@@ -1488,7 +1632,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 145,
@@ -1497,7 +1642,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 146,
@@ -1506,7 +1652,8 @@
       "from": "Infrastructure/Airflow",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 147,
@@ -1515,7 +1662,8 @@
       "from": "Infrastructure/Airflow",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 148,
@@ -1524,7 +1672,8 @@
       "from": "IT",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 149,
@@ -1533,7 +1682,8 @@
       "from": "IT",
       "to": "보안",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 150,
@@ -1542,7 +1692,8 @@
       "from": "IT",
       "to": "인프라/CI·CD",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 151,
@@ -1551,7 +1702,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 152,
@@ -1560,7 +1712,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 153,
@@ -1569,7 +1722,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 154,
@@ -1578,7 +1732,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 155,
@@ -1587,7 +1742,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 156,
@@ -1596,7 +1752,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 157,
@@ -1605,7 +1762,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 158,
@@ -1614,7 +1772,8 @@
       "from": "Infrastructure/Micro Service Architecture",
       "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 159,
@@ -1623,7 +1782,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 160,
@@ -1632,7 +1792,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 161,
@@ -1641,7 +1802,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 162,
@@ -1650,7 +1812,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 163,
@@ -1659,7 +1822,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 164,
@@ -1668,7 +1832,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 165,
@@ -1677,7 +1842,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 166,
@@ -1686,7 +1852,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 167,
@@ -1695,7 +1862,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 168,
@@ -1704,7 +1872,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 169,
@@ -1713,7 +1882,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 170,
@@ -1722,7 +1892,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 171,
@@ -1731,7 +1902,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 172,
@@ -1740,7 +1912,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 173,
@@ -1749,7 +1922,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 174,
@@ -1758,7 +1932,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 175,
@@ -1767,7 +1942,8 @@
       "from": "Python/Open Source",
       "to": "Python/라이브러리",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 176,
@@ -1776,7 +1952,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 177,
@@ -1785,7 +1962,8 @@
       "from": "Infrastructure/Prometheus",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 178,
@@ -1794,7 +1972,8 @@
       "from": "Infrastructure/Prometheus",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 179,
@@ -1803,7 +1982,8 @@
       "from": "OS/Ubuntu",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 180,
@@ -1812,7 +1992,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 181,
@@ -1821,7 +2002,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 182,
@@ -1830,7 +2012,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 183,
@@ -1839,7 +2022,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 184,
@@ -1848,7 +2032,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 185,
@@ -1857,7 +2042,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 186,
@@ -1866,7 +2052,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 187,
@@ -1875,7 +2062,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 188,
@@ -1884,7 +2072,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 189,
@@ -1893,7 +2082,8 @@
       "from": "Infrastructure/Fluentd",
       "to": "인프라/모니터링",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 190,
@@ -1902,7 +2092,8 @@
       "from": "OS/Centos",
       "to": "인프라/모니터링",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 191,
@@ -1911,7 +2102,8 @@
       "from": "OS/Centos",
       "to": "인프라/모니터링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 192,
@@ -1920,7 +2112,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 193,
@@ -1929,7 +2122,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 194,
@@ -1938,7 +2132,8 @@
       "from": "IT/Git",
       "to": "개발 도구/Git",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 195,
@@ -1947,7 +2142,8 @@
       "from": "IT",
       "to": "인프라/CI·CD",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 196,
@@ -1956,7 +2152,8 @@
       "from": "IT",
       "to": "인프라/CI·CD",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 197,
@@ -1965,7 +2162,8 @@
       "from": "OS/Centos",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 198,
@@ -1974,7 +2172,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 199,
@@ -1983,7 +2182,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 200,
@@ -1992,7 +2192,8 @@
       "from": "IT/알고리즘",
       "to": "알고리즘",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 201,
@@ -2001,7 +2202,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 202,
@@ -2010,7 +2212,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 203,
@@ -2019,7 +2222,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 204,
@@ -2028,7 +2232,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 205,
@@ -2037,7 +2242,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 206,
@@ -2046,7 +2252,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 207,
@@ -2055,7 +2262,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 208,
@@ -2064,16 +2272,18 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 209,
       "title": "캐시 (Cache)",
       "date": "2021.01.19",
       "from": "IT/Web",
-      "to": "네트워크",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
-      "review": "'캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터베이스/NoSQL·검색으로 갈 수도"
+      "review": null,
+      "verified": "원문 확인 — HTTP 캐시도 Redis도 아닌 일반 컴퓨팅 개념(RAM·스토리지 계층)이라 네트워크에서 옮겨왔다"
     },
     {
       "index": 210,
@@ -2082,7 +2292,8 @@
       "from": "OS/Ubuntu",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 211,
@@ -2091,7 +2302,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 212,
@@ -2100,7 +2312,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 213,
@@ -2109,7 +2322,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": "'브라우저 동작 원리' — 네트워크보다 프론트엔드에 가깝다. 이 블로그에 갈 곳이 없어 네트워크에 뒀다"
+      "review": "원문은 렌더링 엔진 내부(파싱·DOM·렌더트리)가 중심이고 네트워크는 항목 하나다. 이 블로그에 프론트엔드 카테고리가 없어 갈 곳이 없다. 1편을 위해 카테고리를 만들 수는 없어 네트워크에 둔다",
+      "verified": null
     },
     {
       "index": 214,
@@ -2118,7 +2332,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 215,
@@ -2127,7 +2342,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 216,
@@ -2136,7 +2352,8 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 217,
@@ -2145,7 +2362,8 @@
       "from": "IT/Web",
       "to": "기록",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 218,
@@ -2154,7 +2372,8 @@
       "from": "Python/Open Source",
       "to": "Python/라이브러리",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 219,
@@ -2163,7 +2382,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 220,
@@ -2172,7 +2392,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 221,
@@ -2181,7 +2402,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 222,
@@ -2190,7 +2412,8 @@
       "from": "Python/Django",
       "to": "Python/Django·Flask",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 223,
@@ -2199,7 +2422,8 @@
       "from": "IT/Clean Code",
       "to": "코드 품질/Clean Code",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 224,
@@ -2208,7 +2432,8 @@
       "from": "Python/Django",
       "to": "Python/Django·Flask",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 225,
@@ -2217,7 +2442,8 @@
       "from": "Python/Django",
       "to": "Python/Django·Flask",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 226,
@@ -2226,7 +2452,8 @@
       "from": "Python/Django",
       "to": "Python/Django·Flask",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 227,
@@ -2235,7 +2462,8 @@
       "from": "Python/Django",
       "to": "Python/Django·Flask",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 228,
@@ -2244,7 +2472,8 @@
       "from": "Python/Django",
       "to": "Python/Django·Flask",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 229,
@@ -2253,7 +2482,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 230,
@@ -2262,7 +2492,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 231,
@@ -2271,7 +2502,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 232,
@@ -2280,7 +2512,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 233,
@@ -2289,7 +2522,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 234,
@@ -2298,7 +2532,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 235,
@@ -2307,7 +2542,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 236,
@@ -2316,7 +2552,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 237,
@@ -2325,7 +2562,8 @@
       "from": "IT/리팩토링",
       "to": "코드 품질/리팩토링",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 238,
@@ -2334,7 +2572,8 @@
       "from": "IT",
       "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
-      "review": "'batch 프로그램으로 host 변경' — hosts 파일이 주제면 네트워크로"
+      "review": null,
+      "verified": "원문 확인 — 윈도우 .bat으로 hosts를 바꿔 로컬 환경을 전환한다. 네트워크가 아니다"
     },
     {
       "index": 239,
@@ -2343,7 +2582,8 @@
       "from": "Python/Flask",
       "to": "Python/Django·Flask",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 240,
@@ -2352,7 +2592,8 @@
       "from": "Python/Flask",
       "to": "Python/Django·Flask",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 241,
@@ -2361,7 +2602,8 @@
       "from": "Search Engine/ElasticSearch",
       "to": "데이터베이스/NoSQL·검색",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 242,
@@ -2370,7 +2612,8 @@
       "from": "PHP/Codeigniter",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": "PHP 2편 — 제목이 'Centos7 … 세팅'이라 설치 글로 보고 리눅스에 뒀다. 언어로 보면 갈 곳이 없다"
+      "review": null,
+      "verified": "원문 확인 — 90%가 yum·systemctl 설치 명령이고 Codeigniter 내용은 없다. 리눅스가 맞다"
     },
     {
       "index": 243,
@@ -2379,7 +2622,8 @@
       "from": "IT",
       "to": "기록",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 244,
@@ -2388,7 +2632,8 @@
       "from": "PHP/Laravel",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 245,
@@ -2397,7 +2642,8 @@
       "from": "OS/Centos",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 246,
@@ -2406,7 +2652,8 @@
       "from": "IT",
       "to": "개발 도구/Git",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 247,
@@ -2415,7 +2662,8 @@
       "from": "Search Engine/Lucene Solr",
       "to": "데이터베이스/NoSQL·검색",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 248,
@@ -2424,7 +2672,8 @@
       "from": "Python/Flask",
       "to": "Python/Django·Flask",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 249,
@@ -2433,7 +2682,8 @@
       "from": "Python/Flask",
       "to": "Python/Django·Flask",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 250,
@@ -2442,7 +2692,8 @@
       "from": "OS/Centos",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": "fail2ban — 침입 차단 도구라 보안으로 볼 수도"
+      "review": null,
+      "verified": "원문 확인 — 설치·설정 가이드이고 보안 개념 설명은 없다. 리눅스가 맞다"
     },
     {
       "index": 251,
@@ -2451,7 +2702,8 @@
       "from": "OS/Centos",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 252,
@@ -2460,7 +2712,8 @@
       "from": "Infrastructure/VPN",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 253,
@@ -2469,7 +2722,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 254,
@@ -2478,7 +2732,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 255,
@@ -2487,7 +2742,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 256,
@@ -2496,7 +2752,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 257,
@@ -2505,7 +2762,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 258,
@@ -2514,7 +2772,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 259,
@@ -2523,7 +2782,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 260,
@@ -2532,7 +2792,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": true,
-      "review": "토끼책 2편 — 책 요약이라 기록으로 볼 수도 (내용은 객체지향 설계)"
+      "review": null,
+      "verified": "원문 확인 — 감상이 아니라 상태·행동·식별자를 정리한 개념 노트다. 원칙이 맞다"
     },
     {
       "index": 261,
@@ -2541,7 +2802,8 @@
       "from": "IT",
       "to": "아키텍처/원칙",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 262,
@@ -2550,7 +2812,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 263,
@@ -2559,7 +2822,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/이론",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 264,
@@ -2568,7 +2832,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/이론",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 265,
@@ -2577,7 +2842,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/이론",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 266,
@@ -2586,7 +2852,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 267,
@@ -2595,7 +2862,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 268,
@@ -2604,7 +2872,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/이론",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 269,
@@ -2613,7 +2882,8 @@
       "from": "Database/MySQL",
       "to": "데이터베이스/MySQL",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 270,
@@ -2622,7 +2892,8 @@
       "from": "OS/Centos",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 271,
@@ -2631,7 +2902,8 @@
       "from": "OS/Centos",
       "to": "네트워크",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 272,
@@ -2640,7 +2912,8 @@
       "from": "Python/Python",
       "to": "Python/기초",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 273,
@@ -2649,7 +2922,8 @@
       "from": "OS/Centos",
       "to": "인프라/리눅스",
       "hasThumbnail": false,
-      "review": null
+      "review": null,
+      "verified": null
     },
     {
       "index": 274,
@@ -2658,7 +2932,8 @@
       "from": "OS/Centos",
       "to": "인프라/리눅스",
       "hasThumbnail": true,
-      "review": null
+      "review": null,
+      "verified": null
     }
   ]
 }

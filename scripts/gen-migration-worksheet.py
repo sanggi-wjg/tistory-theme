@@ -101,7 +101,12 @@ for old, dests, total in split:
         w(f"**→ {dest}** ({len(items)}편)")
         w("")
         for p in sorted(items, key=lambda p: p["date"], reverse=True):
-            note = f"  ⚠️ {p['review']}" if p.get("review") else ""
+            if p.get("review"):
+                note = f"  ⚠️ {p['review']}"
+            elif p.get("verified"):
+                note = f"  ✓ {p['verified']}"
+            else:
+                note = ""
             w(f"- [ ] {p['date']}  {p['title']}{note}")
         w("")
     w("")
@@ -140,22 +145,31 @@ w("- [ ] 미결 6(기본 이미지 11장 도안) 착수 — 이제 카테고리�
 w("")
 w("---")
 w("")
-w("## 작업 중 판단이 필요한 글")
+w("## 분류 근거")
 w("")
-w("제목만으로 분류해서 원문을 봐야 확정되는 것들이다. 위 목록에서도 ⚠️ 로 표시해 뒀다.")
-w("이 표는 `scripts/remap-categories.py`의 `NEEDS_REVIEW`에서 생성된다 — 손으로 고치지 않는다.")
-w("**옮기기 전에 글을 한 번 열어 보고**, 다르게 판단되면 그쪽으로 옮긴다.")
+w("제목만으로는 갈렸던 글들이다. **원문을 읽어 확정했고**, 위 목록에 ✓ 로 표시했다.")
+w("옮기다가 다르게 판단되면 그쪽으로 옮기면 된다.")
 w("")
-w("| 날짜 | 글 | 넣어 둔 곳 | 살펴볼 점 |")
+w("| 날짜 | 글 | 넣은 곳 | 원문 확인 결과 |")
 w("|---|---|---|---|")
 for p in sorted(posts, key=lambda p: p["date"], reverse=True):
-    if not p.get("review"):
+    if not p.get("verified"):
         continue
     title = p["title"].replace("|", "\\|")
-    if len(title) > 42:
-        title = title[:41] + "…"
-    w(f'| {p["date"]} | {title} | {p["to"]} | {p["review"]} |')
+    if len(title) > 40:
+        title = title[:39] + "…"
+    w(f'| {p["date"]} | {title} | {p["to"]} | {p["verified"].replace("원문 확인 — ", "")} |')
 w("")
+
+open_items = [p for p in posts if p.get("review")]
+if open_items:
+    w(f"### 아직 갈 곳이 마땅치 않은 {len(open_items)}건")
+    w("")
+    for p in sorted(open_items, key=lambda p: p["date"], reverse=True):
+        w(f'- **{p["title"]}** ({p["date"]}) → 지금은 `{p["to"]}`')
+        w(f'  {p["review"]}')
+    w("")
+
 w("**바꾸기로 했다면** `scripts/remap-categories.py`의 해당 인덱스를 옮기고 다시 돌린다 — 매핑과 문서가 같이 갱신된다.")
 w("")
 

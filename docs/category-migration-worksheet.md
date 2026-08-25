@@ -3,7 +3,7 @@
 티스토리 관리 화면을 열어 두고 이 파일을 보면서 진행한다.
 설계 근거와 왜 이렇게 나눴는지는 [`category-taxonomy.md`](./category-taxonomy.md)에 있다 — **이 파일은 손으로 하는 작업만** 담는다.
 
-**총 275편** · 통째 이동 121편 / 쪼개서 이동 154편
+**총 275편** · 통째 이동 109편 / 쪼개서 이동 166편
 
 ---
 
@@ -74,7 +74,6 @@
 | ✓ | 기존 카테고리 | 편수 | 옮길 곳 |
 |---|---|---:|---|
 | [ ] | `IT/Clean Code` | 16 | **코드 품질/Clean Code** |
-| [ ] | `IT/AI` | 12 | **AI** |
 | [ ] | `Go` | 11 | **Go** |
 | [ ] | `Infrastructure/Fluentd` | 11 | **인프라/모니터링** |
 | [ ] | `IT/리팩토링` | 9 | **코드 품질/리팩토링** |
@@ -100,7 +99,7 @@
 | [ ] | `PHP/Laravel` | 1 | **인프라/리눅스** |
 | [ ] | `Search Engine/Lucene Solr` | 1 | **데이터베이스/NoSQL·검색** |
 
-여기까지 121편. 전체의 44%가 이 단계에서 끝난다.
+여기까지 109편. 전체의 39%가 이 단계에서 끝난다.
 
 ---
 
@@ -122,7 +121,7 @@
 - [ ] 2021.01.21  객체지향 설계 5대 원리 SOLID - OCP
 - [ ] 2021.01.21  객체지향 설계 5대 원리 SOLID  - SRP
 - [ ] 2021.01.21  객체지향 설계 5대 원리 SOLID
-- [ ] 2019.10.22  [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체  ⚠️ 토끼책 2편 — 책 요약이라 기록으로 볼 수도 (내용은 객체지향 설계)
+- [ ] 2019.10.22  [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체  ✓ 원문 확인 — 감상이 아니라 상태·행동·식별자를 정리한 개념 노트다. 원칙이 맞다
 - [ ] 2019.10.22  [토끼책] 객체지향의 사실과 오해 1장 - 협력하는 객체들의 공동체
 
 **→ 보안** (5편)
@@ -145,7 +144,7 @@
 - [ ] 2026.02.11  터미널 오픈소스 도구 모음: btop, k9s, Mole, Sniffnet
 - [ ] 2025.08.08  [Mac] 맥 환경, Jetbrains IDE 과거 버전 삭제
 - [ ] 2024.02.26  [Jetbrains]  Intellij 인텔리제이 Live Template 사용 방법
-- [ ] 2019.10.25  batch 프로그램으로 host 변경하기  ⚠️ 'batch 프로그램으로 host 변경' — hosts 파일이 주제면 네트워크로
+- [ ] 2019.10.25  batch 프로그램으로 host 변경하기  ✓ 원문 확인 — 윈도우 .bat으로 hosts를 바꿔 로컬 환경을 전환한다. 네트워크가 아니다
 
 **→ 인프라/CI·CD** (4편)
 
@@ -220,16 +219,15 @@
 - [ ] 2022.05.12  [Python] 후위표기법(postifx) 계산 코드
 
 
-### `IT/Web` — 18편 → 3곳
+### `IT/Web` — 18편 → 4곳
 
-**→ 네트워크** (9편)
+**→ 네트워크** (8편)
 
 - [ ] 2025.04.01  HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/3
 - [ ] 2024.12.25  HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/2
 - [ ] 2024.12.24  HTTP (Hypertext Transfer Protocol) 개념알기
-- [ ] 2021.01.19  캐시 (Cache)  ⚠️ '캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터베이스/NoSQL·검색으로 갈 수도
 - [ ] 2021.01.15  DNS(Domain Name System) 작동원리
-- [ ] 2021.01.15  브라우저 동작 원리  ⚠️ '브라우저 동작 원리' — 네트워크보다 프론트엔드에 가깝다. 이 블로그에 갈 곳이 없어 네트워크에 뒀다
+- [ ] 2021.01.15  브라우저 동작 원리  ⚠️ 원문은 렌더링 엔진 내부(파싱·DOM·렌더트리)가 중심이고 네트워크는 항목 하나다. 이 블로그에 프론트엔드 카테고리가 없어 갈 곳이 없다. 1편을 위해 카테고리를 만들 수는 없어 네트워크에 둔다
 - [ ] 2021.01.14  HTTP Response Status Code (HTTP 응답 상태 코드)
 - [ ] 2021.01.13  HTTP Request Method (HTTP 요청 방법)
 - [ ] 2021.01.13  HTTP (HyperText Transfer Protocol) 란?
@@ -245,6 +243,10 @@
 - [ ] 2023.04.13  [보안] XSS HTML Image 태그 주의할 점 - 2
 - [ ] 2023.04.08  [보안] XSS HTML Image 태그 주의할 점
 
+**→ 아키텍처/분산 시스템** (1편)
+
+- [ ] 2021.01.19  캐시 (Cache)  ✓ 원문 확인 — HTTP 캐시도 Redis도 아닌 일반 컴퓨팅 개념(RAM·스토리지 계층)이라 네트워크에서 옮겨왔다
+
 **→ 기록** (1편)
 
 - [ ] 2021.01.13  2020년 백엔드(Back-end) 개발자 로드맵
@@ -256,7 +258,7 @@
 
 - [ ] 2021.02.04  Cent OS 6 버전 yum 에러
 - [ ] 2019.10.23  설치 에러 발생시 대처
-- [ ] 2019.10.22  fail2ban  ⚠️ fail2ban — 침입 차단 도구라 보안으로 볼 수도
+- [ ] 2019.10.22  fail2ban  ✓ 원문 확인 — 설치·설정 가이드이고 보안 개념 설명은 없다. 리눅스가 맞다
 - [ ] 2019.10.22  Centos 파일, 디렉토리 찾기
 - [ ] 2019.10.22  파이선, 쉘스크립트 윈도우 -> 리눅스 되었을때 발생하는 문제
 - [ ] 2019.10.22  쉘 접속 지연 문제 해결 방법
@@ -325,23 +327,44 @@
 - [ ] 2025.03.29  Consistent hashing, 일관된 해싱
 
 
+### `IT/AI` — 12편 → 2곳
+
+**→ AI** (11편)
+
+- [ ] 2026.03.26  구글 제미나이(Gemini), 데스크탑 앱처럼 쓰는 방법 - PWA 설치 가이드
+- [ ] 2026.02.05  Run Claude Code with Ollama Local & Cloud Models
+- [ ] 2025.01.15  Ollama Model Update 모델 일괄 업데이트 방법
+- [ ] 2024.12.14  [AI] 오디오 녹음 요약하기 (OpenAI Whisper, Langchain, Exaone)
+- [ ] 2024.12.12  ORM 사용에 관한 에이전트 토론 들어보기
+- [ ] 2024.11.28  [Stable Diffusion] Stable Diffusion 3.5 Text to Image 이미지 생성
+- [ ] 2024.11.24  Prompt Engineering Guide: Prompting Techniques
+- [ ] 2024.11.22  Prompt Engineering Guide: LLM Arguments
+- [ ] 2024.08.07  Ollama로 Github PR AI 코드 리뷰 하기
+- [ ] 2024.08.06  [AI] Markdown 을 사용한 Prompts 작성 방법
+- [ ] 2024.01.26  [AI] stable-code-3b 기본적인 사용 가이드 (AI coding)
+
+**→ 기록** (1편)
+
+- [ ] 2026.02.10  속도의 병목이 이동하고 있다  ✓ 원문 확인 — 코드 없는 1인칭 에세이라 AI에서 옮겨왔다
+
+
 ### `Kotlin & Java/Spring` — 10편 → 2곳
 
-**→ 인프라/쿠버네티스** (6편)
+**→ Kotlin·Java** (7편)
 
-- [ ] 2026.05.09  K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 3편: HikariCP 설정으로인한 Socket 메모리 누수  ⚠️ OOMKilled 3부작 — Spring Boot 앱 문제이지만 K8s 운영 트러블슈팅으로 판단
+- [ ] 2026.05.09  K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 3편: HikariCP 설정으로인한 Socket 메모리 누수  ✓ 원문 확인 — 3편이 90% HikariCP 설정이고 해결도 Spring 쪽이라 쿠버네티스에서 옮겨왔다
 - [ ] 2026.04.21  K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 2편: K8s 팟 힙 덤프 추출과 논힙 메모리 추적
 - [ ] 2026.04.06  K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 1편: OOM 레벨 구분과 QoS 확인
-- [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 3편: Argo Workflows로 스케줄링하기  ⚠️ Argo 전환 3부작 — Spring Batch 설계가 절반이지만 K8s 스케줄링이 주제
-- [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 2편: Spring Batch REST API 서버 설계
-- [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 1편: CronJob 문제와 스케줄러 선택
-
-**→ Kotlin·Java** (4편)
-
 - [ ] 2025.12.01  다중 DataSource 환경에서 장애 격리하기: LazyConnectionDataSourceProxy 활용기
 - [ ] 2024.07.28  Kotlin + Spring Boot 에서 data class 구현으로 Validation 로직 작성하기
 - [ ] 2024.02.06  Pessimistic Locking in JPA
 - [ ] 2023.03.22  [Code Execution API] 1. 프로그래밍 코드 실행 API 만들어보기
+
+**→ 인프라/쿠버네티스** (3편)
+
+- [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 3편: Argo Workflows로 스케줄링하기  ✓ 원문 확인 — 85%가 Argo/K8s YAML이고 Spring 코드는 없다. 쿠버네티스가 맞다
+- [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 2편: Spring Batch REST API 서버 설계
+- [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 1편: CronJob 문제와 스케줄러 선택
 
 
 ### `IT/Git` — 9편 → 2곳
@@ -367,7 +390,7 @@
 **→ Python/라이브러리** (4편)
 
 - [ ] 2023.04.04  [Python] 파이썬 출력 문자 색 변경하기
-- [ ] 2023.03.14  ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit)  ⚠️ ChatGPT + streamlit 웹앱 — AI로 볼 수도
+- [ ] 2023.03.14  ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit)  ✓ 원문 확인 — streamlit UI 사용법이 중심이고 ChatGPT는 토큰 입력만. AI가 아니라 라이브러리가 맞다
 - [ ] 2021.08.12  [Python] Colorful print
 - [ ] 2021.01.13  [Python 오픈소스] Diagrams
 
@@ -423,25 +446,28 @@
 
 ---
 
-## 작업 중 판단이 필요한 글
+## 분류 근거
 
-제목만으로 분류해서 원문을 봐야 확정되는 것들이다. 위 목록에서도 ⚠️ 로 표시해 뒀다.
-이 표는 `scripts/remap-categories.py`의 `NEEDS_REVIEW`에서 생성된다 — 손으로 고치지 않는다.
-**옮기기 전에 글을 한 번 열어 보고**, 다르게 판단되면 그쪽으로 옮긴다.
+제목만으로는 갈렸던 글들이다. **원문을 읽어 확정했고**, 위 목록에 ✓ 로 표시했다.
+옮기다가 다르게 판단되면 그쪽으로 옮기면 된다.
 
-| 날짜 | 글 | 넣어 둔 곳 | 살펴볼 점 |
+| 날짜 | 글 | 넣은 곳 | 원문 확인 결과 |
 |---|---|---|---|
-| 2026.05.09 | K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추… | 인프라/쿠버네티스 | OOMKilled 3부작 — Spring Boot 앱 문제이지만 K8s 운영 트러블슈팅으로 판단 |
-| 2026.03.27 | K8s CronJob 기반 Spring Batch, Argo Workflo… | 인프라/쿠버네티스 | Argo 전환 3부작 — Spring Batch 설계가 절반이지만 K8s 스케줄링이 주제 |
-| 2026.02.10 | 속도의 병목이 이동하고 있다 | AI | '속도의 병목이 이동하고 있다' — 에세이라 기록으로 볼 수도 |
-| 2024.03.08 | [CDC] MySQL Debezium Change Data Capture … | 인프라/데이터 파이프라인 | CDC 4편 — 전부 'MySQL Debezium'이라 데이터베이스/MySQL에 붙을 수도. 지금은 Kafka·Airflow와 같은 파이프라인으로 묶었다 |
-| 2023.03.14 | ChatGPT를 이용한 간단한 Web App 만들기 (python, str… | Python/라이브러리 | ChatGPT + streamlit 웹앱 — AI로 볼 수도 |
-| 2021.01.19 | 캐시 (Cache) | 네트워크 | '캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터베이스/NoSQL·검색으로 갈 수도 |
-| 2021.01.15 | 브라우저 동작 원리 | 네트워크 | '브라우저 동작 원리' — 네트워크보다 프론트엔드에 가깝다. 이 블로그에 갈 곳이 없어 네트워크에 뒀다 |
-| 2019.10.25 | batch 프로그램으로 host 변경하기 | 개발 도구/에디터·터미널 | 'batch 프로그램으로 host 변경' — hosts 파일이 주제면 네트워크로 |
-| 2019.10.23 | Centos7 Nginx, PHP, MySQL  Codeigniter 프로… | 인프라/리눅스 | PHP 2편 — 제목이 'Centos7 … 세팅'이라 설치 글로 보고 리눅스에 뒀다. 언어로 보면 갈 곳이 없다 |
-| 2019.10.22 | fail2ban | 인프라/리눅스 | fail2ban — 침입 차단 도구라 보안으로 볼 수도 |
-| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체 | 아키텍처/원칙 | 토끼책 2편 — 책 요약이라 기록으로 볼 수도 (내용은 객체지향 설계) |
+| 2026.05.09 | K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled… | Kotlin·Java | 3편이 90% HikariCP 설정이고 해결도 Spring 쪽이라 쿠버네티스에서 옮겨왔다 |
+| 2026.03.27 | K8s CronJob 기반 Spring Batch, Argo Workf… | 인프라/쿠버네티스 | 85%가 Argo/K8s YAML이고 Spring 코드는 없다. 쿠버네티스가 맞다 |
+| 2026.02.10 | 속도의 병목이 이동하고 있다 | 기록 | 코드 없는 1인칭 에세이라 AI에서 옮겨왔다 |
+| 2024.03.08 | [CDC] MySQL Debezium Change Data Captur… | 인프라/데이터 파이프라인 | 90%가 Spring Kafka 클라이언트 구성이고 MySQL 설정은 없다. MySQL이 아니라 파이프라인이 맞다 |
+| 2023.03.14 | ChatGPT를 이용한 간단한 Web App 만들기 (python, s… | Python/라이브러리 | streamlit UI 사용법이 중심이고 ChatGPT는 토큰 입력만. AI가 아니라 라이브러리가 맞다 |
+| 2021.01.19 | 캐시 (Cache) | 아키텍처/분산 시스템 | HTTP 캐시도 Redis도 아닌 일반 컴퓨팅 개념(RAM·스토리지 계층)이라 네트워크에서 옮겨왔다 |
+| 2019.10.25 | batch 프로그램으로 host 변경하기 | 개발 도구/에디터·터미널 | 윈도우 .bat으로 hosts를 바꿔 로컬 환경을 전환한다. 네트워크가 아니다 |
+| 2019.10.23 | Centos7 Nginx, PHP, MySQL  Codeigniter … | 인프라/리눅스 | 90%가 yum·systemctl 설치 명령이고 Codeigniter 내용은 없다. 리눅스가 맞다 |
+| 2019.10.22 | fail2ban | 인프라/리눅스 | 설치·설정 가이드이고 보안 개념 설명은 없다. 리눅스가 맞다 |
+| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체 | 아키텍처/원칙 | 감상이 아니라 상태·행동·식별자를 정리한 개념 노트다. 원칙이 맞다 |
+
+### 아직 갈 곳이 마땅치 않은 1건
+
+- **브라우저 동작 원리** (2021.01.15) → 지금은 `네트워크`
+  원문은 렌더링 엔진 내부(파싱·DOM·렌더트리)가 중심이고 네트워크는 항목 하나다. 이 블로그에 프론트엔드 카테고리가 없어 갈 곳이 없다. 1편을 위해 카테고리를 만들 수는 없어 네트워크에 둔다
 
 **바꾸기로 했다면** `scripts/remap-categories.py`의 해당 인덱스를 옮기고 다시 돌린다 — 매핑과 문서가 같이 갱신된다.
 
