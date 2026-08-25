@@ -118,6 +118,14 @@ radius:
   --accent-cyan:   #29bc9b;
   --selection-bg:  #171717;
   --selection-fg:  #f2f2f2;
+
+  /* 모서리 — 테마와 무관하므로 여기서 한 번만 정의한다.
+     frontmatter의 `radius:`는 YAML 메타데이터일 뿐 CSS가 아니다.
+     정의하지 않은 채 var()를 쓰면 폴백이 없어 border-radius가 0으로 조용히 떨어진다. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -353,6 +361,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 - **제목은 반드시 2줄에서 자른다.** 홈에 노출되는 최신 20편의 제목 중앙값이 49자, 40자 초과가 75%다.
 - 카드 높이를 고정해 그리드 정렬을 유지한다.
+- **`.thumb`의 CSS는 §6.2가 통째로 갖는다.** 여기서 따로 쓰지 않는다 — 상자 속성(`display` `position` `overflow`)이 §6.2의 기본 이미지 3층 구조를 떠받치고 있어서, 두 곳에서 정의하면 갈라진다.
 
 ### 6.2 대표이미지 기본값
 
@@ -366,46 +375,78 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 </article>
 ```
 
+**3층으로 쌓는다.** 격자는 CSS, 모티프는 마스크, 진짜 이미지는 그 위.
+
 ```css
-.post .thumb { background: center/cover var(--ph-default); }
+/* 0층 — 상자. 위의 세 줄은 장식이 아니라 기계장치다. 지우면 조용히 무너진다.
+   · display   — `<span class="thumb">`는 기본이 inline이라 크기를 못 갖는다
+   · position  — 없으면 2층 ::before가 .thumb가 아니라 페이지 전체에 붙는다
+                 (실측: 높이 1028px짜리 모티프가 화면을 덮었다)
+   · overflow  — 모티프와 img를 radius로 잘라낸다 */
+.post .thumb {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+
+  /* 1층 — 점격자. 순수 CSS라 SVG 용량이 0이고 토큰을 그냥 따른다 */
+  background-color: var(--canvas-soft);
+  background-image: radial-gradient(circle, var(--hairline) 1.1px, transparent 1.2px);
+  background-size: 8px 8px;
+  background-position: -1px -1px;
+}
+
+/* 2층 — 모티프. 모양은 마스크가, 색은 토큰이 정한다 */
+.post .thumb::before {
+  content: ""; position: absolute; inset: 0;
+  background-color: var(--ink-mute);
+  opacity: .62;
+  -webkit-mask: var(--ph-default) center / cover no-repeat;
+          mask: var(--ph-default) center / cover no-repeat;
+}
 
 /* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
-.post[data-cat="인프라"] .thumb,
-.post[data-cat^="인프라/"] .thumb                  { background-image: var(--ph-infra); }
-.post[data-cat="Kotlin·Java"] .thumb             { background-image: var(--ph-jvm); }
-.post[data-cat="Python"] .thumb,
-.post[data-cat^="Python/"] .thumb                { background-image: var(--ph-python); }
-.post[data-cat="PHP"] .thumb,
-.post[data-cat^="PHP/"] .thumb                   { background-image: var(--ph-php); }
-.post[data-cat="아키텍처"] .thumb,
-.post[data-cat^="아키텍처/"] .thumb                { background-image: var(--ph-arch); }
-.post[data-cat="데이터베이스"] .thumb,
-.post[data-cat^="데이터베이스/"] .thumb             { background-image: var(--ph-db); }
-.post[data-cat="네트워크"] .thumb                  { background-image: var(--ph-net); }
-.post[data-cat="보안"] .thumb                     { background-image: var(--ph-sec); }
-.post[data-cat="AI"] .thumb                      { background-image: var(--ph-ai); }
-.post[data-cat="코드 품질"] .thumb,
-.post[data-cat^="코드 품질/"] .thumb               { background-image: var(--ph-quality); }
-.post[data-cat="Go"] .thumb                      { background-image: var(--ph-go); }
-.post[data-cat="알고리즘"] .thumb                  { background-image: var(--ph-algo); }
-.post[data-cat="개발 도구"] .thumb,
-.post[data-cat^="개발 도구/"] .thumb               { background-image: var(--ph-tool); }
-.post[data-cat="기록"] .thumb                     { background-image: var(--ph-note); }
+.post[data-cat="인프라"] .thumb::before,
+.post[data-cat^="인프라/"] .thumb::before        { -webkit-mask-image: var(--ph-infra);   mask-image: var(--ph-infra); }
+.post[data-cat="Kotlin·Java"] .thumb::before    { -webkit-mask-image: var(--ph-jvm);     mask-image: var(--ph-jvm); }
+.post[data-cat="Python"] .thumb::before,
+.post[data-cat^="Python/"] .thumb::before       { -webkit-mask-image: var(--ph-python);  mask-image: var(--ph-python); }
+.post[data-cat="PHP"] .thumb::before,
+.post[data-cat^="PHP/"] .thumb::before          { -webkit-mask-image: var(--ph-php);     mask-image: var(--ph-php); }
+.post[data-cat="아키텍처"] .thumb::before,
+.post[data-cat^="아키텍처/"] .thumb::before       { -webkit-mask-image: var(--ph-arch);    mask-image: var(--ph-arch); }
+.post[data-cat="데이터베이스"] .thumb::before,
+.post[data-cat^="데이터베이스/"] .thumb::before    { -webkit-mask-image: var(--ph-db);      mask-image: var(--ph-db); }
+.post[data-cat="네트워크"] .thumb::before         { -webkit-mask-image: var(--ph-net);     mask-image: var(--ph-net); }
+.post[data-cat="보안"] .thumb::before            { -webkit-mask-image: var(--ph-sec);     mask-image: var(--ph-sec); }
+.post[data-cat="AI"] .thumb::before             { -webkit-mask-image: var(--ph-ai);      mask-image: var(--ph-ai); }
+.post[data-cat="코드 품질"] .thumb::before,
+.post[data-cat^="코드 품질/"] .thumb::before      { -webkit-mask-image: var(--ph-quality); mask-image: var(--ph-quality); }
+.post[data-cat="Go"] .thumb::before             { -webkit-mask-image: var(--ph-go);      mask-image: var(--ph-go); }
+.post[data-cat="알고리즘"] .thumb::before         { -webkit-mask-image: var(--ph-algo);    mask-image: var(--ph-algo); }
+.post[data-cat="개발 도구"] .thumb::before,
+.post[data-cat^="개발 도구/"] .thumb::before      { -webkit-mask-image: var(--ph-tool);    mask-image: var(--ph-tool); }
+.post[data-cat="기록"] .thumb::before            { -webkit-mask-image: var(--ph-note);    mask-image: var(--ph-note); }
 
-.post .thumb img { position: relative; width: 100%; height: 100%; object-fit: cover; }
+/* 3층 — 진짜 대표이미지가 있으면 앞의 둘을 덮는다. z-index가 있어야 ::before 위로 온다 */
+.post .thumb img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
 
 /* 카테고리 목록에서는 같은 그림이 최대 15번 반복되므로 감춘다 */
 #tt-body-category .post:not(:has(.thumb img)) .thumb { display: none; }
 ```
 
+- **한 카테고리에 파일 하나면 된다.** 마스크는 알파만 쓰므로 색이 `background-color`에서, 곧 **토큰에서만** 나온다. §2의 "미디어쿼리 안에서 색을 처음 정의하지 않는다"가 이미지까지 확장된다. 라이트/다크 두 벌을 만들 필요가 없어 **14장 + 기본값 1장 = 15장**이다.
+- **대가는 단색이다.** 모티프 안에서 색을 나눌 수 없다. 강약은 SVG 안의 `opacity`로만 준다(`ai.svg`의 간선이 그렇게 흐리다). 링크색 강조는 포기했다 — 카드에서 색을 갖는 것은 `.cat` 라벨 하나로 충분하다.
 - **접두사 충돌이 없다** — 상위 14종 중 어느 이름도 다른 이름의 접두사가 아니다. `^=`가 옆 카테고리를 물지 않는다.
 - **하위가 없는 7종**(`Kotlin·Java` `네트워크` `보안` `AI` `Go` `알고리즘` `기록`)은 `^=` 줄을 두지 않았다. 하위가 생기면 두 줄짜리로 바꾼다 — 안 바꾸면 새 하위 글이 `--ph-default`로 조용히 떨어진다.
 - 이름에 `&`가 없어 이스케이프 걱정은 사라졌지만 **`코드 품질`·`개발 도구`에는 공백이 있으므로** 값은 계속 따옴표로 감싼다.
 - **`--ph-*` 변수명은 `src/assets/placeholders/`의 SVG 파일명에서 그대로 나온다** (`arch.svg` → `--ph-arch`). 빌드가 파일을 훑어 `data:` URI로 만들 뿐 이름을 검사하지 않으므로, **파일명을 틀리면 변수가 정의되지 않고 카드는 조용히 `--ph-default`로 떨어진다.** 위 블록의 이름이 곧 파일명 목록이다.
-- **카테고리를 늘리거나 이름을 바꾸면 이 블록과 SVG 파일명을 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
-- **기본 이미지는 SVG를 `data:` URI로 `style.css`에 인라인한다.** 배포가 수동이므로 업로드할 파일 수를 줄인다.
-- 기본 이미지는 라이트/다크 양쪽에서 성립해야 한다. `currentColor`를 못 쓰므로 두 벌을 만들고 토큰으로 교체한다.
-- **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.**
+- **도안을 고칠 때는 SVG를 직접 손대지 말고 `scripts/gen-placeholders.py`를 고쳐 다시 돌린다.** 15장이 한 파일에 정의돼 있어 좌표·굵기 규칙을 한눈에 맞출 수 있다.
+- **카테고리를 늘리거나 이름을 바꾸면 이 블록과 생성기를 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
+- **기본 이미지는 SVG를 `data:` URI로 `style.css`에 인라인한다.** 배포가 수동이므로 업로드할 파일 수를 줄인다. 15장 전부 합쳐 **base64 약 8KB**다.
+- **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.** 다만 이 치환자는 관리 화면에서 카테고리 대표이미지를 설정해야 값이 나오고, 없으면 블록째 사라진다 — **기본 이미지를 배너로 대신 쓸지는 미정**이다(`DECISIONS.md` 미결 12).
 
 ### 6.3 코드블록
 
@@ -471,6 +512,6 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 ## 8. 알려진 빈틈
 
 - **다크 팔레트는 파생값이다.** 원본 Vercel 분석은 단일 모드다. 실제 화면에서 대비를 검증한 뒤 조정한다.
-- **기본 이미지 도안이 아직 없다.** 상위 14종 × 라이트/다크 두 벌 = **28장.** 카테고리 개편이 끝나 §6.2의 선택자와 `data/categories.json`은 확정됐고, 남은 것은 도안뿐이다. `PHP`는 "우선 유지"라 뒤집힐 수 있으니 **마지막에 그린다**(`DECISIONS.md` 결정 27). 도안을 넣으면 린트 `BND003`이 빠진 카테고리를 알려준다.
+- **기본 이미지 도안은 들어왔다** — `src/assets/placeholders/` 15장(상위 14 + 기본값 1), `scripts/gen-placeholders.py`가 정본이다. 마스크 방식이라 라이트/다크가 한 파일로 갈린다. **다만 `src/styles/`가 없어 빌드 산출물로는 아직 확인하지 못했다** — `placeholderVars()`는 CSS 빌드 안에서만 돈다. 스킨 첫 사이클에서 `style.css`에 `--ph-*`가 실제로 박히는지, 린트 `BND003`이 실제로 도는지 확인한다.
 - **`preview.gif` / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`** 스킨 미리보기 이미지가 필요하다.
 - **인라인 색 열거 목록은 2026-08-24 기준 275편 전수 조사 결과다.** 새 글이 쌓이면 다시 세야 하며, 그때까지는 JS 안전망이 막는다.
