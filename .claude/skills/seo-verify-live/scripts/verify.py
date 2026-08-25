@@ -27,7 +27,11 @@ UA_PC = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
 UA_MOBILE = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 "
              "(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1")
 
-ROOT = os.getcwd()
+# .claude/skills/seo-verify-live/scripts/verify.py 에서 네 단계 위가 저장소 루트다.
+# os.getcwd()를 쓰면 다른 디렉터리에서 돌릴 때 엉뚱한 곳에 baseline을 만들고,
+# 배포 전/후 두 실행이 서로 다른 파일을 보게 된다.
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 # baseline은 data/에 둔다. _workspace/는 .gitignore 대상이고 worktree마다 독립이라
 # "배포 전 저장 → 배포 후 비교" 사이에 세션이 바뀌면 기준선이 조용히 사라진다.
 # data/*.json은 CLAUDE.md가 git으로 공유된다고 명시한 자리다.
@@ -38,6 +42,10 @@ ERRORS, WARNINGS, INFO, UNVERIFIED = [], [], [], []
 # 응답이 아예 없던 페이지. "죽은 페이지"와 "네트워크가 흔들린 페이지"를
 # 구분하지 않으면 점검 중에 돌린 검증이 없는 회귀를 만들어 낸다.
 UNREACHED = set()
+
+# 이번 실행에서 실제로 요청을 시도한 페이지 이름. 타깃 목록에 없던 페이지를
+# "죽었다"고 신고하지 않으려면 이 구분이 필요하다.
+ATTEMPTED = set()
 
 
 def err(code, msg, where=""):
@@ -79,7 +87,9 @@ def fetch(url, ua=UA_PC, retries=2):
 
 # ─────────────────────────── HTML 파싱 보조 ───────────────────────────
 
-HREF_RE = re.compile(r"""\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""", re.I)
+# (?:^|[\s]) 로 앵커한다. \b 는 data-href 의 '-' 와 'h' 사이에서도 걸려
+# data-href 를 진짜 href 로 읽는다.
+HREF_RE = re.compile(r"""(?:^|\s)href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""", re.I)
 
 
 def href_of(tag):
@@ -89,6 +99,17 @@ def href_of(tag):
         return None
     v = next((g for g in m.groups() if g is not None), "")
     return htmllib.unescape(v) or None
+
+
+def load_json(path, what):
+    """깨진 파일 하나가 리포트 전체를 날리지 않게 한다. 리포트는 main 끝에서
+    한 번에 출력되므로, 중간에 예외가 나면 이미 모은 결과가 전부 사라진다."""
+    try:
+        return json.load(open(path, encoding="utf-8"))
+    except Exception as e:
+        unverified("V015", "%s 를 읽지 못했다 (%s). 파일이 깨졌거나 없다."
+                   % (what, e.__class__.__name__), path)
+        return None
 
 
 def head_of(doc):
@@ -199,7 +220,9 @@ def jsonld_types(doc):
 
     for raw in re.findall(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', doc, re.S | re.I):
         try:
-            data = json.loads(htmllib.unescape(raw.strip()))
+            # unescape하지 않는다. <script>는 raw text라 엔티티가 디코드되지 않으며,
+            # 티스토리가 제목의 "를 &quot;로 넣어 둔 것을 풀면 JSON이 깨진다.
+            data = json.loads(raw.strip())
         except Exception:
             types.append(PARSE_ERROR)
             continue
@@ -226,7 +249,7 @@ def page_targets(base):
 
     posts_path = os.path.join(ROOT, "data", "posts.json")
     if os.path.exists(posts_path):
-        d = json.load(open(posts_path, encoding="utf-8"))
+        d = load_json(posts_path, "data/posts.json") or {}
         posts = d.get("posts") or []
         url = (posts[0].get("url") or "") if posts else ""
         if url:
@@ -283,9 +306,9 @@ def verify_page(name, url, doc, status, base_host, stats):
     # 하드 오류를 만든다. 그래서 body만, 그중에서도 코드블록·스크립트·주석은 뺀다.
     scannable = strip_comments(body_of(doc))
     scannable = re.sub(r"<(pre|code|script|style)\b.*?</\1>", " ", scannable, flags=re.S | re.I)
-    title_m = re.search(r"<title>(.*?)</title>", doc, re.S | re.I)
-    if title_m:
-        scannable += " " + title_m.group(1)   # <title>에 남은 치환자는 눈에 띈다
+    # <title>은 검사하지 않는다. 티스토리가 글 제목을 그대로 넣으므로,
+    # 제목에 치환자를 쓴 글("[##_article_rep_title_##] 정리" 같은)이 곧바로
+    # 오탐이 된다 — 바로 위에서 피하겠다고 한 그 오탐이다.
     leftovers = (re.findall(r"\[##_[a-zA-Z0-9_]+_##\]", scannable)
                  + re.findall(r"</?s_[a-zA-Z0-9_]+>", scannable))
     if leftovers:
@@ -335,7 +358,8 @@ def verify_page(name, url, doc, status, base_host, stats):
         # V008 — 이미지 alt (콘텐츠 이슈. 스킨으로 고칠 수 없으므로 보고만 한다)
         imgs = re.findall(r"<img[^>]*>", strip_comments(body_of(doc)), re.I)
         if imgs:
-            with_alt = sum(1 for i in imgs if re.search(r'\balt\s*=\s*"[^"]+"', i, re.I))
+            alt_re = re.compile(r"""(?:^|\s)alt\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s"'>]+))""", re.I)
+            with_alt = sum(1 for i in imgs if alt_re.search(i))
             if with_alt < len(imgs):
                 info("%s — 이미지 %d장 중 alt가 있는 것은 %d장. 본문 이미지는 에디터에서 "
                      "쓰므로 스킨으로 고칠 수 없다. 사용자에게 보고할 항목."
@@ -349,16 +373,26 @@ def verify_skin_applied(base, home_doc):
         unverified("V009", "dist/style.css가 없어 스킨 반영 여부를 대조하지 못했다. "
                    "npm run build 후 다시 실행하라.", "dist/style.css")
         return
-    live_url = None
+    live_url, fallback = None, None
     for tag in re.findall(r"<link\b[^>]*>", head_of(home_doc), re.I):
         h = href_of(tag)
-        if h and "/skin/style.css" in h:
+        if not h or not h.endswith(".css") and ".css?" not in h:
+            continue
+        if "/skin/style.css" in h:
             # 루트상대·프로토콜상대·절대 URL을 전부 흡수한다.
             live_url = urllib.parse.urljoin(base + "/", h)
             break
+        if "style.css" in h and fallback is None:
+            fallback = h
     if not live_url:
-        err("V009", "홈이 /skin/style.css를 로드하지 않는다. 커스텀 스킨이 적용되지 "
-            "않았거나 <head>가 깨졌다.", base + "/")
+        if fallback:
+            # 스킨 CSS인지 단정할 수 없다. 오류로 적으면 멀쩡한 배포를 막는다.
+            unverified("V009", "티스토리 표준 경로(/skin/style.css)의 스타일시트를 찾지 "
+                       "못했다. 대신 %s 가 걸려 있다 — 이것이 스킨 CSS인지 눈으로 "
+                       "확인하라." % fallback, base + "/")
+        else:
+            err("V009", "홈에 스킨 스타일시트가 하나도 없다. 커스텀 스킨이 적용되지 "
+                "않았거나 <head>가 깨졌다.", base + "/")
         return
     status, live_css, _ = fetch(live_url)
     if status != 200 or not live_css:
@@ -422,7 +456,9 @@ def verify_paging_canonical(base):
     posts_path = os.path.join(ROOT, "data", "posts.json")
     if not os.path.exists(posts_path):
         return
-    d = json.load(open(posts_path, encoding="utf-8"))
+    d = load_json(posts_path, "data/posts.json")
+    if not d:
+        return
     cats = sorted({p.get("category", "").split("/")[0]
                    for p in d.get("posts") or [] if p.get("category")})
     if not cats:
@@ -467,7 +503,9 @@ def compare_baseline(stats, base):
         err("V012", "이전 baseline이 없어 회귀를 비교하지 못했다. 배포 전에 "
             "--save-baseline으로 기준선을 먼저 만들어야 한다.", BASELINE)
         return
-    saved = json.load(open(BASELINE, encoding="utf-8"))
+    saved = load_json(BASELINE, "baseline")
+    if saved is None:
+        return
     prev_base = saved.get("base")
     if prev_base and prev_base.rstrip("/") != base.rstrip("/"):
         # DECISIONS.md #22 — 개발은 테스트 블로그에서 한다. 두 블로그의 지표를
@@ -478,7 +516,12 @@ def compare_baseline(stats, base):
         return
     old = saved.get("pages", {})
     for name in sorted(set(old) - set(stats)):
-        if name in UNREACHED:
+        if name not in ATTEMPTED:
+            # 타깃 목록에 아예 없었다. data/posts.json이 없으면 page·category가
+            # 만들어지지 않는다. 시도하지 않은 것을 죽었다고 적으면 안 된다.
+            unverified("V012", "%s 는 이번 검증 대상에 없었다. data/posts.json이 없거나 "
+                       "비어 URL을 만들지 못했을 수 있다." % name, name)
+        elif name in UNREACHED:
             # 응답 자체가 없었다. 회귀가 아니라 검증을 못 한 것이다.
             unverified("V012", "%s 가 baseline에는 있는데 이번에는 응답이 없어 비교하지 "
                        "못했다." % name, name)
@@ -523,10 +566,7 @@ def save_baseline(base, stats, expected):
         return
 
     if os.path.exists(BASELINE):
-        try:
-            saved = json.load(open(BASELINE, encoding="utf-8"))
-        except Exception:
-            saved = {}
+        saved = load_json(BASELINE, "기존 baseline") or {}
         prev_base = saved.get("base")
         if prev_base and prev_base.rstrip("/") != base.rstrip("/"):
             # DECISIONS.md #22 — 개발은 테스트 블로그에서 한다. 그 실행이 본 블로그
@@ -583,6 +623,7 @@ def main():
     stats, home_doc, post_url = {}, "", ""
 
     for name, url in targets:
+        ATTEMPTED.add(name)
         status, doc, _ = fetch(url)
         verify_page(name, url, doc, status, base_host, stats)
         if name == "index":

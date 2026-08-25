@@ -305,13 +305,13 @@ def lint_seo(skin):
         r"<%s(?:\s[^>]*)?>.*?</%s>" % (CONTEXTUAL_SINGLE, CONTEXTUAL_SINGLE),
         skin, re.S | re.I)]
     for m in re.finditer(r"<s_article_rep(?:\s[^>]*)?>(.*?)</s_article_rep>", skin, re.S | re.I):
-        if any(a <= m.start() and m.end() <= b for a, b in repeating_spans):
-            continue   # 위 루프가 바깥 블록으로 이미 신고했다. 같은 결함을 두 번 적지 않는다
         body_start = m.start(1)
         for h in re.finditer(r"<h1[\s>]", m.group(1), re.I):
             at = body_start + h.start()
             if any(a <= at < b for a, b in single_spans):
                 continue   # 글 상세 영역 안의 h1 — 한 번만 렌더되므로 맞다
+            if any(a <= at < b for a, b in repeating_spans):
+                continue   # 위 루프가 이미 신고한 h1이다. 같은 결함을 두 번 적지 않는다
             line = skin[:at].count("\n") + 1
             err("SEO001", "<s_article_rep> 안의 <h1>이 <%s> 영역 밖에 있다. 홈·목록에서는 "
                 "이 블록이 글 수만큼 반복되므로 h1도 그만큼 생긴다. 글 상세에서만 h1을 쓰려면 "
