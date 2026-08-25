@@ -242,42 +242,175 @@ def canonical_of(doc):
     return None
 
 
+# ──────────────────── 검증할 글·카테고리 고르기 ────────────────────
+
+# data/posts.json은 **본 블로그** 실측이다. 테스트 블로그를 검증하면서 그 경로를
+# 그대로 붙이면 있지도 않은 글·카테고리를 두드려 404가 나고, --save-baseline은
+# V014로 아무것도 저장하지 못한다. 2026-08-25 실측: git-rich-quick.tistory.com에
+# /entry/타이밍어택…과 /category/AI를 요청해 둘 다 404, baseline 저장 실패.
+# 그래서 **대상 블로그가 실측과 다르면 대상 블로그에서 직접 찾는다.**
+_RESOLVED = {}
+
+
+def host_of(value):
+    """'sanggi-jayg.tistory.com'도 'https://sanggi-jayg.tistory.com/'도 받는다."""
+    v = (value or "").strip()
+    if not v:
+        return ""
+    if "//" not in v:
+        v = "//" + v
+    return urllib.parse.urlparse(v).netloc
+
+
+def census_targets(base_host):
+    """실측에서 글 경로·상위 카테고리를 꺼낸다. 다른 블로그면 (None, None, 사유)."""
+    posts_path = os.path.join(ROOT, "data", "posts.json")
+    if not os.path.exists(posts_path):
+        return None, None, ("data/posts.json이 없다. 검증할 글·카테고리를 "
+                            "대상 블로그에서 직접 찾는다.")
+    d = load_json(posts_path, "data/posts.json") or {}
+    blog = host_of(d.get("blog"))
+    if blog and not same_host(blog, base_host):
+        return None, None, ("data/posts.json은 %s 실측인데 검증 대상은 %s 다. "
+                            "실측의 글·카테고리는 이 블로그에 없으므로 쓰지 않고 "
+                            "대상 블로그에서 직접 찾는다." % (blog, base_host))
+    posts = d.get("posts") or []
+    url = (posts[0].get("url") or "") if posts else ""
+    path = None
+    if url:
+        parsed = urllib.parse.urlparse(url)
+        path = parsed.path or "/"
+        if parsed.query:
+            path += "?" + parsed.query
+        if not path.startswith("/"):
+            path = "/" + path
+    cats = sorted({p.get("category", "").split("/")[0]
+                   for p in posts if p.get("category")})
+    return path, (cats[0] if cats else None), None
+
+
+def category_names(doc, base_host):
+    """문서에 나온 카테고리 이름을 등장 순서대로. 상위 카테고리를 앞에 둔다.
+
+    상위를 앞에 두는 이유 — V013의 페이징 검사는 글이 많은 목록이라야 2페이지가
+    있다. 하위 카테고리를 집으면 글이 적어 2페이지가 없고, 검사가 조용히 미검증이 된다."""
+    top, sub = [], []
+    for l in links_in(doc):
+        p = urllib.parse.urlparse(l)
+        if p.netloc and not same_host(p.netloc, base_host):
+            continue
+        path = p.path[2:] if p.path.startswith(MOBILE_PREFIX) else p.path
+        if not path.startswith("/category/"):
+            continue
+        name = urllib.parse.unquote(path[len("/category/"):]).strip("/")
+        if not name:
+            continue
+        (top if "/" not in name else sub).append(name.split("/")[0])
+    return top + sub
+
+
+def discover_targets(base, base_host):
+    """대상 블로그에서 글 경로·카테고리를 직접 찾는다. 홈 → sitemap.xml 순."""
+    post = cat = None
+    status, doc, _ = fetch(base + "/")
+    if status == 200 and doc:
+        paths, _forms = entry_links(doc, base_host)
+        if paths:
+            post = sorted(paths)[0]
+        names = category_names(doc, base_host)
+        if names:
+            cat = names[0]
+    if post and cat:
+        return post, cat
+    # 홈이 비었거나(이전 스킨이 목록을 안 깔았거나) 카테고리 모듈이 꺼져 있을 수 있다.
+    # sitemap.xml은 티스토리가 만들어 주므로 스킨과 무관하게 남아 있다.
+    status, sm, _ = fetch(base + "/sitemap.xml")
+    if status == 200 and sm:
+        for loc in re.findall(r"<loc>([^<]+)</loc>", sm):
+            p = urllib.parse.urlparse(loc)
+            if p.netloc and not same_host(p.netloc, base_host):
+                continue
+            path = normalize_post_path(p.path)
+            if not post and POST_PATH_RE.match(path):
+                post = path
+            if not cat and path.startswith("/category/"):
+                name = urllib.parse.unquote(path[len("/category/"):]).strip("/")
+                if name:
+                    cat = name.split("/")[0]
+            if post and cat:
+                break
+    return post, cat
+
+
+def resolve_targets(base, base_host, cli_post=None, cli_cat=None):
+    """검증에 쓸 (글 경로, 상위 카테고리 이름)을 한 번 정하고 재사용한다.
+
+    우선순위: 명령줄 지정 > 실측(같은 블로그일 때) > 대상 블로그에서 발견."""
+    if _RESOLVED:
+        return _RESOLVED
+
+    post, cat = cli_post, cli_cat
+    post_src = "--post-path" if post else ""
+    cat_src = "--category" if cat else ""
+
+    if not (post and cat) and os.path.exists(BASELINE):
+        # 기준선이 본 대상을 그대로 이어 쓴다. 실측(posts.json)은 글이 늘면 첫 글이
+        # 바뀌고, 발견도 홈 목록이 바뀌면 따라 바뀐다. 어느 쪽이든 배포 전/후가
+        # 다른 글을 비교하게 되므로, 같은 블로그의 기준선이 있으면 그것이 우선이다.
+        saved = load_json(BASELINE, "기존 baseline") or {}
+        if (saved.get("base") or "").rstrip("/") == base.rstrip("/"):
+            saved_t = saved.get("targets") or {}
+            if not post and saved_t.get("post"):
+                post, post_src = saved_t["post"], "baseline"
+            if not cat and saved_t.get("category"):
+                cat, cat_src = saved_t["category"], "baseline"
+
+    if not (post and cat):
+        c_post, c_cat, why = census_targets(base_host)
+        if why:
+            info(why)
+        if not post and c_post:
+            post, post_src = c_post, "data/posts.json"
+        if not cat and c_cat:
+            cat, cat_src = c_cat, "data/posts.json"
+
+    if not (post and cat):
+        # 실측이 못 채운 것만 찾는다. 본 블로그를 검증할 때는 이 요청이 아예 없다.
+        d_post, d_cat = discover_targets(base, base_host)
+        if not post and d_post:
+            post, post_src = d_post, "대상 블로그에서 발견"
+        if not cat and d_cat:
+            cat, cat_src = d_cat, "대상 블로그에서 발견"
+
+    if post:
+        info("검증할 글: %s (%s)" % (post, post_src))
+    else:
+        unverified("V000", "검증할 글 URL을 찾지 못했다. 홈에도 sitemap.xml에도 글 링크가 "
+                   "없다. --post-path /entry/... 로 직접 지정하라.", base + "/")
+    if cat:
+        info("검증할 카테고리: %s (%s)" % (cat, cat_src))
+    else:
+        unverified("V000", "검증할 카테고리를 찾지 못했다. 카테고리가 없거나 모듈이 꺼져 "
+                   "있을 수 있다. --category 이름 으로 직접 지정하라.", base + "/")
+
+    _RESOLVED.update({"post": post, "category": cat})
+    return _RESOLVED
+
+
 # ─────────────────────────── 검증할 URL 목록 ───────────────────────────
 
-def page_targets(base):
+def page_targets(base, base_host):
     """라이브 URL 8종.
 
     skin-preview는 10개를 렌더하지만 그중 page_toc·tag_cloud는 **같은 URL 타입의 다른 상태**다
     (목차 유/무, 태그 목록/클라우드). 여기서 세는 것은 URL 종류이므로 8이 맞다.
     """
+    t = resolve_targets(base, base_host)
     targets = [("index", base + "/")]
-
-    posts_path = os.path.join(ROOT, "data", "posts.json")
-    if os.path.exists(posts_path):
-        d = load_json(posts_path, "data/posts.json") or {}
-        posts = d.get("posts") or []
-        url = (posts[0].get("url") or "") if posts else ""
-        if url:
-            # posts.json은 절대 URL을 담을 수도 있다. 경로만 떼어 --base에 붙인다.
-            # 그러지 않으면 테스트 블로그를 검증한다면서 본 블로그를 두드린다.
-            parsed = urllib.parse.urlparse(url)
-            path = parsed.path or "/"
-            if parsed.query:
-                path += "?" + parsed.query
-            if parsed.netloc and not same_host(parsed.netloc, urllib.parse.urlparse(base).netloc):
-                info("data/posts.json의 글 URL이 %s 인데 검증 대상은 %s 다. "
-                     "경로만 떼어 검증 대상에 붙인다." % (parsed.netloc, base))
-            targets.append(("page", base + (path if path.startswith("/") else "/" + path)))
-        else:
-            unverified("V000", "data/posts.json에 글 URL이 없어 글 페이지를 검증하지 못했다.",
-                       "data/posts.json")
-        cats = sorted({p.get("category", "") for p in posts if p.get("category")})
-        if cats:
-            targets.append(("category", base + "/category/" + urllib.parse.quote(cats[0])))
-    else:
-        unverified("V000", "data/posts.json이 없어 글·카테고리 URL을 만들지 못했다. "
-                   "/blog-census를 먼저 돌려라.", "data/posts.json")
-
+    if t["post"]:
+        targets.append(("page", base + t["post"]))
+    if t["category"]:
+        targets.append(("category", base + "/category/" + urllib.parse.quote(t["category"])))
     targets += [
         ("archive",   base + "/archive"),
         ("tag",       base + "/tag"),
@@ -436,8 +569,12 @@ def verify_skin_applied(base, home_doc):
     live_url, fallback = skin_css_of(home_doc, base)
     dist = os.path.join(ROOT, "dist", "style.css")
     if not os.path.exists(dist):
+        # 절대경로로 알린다. dist/는 .gitignore라 worktree마다 따로 빌드해야 하는데,
+        # 상대경로만 찍으면 "빌드를 안 했다"와 "빌드한 곳이 아닌 체크아웃에서 돌렸다"가
+        # 똑같이 보인다. 후자가 실제로 일어난다(2026-08-25).
         unverified("V009", "dist/style.css가 없어 스킨 반영 여부를 대조하지 못했다. "
-                   "npm run build 후 다시 실행하라.", "dist/style.css")
+                   "이 체크아웃에서 npm run build 를 먼저 돌려라 — 다른 worktree에서 "
+                   "빌드했다면 그 dist/는 여기서 보이지 않는다.", dist)
         return live_url
     if not live_url:
         if fallback:
@@ -525,17 +662,10 @@ def verify_paging_canonical(base):
     사이트 루트를 가리킨다. 2페이지 이후 목록은 독립 색인되지 않는다는 뜻이다.
     티스토리 소관이라 스킨으로 못 고치지만, 모르면 "페이징으로 크롤링되겠지"라고
     잘못 설계한다. 티스토리가 고치면 이 검사가 알려 준다."""
-    posts_path = os.path.join(ROOT, "data", "posts.json")
-    if not os.path.exists(posts_path):
+    cat = _RESOLVED.get("category")
+    if not cat:
         return
-    d = load_json(posts_path, "data/posts.json")
-    if not d:
-        return
-    cats = sorted({p.get("category", "").split("/")[0]
-                   for p in d.get("posts") or [] if p.get("category")})
-    if not cats:
-        return
-    url = base + "/category/" + urllib.parse.quote(cats[0]) + "?page=2"
+    url = base + "/category/" + urllib.parse.quote(cat) + "?page=2"
     status, doc, _ = fetch(url)
     if status != 200 or not doc:
         unverified("V013", "목록 2페이지를 받지 못했다 (HTTP %s)." % status, url)
@@ -685,7 +815,12 @@ def save_baseline(base, stats, expected, allow_missing=False):
 
     os.makedirs(os.path.dirname(BASELINE), exist_ok=True)
     with open(BASELINE, "w", encoding="utf-8") as f:
-        json.dump({"base": base, "pages": stats, "missing": missing},
+        # 어떤 글·카테고리를 봤는지 함께 남긴다. 이게 없으면 다음 실행이 **다른 글**을
+        # 골라(글이 하나만 늘어도 바뀐다) 배포 전/후가 서로 다른 대상을 비교하고,
+        # 그 차이가 전부 회귀로 보고된다.
+        json.dump({"base": base, "pages": stats, "missing": missing,
+                   "targets": {"post": _RESOLVED.get("post"),
+                               "category": _RESOLVED.get("category")}},
                   f, ensure_ascii=False, indent=1)
     if missing:
         warn("V014", "--allow-missing 으로 %s 를 빼고 저장했다. 이 페이지 타입들은 "
@@ -706,6 +841,11 @@ def main():
                     help="일부 페이지 타입이 원래 없을 때(방명록 끔 등) 그것을 빼고 "
                          "baseline을 저장한다. 빠진 것은 회귀 감시에서 제외된다.")
     ap.add_argument("--compare", action="store_true")
+    ap.add_argument("--post-path", default=None,
+                    help="검증에 쓸 글의 경로 (예: /entry/제목). 자동 선택이 엉뚱한 글을 "
+                         "집거나 못 찾을 때만 쓴다.")
+    ap.add_argument("--category", default=None,
+                    help="검증에 쓸 상위 카테고리 이름 (예: 경제).")
     args = ap.parse_args()
 
     base = args.base.rstrip("/")
@@ -718,7 +858,10 @@ def main():
     if not args.json:
         print("검증 대상: %s\n" % base)
 
-    targets = page_targets(base)
+    # 타깃을 먼저 확정한다 — 이 안에서 대상 블로그를 한 번 두드릴 수 있고(다른 블로그일 때만),
+    # V013 페이징 검사도 여기서 정해진 카테고리를 그대로 쓴다.
+    resolve_targets(base, base_host, cli_post=args.post_path, cli_cat=args.category)
+    targets = page_targets(base, base_host)
     stats, home_doc, post_url = {}, "", ""
 
     for name, url in targets:

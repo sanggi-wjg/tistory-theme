@@ -32,7 +32,27 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://sanggi-j
 | `--save-baseline` | 현재 지표를 `data/seo-baseline.json`에 기준선으로 저장 |
 | `--compare` | 직전 baseline과 비교해 **회귀**를 잡는다 |
 | `--allow-missing` | 원래 없는 페이지 타입(방명록을 껐다든가)을 빼고 저장 |
+| `--post-path` | 검증에 쓸 글을 직접 지정 (예: `/entry/제목`) |
+| `--category` | 검증에 쓸 상위 카테고리를 직접 지정 (예: `경제`) |
 | `--json` | 자동화용 |
+
+### 어떤 글·카테고리를 보는가
+
+8종 중 `page`·`category`는 **URL을 알아야** 두드릴 수 있다. 우선순위는 이렇다.
+
+1. `--post-path` / `--category` — 직접 지정
+2. **baseline** — `--base`가 같으면 기준선이 본 대상을 이어 쓴다
+3. `data/posts.json` — **같은 블로그일 때만**
+4. **대상 블로그에서 직접 발견** — 홈의 링크, 없으면 `sitemap.xml`
+
+3번의 "같은 블로그일 때만"이 핵심이다. `data/posts.json`은 본 블로그 실측이라,
+그 경로를 테스트 블로그에 붙이면 있지도 않은 글·카테고리를 두드린다. 2026-08-25에
+실제로 일어났다 — `git-rich-quick.tistory.com`에 본 블로그의 글과 `/category/AI`를
+요청해 둘 다 404, `V014`로 baseline이 저장되지 않았다.
+
+2번(baseline 고정)도 같은 이유다. 실측이든 발견이든 **글이 하나만 늘어도 첫 글이
+바뀐다.** 그러면 배포 전과 후가 서로 다른 글을 비교하고, 그 차이가 전부 회귀로 나온다.
+기준선에 `targets`로 박아 두고 이어 쓴다.
 
 **배포 전에 `--save-baseline`, 배포 후에 `--compare`.** 이 순서가 이 스킬의 핵심이다 — 절대값보다 "배포로 무엇이 줄었는가"가 훨씬 잘 잡힌다.
 
@@ -71,6 +91,7 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://... --co
 | `V013` | 목록 2페이지의 `canonical` | 루트로 접히면 2페이지 이후가 독립 색인되지 않는다 |
 | `V014` | baseline 저장 안전장치 (`--save-baseline`) | 불완전한 기준선·다른 블로그 기준선이 좋은 기준선을 덮는 것을 막는다 |
 | `V015` | 입력 JSON 읽기 실패 | `data/posts.json`·baseline이 깨져도 리포트를 잃지 않는다 |
+| `V000` | 검증할 글·카테고리를 못 정했다 | 그 페이지 타입이 통째로 검증에서 빠진다. `--post-path`·`--category`로 지정하라 |
 
 ## 구조화 데이터 — 티스토리가 어디에 무엇을 넣는가
 
