@@ -278,56 +278,74 @@
 
 /* ── 주목 글 (홈 첫 카드) ────────────────────────────────────── */
 @media (min-width: 641px) {
-  .card-grid > .post:first-child .post-link {
+  #tt-body-index .post-list > .post:first-child .post-link {
     flex-direction: row;
     align-items: stretch;
     gap: var(--sp-5);
   }
 
-  .card-grid > .post:first-child .thumb {
+  #tt-body-index .post-list > .post:first-child .thumb {
     flex: 0 0 46%;
   }
 
-  .card-grid > .post:first-child .post-text {
+  #tt-body-index .post-list > .post:first-child .post-text {
     justify-content: center;
     gap: var(--sp-3);
   }
 
-  .card-grid > .post:first-child .post-title {
+  #tt-body-index .post-list > .post:first-child .post-title {
     min-height: 0;
     font-size: var(--fs-display-md);
     line-height: var(--lh-display-md);
     letter-spacing: var(--ls-display-md);
   }
 
-  .card-grid > .post:first-child .post-excerpt {
+  #tt-body-index .post-list > .post:first-child .post-excerpt {
     -webkit-line-clamp: 3;
     line-clamp: 3;
     font-size: var(--fs-body);
     line-height: var(--lh-body-sm);
   }
 
-  .card-grid > .post:first-child .post-meta { margin-top: 0; }
+  #tt-body-index .post-list > .post:first-child .post-meta { margin-top: 0; }
 }
 
-/* ── 목록 페이지의 카드는 가로 행 ─────────────────────────────── */
-.post-list .post { border-bottom: 1px solid var(--hairline); }
+/* ── 목록 페이지의 카드는 가로 행 ───────────────────────────────
+   같은 .post-list 마크업이 홈에서는 카드 그리드다(layout.css 게이트 ①).
+   그래서 행 스타일은 body_id로 목록 4종에 한정한다 — 범위를 안 걸면
+   홈 카드에 밑줄이 깔리고 썸네일이 180px로 눌린다. */
+#tt-body-category .post-list .post,
+#tt-body-search   .post-list .post,
+#tt-body-tag      .post-list .post,
+#tt-body-archive  .post-list .post { border-bottom: 1px solid var(--hairline); }
 
-.post-list .post-link {
+#tt-body-category .post-list .post-link,
+#tt-body-search   .post-list .post-link,
+#tt-body-tag      .post-list .post-link,
+#tt-body-archive  .post-list .post-link {
   padding: var(--sp-5) 0;
   height: auto;
 }
 
-.post-list .post-title { min-height: 0; }
+#tt-body-category .post-list .post-title,
+#tt-body-search   .post-list .post-title,
+#tt-body-tag      .post-list .post-title,
+#tt-body-archive  .post-list .post-title { min-height: 0; }
 
 @media (min-width: 561px) {
-  .post-list .post-link {
+  #tt-body-category .post-list .post-link,
+  #tt-body-search   .post-list .post-link,
+  #tt-body-tag      .post-list .post-link,
+  #tt-body-archive  .post-list .post-link {
     flex-direction: row;
     align-items: flex-start;
     gap: var(--sp-5);
   }
 
-  .post-list .thumb { flex: 0 0 180px; }
+  #tt-body-category .post-list .thumb,
+  #tt-body-search   .post-list .thumb,
+  #tt-body-tag      .post-list .thumb,
+  #tt-body-archive  .post-list .thumb { flex: 0 0 180px; }
 }
 
 /* ╔════════════════════════════════════════════════════════════════════╗

@@ -2,15 +2,15 @@
    layout.css — body_id 게이트 · 본체 골격 · 반응형
 
    skin.html은 한 장이고, 페이지별 영역은 치환자가 지우고 남긴다.
-   그런데 두 영역은 치환자로 지울 수 없어 **모든 페이지 DOM에 남는다**
-   (docs/hooks.md §1):
+   그런데 .sidebar는 치환자로 지울 수 없어 **모든 페이지 DOM에 남는다**
+   — <s_sidebar>가 페이지를 가리지 않는다 (docs/hooks.md §1).
 
-     .card-grid — 반복 치환자 <s_index_article_rep>를 감싸야 해서 바깥에 있다
-     .sidebar   — <s_sidebar>가 페이지를 가리지 않는다
+   그래서 여기서 body_id로 잠근다. 빠뜨리면 방명록에 빈 사이드바 칸이 뜬다.
+   :empty로는 못 잡는다 — 치환자가 사라져도 줄바꿈 공백이 남아 :empty가 거짓이 된다.
 
-   그래서 여기서 body_id로 잠근다. 빠뜨리면 글 페이지에 빈 그리드가,
-   방명록에 빈 사이드바 칸이 뜬다. :empty로는 못 잡는다 —
-   치환자가 사라져도 줄바꿈 공백이 남아 :empty가 거짓이 된다.
+   목록(.post-list)은 <s_list> 안에 있어 페이지 타입에 따라 티스토리가 지운다.
+   다만 **홈에서도 렌더된다**(2026-08-25 실측) — 그래서 지우는 게이트가 아니라
+   모양을 가르는 게이트가 필요하다. 홈은 카드 그리드, 목록 4종은 세로 행이다.
 
    폭 기준 (DESIGN.md §4): ~640px 1열 / 641~1024px 2열 / 1025px~ 3열.
    ══════════════════════════════════════════════════════════════════════ */
@@ -30,10 +30,10 @@
    페이지 전체가 가로로 스크롤한다. */
 .content { min-width: 0; }
 
-/* ── 게이트 ① 홈 그리드 — 홈에서만 ─────────────────────────────── */
-.card-grid { display: none; }
-
-#tt-body-index .card-grid {
+/* ── 게이트 ① 목록의 모양 — 홈은 그리드, 목록 4종은 세로 행 ────────
+   같은 <s_list> 마크업이 두 모양을 낸다. 홈에만 있는 영역이 없으므로
+   구분은 body_id뿐이다. */
+#tt-body-index .post-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-5);
@@ -126,27 +126,30 @@
 }
 
 /* ── 목록 : 카드 세로 나열 ──────────────────────────────────────── */
-.post-list {
+#tt-body-category .post-list,
+#tt-body-search   .post-list,
+#tt-body-tag      .post-list,
+#tt-body-archive  .post-list {
   display: flex;
   flex-direction: column;
 }
 
 /* ══ 641px~ : 2열 ══════════════════════════════════════════════ */
 @media (min-width: 641px) {
-  #tt-body-index .card-grid {
+  #tt-body-index .post-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   /* 주목 글. 반복 치환자는 첫 항목을 표시해 주지 않으므로 :first-child로 잡는다.
-     그래서 .card-grid의 자식은 .post뿐이어야 한다 — 광고·공지를 넣으면 깨진다. */
-  #tt-body-index .card-grid > .post:first-child {
+     그래서 .post-list의 자식은 .post뿐이어야 한다 — 광고·공지를 넣으면 깨진다. */
+  #tt-body-index .post-list > .post:first-child {
     grid-column: 1 / -1;
   }
 }
 
 /* ══ 1025px~ : 3열 · 2단 · 목차 우측 ═══════════════════════════ */
 @media (min-width: 1025px) {
-  #tt-body-index .card-grid {
+  #tt-body-index .post-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

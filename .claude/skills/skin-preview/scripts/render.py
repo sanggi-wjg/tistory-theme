@@ -45,6 +45,36 @@ PAGE_TYPES = {
 
 LIST_PAGES = {"category", "search", "tag", "archive", "empty"}
 
+# <s_list>는 **홈에서도 렌더된다.** 2026-08-25 실측 — 홈에 list_conform "전체 글",
+# list_count(전체 글 수), 글 카드, 페이징이 모두 나왔다. 렌더러가 이걸 몰라서
+# 프리뷰의 홈은 s_index_article_rep로만 그려졌고, 그 영역이 실제로는 죽어 있다는
+# 것을 배포 전까지 아무도 볼 수 없었다.
+LIST_AREA_PAGES = LIST_PAGES | {"index"}
+
+# s_article_rep의 하위 영역. 바깥에 두면 티스토리가 통째로 버린다 (DECISIONS.md 결정 29).
+ARTICLE_REP_CHILDREN = ("s_index_article_rep", "s_permalink_article_rep")
+
+# 위 영역 중 s_article_rep 바깥에 있어 이번 렌더에서 버려진 것들.
+ORPHAN_AREAS = set()
+
+
+def scan_orphan_areas(skin):
+    """티스토리와 같은 판단을 미리 내린다 — 버릴 영역을 정하고 경고한다.
+
+    렌더러가 이 규칙을 몰랐던 것이 이번 사고의 절반이다. 린트(SUB008)가 잡더라도,
+    프리뷰가 "잘 나온다"고 보여 주면 사람은 프리뷰를 믿는다."""
+    ORPHAN_AREAS.clear()
+    for child in ARTICLE_REP_CHILDREN:
+        for m in re.finditer(r"<%s(?:\s[^>]*)?>" % child, skin, re.I):
+            before = skin[:m.start()]
+            if len(re.findall(r"<s_article_rep(?:\s[^>]*)?>", before, re.I)) <= \
+               len(re.findall(r"</s_article_rep>", before, re.I)):
+                ORPHAN_AREAS.add(child)
+                sys.stderr.write(
+                    "  [경고] <%s>가 <s_article_rep> 바깥에 있다 — 티스토리가 이 영역을 "
+                    "통째로 버린다. 프리뷰도 똑같이 버린다 (린트 SUB008).\n" % child)
+                break
+
 # 실제 글에서 관찰된 오염 패턴을 그대로 담은 본문 픽스처.
 # 인라인 color/background-color/font-family 보정 규칙이 동작하는지 여기서 확인한다.
 ARTICLE_BODY = """<div class="tt_article_useless_p_margin contents_style">
@@ -130,7 +160,10 @@ def build_category_html(cats, posts):
 
 
 def globals_for(page, posts, cats, category_html, skin_vars):
-    conform = {"category": "Kotlin & Java/Spring", "search": "OOMKilled",
+    # 홈의 list_conform은 "전체 글"이다 (2026-08-25 실측). 빈 문자열로 두면
+    # 홈의 h1이 비어 보이고, V003이 실물과 어긋난다.
+    conform = {"index": "전체 글",
+               "category": "Kotlin & Java/Spring", "search": "OOMKilled",
                "tag": "hikaricp", "archive": "2026", "empty": "존재하지않는검색어"}.get(page, "")
     g = {
         "title": "상쾌한기분", "desc": "오늘도 상쾌한기분", "blogger": "상쾌한기분",
@@ -144,7 +177,9 @@ def globals_for(page, posts, cats, category_html, skin_vars):
         "count_total": "482,193", "count_today": "312", "count_yesterday": "487",
         "search_name": "search", "search_text": "", "search_onclick_submit": "return false;",
         "list_conform": conform, "list_count": "0" if page == "empty" else str(len(posts)),
-        "list_description": "카테고리 설명이 들어가는 자리다.",
+        # 홈에서는 블로그 설명이 들어간다 (실측: "git-rich-quick 님의 블로그 입니다.").
+        "list_description": ("오늘도 상쾌한기분" if page == "index"
+                             else "카테고리 설명이 들어가는 자리다."),
         "list_style": "list", "list_image": "https://placehold.co/1200x300/eeeeee/999999?text=category",
         "prev_page": 'href="?page=1"', "next_page": 'href="?page=3"',
         "no_more_prev": "", "no_more_next": "",
@@ -252,6 +287,8 @@ def handle_group(name, attrs, inner, ctx, page, posts):
         return "" if truthy(ctx.get("var_" + name[10:])) else R(inner)
 
     # 페이지 영역
+    if name in ORPHAN_AREAS:
+        return ""
     if name == "s_index_article_rep":
         return repeat(inner, posts[:12], "article_rep", ctx, page, posts) if page == "index" else ""
     if name == "s_permalink_article_rep":
@@ -263,9 +300,10 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             return repeat(inner, posts[:12], "article_rep", ctx, page, posts)
         return ""
     if name == "s_list":
-        return R(inner) if is_list else ""
+        return R(inner) if page in LIST_AREA_PAGES else ""
     if name == "s_list_rep":
-        return repeat(inner, posts[:20], "list_rep", ctx, page, posts) if (is_list and page != "empty") else ""
+        return (repeat(inner, posts[:20], "list_rep", ctx, page, posts)
+                if (page in LIST_AREA_PAGES and page != "empty") else "")
     if name == "s_list_empty":
         return R(inner) if page == "empty" else ""
     if name == "s_list_image":
@@ -444,6 +482,7 @@ def main():
                 skin_vars[n.group(1).strip()] = v
 
     skin = open(args.src, encoding="utf-8").read()
+    scan_orphan_areas(skin)
     os.makedirs(OUT, exist_ok=True)
     made = []
     for page in [p.strip() for p in args.page.split(",") if p.strip()]:
