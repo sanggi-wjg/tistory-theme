@@ -46,6 +46,14 @@ npm install                      # worktree마다 필요하다
 git worktree remove ../tistory-theme-<작업명>
 ```
 
+**cmux를 쓸 때** — cmux는 터미널을 나누지 파일시스템을 나누지 않는다. 두 워크스페이스가 같은 경로를 가리키면 **같은 git 작업 트리를 공유**하므로, 한쪽에서 브랜치를 바꾸면 다른 쪽 파일이 그대로 바뀐다. **워크스페이스와 worktree를 1:1로 맞춘다.**
+
+```bash
+CMUX_QUIET=1 cmux workspace list --json   # 같은 디렉터리를 쓰는 워크스페이스가 있는지 먼저 확인
+git worktree add ../tistory-theme-<작업명> -b feat/<작업명>
+cmux new-workspace --name "<작업명>" --cwd "$PWD/../tistory-theme-<작업명>"
+```
+
 **worktree에서 주의할 것**
 
 | 항목 | 동작 |
@@ -73,4 +81,4 @@ git worktree remove ../tistory-theme-<작업명>
 |---|---|---|---|
 | 2026-08-24 | 초기 구성 — 에이전트 5, 스킬 7 | 전체 | — |
 | 2026-08-25 | 브랜치·PR 작업 방식 지침 추가 | CLAUDE.md, 오케스트레이터 Phase 5 | main 직접 커밋을 막고 변경을 PR 단위로 검토하기 위해 |
-| 2026-08-25 | worktree 동시 작업 지침 추가 | CLAUDE.md, .gitignore | 여러 세션이 같은 디렉터리에서 브랜치를 바꿔 서로 밟는 것을 막기 위해 |
+| 2026-08-25 | worktree·cmux 동시 작업 지침 추가 | CLAUDE.md, .gitignore | 여러 세션이 같은 디렉터리에서 브랜치를 바꿔 서로 밟는 것을 막기 위해 |
