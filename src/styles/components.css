@@ -32,18 +32,6 @@
   min-width: 0;
 }
 
-/* 홈에서만 블로그 이름이 h1이다. 글 페이지의 h1은 .entry-title이므로 거기서는
-   p로 낮춘다 — 한 페이지에 h1이 둘이 되지 않게. (코드리뷰 ①)
-
-   태그는 CSS로 바꿀 수 없다. 그래서 skin.html이 h1과 p를 한 벌씩 놓고 여기서
-   body_id로 하나만 보인다. display:none이라 감춘 쪽은 접근성 트리에도 없다.
-   ⚠ 둘의 내용은 항상 같아야 한다. 한쪽만 고치면 홈과 나머지가 갈린다. */
-.brand-line { margin: 0; }
-.brand-line-home { display: none; }
-
-#tt-body-index .brand-line-home { display: block; }
-#tt-body-index .brand-line-sub  { display: none; }
-
 .brand-title {
   display: block;
   font-size: var(--fs-display-sm);

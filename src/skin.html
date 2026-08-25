@@ -54,13 +54,22 @@ gtag('config', 'G-PHQ5FKMZ37');
 <header class="site-header">
   <div class="header-inner">
     <div class="site-brand">
-      <!-- 홈에서는 블로그 이름이 h1, 글 페이지에서는 .entry-title이 h1이다.
-           마크업은 한 장이라 페이지별로 태그를 바꿀 수 없다. 그래서 같은 내용을
-           h1과 p로 한 벌씩 놓고 body_id로 하나만 보인다(components.css).
-           감춘 쪽은 display:none이라 **접근성 트리에서도 빠진다** — 스크린리더에도
-           제목은 하나만 들리고, 화면에 이름이 두 번 나오지도 않는다. -->
-      <h1 class="brand-line brand-line-home"><a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a></h1>
-      <p  class="brand-line brand-line-sub"><a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a></p>
+      <!-- ⚠ 여기는 h1이 아니다. 헤더는 모든 페이지에 있으므로 h1을 두면
+           글·목록 페이지에서 그 페이지의 h1과 겹쳐 **마크업에 h1이 둘**이 된다.
+           CSS로 감춰도 원시 HTML에는 남고, 크롤러와 seo-verify-live의 V003은
+           원시 HTML을 센다(실측: 감춤 방식일 때 홈 빼고 전 페이지 h1 2개).
+
+           h1은 각 페이지 자신의 영역이 갖는다 —
+             글    .entry-title      (s_permalink_article_rep)
+             목록  .list-title       (s_list)
+             클라우드 .tagcloud-title (s_tag)
+             방명록 .guestbook-title  (s_guest)
+
+           **홈에는 h1이 없다. 알고 남긴 예외다.** 티스토리에는 홈에서 한 번만
+           렌더되는 영역이 없어(areaScope의 홈은 s_index_article_rep 반복과
+           커버뿐) 홈 전용 h1을 놓을 자리가 없다. 홈의 이름은 <title>과
+           아래 링크 텍스트가 담는다. 자세한 것은 DESIGN.md §3. -->
+      <a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a>
       <p class="brand-desc">[##_desc_##]</p>
     </div>
 
