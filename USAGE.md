@@ -6,11 +6,12 @@ Node 20+ · Python 3. worktree마다 `npm install`이 따로 필요하다(esbuil
 
 | 명령 | 하는 일 |
 |---|---|
-| `npm run build` | `src/` → `dist/` 4개 파일 생성 |
+| `npm run build` | `src/` → `dist/` 배포 산출물 생성 |
 | `npm run watch` | 변경 감시 빌드 |
 | `npm run lint` | 정적 검증. 오류가 있으면 exit 1 |
 | `npm run preview` | 빌드 후 `_preview/`에 10개 페이지 렌더 |
 | `npm run check` | 빌드 → 린트 → 프리뷰. **커밋 전에 통과해야 한다** |
+| `npm run preview:images` | 관리 화면용 미리보기 이미지 4종 재생성 (macOS + Chrome 필요) |
 
 `dist/`·`_preview/`는 git에 들어가지 않는다. 소스에서 언제든 다시 만든다.
 
