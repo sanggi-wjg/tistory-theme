@@ -14,7 +14,7 @@
 
 ## 빠른 시작
 
-Node 20+ 와 Python 3 이 필요하다 (파이썬 스크립트는 표준 라이브러리만 쓴다).
+Node 20+와 Python 3이 필요하다 (파이썬 스크립트는 표준 라이브러리만 쓴다).
 
 ```bash
 npm install
@@ -27,14 +27,14 @@ open _preview/index.html
 ## 구조
 
 ```
-src/skin.html          치환자가 든 스킨 마크업 (빌드가 변환하지 않고 그대로 복사)
-src/index.xml          스킨 정보·옵션 변수
-src/styles/*.css       tokens → base → layout → content → tistory → components 순으로 합쳐진다
-src/js/*.js            index.js를 진입점으로 esbuild 번들
+src/skin.html             치환자가 든 스킨 마크업 (빌드가 변환하지 않고 그대로 복사)
+src/index.xml             스킨 정보·옵션 변수
+src/styles/*.css          tokens → base → layout → content → tistory → components 순으로 합쳐진다
+src/js/*.js               index.js를 진입점으로 esbuild 번들
 src/assets/placeholders/  카테고리 기본이미지 SVG (data: URI로 CSS에 인라인된다)
-scripts/build.mjs      빌드
-data/*.json            블로그 실측 결과. 인라인색 보정 CSS와 프리뷰 픽스처의 근거
-docs/hooks.md          마크업 ↔ CSS ↔ JS 경계면 계약
+scripts/build.mjs         빌드
+data/*.json               블로그 실측 결과. 인라인색 보정 CSS와 프리뷰 픽스처의 근거
+docs/hooks.md             마크업 ↔ CSS ↔ JS 경계면 계약
 ```
 
 ## 이 프로젝트의 전제
