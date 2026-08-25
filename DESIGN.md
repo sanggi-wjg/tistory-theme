@@ -325,7 +325,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 - 접기/펼치기가 필요하면 JS로 DOM을 조작한다.
 - `index.xml`의 `<tree>` 설정(색·글자수·글수 표시)도 함께 관리한다.
-- 상위 11종 / 하위 36종. `span.c_cnt`는 `--ink-mute`, `tabular-nums`.
+- 상위 11종 / 하위 36종 (**개편 전 값**. [개편안](../docs/category-taxonomy.md) 적용 시 상위 13 / 하위 19, 사이드바 47줄 → 32줄). `span.c_cnt`는 `--ink-mute`, `tabular-nums`.
 
 ### 5.4 댓글·방명록
 
@@ -394,7 +394,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 #tt-body-category .post:not(:has(.thumb img)) .thumb { display: none; }
 ```
 
-- 접두사 충돌이 없다 (상위 11종 이름끼리 겹치지 않음).
+- 접두사 충돌이 없다 (상위 11종 이름끼리 겹치지 않음). ⚠️ **위 선택자는 개편 전 카테고리 이름 기준이다.** [개편안](../docs/category-taxonomy.md)이 적용되면 상위 13종으로 값을 전부 교체하고 장수도 11 → 13이 된다. 개편안은 이름에 `&`를 쓰지 않아 이스케이프 걱정이 없다.
 - **기본 이미지는 SVG를 `data:` URI로 `style.css`에 인라인한다.** 배포가 수동이므로 업로드할 파일 수를 줄인다.
 - 기본 이미지는 라이트/다크 양쪽에서 성립해야 한다. `currentColor`를 못 쓰므로 두 벌을 만들고 토큰으로 교체한다.
 - **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.**

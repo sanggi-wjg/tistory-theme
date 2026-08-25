@@ -16,6 +16,9 @@ src = collections.defaultdict(lambda: collections.defaultdict(list))
 for p in posts:
     src[p["from"]][p["to"]].append(p)
 
+n_top = len(tax)
+n_sub = sum(1 for t in tax for x in t["subs"] if x["name"])
+
 whole, split = [], []
 for old, dests in src.items():
     total = sum(len(v) for v in dests.values())
@@ -60,8 +63,8 @@ for t in tax:
         w(f'      └ {s["name"]}')
 w("```")
 w("")
-w("- [ ] 상위 11종을 만들었다")
-w("- [ ] 하위 26종을 만들었다")
+w(f"- [ ] 상위 {n_top}종을 만들었다")
+w(f"- [ ] 하위 {n_sub}종을 만들었다")
 w("")
 w("> **이름 주의** — `CI·CD`의 가운뎃점은 `·`(U+00B7)다. `&`는 어디에도 쓰지 않는다.")
 w("")
@@ -111,7 +114,7 @@ w("카테고리 관리에서 드래그로 1단계 목록 순서와 같게 맞춘
 w("")
 w("**활성 주력 → 대형 아카이브 → 잡문** 순이다. 이걸 빠뜨리면 개편 효과의 절반이 날아간다 — 사이드바 맨 위가 3~5년 전 연재물로 채워진다.")
 w("")
-w("- [ ] 상위 11종 순서 확인")
+w(f"- [ ] 상위 {n_top}종 순서 확인")
 w("- [ ] 각 상위 안의 하위 순서 확인")
 w("")
 w("---")
@@ -132,7 +135,7 @@ w("```")
 w("")
 w("- [ ] `DECISIONS.md` §3 카테고리 절을 새 값으로 다시 쓴다 (⚠️ 개편 대기 표시 제거)")
 w("- [ ] `DECISIONS.md` 미결 8을 완료 처리한다")
-w("- [ ] `DESIGN.md` §6.2 `data-cat` 접두 선택자 값을 새 상위 11종으로 교체한다")
+w(f"- [ ] `DESIGN.md` §6.2 `data-cat` 접두 선택자 값을 새 상위 {n_top}종으로 교체한다 (기본 이미지도 {n_top}장)")
 w("- [ ] 미결 6(기본 이미지 11장 도안) 착수 — 이제 카테고리가 확정됐다")
 w("")
 w("---")
