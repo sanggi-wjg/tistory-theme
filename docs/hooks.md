@@ -395,11 +395,15 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 **카테고리 접기 — CSS가 지켜야 할 세 가지** (`src/styles/tistory.css`, `src/js/category.js`)
 
 1. **기능 규칙은 `.side-category`로 스코프한다. `.tt_category`가 아니다.**
-   `[##_category_##]`의 안쪽 클래스 이름(`.tt_category` · `.category_list` · `.sub_category_list` ·
-   `.link_item`)은 **공식 레퍼런스에 없다.** DESIGN.md §5.3의 기록이고 출처가 적혀 있지 않다.
+   `[##_category_list_##]`의 안쪽 클래스 이름(`.tt_category` · `.category_list` ·
+   `.sub_category_list` · `.link_item`)은 **공식 레퍼런스에 없다.** 2026-08-25 실측으로
+   확정했지만(DESIGN.md §5.3), 확정했다고 기능을 이름에 걸지는 않는다.
    이름이 다르면 치장 규칙은 밋밋해지고 끝이지만, 접기 규칙이 안 먹으면 **버튼을 눌러도
    아무 일도 일어나지 않는다.** 그래서 접기만은 우리가 보장하는 훅에 건다:
    `.side-category li.is-collapsed > ul { display: none }`
+
+   이 선택은 값을 이미 한 번 했다. 스킨이 폴더형을 내보내던 동안 JS는 `ul`을 못 찾아
+   조용히 물러났고, **잘못된 DOM에 토글을 억지로 심지 않았다** (DECISIONS.md 결정 31).
 2. **대상도 이름이 아니라 자식 `ul` 전체다.** `> .sub_category_list`가 아니라 `> ul`.
 3. **기본값을 "접힘"으로 두지 않는다.** JS가 없거나 실패하면 아무 클래스도 붙지 않아
    트리는 전부 펼쳐진 채로 남는다 — 읽을 수는 있다. CSS로 미리 접어 두면
@@ -407,8 +411,10 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 **JS가 지키는 것** — 클래스 이름에 의존하지 않고 "중첩 `ul`을 가진 `li`"라는 구조로 고른다.
 구조가 예상과 다르면 아무것도 하지 않고 조용히 물러난다. 상위 카테고리 링크는 가로채지 않는다
-(접기는 별도 버튼). 현재 보고 있는 가지는 `location.pathname`과 링크 `href`를 대조해 펼친 채로 시작한다
-— 티스토리가 선택된 항목에 붙이는 클래스를 모르기 때문이다.
+(접기는 별도 버튼). 현재 보고 있는 가지는 펼친 채로 시작한다 — **`li.selected`를 먼저 보고**,
+없으면 `location.pathname`과 링크 `href`를 대조한다. 둘 다 두는 이유는 `selected`가
+카테고리 페이지에만 붙기 때문이다. 글 페이지 URL(`/entry/…`)은 카테고리 경로와 겹치지 않아
+둘 다 안 걸리고, 그때는 트리가 접힌 채로 시작한다 — 의도한 동작이다.
 
 ---
 
@@ -434,7 +440,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 | 모듈 클래스 | 내용 | 안쪽 훅 |
 |---|---|---|
-| `.side-category` | `[##_category_##]` 한 줄 | **티스토리 고정 마크업.** `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.link_sub_item` `.c_cnt` (DESIGN §5.3) |
+| `.side-category` | `[##_category_list_##]` 한 줄 — **폴더형 `[##_category_##]`이 아니다**(결정 31, 린트 `CAT001`) | **티스토리 고정 마크업.** `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.link_sub_item` `.c_cnt`, 현재 가지에 `li.selected` (DESIGN §5.3) |
 | `.side-notice` | 최근 공지 | `.side-list` `.side-item` `.side-link` |
 | `.side-recent` | 최근 글 | `.side-list` `.side-item` `.side-link` `.side-thumb` `.side-thumb-img` `.side-text` `.side-meta` `.side-rp` |
 | `.side-popular` | 인기글 | 위와 동일 |

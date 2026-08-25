@@ -675,6 +675,47 @@ def verify_paging_canonical(base):
         info("목록 2페이지의 canonical: %s" % canon)
 
 
+def verify_category_tree(base, home_doc):
+    """V016 — 라이브 카테고리 트리가 리스트형인가.
+
+    2026-08-25 첫 배포에서 폴더형([##_category_##])이 나갔다 (DECISIONS.md 결정 31).
+    린트 CAT001이 소스를 막지만 **배포는 손으로 하는 복붙이라 소스가 맞아도
+    프로덕션이 틀릴 수 있다** — 이 스킬이 존재하는 이유가 정확히 그것이다.
+
+    폴더형이 나가면 사이드바에서 가장 큰 모듈의 내부링크가 통째로 0이 된다.
+    링크가 <a href>가 아니라 onclick이라 크롤러도 키보드도 닿지 않는다.
+    V010의 내부링크 집계는 홈 전체를 세므로 이 손실을 개별로 짚어 주지 못한다.
+    """
+    if not home_doc:
+        unverified("V016", "홈을 받지 못해 카테고리 트리 형식을 확인하지 못했다.", base + "/")
+        return
+
+    doc = strip_comments(home_doc)
+    folder = re.search(r'id=["\']treeComponent["\']', doc, re.I)
+    listed = re.search(r'class=["\'][^"\']*\btt_category\b', doc, re.I)
+
+    if folder:
+        err("V016", "카테고리 트리가 **폴더형**으로 렌더됐다 (table#treeComponent). "
+            "링크가 onclick이라 사이드바 카테고리의 내부링크가 0개이고, 인라인 색이 "
+            "다크모드를 이긴다. skin.html의 [##_category_##]를 [##_category_list_##]로 "
+            "바꿔 CSS 탭이 아니라 **HTML 탭**을 다시 올려라 (DECISIONS.md 결정 31).",
+            base + "/")
+        return
+
+    if not listed:
+        unverified("V016", "홈에서 카테고리 트리를 찾지 못했다 (ul.tt_category 없음). "
+                   "사이드바 카테고리 모듈이 꺼져 있으면 정상이다.", base + "/")
+        return
+
+    # 리스트형이 맞다면 트리 안의 /category 링크 수를 세어 둔다.
+    # 상위 14 + 하위 21 + 분류 전체보기 1 = 36이 이 블로그의 기대값이다.
+    n = len(re.findall(r'<a[^>]+href=["\'][^"\']*/category', doc, re.I))
+    info("카테고리 트리 — 리스트형(ul.tt_category), /category 링크 %d개." % n)
+    if n == 0:
+        err("V016", "리스트형 트리인데 /category 링크가 하나도 없다. 마크업이 잘려 "
+            "붙여넣어졌을 수 있다.", base + "/")
+
+
 def verify_platform_assets(base):
     """V011 — 티스토리 소관 자산. 우리가 만들지는 않지만 죽으면 유입이 죽는다."""
     for name, path in (("robots.txt", "/robots.txt"), ("sitemap.xml", "/sitemap.xml")):
@@ -873,6 +914,7 @@ def main():
         pc_skin_css = None
         unverified("V009", "홈을 받지 못해 스킨 반영 여부를 확인하지 못했다.", base + "/")
     verify_mobile(base, post_url, pc_skin_css=pc_skin_css)
+    verify_category_tree(base, home_doc)
     verify_paging_canonical(base)
     verify_platform_assets(base)
 

@@ -370,18 +370,21 @@ radius:
 
 ### 5.3 카테고리 트리
 
-`[##_category_##]`가 통째로 렌더링한다. 클래스는 고정이며 마크업은 바꿀 수 없다.
+**`[##_category_list_##]`(리스트형)가 통째로 렌더링한다.** `[##_category_##]`(폴더형)가 아니다 — 둘은 완전히 다른 것을 출력하고, 폴더형을 쓰면 아래 클래스가 **하나도 나오지 않는다**(`DECISIONS.md` 결정 31, 린트 `CAT001`). 마크업은 바꿀 수 없다.
 
 ```
 ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
-  ul.category_list > li > a.link_item     상위 카테고리
-    ul.sub_category_list > li > a.link_sub_item   하위 카테고리
+  ul.category_list > li > a.link_item     상위 카테고리 14
+    ul.sub_category_list > li > a.link_sub_item   하위 카테고리 21
 ```
 
-- 접기/펼치기가 필요하면 JS로 DOM을 조작한다.
-- `index.xml`의 `<tree>` 설정(색·글자수·글수 표시)도 함께 관리한다.
+- **현재 보고 있는 가지의 `li`에 `class="selected"`가 붙는다.** 카테고리 페이지에서만이다 — 글 페이지에는 안 붙는다. 왼쪽 2px 막대 + `--link`로 표시한다. 배경을 칠하지 않는 이유는 240px 레일에서 블록 면적이 크고 §4의 촘촘한 세로선을 끊기 때문이다.
+- 앵커 안에는 앞뒤 공백이 들어 있다 — `<a> 인프라 <span>(42)</span> </a>`.
+- 접기/펼치기가 필요하면 JS로 DOM을 조작한다(`js/category.js`). 기본은 접힘이 아니라 **펼침**이고, JS가 토글을 만든 가지만 접힌 상태로 시작한다 — JS가 실패해도 하위 카테고리로 갈 길이 남는다.
+- **`index.xml`의 `<tree>` 설정은 리스트형에 닿지 않는다.** 폴더형 전용이다. 지우려면 `index.xml`을 다시 올려야 하고 그러면 스킨 설정이 초기화되므로(결정 1) 그대로 둔다. 색·글수 표시는 전부 CSS가 맡는다.
 - **상위 14종 / 하위 21종 → 트리 36줄** (`분류 전체보기` 1 + 14 + 21). 개편 전 48줄(1 + 11 + 36). 전체 목록과 순서는 `DECISIONS.md` §3, 정본은 `data/categories.json`.
-- `span.c_cnt`는 `--ink-mute`, `tabular-nums`.
+- `span.c_cnt`는 `--ink-mute`, `tabular-nums`. 제목이 두 줄이 될 때 배지가 마지막 줄에 붙지 않도록 앵커 정렬은 `baseline`이 아니라 `flex-start`다.
+- **240px 레일에서 상위·하위 35종이 전부 한 줄에 들어간다** (2026-08-25 프리뷰 계측). 가장 긴 이름 `성능과 동시성`·`Django·Flask`·`Kotlin·Java`도 줄바꿈되지 않는다. 이름이 더 길어지면 `overflow-wrap: break-word`로 흘린다.
 
 ### 5.4 댓글·방명록
 
