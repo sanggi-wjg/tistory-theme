@@ -3,7 +3,7 @@
 티스토리 관리 화면을 열어 두고 이 파일을 보면서 진행한다.
 설계 근거와 왜 이렇게 나눴는지는 [`category-taxonomy.md`](./category-taxonomy.md)에 있다 — **이 파일은 손으로 하는 작업만** 담는다.
 
-**총 275편** · 통째 이동 109편 / 쪼개서 이동 166편
+**총 275편** · 통째 이동 121편 / 쪼개서 이동 154편
 
 ---
 
@@ -25,40 +25,34 @@
  1. 인프라
       └ 쿠버네티스
       └ 모니터링
-      └ 리눅스
-      └ 네트워크
-      └ CI·CD
- 2. 백엔드
-      └ Kotlin·Spring
-      └ 웹 프레임워크
-      └ 분산 시스템
-      └ 설계 원칙
- 3. 데이터
-      └ MySQL
-      └ DB 이론
-      └ NoSQL·검색
       └ 데이터 파이프라인
- 4. 웹·보안
-      └ HTTP
-      └ 보안
- 5. AI
-      └ LLM 활용
-      └ Langchain
-      └ 로컬 모델
- 6. Python
-      └ 기초
-      └ 성능과 동시성
-      └ 라이브러리
- 7. 코드 품질
+      └ 리눅스
+      └ CI·CD
+ 2. Kotlin·Spring
+ 3. 아키텍처
+ 4. 데이터베이스
+      └ MySQL
+      └ NoSQL·검색
+      └ DB 이론
+ 5. 네트워크
+ 6. 보안
+ 7. AI
+ 8. 코드 품질
       └ Clean Code
+      └ 설계 원칙
       └ 리팩토링
       └ 테스트
- 8. 개발 도구
+ 9. Python
+      └ 성능과 동시성
+      └ Django·Flask
+      └ 기초
+      └ 라이브러리
+10. Go
+11. 알고리즘
+12. 개발 도구
       └ Git
       └ 개발 환경
- 9. 알고리즘
-10. Go
-11. 기록
+13. 기록
 ```
 
 - [ ] 상위 11종을 만들었다
@@ -79,32 +73,33 @@
 | ✓ | 기존 카테고리 | 편수 | 옮길 곳 |
 |---|---|---:|---|
 | [ ] | `IT/Clean Code` | 16 | **코드 품질/Clean Code** |
+| [ ] | `IT/AI` | 12 | **AI** |
 | [ ] | `Go` | 11 | **Go** |
 | [ ] | `Infrastructure/Fluentd` | 11 | **인프라/모니터링** |
 | [ ] | `IT/리팩토링` | 9 | **코드 품질/리팩토링** |
-| [ ] | `IT/Langchain` | 8 | **AI/Langchain** |
-| [ ] | `Infrastructure/Micro Service Architecture` | 8 | **백엔드/분산 시스템** |
-| [ ] | `Python/Django` | 6 | **백엔드/웹 프레임워크** |
-| [ ] | `Kotlin & Java` | 5 | **백엔드/Kotlin·Spring** |
-| [ ] | `Infrastructure/Kafka` | 5 | **데이터/데이터 파이프라인** |
-| [ ] | `Infrastructure/CDC` | 4 | **데이터/데이터 파이프라인** |
-| [ ] | `Python/Flask` | 4 | **백엔드/웹 프레임워크** |
-| [ ] | `Database/Redis` | 3 | **데이터/NoSQL·검색** |
+| [ ] | `IT/Langchain` | 8 | **AI** |
+| [ ] | `Infrastructure/Micro Service Architecture` | 8 | **아키텍처** |
+| [ ] | `Python/Django` | 6 | **Python/Django·Flask** |
+| [ ] | `Kotlin & Java` | 5 | **Kotlin·Spring** |
+| [ ] | `Infrastructure/Kafka` | 5 | **인프라/데이터 파이프라인** |
+| [ ] | `Infrastructure/CDC` | 4 | **인프라/데이터 파이프라인** |
+| [ ] | `Python/Flask` | 4 | **Python/Django·Flask** |
+| [ ] | `Database/Redis` | 3 | **데이터베이스/NoSQL·검색** |
 | [ ] | `일상` | 2 | **기록** |
 | [ ] | `책책책 책을 읽읍시다` | 2 | **기록** |
-| [ ] | `Infrastructure` | 2 | **백엔드/분산 시스템** |
-| [ ] | `Infrastructure/VPN` | 2 | **인프라/네트워크** |
-| [ ] | `Infrastructure/Airflow` | 2 | **데이터/데이터 파이프라인** |
+| [ ] | `Infrastructure` | 2 | **아키텍처** |
+| [ ] | `Infrastructure/VPN` | 2 | **네트워크** |
+| [ ] | `Infrastructure/Airflow` | 2 | **인프라/데이터 파이프라인** |
 | [ ] | `Infrastructure/Prometheus` | 2 | **인프라/모니터링** |
 | [ ] | `IT/수학` | 1 | **알고리즘** |
 | [ ] | `Infrastructure/Docker` | 1 | **인프라/쿠버네티스** |
 | [ ] | `OS/Mac` | 1 | **개발 도구/개발 환경** |
-| [ ] | `Search Engine/ElasticSearch` | 1 | **데이터/NoSQL·검색** |
-| [ ] | `PHP/Codeigniter` | 1 | **백엔드/웹 프레임워크** |
-| [ ] | `PHP/Laravel` | 1 | **백엔드/웹 프레임워크** |
-| [ ] | `Search Engine/Lucene Solr` | 1 | **데이터/NoSQL·검색** |
+| [ ] | `Search Engine/ElasticSearch` | 1 | **데이터베이스/NoSQL·검색** |
+| [ ] | `PHP/Codeigniter` | 1 | **인프라/리눅스** |
+| [ ] | `PHP/Laravel` | 1 | **인프라/리눅스** |
+| [ ] | `Search Engine/Lucene Solr` | 1 | **데이터베이스/NoSQL·검색** |
 
-여기까지 109편. 전체의 39%가 이 단계에서 끝난다.
+여기까지 121편. 전체의 44%가 이 단계에서 끝난다.
 
 ---
 
@@ -113,9 +108,9 @@
 여러 곳으로 갈린다. 카테고리 필터로 거른 뒤 **아래 목록을 보며 골라서** 이동한다.
 제목은 관리 화면에 보이는 그대로다. 목적지가 같은 것끼리 묶어 놨으니 한 목적지씩 처리하면 된다.
 
-### `IT` — 35편 → 11곳
+### `IT` — 35편 → 10곳
 
-**→ 백엔드/설계 원칙** (11편)
+**→ 코드 품질/설계 원칙** (11편)
 
 - [ ] 2024.12.19  의존성 주입에 대한 생각
 - [ ] 2024.08.01  멱등성 (Idempotence)와 HTTP API 설계
@@ -129,7 +124,7 @@
 - [ ] 2019.10.22  [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체  ⚠️ 토끼책 2편 — 책 요약이라 기록으로 볼 수도 (내용은 객체지향 설계)
 - [ ] 2019.10.22  [토끼책] 객체지향의 사실과 오해 1장 - 협력하는 객체들의 공동체
 
-**→ 웹·보안/보안** (5편)
+**→ 보안** (5편)
 
 - [ ] 2026.08.12  타이밍 어택, 어디까지 막아야 할까? == 비교부터 프레임워크 CVE까지
 - [ ] 2026.05.22  유출된 AWS AccessKey 무중단 교체하기: 출근길에마주한 IAM 유저 생성 시도 알림
@@ -149,7 +144,7 @@
 - [ ] 2026.02.11  터미널 오픈소스 도구 모음: btop, k9s, Mole, Sniffnet
 - [ ] 2025.08.08  [Mac] 맥 환경, Jetbrains IDE 과거 버전 삭제
 - [ ] 2024.02.26  [Jetbrains]  Intellij 인텔리제이 Live Template 사용 방법
-- [ ] 2019.10.25  batch 프로그램으로 host 변경하기  ⚠️ 'batch 프로그램으로 host 변경' — hosts 파일이 주제면 인프라/네트워크로
+- [ ] 2019.10.25  batch 프로그램으로 host 변경하기  ⚠️ 'batch 프로그램으로 host 변경' — hosts 파일이 주제면 네트워크로
 
 **→ 인프라/CI·CD** (4편)
 
@@ -158,26 +153,23 @@
 - [ ] 2021.02.08  [Jenkins] 젠킨스 Dockerfile 설치
 - [ ] 2021.02.05  [Jenkins] 젠킨스란 무엇인가
 
+**→ 네트워크** (2편)
+
+- [ ] 2026.04.02  통신사별 DNS IP 리스트 (구글, SKT, KT, LG, Cloudflare)
+- [ ] 2021.09.27  WEB RTC
+
 **→ 기록** (2편)
 
 - [ ] 2025.05.26  좋은 엔지니어 되기: 핵심 원칙과 실천 방안
 - [ ] 2019.10.23  개발에 있어서...
 
-**→ 인프라/네트워크** (1편)
-
-- [ ] 2026.04.02  통신사별 DNS IP 리스트 (구글, SKT, KT, LG, Cloudflare)
-
 **→ 인프라/쿠버네티스** (1편)
 
 - [ ] 2023.01.09  [Kubernetes] OpenLens 설치
 
-**→ 백엔드/분산 시스템** (1편)
+**→ 아키텍처** (1편)
 
 - [ ] 2022.10.08  알림 서비스 디자인
-
-**→ 웹·보안/HTTP** (1편)
-
-- [ ] 2021.09.27  WEB RTC
 
 **→ 개발 도구/Git** (1편)
 
@@ -229,19 +221,19 @@
 
 ### `IT/Web` — 18편 → 3곳
 
-**→ 웹·보안/HTTP** (9편)
+**→ 네트워크** (9편)
 
 - [ ] 2025.04.01  HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/3
 - [ ] 2024.12.25  HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/2
 - [ ] 2024.12.24  HTTP (Hypertext Transfer Protocol) 개념알기
-- [ ] 2021.01.19  캐시 (Cache)  ⚠️ '캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터/NoSQL·검색으로 갈 수도
+- [ ] 2021.01.19  캐시 (Cache)  ⚠️ '캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터베이스/NoSQL·검색으로 갈 수도
 - [ ] 2021.01.15  DNS(Domain Name System) 작동원리
 - [ ] 2021.01.15  브라우저 동작 원리
 - [ ] 2021.01.14  HTTP Response Status Code (HTTP 응답 상태 코드)
 - [ ] 2021.01.13  HTTP Request Method (HTTP 요청 방법)
 - [ ] 2021.01.13  HTTP (HyperText Transfer Protocol) 란?
 
-**→ 웹·보안/보안** (8편)
+**→ 보안** (8편)
 
 - [ ] 2023.05.18  [Web Hacking] Challange 54 풀이
 - [ ] 2023.05.05  [Web Hacking] Challange 24 풀이
@@ -257,37 +249,13 @@
 - [ ] 2021.01.13  2020년 백엔드(Back-end) 개발자 로드맵
 
 
-### `IT/AI` — 12편 → 3곳
-
-**→ AI/LLM 활용** (6편)
-
-- [ ] 2026.03.26  구글 제미나이(Gemini), 데스크탑 앱처럼 쓰는 방법 - PWA 설치 가이드
-- [ ] 2026.02.10  속도의 병목이 이동하고 있다  ⚠️ '속도의 병목이 이동하고 있다' — 에세이라 기록으로 볼 수도
-- [ ] 2024.12.12  ORM 사용에 관한 에이전트 토론 들어보기
-- [ ] 2024.11.24  Prompt Engineering Guide: Prompting Techniques
-- [ ] 2024.11.22  Prompt Engineering Guide: LLM Arguments
-- [ ] 2024.08.06  [AI] Markdown 을 사용한 Prompts 작성 방법
-
-**→ AI/로컬 모델** (5편)
-
-- [ ] 2026.02.05  Run Claude Code with Ollama Local & Cloud Models
-- [ ] 2025.01.15  Ollama Model Update 모델 일괄 업데이트 방법
-- [ ] 2024.11.28  [Stable Diffusion] Stable Diffusion 3.5 Text to Image 이미지 생성
-- [ ] 2024.08.07  Ollama로 Github PR AI 코드 리뷰 하기
-- [ ] 2024.01.26  [AI] stable-code-3b 기본적인 사용 가이드 (AI coding)
-
-**→ AI/Langchain** (1편)
-
-- [ ] 2024.12.14  [AI] 오디오 녹음 요약하기 (OpenAI Whisper, Langchain, Exaone)
-
-
 ### `OS/Centos` — 10편 → 3곳
 
 **→ 인프라/리눅스** (6편)
 
 - [ ] 2021.02.04  Cent OS 6 버전 yum 에러
 - [ ] 2019.10.23  설치 에러 발생시 대처
-- [ ] 2019.10.22  fail2ban  ⚠️ fail2ban — 침입 차단 도구라 웹·보안/보안으로 볼 수도
+- [ ] 2019.10.22  fail2ban  ⚠️ fail2ban — 침입 차단 도구라 보안으로 볼 수도
 - [ ] 2019.10.22  Centos 파일, 디렉토리 찾기
 - [ ] 2019.10.22  파이선, 쉘스크립트 윈도우 -> 리눅스 되었을때 발생하는 문제
 - [ ] 2019.10.22  쉘 접속 지연 문제 해결 방법
@@ -297,7 +265,7 @@
 - [ ] 2021.04.09  [CentOS] CPU, Memory 사용량 로그
 - [ ] 2021.04.08  [CentOS 7] Prometheus + Grafana 설치
 
-**→ 인프라/네트워크** (2편)
+**→ 네트워크** (2편)
 
 - [ ] 2019.10.22  CentOS 7 / 고정 IP 설정하는 방법
 - [ ] 2019.10.22  Centos 6, 7 포트 추가
@@ -305,7 +273,7 @@
 
 ### `Database/MySQL` — 21편 → 2곳
 
-**→ 데이터/MySQL** (17편)
+**→ 데이터베이스/MySQL** (17편)
 
 - [ ] 2024.02.15  [MySQL] Table lock 조회 쿼리
 - [ ] 2023.12.24  [MySQL] GROUP BY Optimization
@@ -325,7 +293,7 @@
 - [ ] 2019.10.22  프로시저 언제 사용해야 하나?
 - [ ] 2019.10.22  MySQL's Storage Engies - MyISAM Engine
 
-**→ 데이터/DB 이론** (4편)
+**→ 데이터베이스/DB 이론** (4편)
 
 - [ ] 2019.10.22  Indexing for High Performance
 - [ ] 2019.10.22  데이터 베이스 설계 프로세스
@@ -351,7 +319,7 @@
 - [ ] 2021.01.22  프로그래머스 - 나머지 한 점
 - [ ] 2021.01.22  프로그래머스 - 순열 검사
 
-**→ 백엔드/분산 시스템** (1편)
+**→ 아키텍처** (1편)
 
 - [ ] 2025.03.29  Consistent hashing, 일관된 해싱
 
@@ -367,7 +335,7 @@
 - [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 2편: Spring Batch REST API 서버 설계
 - [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 1편: CronJob 문제와 스케줄러 선택
 
-**→ 백엔드/Kotlin·Spring** (4편)
+**→ Kotlin·Spring** (4편)
 
 - [ ] 2025.12.01  다중 DataSource 환경에서 장애 격리하기: LazyConnectionDataSourceProxy 활용기
 - [ ] 2024.07.28  Kotlin + Spring Boot 에서 data class 구현으로 Validation 로직 작성하기
@@ -398,7 +366,7 @@
 **→ Python/라이브러리** (4편)
 
 - [ ] 2023.04.04  [Python] 파이썬 출력 문자 색 변경하기
-- [ ] 2023.03.14  ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit)  ⚠️ ChatGPT + streamlit 웹앱 — AI/LLM 활용으로 볼 수도
+- [ ] 2023.03.14  ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit)  ⚠️ ChatGPT + streamlit 웹앱 — AI로 볼 수도
 - [ ] 2021.08.12  [Python] Colorful print
 - [ ] 2021.01.13  [Python 오픈소스] Diagrams
 
@@ -410,12 +378,12 @@
 
 ### `OS/Ubuntu` — 3편 → 2곳
 
-**→ 데이터/MySQL** (2편)
+**→ 데이터베이스/MySQL** (2편)
 
 - [ ] 2021.06.17  [Ubuntu 20.04] MySQL 5.6.xx 설치
 - [ ] 2021.01.15  [Ubuntu 18] docker 를 이용한 MariaDB Sharding (샤딩)
 
-**→ 인프라/네트워크** (1편)
+**→ 네트워크** (1편)
 
 - [ ] 2022.05.16  Ubuntu 20.04 고정 IP 할당 방법
 

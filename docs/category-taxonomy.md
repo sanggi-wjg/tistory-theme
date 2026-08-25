@@ -16,7 +16,9 @@
 2. 글 하나를 검색으로 읽고 온 사람이 **"비슷한 걸 더"** 를 누를 수 있다
 3. 글쓴이가 새 글을 쓸 때 **넣을 곳이 바로 떠오른다**
 
-275편을 고르게 나누는 것은 목적이 아니다. 실제로 고르게 나누면 ②만 잘하고 ①③을 놓친다 — 아래 §2가 그 증거다.
+275편을 고르게 나누는 것은 목적이 아니다. 실제로 고르게 나누면 ②만 잘하고 ①③을 놓친다.
+
+**그리고 분류 기준은 하나여야 한다.** 같은 레벨에 서로 다른 축이 섞이면 새 글이 갈 곳이 두 군데가 되고, 그때부터 아무 데나 들어간다.
 
 ---
 
@@ -38,7 +40,7 @@
 
 ### 2.4 큰 카테고리일수록 죽어 있다
 
-이게 가장 중요하다. 카테고리 크기는 **과거**가 정하는데, 블로그가 보여줘야 하는 것은 **현재**다.
+카테고리 크기는 **과거**가 정하는데, 블로그가 보여줘야 하는 것은 **현재**다.
 
 | 카테고리 | 총 편수 | 2025~26 | 최신 글 | 한날 몰림 |
 |---|---:|---:|---|---|
@@ -48,8 +50,6 @@
 | MySQL | 21 | 0 | 2024.02.15 | 11편이 2019.10.22 하루 |
 
 하루 만에 몰아 쓴 **연재 시리즈**가 사이드바에서 영구히 큰 자리를 차지한다. 전체로 보면 **하위 32개 중 16개가 최근 2년 0편**이다.
-
-**결론: 죽은 카테고리는 구조가 아니라 순서로 다룬다.** 분류를 뒤틀어 활성도를 반영하려 하면 분류가 망가진다. 티스토리는 카테고리 정렬 순서를 지정할 수 있으므로 §4를 그렇게 쓴다.
 
 ### 2.5 잔가지가 많다
 
@@ -61,40 +61,45 @@
 
 ## 3. 새 카테고리 트리
 
-**상위 11종 · 하위 26종 · 사이드바 37줄** (현재 47줄). 번호가 곧 정렬 순서다 — 근거는 §4.
+**상위 13종 · 하위 18종 · 사이드바 31줄** (현재 47줄). 번호가 곧 정렬 순서다 — 규칙은 §4.
 
 | # | 상위 | 편수 | 하위 |
 |---:|---|---:|---|
-| 1 | **인프라** | 40 | 쿠버네티스 (8) · 모니터링 (15) · 리눅스 (6) · 네트워크 (6) · CI·CD (5) |
-| 2 | **백엔드** | 44 | Kotlin·Spring (9) · 웹 프레임워크 (12) · 분산 시스템 (12) · 설계 원칙 (11) |
-| 3 | **데이터** | 39 | MySQL (19) · DB 이론 (4) · NoSQL·검색 (5) · 데이터 파이프라인 (11) |
-| 4 | **웹·보안** | 23 | HTTP (10) · 보안 (13) |
-| 5 | **AI** | 20 | LLM 활용 (6) · Langchain (9) · 로컬 모델 (5) |
-| 6 | **Python** | 31 | 기초 (9) · 성능과 동시성 (14) · 라이브러리 (8) |
-| 7 | **코드 품질** | 31 | Clean Code (16) · 리팩토링 (9) · 테스트 (6) |
-| 8 | **개발 도구** | 14 | Git (9) · 개발 환경 (5) |
-| 9 | **알고리즘** | 15 | — |
+| 1 | **인프라** | 47 | 쿠버네티스 (8) · 모니터링 (15) · 데이터 파이프라인 (11) · 리눅스 (8) · CI·CD (5) |
+| 2 | **Kotlin·Spring** | 9 | — |
+| 3 | **아키텍처** | 12 | — |
+| 4 | **데이터베이스** | 28 | MySQL (19) · NoSQL·검색 (5) · DB 이론 (4) |
+| 5 | **네트워크** | 16 | — |
+| 6 | **보안** | 13 | — |
+| 7 | **AI** | 20 | — |
+| 8 | **코드 품질** | 42 | Clean Code (16) · 설계 원칙 (11) · 리팩토링 (9) · 테스트 (6) |
+| 9 | **Python** | 41 | 성능과 동시성 (14) · Django·Flask (10) · 기초 (9) · 라이브러리 (8) |
 | 10 | **Go** | 11 | — |
-| 11 | **기록** | 7 | — |
+| 11 | **알고리즘** | 15 | — |
+| 12 | **개발 도구** | 14 | Git (9) · 개발 환경 (5) |
+| 13 | **기록** | 7 | — |
 
-최대 카테고리가 전체의 16%다 (현재는 `IT` 45%).
+### 3.1 축은 둘이다 — 주제, 그리고 언어
 
-### 3.1 축은 주제로 통일하되, 언어는 예외로 남긴다
+**언어를 예외로 두되 일관되게 둔다.** `Python` `Kotlin·Spring` `Go` 셋이 같은 레벨에 있고, 나머지는 전부 주제 축이다.
 
-**이 예외를 숨기지 않는다.** `Python`과 `Go`는 언어 축이고 나머지는 주제 축이다. §2.2에서 지적한 "축 혼재"의 일부를 의도적으로 남긴 것이다.
+언어를 남기는 이유는 블로그이기 때문이다. **언어 이름은 검색과 인지에서 가장 강력한 라벨이다.** `[Python] …` 제목을 단 31편을 주제별로 흩으면 검색으로 들어온 독자에게 보여줄 옆 글이 무너진다. 축의 순수성은 도서관 분류학의 미덕이지 블로그의 미덕이 아니다.
 
-이유는 블로그이기 때문이다. **언어 이름은 검색과 인지에서 가장 강력한 라벨이다.** `[Python] …` 제목을 단 31편을 주제별로 흩으면, 검색으로 들어온 독자에게 보여줄 옆 글이 무너진다. 축의 순수성은 도서관 분류학의 미덕이지 블로그의 미덕이 아니다.
+다만 **예외는 예외답게, 전부 같은 대우를 한다.** 한 언어만 상위로 올리고 다른 언어를 주제 카테고리 안에 숨기면 그게 §2.2의 축 혼재다.
 
-다만 예외를 **두 개로 묶어 두고 아래쪽에 놓는다**(6번, 10번). 언어가 트리의 얼굴이 되지 않게 한다 — 이 블로그의 최신 글은 Kotlin/Spring/K8s이지 Python이 아니다.
+**각 언어의 프레임워크는 그 언어 아래로 간다** — `Python/Django·Flask`, `Kotlin·Spring` 안의 Spring 4편. 프레임워크를 언어에서 떼어 별도 상위에 두면 "Spring은 웹 프레임워크가 아닌가?" 하는 질문에 답할 수 없다.
 
 ### 3.2 배치를 가른 판단들
 
-- **JVM 5편은 `백엔드/Kotlin·Spring`으로.** GC 3편은 2025년 글이고 "Spring Boot GC 부하 테스트"라 Spring과 붙는 게 맞다. 언어 상위에 두면 죽은 서랍에 활성 글이 묻힌다.
-- **K8s 위에서 Spring 앱을 운영한 6편은 인프라로.** OOMKilled 3부작과 Argo 전환 3부작은 Spring 코드보다 K8s 운영이 주제이고, 유입 검색어도 "OOMKilled" "Argo Workflows"일 가능성이 높다.
-- **`Web` 18편은 성격이 둘이었다.** HTTP·브라우저 개념 10편과 웹해킹·XSS 8편. 후자를 `보안`으로 모으니 최신 보안 글(타이밍 어택, AccessKey 유출, 개인정보보호법)과 합쳐져 13편이 됐다. **`보안`은 최근 2년 4편으로 성장 중이라** 나중에 상위로 독립시킬 여지를 남겼다.
-- **`Search Engine` 2편은 단독으로 두지 않았다.** Redis와 묶어 `NoSQL·검색` 5편으로. 비-RDB 저장소라는 공통점이 있다.
-- **토끼책(객체지향의 사실과 오해) 2편은 `기록`이 아니라 `백엔드/설계 원칙`에.** SOLID·DRY와 같은 내용이라 함께 있어야 유용하다.
-- **`알고리즘` `Go` `기록`은 하위를 두지 않았다.** 각각 15·11·7편이고 더 쪼갤 실익이 없다. 특히 `기록` 7편에 하위 3개는 과분할이고, `개발자 생각` 같은 이름은 방치되기 쉽다.
+- **`데이터 파이프라인` 11편은 `데이터베이스`가 아니라 `인프라`로.** Kafka·Airflow·Debezium은 저장소가 아니라 운영하는 미들웨어다. 상위 이름이 `데이터베이스`인 이상 파이프라인은 그 아래에 있을 수 없다.
+- **`설계 원칙` 11편은 `코드 품질`로.** SOLID·DRY·KISS·객체지향은 `Clean Code`·`리팩토링`과 정확히 같은 territory다. Clean Code 책 안에 SOLID가 나온다.
+- **`아키텍처` 12편은 독립.** MSA·CAP·Raft·Consistent hashing·알림 서비스 디자인은 코드 설계가 아니라 시스템 설계다. `설계 원칙`과 스케일이 다르다.
+- **`웹·보안`을 `네트워크`와 `보안`으로 쪼갰다.** 원래 "DNS 작동원리"는 HTTP 쪽에, "통신사 DNS IP 리스트"는 네트워크 쪽에 흩어져 있었다. 둘을 합쳐 `네트워크` 16편, 웹해킹·XSS·최신 보안 글을 합쳐 `보안` 13편. **`보안`은 최근 2년 4편에 최신 글이 2026.08로 성장 중이다.**
+- **K8s 위에서 Spring 앱을 운영한 6편은 `인프라/쿠버네티스`로.** OOMKilled 3부작과 Argo 전환 3부작은 Spring 코드보다 K8s 운영이 주제이고, 유입 검색어도 "OOMKilled" "Argo Workflows"일 가능성이 높다.
+- **PHP 2편은 `인프라/리눅스`로.** 제목이 `Centos7 Nginx, PHP, MySQL Codeigniter 프로젝트 세팅`과 `Centos Laravel 설치`다. 언어 글이 아니라 서버 설치 글이다.
+- **토끼책(객체지향의 사실과 오해) 2편은 `기록`이 아니라 `코드 품질/설계 원칙`에.** SOLID·DRY와 같은 내용이라 함께 있어야 유용하다.
+- **`AI` 20편은 하위를 두지 않았다.** `LLM 활용`과 `로컬 모델`의 경계가 모호했다 — "Ollama로 Github PR AI 코드리뷰"는 양쪽 다다.
+- **`Search Engine` 2편은 Redis와 묶어 `NoSQL·검색` 5편으로.** 비-RDB 저장소라는 공통점이 있다.
 
 ### 3.3 이름 규칙
 
@@ -109,25 +114,35 @@
 
 ---
 
-## 4. 정렬 순서와 그 근거
+## 4. 정렬 순서 — 백엔드 스택 계층 순
 
-티스토리 카테고리 관리 화면에서 드래그로 순서를 정한다. **활성 주력 → 대형 아카이브 → 잡문** 순이다.
+티스토리 카테고리 관리 화면에서 드래그로 순서를 정한다. **요청이 들어오는 순서대로** 놓는다 — 인프라에서 시작해 앱, 아키텍처, 데이터, 네트워크, 보안으로 올라간다.
 
-| # | 상위 | 편수 | 2025~26 | 최신 글 | 놓은 이유 |
-|---:|---|---:|---:|---|---|
-| 1 | 인프라 | 40 | **8** | 2026.05 | 최근 2년 글이 가장 많다. 블로그의 현재 |
-| 2 | 백엔드 | 44 | 7 | 2025.12 | 최대 카테고리이자 활성 |
-| 3 | 데이터 | 39 | 0 | 2024.03 | 정체지만 대형 — 크기도 방문자에게는 정보다 |
-| 4 | 웹·보안 | 23 | 5 | **2026.08** | 가장 최근 글. 성장 중 |
-| 5 | AI | 20 | 4 | 2026.03 | 성장 중 |
-| 6 | Python | 31 | 0 | 2023.04 | 대형 아카이브. 검색 유입은 살아 있다 |
-| 7 | 코드 품질 | 31 | 3 | 2026.07 | 25편이 2019·2021년 책 정리. 테스트만 활성 |
-| 8 | 개발 도구 | 14 | 3 | 2026.02 | 소형 활성 |
-| 9 | 알고리즘 | 15 | 0 | 2023.12 | 아카이브 |
-| 10 | Go | 11 | 0 | 2022.08 | 아카이브 |
-| 11 | 기록 | 7 | 5 | 2026.05 | 활성이지만 성격상 맨 아래 |
+새 카테고리가 생기면 **먼저 몇 군인지 정하고, 그 안에서 자리를 잡는다.**
 
-하위 단위 활성도는 `python3 scripts/remap-categories.py`가 매번 출력한다.
+| 군 | 성격 | 카테고리 |
+|---|---|---|
+| **1군** | 운영하는 것 (스택 아래 → 위) | 인프라 · Kotlin·Spring · 아키텍처 · 데이터베이스 · 네트워크 · 보안 |
+| **2군** | 만드는 방식 (횡단) | AI · 코드 품질 |
+| **3군** | 언어 아카이브 | Python · Go |
+| **4군** | 주변 | 알고리즘 · 개발 도구 |
+| **5군** | 잡문 | 기록 |
+
+### 왜 활성도 순이 아닌가
+
+활성도(최근 2년 글 수)로 정렬하면 이렇게 된다.
+
+```
+인프라 47(7) · AI 20(4) · 보안 13(4) · Kotlin·Spring 9(4) · 코드 품질 42(3)
+· 개발 도구 14(3) · 아키텍처 12(3) · 네트워크 16(2) · Python 41(0)
+· 데이터베이스 28(0) · 알고리즘 15(0) · Go 11(0) · 기록 7(5)
+```
+
+**`개발 도구` 14편이 `데이터베이스` 28편·`Python` 41편보다 위로 온다.** 사이드바만 훑는 방문자에게 블로그의 무게중심을 잘못 보여준다. 그리고 `코드 품질` 42편은 그중 36편이 죽은 책 정리인데 `테스트` 3편 때문에 2번으로 올라온다 — 활성도를 상위 단위로 재면 왜곡된다.
+
+**대가는 안다.** 스택 계층은 사람 판단이라 재현되지 않고, 새 카테고리가 생길 때마다 자리를 정해야 한다. `Kotlin·Spring` 9편이 2번인 것도 편수만 보면 어색하다. 위의 5군 표가 그 판단을 줄이기 위한 것이다.
+
+활성도 자체는 버리지 않는다 — `python3 scripts/remap-categories.py`가 매번 출력하고, **기본 이미지 도안 우선순위**와 **어느 카테고리를 나중에 쪼갤지** 판단에 쓴다.
 
 ---
 
@@ -137,17 +152,17 @@
 
 | 현재 | 편수 | 이동 |
 |---|---:|---|
-| `IT` (직속) | 35 | **11곳으로 분해** — 설계 원칙 11 · 보안 5 · 테스트 4 · 개발 환경 4 · CI·CD 4 · 기록 2 · 나머지 5 |
-| `Python/Python` | 28 | 성능과 동시성 14 · 기초 9 · 라이브러리 4 · 알고리즘 1 |
-| `Database/MySQL` | 21 | MySQL 17 · DB 이론 4 |
-| `IT/Web` | 18 | HTTP 9 · 보안 8 · 기록 1 |
-| `IT/알고리즘` | 14 | 알고리즘 13 · 분산 시스템 1 |
-| `IT/AI` | 12 | LLM 활용 6 · 로컬 모델 5 · Langchain 1 |
-| `Kotlin & Java/Spring` | 10 | **쿠버네티스 6** · Kotlin·Spring 4 |
-| `OS/Centos` | 10 | 리눅스 6 · 모니터링 2 · 네트워크 2 |
-| `IT/Git` | 9 | Git 8 · CI·CD 1 |
+| `IT` (직속) | 35 | **10곳으로 분해** — 코드 품질/설계 원칙 11 · 보안 5 · 코드 품질/테스트 4 · 개발 도구/개발 환경 4 · 인프라/CI·CD 4 · 기록 2 · 나머지 5 |
+| `Python/Python` | 28 | Python/성능과 동시성 14 · Python/기초 9 · Python/라이브러리 4 · 알고리즘 1 |
+| `Database/MySQL` | 21 | 데이터베이스/MySQL 17 · 데이터베이스/DB 이론 4 |
+| `IT/Web` | 18 | 네트워크 9 · 보안 8 · 기록 1 |
+| `IT/알고리즘` | 14 | 알고리즘 13 · 아키텍처 1 |
+| `IT/AI` | 12 | AI 12 |
+| `Kotlin & Java/Spring` | 10 | **인프라/쿠버네티스 6** · Kotlin·Spring 4 |
+| `OS/Centos` | 10 | 인프라/리눅스 6 · 인프라/모니터링 2 · 네트워크 2 |
+| `IT/Git` | 9 | 개발 도구/Git 8 · 인프라/CI·CD 1 |
 
-**통째로 옮겨가는 것** — `IT/Clean Code`→코드 품질/Clean Code, `IT/리팩토링`→코드 품질/리팩토링, `Infrastructure/MSA`→백엔드/분산 시스템, `Infrastructure/Fluentd`→인프라/모니터링, `Go`→Go, `Kotlin & Java`(직속)→백엔드/Kotlin·Spring, `Python/Django`+`Python/Flask`+`PHP/*`→백엔드/웹 프레임워크, `Infrastructure/Kafka`+`CDC`+`Airflow`→데이터/데이터 파이프라인.
+**통째로 옮겨가는 것** — `IT/Clean Code`→코드 품질/Clean Code, `IT/리팩토링`→코드 품질/리팩토링, `IT/Langchain`→AI, `Infrastructure/MSA`→아키텍처, `Infrastructure/Fluentd`→인프라/모니터링, `Go`→Go, `Kotlin & Java`(직속)→Kotlin·Spring, `Python/Django`+`Python/Flask`→Python/Django·Flask, `PHP/*`→인프라/리눅스, `Infrastructure/Kafka`+`CDC`+`Airflow`→인프라/데이터 파이프라인.
 
 전체 275편의 개별 이동은 §9 부록과 `data/category-mapping.json`에 있다.
 
@@ -159,15 +174,15 @@
 
 | 글 | 배치 | 다른 선택지 |
 |---|---|---|
-| 캐시 (Cache) | 웹·보안/HTTP | HTTP 캐시가 아니라 애플리케이션 캐시면 → 데이터/NoSQL·검색 |
-| OOMKilled 추적기 3부작 | 인프라/쿠버네티스 | Spring Boot 앱 문제로 보면 → 백엔드/Kotlin·Spring |
-| Argo Workflows 전환 3부작 | 인프라/쿠버네티스 | 2편이 Spring Batch REST API 설계라 → 백엔드/Kotlin·Spring |
-| JVM GC 3부작 | 백엔드/Kotlin·Spring | 언어 런타임으로 보면 → Python처럼 `JVM` 상위 신설 |
-| ChatGPT + streamlit 웹앱 | Python/라이브러리 | → AI/LLM 활용 |
-| 속도의 병목이 이동하고 있다 | AI/LLM 활용 | 에세이라 → 기록 |
-| 토끼책 2편 | 백엔드/설계 원칙 | 책 정리라 → 기록 |
-| batch 프로그램으로 host 변경 | 개발 도구/개발 환경 | hosts 파일이 주제라 → 인프라/네트워크 |
-| fail2ban | 인프라/리눅스 | 침입 차단이라 → 웹·보안/보안 |
+| 캐시 (Cache) | 네트워크 | HTTP 캐시가 아니라 애플리케이션 캐시면 → 데이터베이스/NoSQL·검색 |
+| OOMKilled 추적기 3부작 | 인프라/쿠버네티스 | Spring Boot 앱 문제로 보면 → Kotlin·Spring |
+| Argo Workflows 전환 3부작 | 인프라/쿠버네티스 | 2편이 Spring Batch REST API 설계라 → Kotlin·Spring |
+| PHP 2편 | 인프라/리눅스 | 언어 글로 보면 갈 곳이 없다 — 버리거나 별도 상위 |
+| ChatGPT + streamlit 웹앱 | Python/라이브러리 | → AI |
+| 속도의 병목이 이동하고 있다 | AI | 에세이라 → 기록 |
+| 토끼책 2편 | 코드 품질/설계 원칙 | 책 정리라 → 기록 |
+| batch 프로그램으로 host 변경 | 개발 도구/개발 환경 | hosts 파일이 주제라 → 네트워크 |
+| fail2ban | 인프라/리눅스 | 침입 차단이라 → 보안 |
 
 **크롤링이 닿지 않은 것** — 티스토리 관리 화면의 `비공개용 (3)`은 비공개 글이라 실측에 잡히지 않았다. 이 3편은 직접 확인해서 배치하거나 비공개인 채로 남긴다.
 
@@ -177,11 +192,11 @@
 
 | 항목 | 영향 |
 |---|---|
-| **DECISIONS.md 결정 5** (상위 카테고리별 기본 이미지 11장) | **변경 없음.** 상위가 11종 그대로다 |
-| **DECISIONS.md 결정 7** (카테고리 목록 상단 배너) | **유지, 그리고 더 필요해졌다.** 대표이미지 0% 카테고리가 여전히 있다 — `코드 품질/리팩토링` 9편 전부 없음, `코드 품질/Clean Code` 15/16 없음, `데이터/MySQL` 14/19 없음 |
-| **DESIGN.md §6.2** (`data-cat` 접두 선택자) | **선택자 값 전면 교체.** 새 상위 11종 사이에 접두 충돌은 없다. `&`가 사라져 이스케이프 걱정이 줄었지만, 공백이 있으므로 여전히 따옴표로 감싼다 — `[data-cat^="개발 도구"]` |
+| **DECISIONS.md 결정 5** (상위 카테고리별 기본 이미지 11장) | ⚠️ **11장 → 13장.** 상위가 11종에서 13종으로 늘어난다. 라이트/다크 두 벌이므로 도안은 26장 |
+| **DECISIONS.md 결정 7** (카테고리 목록 상단 배너) | **유지, 그리고 더 필요해졌다.** 대표이미지 0% 카테고리가 여전히 있다 — `코드 품질/리팩토링` 9편 전부 없음, `코드 품질/Clean Code` 15/16 없음, `데이터베이스/MySQL` 14/19 없음 |
+| **DESIGN.md §6.2** (`data-cat` 접두 선택자) | **선택자 값 전면 교체.** `&`가 사라져 이스케이프 걱정이 줄었지만 공백이 있으므로 여전히 따옴표로 감싼다 — `[data-cat^="개발 도구"]`. **접두 충돌 주의** — `데이터베이스`는 다른 상위 이름의 접두가 아니지만, 새 카테고리를 만들 때 확인이 필요하다 |
 | **DECISIONS.md §3 실측 카테고리 절** | 적용 후 `/blog-census`로 `data/categories.json` 재생성 필요 |
-| **DECISIONS.md 미결 6** (기본 이미지 도안) | 이 개편이 그 선행 작업이다. 확정 후 11장 도안 착수 |
+| **DECISIONS.md 미결 6** (기본 이미지 도안) | 이 개편이 그 선행 작업이다. 확정 후 **13장** 도안 착수 |
 | **URL** | 티스토리 글 주소는 `/entry/{제목}` 또는 `/{번호}`라 **카테고리를 바꿔도 글 URL은 변하지 않는다.** 바뀌는 것은 `/category/...` 목록 주소뿐 |
 
 ---
@@ -190,19 +205,19 @@
 
 카테고리 관리 화면은 되돌리기가 없다. 순서를 지킨다.
 
-> **실제로 작업할 때는 [`category-migration-worksheet.md`](./category-migration-worksheet.md)를 연다.** 아래는 개요이고, 그쪽에 체크박스와 글 제목까지 있다 — 통째 이동 25건(109편) / 쪼개서 이동 11건(166편).
+> **실제로 작업할 때는 [`category-migration-worksheet.md`](./category-migration-worksheet.md)를 연다.** 아래는 개요이고, 그쪽에 체크박스와 글 제목까지 있다.
 
 1. **백업** — 관리 → 데이터 관리에서 블로그 백업을 먼저 받는다
-2. **새 상위 11종을 만든다** — 기존 것을 고치지 말고 새로 만든다. 기존 트리는 이동이 끝날 때까지 남겨 둔다
-3. **하위 26종을 만든다**
-4. **글을 옮긴다** — 관리 → 글 관리에서 카테고리로 필터 → 전체 선택 → 카테고리 이동. §9 부록의 카테고리별 목록 순서대로 진행하면 한 번에 한 덩어리씩 끝난다
-5. **빈 기존 카테고리를 지운다** — 글을 다 옮기면 기존 트리 47줄이 전부 0편이 된다. `Design Pattern`처럼 처음부터 0편이던 것들도 이때 함께 사라진다
-6. **정렬 순서를 잡는다** — §4의 번호대로 드래그. 이걸 빠뜨리면 개편 효과의 절반이 날아간다
+2. **새 상위 13종을 만든다** — 기존 것을 고치지 말고 새로 만든다. 기존 트리는 이동이 끝날 때까지 남겨 둔다
+3. **하위 18종을 만든다**
+4. **글을 옮긴다** — 관리 → 글 관리에서 카테고리로 필터 → 전체 선택 → 카테고리 이동
+5. **빈 기존 카테고리를 지운다** — 글을 다 옮기면 기존 트리 47줄이 전부 0편이 된다
+6. **정렬 순서를 잡는다** — §4의 번호대로. 2번에서 순서대로 만들었으면 확인만 하면 된다
 7. **비공개 3편을 배치한다**
 8. **재실측** — `/blog-census` 실행 → `data/categories.json`·`DECISIONS.md` §3 갱신
-9. **스킨 반영** — 기본 이미지 11장 도안 → `DESIGN.md` §6.2 `data-cat` 선택자 교체
+9. **스킨 반영** — 기본 이미지 13장 도안 → `DESIGN.md` §6.2 `data-cat` 선택자 교체
 
-> 4번이 가장 오래 걸린다. `IT` 직속 35편은 11곳으로 흩어지므로 개별 확인이 필요하다. 나머지는 대부분 카테고리 단위로 통째 이동이라 빠르다.
+> 4번이 가장 오래 걸린다. `IT` 직속 35편은 10곳으로 흩어지므로 개별 확인이 필요하다. 나머지는 대부분 카테고리 단위로 통째 이동이라 빠르다.
 
 ---
 
@@ -243,27 +258,34 @@
 | 2021.04.09 | [CentOS] CPU, Memory 사용량 로그 | OS/Centos |
 | 2021.04.08 | [CentOS 7] Prometheus + Grafana 설치 | OS/Centos |
 
-### 인프라/리눅스 (6)
+### 인프라/데이터 파이프라인 (11)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2024.03.08 | [CDC] MySQL Debezium Change Data Capture 따라해보기 - 3 | Infrastructure/CDC |
+| 2024.02.10 | [CDC] MySQL Debezium Change Data Capture 따라해보기 - 2 | Infrastructure/CDC |
+| 2024.02.10 | [CDC] MySQL Debezium Change Data Capture 따라해보기 - 1 | Infrastructure/CDC |
+| 2024.02.10 | [CDC] Change Data Capture 개념 | Infrastructure/CDC |
+| 2023.10.29 | [Kafka] 카프카 컨슈머 | Infrastructure/Kafka |
+| 2023.09.17 | [Kafka] 카프카 프로듀서 | Infrastructure/Kafka |
+| 2023.09.17 | [Kafka] 카프카 메시지 브로커 | Infrastructure/Kafka |
+| 2023.09.15 | [Kafka] 카프카 에러 핸들링 패턴 | Infrastructure/Kafka |
+| 2023.02.07 | [Kafka] Python confluent Kafka 설치 및 테스트 | Infrastructure/Kafka |
+| 2021.11.04 | [Airflow] DAGs 생성하기 | Infrastructure/Airflow |
+| 2021.10.26 | [Airflow] Ubuntu 20.04 docker-compose 설치 | Infrastructure/Airflow |
+
+### 인프라/리눅스 (8)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
 | 2021.02.04 | Cent OS 6 버전 yum 에러 | OS/Centos |
+| 2019.10.23 | Centos7 Nginx, PHP, MySQL  Codeigniter 프로젝트 세팅 | PHP/Codeigniter |
+| 2019.10.23 | Centos  Laravel 설치 | PHP/Laravel |
 | 2019.10.23 | 설치 에러 발생시 대처 | OS/Centos |
 | 2019.10.22 | fail2ban | OS/Centos |
 | 2019.10.22 | Centos 파일, 디렉토리 찾기 | OS/Centos |
 | 2019.10.22 | 파이선, 쉘스크립트 윈도우 -> 리눅스 되었을때 발생하는 문제 | OS/Centos |
 | 2019.10.22 | 쉘 접속 지연 문제 해결 방법 | OS/Centos |
-
-### 인프라/네트워크 (6)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2026.04.02 | 통신사별 DNS IP 리스트 (구글, SKT, KT, LG, Cloudflare) | IT |
-| 2023.01.29 | [Ubuntu 20.04] OpenVPN Server Docker 설치 및 Client | Infrastructure/VPN |
-| 2022.05.16 | Ubuntu 20.04 고정 IP 할당 방법 | OS/Ubuntu |
-| 2019.10.22 | CentOS 7 / 고정 IP 설정하는 방법 | OS/Centos |
-| 2019.10.22 | 넷기어 VPN - L2TP 설정 | Infrastructure/VPN |
-| 2019.10.22 | Centos 6, 7 포트 추가 | OS/Centos |
 
 ### 인프라/CI·CD (5)
 
@@ -275,7 +297,7 @@
 | 2021.02.08 | [Jenkins] 젠킨스 Dockerfile 설치 | IT |
 | 2021.02.05 | [Jenkins] 젠킨스란 무엇인가 | IT |
 
-### 백엔드/Kotlin·Spring (9)
+### Kotlin·Spring (9)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
@@ -289,24 +311,7 @@
 | 2023.10.29 | Intellij에서 Kotlin을 Java로 변환 확인 하는 방법 | Kotlin & Java |
 | 2023.03.22 | [Code Execution API] 1. 프로그래밍 코드 실행 API 만들어보기 | Kotlin & Java/Spring |
 
-### 백엔드/웹 프레임워크 (12)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2020.07.14 | Django demo project (chatting, monggo db, sample) | Python/Django |
-| 2019.11.11 | 5. Django - Nginx 연동 | Python/Django |
-| 2019.11.07 | 4. Django 모델 및 관리자 | Python/Django |
-| 2019.10.28 | 3. Django 뷰 작성 및 라우팅 | Python/Django |
-| 2019.10.25 | 2.  Django 프로젝트 생성 | Python/Django |
-| 2019.10.25 | 1. Django 및 기타 설치 | Python/Django |
-| 2019.10.25 | Flask Flask-SQLAlchemy | Python/Flask |
-| 2019.10.23 | Flask  Request Handler, Error Handler | Python/Flask |
-| 2019.10.23 | Centos7 Nginx, PHP, MySQL  Codeigniter 프로젝트 세팅 | PHP/Codeigniter |
-| 2019.10.23 | Centos  Laravel 설치 | PHP/Laravel |
-| 2019.10.23 | Flask 관련... | Python/Flask |
-| 2019.10.23 | Centos 7 Flask 설치 | Python/Flask |
-
-### 백엔드/분산 시스템 (12)
+### 아키텍처 (12)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
@@ -323,23 +328,7 @@
 | 2021.09.06 | Micro Service Architecture - 2.FTGO 예시 | Infrastructure/Micro Service Architecture |
 | 2021.09.06 | Micro Service Architecture - 1. MSA | Infrastructure/Micro Service Architecture |
 
-### 백엔드/설계 원칙 (11)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2024.12.19 | 의존성 주입에 대한 생각 | IT |
-| 2024.08.01 | 멱등성 (Idempotence)와 HTTP API 설계 | IT |
-| 2021.01.22 | 소프트웨어 개발원칙 YAGNI | IT |
-| 2021.01.22 | 소프트웨어 개발원칙 KISS | IT |
-| 2021.01.22 | 소프트웨어 개발 원칙 DRY | IT |
-| 2021.01.22 | 객체지향 설계 5대 원리 SOLID - IRP | IT |
-| 2021.01.21 | 객체지향 설계 5대 원리 SOLID - OCP | IT |
-| 2021.01.21 | 객체지향 설계 5대 원리 SOLID  - SRP | IT |
-| 2021.01.21 | 객체지향 설계 5대 원리 SOLID | IT |
-| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체 | IT |
-| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 1장 - 협력하는 객체들의 공동체 | IT |
-
-### 데이터/MySQL (19)
+### 데이터베이스/MySQL (19)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
@@ -363,16 +352,7 @@
 | 2019.10.22 | 프로시저 언제 사용해야 하나? | Database/MySQL |
 | 2019.10.22 | MySQL's Storage Engies - MyISAM Engine | Database/MySQL |
 
-### 데이터/DB 이론 (4)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2019.10.22 | Indexing for High Performance | Database/MySQL |
-| 2019.10.22 | 데이터 베이스 설계 프로세스 | Database/MySQL |
-| 2019.10.22 | Isolation level (트랜잭션 고립(격리) 수준) | Database/MySQL |
-| 2019.10.22 | 트랜잭션 너는 누구니? | Database/MySQL |
-
-### 데이터/NoSQL·검색 (5)
+### 데이터베이스/NoSQL·검색 (5)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
@@ -382,29 +362,25 @@
 | 2019.10.23 | Centos7 ElasticSearch 설치 | Search Engine/ElasticSearch |
 | 2019.10.23 | Centos7 + Lucene Solr 8.2 설치 및 실행 | Search Engine/Lucene Solr |
 
-### 데이터/데이터 파이프라인 (11)
+### 데이터베이스/DB 이론 (4)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
-| 2024.03.08 | [CDC] MySQL Debezium Change Data Capture 따라해보기 - 3 | Infrastructure/CDC |
-| 2024.02.10 | [CDC] MySQL Debezium Change Data Capture 따라해보기 - 2 | Infrastructure/CDC |
-| 2024.02.10 | [CDC] MySQL Debezium Change Data Capture 따라해보기 - 1 | Infrastructure/CDC |
-| 2024.02.10 | [CDC] Change Data Capture 개념 | Infrastructure/CDC |
-| 2023.10.29 | [Kafka] 카프카 컨슈머 | Infrastructure/Kafka |
-| 2023.09.17 | [Kafka] 카프카 프로듀서 | Infrastructure/Kafka |
-| 2023.09.17 | [Kafka] 카프카 메시지 브로커 | Infrastructure/Kafka |
-| 2023.09.15 | [Kafka] 카프카 에러 핸들링 패턴 | Infrastructure/Kafka |
-| 2023.02.07 | [Kafka] Python confluent Kafka 설치 및 테스트 | Infrastructure/Kafka |
-| 2021.11.04 | [Airflow] DAGs 생성하기 | Infrastructure/Airflow |
-| 2021.10.26 | [Airflow] Ubuntu 20.04 docker-compose 설치 | Infrastructure/Airflow |
+| 2019.10.22 | Indexing for High Performance | Database/MySQL |
+| 2019.10.22 | 데이터 베이스 설계 프로세스 | Database/MySQL |
+| 2019.10.22 | Isolation level (트랜잭션 고립(격리) 수준) | Database/MySQL |
+| 2019.10.22 | 트랜잭션 너는 누구니? | Database/MySQL |
 
-### 웹·보안/HTTP (10)
+### 네트워크 (16)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
+| 2026.04.02 | 통신사별 DNS IP 리스트 (구글, SKT, KT, LG, Cloudflare) | IT |
 | 2025.04.01 | HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/3 | IT/Web |
 | 2024.12.25 | HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/2 | IT/Web |
 | 2024.12.24 | HTTP (Hypertext Transfer Protocol) 개념알기 | IT/Web |
+| 2023.01.29 | [Ubuntu 20.04] OpenVPN Server Docker 설치 및 Client | Infrastructure/VPN |
+| 2022.05.16 | Ubuntu 20.04 고정 IP 할당 방법 | OS/Ubuntu |
 | 2021.09.27 | WEB RTC | IT |
 | 2021.01.19 | 캐시 (Cache) | IT/Web |
 | 2021.01.15 | DNS(Domain Name System) 작동원리 | IT/Web |
@@ -412,8 +388,11 @@
 | 2021.01.14 | HTTP Response Status Code (HTTP 응답 상태 코드) | IT/Web |
 | 2021.01.13 | HTTP Request Method (HTTP 요청 방법) | IT/Web |
 | 2021.01.13 | HTTP (HyperText Transfer Protocol) 란? | IT/Web |
+| 2019.10.22 | CentOS 7 / 고정 IP 설정하는 방법 | OS/Centos |
+| 2019.10.22 | 넷기어 VPN - L2TP 설정 | Infrastructure/VPN |
+| 2019.10.22 | Centos 6, 7 포트 추가 | OS/Centos |
 
-### 웹·보안/보안 (13)
+### 보안 (13)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
@@ -431,86 +410,30 @@
 | 2023.04.08 | [보안] XSS HTML Image 태그 주의할 점 | IT/Web |
 | 2021.09.27 | JWT (JSON Web Token) | IT |
 
-### AI/LLM 활용 (6)
+### AI (20)
 
 | 날짜 | 제목 | 현재 위치 |
 |---|---|---|
 | 2026.03.26 | 구글 제미나이(Gemini), 데스크탑 앱처럼 쓰는 방법 - PWA 설치 가이드 | IT/AI |
 | 2026.02.10 | 속도의 병목이 이동하고 있다 | IT/AI |
-| 2024.12.12 | ORM 사용에 관한 에이전트 토론 들어보기 | IT/AI |
-| 2024.11.24 | Prompt Engineering Guide: Prompting Techniques | IT/AI |
-| 2024.11.22 | Prompt Engineering Guide: LLM Arguments | IT/AI |
-| 2024.08.06 | [AI] Markdown 을 사용한 Prompts 작성 방법 | IT/AI |
-
-### AI/Langchain (9)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
+| 2026.02.05 | Run Claude Code with Ollama Local & Cloud Models | IT/AI |
+| 2025.01.15 | Ollama Model Update 모델 일괄 업데이트 방법 | IT/AI |
 | 2024.12.14 | [AI] 오디오 녹음 요약하기 (OpenAI Whisper, Langchain, Exaone) | IT/AI |
+| 2024.12.12 | ORM 사용에 관한 에이전트 토론 들어보기 | IT/AI |
 | 2024.12.09 | [Langchain] Chatbot 챗봇 구현 | IT/Langchain |
 | 2024.12.07 | [Langchain] 이미지 분석 | IT/Langchain |
 | 2024.12.05 | [Langchain] 계엄령 기념, 집밥 같은 랭체인 코드로 계엄령 뉴스 보기 | IT/Langchain |
 | 2024.12.02 | [Langchain] AI vs AI 토론을 가장한 말싸움 하기 | IT/Langchain |
+| 2024.11.28 | [Stable Diffusion] Stable Diffusion 3.5 Text to Image 이미지 생성 | IT/AI |
 | 2024.11.26 | [Langchain] 웹 요약 Agent | IT/Langchain |
 | 2024.11.25 | [Langchain] PDF 요약 Agent | IT/Langchain |
 | 2024.11.25 | [Langchain] Math Agent | IT/Langchain |
 | 2024.11.24 | [Langchain] 네이버 뉴스 요약 | IT/Langchain |
-
-### AI/로컬 모델 (5)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2026.02.05 | Run Claude Code with Ollama Local & Cloud Models | IT/AI |
-| 2025.01.15 | Ollama Model Update 모델 일괄 업데이트 방법 | IT/AI |
-| 2024.11.28 | [Stable Diffusion] Stable Diffusion 3.5 Text to Image 이미지 생성 | IT/AI |
+| 2024.11.24 | Prompt Engineering Guide: Prompting Techniques | IT/AI |
+| 2024.11.22 | Prompt Engineering Guide: LLM Arguments | IT/AI |
 | 2024.08.07 | Ollama로 Github PR AI 코드 리뷰 하기 | IT/AI |
+| 2024.08.06 | [AI] Markdown 을 사용한 Prompts 작성 방법 | IT/AI |
 | 2024.01.26 | [AI] stable-code-3b 기본적인 사용 가이드 (AI coding) | IT/AI |
-
-### Python/기초 (9)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2022.10.31 | [Python] Linter 비교 | Python/Python |
-| 2022.07.08 | [Python] DTO, Dataclass Validate 방법 | Python/Python |
-| 2022.01.03 | [Python] __slots__ method | Python/Python |
-| 2021.12.23 | [Python] __new__ method | Python/Python |
-| 2021.01.22 | CentOS pyenv 설치 | Python/Python |
-| 2021.01.15 | [Python] builtin dir() 함수 | Python/Python |
-| 2021.01.08 | [Python] builtin all() 함수 | Python/Python |
-| 2021.01.07 | [Python] builtin abs() 함수 | Python/Python |
-| 2019.10.22 | PIP 꼬임 | Python/Python |
-
-### Python/성능과 동시성 (14)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2023.04.05 | [Python] 파이썬 Thread and Pool Manager | Python/Python |
-| 2022.09.28 | [Python] lru_cache | Python/Python |
-| 2022.09.28 | [Python] Object class __slots__를 이용한 성능 개선 | Python/Python |
-| 2022.08.14 | [Python] Concurrency Thread Decorator - 3 | Python/Python |
-| 2022.08.12 | [Python] Concurrency PDF 파일 생성  - 2 | Python/Python |
-| 2022.08.12 | [Python] Concurrency 어떤 경우에 어떤 것을 사용하는게 좋을까 - 1 | Python/Python |
-| 2022.07.09 | [Python] Thread와 Async를 이용한 비동기 방법 | Python/Python |
-| 2021.11.25 | [Python] 파이썬 multiprocessing | Python/Python |
-| 2021.11.25 | [Python] 파이썬 비동기 I/O | Python/Python |
-| 2021.11.15 | [Python] 사전(dict) 와 셋(set) 의 성능 | Python/Python |
-| 2021.11.12 | [Python] 튜플(tuple) 성능 | Python/Python |
-| 2021.11.12 | [Python] 리스트(list) 성능 | Python/Python |
-| 2021.11.12 | [Python] 프로파일링 cProfile, memory_profiler | Python/Python |
-| 2021.11.09 | [Python] 검색 방법 profile 해보기 | Python/Python |
-
-### Python/라이브러리 (8)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2023.04.04 | [Python] 파이썬 출력 문자 색 변경하기 | Python/Open Source |
-| 2023.03.14 | ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit) | Python/Open Source |
-| 2022.07.23 | [Python] 음성인식(Speech Recognition) 과 TTS 구현 - 3 | Python/Python |
-| 2022.07.13 | [Python] 음성인식(Speech Recognition) 과 TTS 구현 - 2 | Python/Python |
-| 2022.07.13 | [Python] 음성인식(Speech Recognition) 과 TTS 구현 - 1 | Python/Python |
-| 2022.02.05 | Python 에서 go 함수 사용 하는 방법 | Python/Python |
-| 2021.08.12 | [Python] Colorful print | Python/Open Source |
-| 2021.01.13 | [Python 오픈소스] Diagrams | Python/Open Source |
 
 ### 코드 품질/Clean Code (16)
 
@@ -532,6 +455,22 @@
 | 2021.08.18 | [Clean Code] 2-2 Method | IT/Clean Code |
 | 2021.08.18 | [Clean Code] 2-1 Class 와 Method 이름 | IT/Clean Code |
 | 2019.11.13 | [Clean Code] 0. 앞 부분... | IT/Clean Code |
+
+### 코드 품질/설계 원칙 (11)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2024.12.19 | 의존성 주입에 대한 생각 | IT |
+| 2024.08.01 | 멱등성 (Idempotence)와 HTTP API 설계 | IT |
+| 2021.01.22 | 소프트웨어 개발원칙 YAGNI | IT |
+| 2021.01.22 | 소프트웨어 개발원칙 KISS | IT |
+| 2021.01.22 | 소프트웨어 개발 원칙 DRY | IT |
+| 2021.01.22 | 객체지향 설계 5대 원리 SOLID - IRP | IT |
+| 2021.01.21 | 객체지향 설계 5대 원리 SOLID - OCP | IT |
+| 2021.01.21 | 객체지향 설계 5대 원리 SOLID  - SRP | IT |
+| 2021.01.21 | 객체지향 설계 5대 원리 SOLID | IT |
+| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체 | IT |
+| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 1장 - 협력하는 객체들의 공동체 | IT |
 
 ### 코드 품질/리팩토링 (9)
 
@@ -558,6 +497,103 @@
 | 2023.03.15 | [Locust] 1. Locust 부하 테스트 툴(load testing tool) | Python/Open Source |
 | 2022.12.24 | API, 서비스, 도메인 테스트 및 TDD 에서의 기어비 | IT |
 
+### Python/성능과 동시성 (14)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2023.04.05 | [Python] 파이썬 Thread and Pool Manager | Python/Python |
+| 2022.09.28 | [Python] lru_cache | Python/Python |
+| 2022.09.28 | [Python] Object class __slots__를 이용한 성능 개선 | Python/Python |
+| 2022.08.14 | [Python] Concurrency Thread Decorator - 3 | Python/Python |
+| 2022.08.12 | [Python] Concurrency PDF 파일 생성  - 2 | Python/Python |
+| 2022.08.12 | [Python] Concurrency 어떤 경우에 어떤 것을 사용하는게 좋을까 - 1 | Python/Python |
+| 2022.07.09 | [Python] Thread와 Async를 이용한 비동기 방법 | Python/Python |
+| 2021.11.25 | [Python] 파이썬 multiprocessing | Python/Python |
+| 2021.11.25 | [Python] 파이썬 비동기 I/O | Python/Python |
+| 2021.11.15 | [Python] 사전(dict) 와 셋(set) 의 성능 | Python/Python |
+| 2021.11.12 | [Python] 튜플(tuple) 성능 | Python/Python |
+| 2021.11.12 | [Python] 리스트(list) 성능 | Python/Python |
+| 2021.11.12 | [Python] 프로파일링 cProfile, memory_profiler | Python/Python |
+| 2021.11.09 | [Python] 검색 방법 profile 해보기 | Python/Python |
+
+### Python/Django·Flask (10)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2020.07.14 | Django demo project (chatting, monggo db, sample) | Python/Django |
+| 2019.11.11 | 5. Django - Nginx 연동 | Python/Django |
+| 2019.11.07 | 4. Django 모델 및 관리자 | Python/Django |
+| 2019.10.28 | 3. Django 뷰 작성 및 라우팅 | Python/Django |
+| 2019.10.25 | 2.  Django 프로젝트 생성 | Python/Django |
+| 2019.10.25 | 1. Django 및 기타 설치 | Python/Django |
+| 2019.10.25 | Flask Flask-SQLAlchemy | Python/Flask |
+| 2019.10.23 | Flask  Request Handler, Error Handler | Python/Flask |
+| 2019.10.23 | Flask 관련... | Python/Flask |
+| 2019.10.23 | Centos 7 Flask 설치 | Python/Flask |
+
+### Python/기초 (9)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2022.10.31 | [Python] Linter 비교 | Python/Python |
+| 2022.07.08 | [Python] DTO, Dataclass Validate 방법 | Python/Python |
+| 2022.01.03 | [Python] __slots__ method | Python/Python |
+| 2021.12.23 | [Python] __new__ method | Python/Python |
+| 2021.01.22 | CentOS pyenv 설치 | Python/Python |
+| 2021.01.15 | [Python] builtin dir() 함수 | Python/Python |
+| 2021.01.08 | [Python] builtin all() 함수 | Python/Python |
+| 2021.01.07 | [Python] builtin abs() 함수 | Python/Python |
+| 2019.10.22 | PIP 꼬임 | Python/Python |
+
+### Python/라이브러리 (8)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2023.04.04 | [Python] 파이썬 출력 문자 색 변경하기 | Python/Open Source |
+| 2023.03.14 | ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit) | Python/Open Source |
+| 2022.07.23 | [Python] 음성인식(Speech Recognition) 과 TTS 구현 - 3 | Python/Python |
+| 2022.07.13 | [Python] 음성인식(Speech Recognition) 과 TTS 구현 - 2 | Python/Python |
+| 2022.07.13 | [Python] 음성인식(Speech Recognition) 과 TTS 구현 - 1 | Python/Python |
+| 2022.02.05 | Python 에서 go 함수 사용 하는 방법 | Python/Python |
+| 2021.08.12 | [Python] Colorful print | Python/Open Source |
+| 2021.01.13 | [Python 오픈소스] Diagrams | Python/Open Source |
+
+### Go (11)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2022.08.02 | [Go] Time | Go |
+| 2022.07.25 | [Go] Factory Pattern(팩토리 패턴) 구현 | Go |
+| 2022.07.24 | [Go] Channel 이용한 Queue | Go |
+| 2022.07.23 | [Go] Int, String, Struct 정렬 | Go |
+| 2022.07.23 | [Go] Linked List 구현 | Go |
+| 2022.07.23 | [Go] Panic recover 하기 | Go |
+| 2022.07.22 | [Go] File 정보 확인 | Go |
+| 2022.07.22 | [Go lang] Excel 읽기, 쓰기 | Go |
+| 2022.07.21 | [Go] variable type별 printf format | Go |
+| 2022.07.21 | [Go]  대용량 파일 chunk 단위로 나누기 | Go |
+| 2022.02.05 | Golang | Go |
+
+### 알고리즘 (15)
+
+| 날짜 | 제목 | 현재 위치 |
+|---|---|---|
+| 2023.12.04 | [통계] 정규화(Normalization)와 표준화(Standardization) | IT/수학 |
+| 2022.05.12 | [Python] 후위표기법(postifx) 계산 코드 | Python/Python |
+| 2022.01.08 | [백준] 4963 파이썬(python) | IT/알고리즘 |
+| 2022.01.08 | [백준] 2468 파이썬(python) | IT/알고리즘 |
+| 2022.01.08 | [백준] 1697 파이썬(python) | IT/알고리즘 |
+| 2022.01.08 | [백준] 11403 파이썬(python) | IT/알고리즘 |
+| 2022.01.08 | [백준] 9372 파이썬(python) | IT/알고리즘 |
+| 2022.01.08 | [백준] 7569 파이썬(python) | IT/알고리즘 |
+| 2021.11.07 | [Python] 백준 11724 - 연결 요소의 개수 | IT/알고리즘 |
+| 2021.11.06 | [Python] 백준 7576 - 토마토 | IT/알고리즘 |
+| 2021.11.06 | [Python] 백준 1012 - 유기농 배추 | IT/알고리즘 |
+| 2021.11.06 | [Python] 백준 2667 - 단지번호붙이기 | IT/알고리즘 |
+| 2021.01.23 | 프로그래머스 - 가장 큰 정사각형 찾기 | IT/알고리즘 |
+| 2021.01.22 | 프로그래머스 - 나머지 한 점 | IT/알고리즘 |
+| 2021.01.22 | 프로그래머스 - 순열 검사 | IT/알고리즘 |
+
 ### 개발 도구/Git (9)
 
 | 날짜 | 제목 | 현재 위치 |
@@ -581,42 +617,6 @@
 | 2024.02.26 | [Jetbrains]  Intellij 인텔리제이 Live Template 사용 방법 | IT |
 | 2022.09.19 | [Mac] 사용 중인 Port 찾기, Kill 하기 | OS/Mac |
 | 2019.10.25 | batch 프로그램으로 host 변경하기 | IT |
-
-### 알고리즘 (15)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2023.12.04 | [통계] 정규화(Normalization)와 표준화(Standardization) | IT/수학 |
-| 2022.05.12 | [Python] 후위표기법(postifx) 계산 코드 | Python/Python |
-| 2022.01.08 | [백준] 4963 파이썬(python) | IT/알고리즘 |
-| 2022.01.08 | [백준] 2468 파이썬(python) | IT/알고리즘 |
-| 2022.01.08 | [백준] 1697 파이썬(python) | IT/알고리즘 |
-| 2022.01.08 | [백준] 11403 파이썬(python) | IT/알고리즘 |
-| 2022.01.08 | [백준] 9372 파이썬(python) | IT/알고리즘 |
-| 2022.01.08 | [백준] 7569 파이썬(python) | IT/알고리즘 |
-| 2021.11.07 | [Python] 백준 11724 - 연결 요소의 개수 | IT/알고리즘 |
-| 2021.11.06 | [Python] 백준 7576 - 토마토 | IT/알고리즘 |
-| 2021.11.06 | [Python] 백준 1012 - 유기농 배추 | IT/알고리즘 |
-| 2021.11.06 | [Python] 백준 2667 - 단지번호붙이기 | IT/알고리즘 |
-| 2021.01.23 | 프로그래머스 - 가장 큰 정사각형 찾기 | IT/알고리즘 |
-| 2021.01.22 | 프로그래머스 - 나머지 한 점 | IT/알고리즘 |
-| 2021.01.22 | 프로그래머스 - 순열 검사 | IT/알고리즘 |
-
-### Go (11)
-
-| 날짜 | 제목 | 현재 위치 |
-|---|---|---|
-| 2022.08.02 | [Go] Time | Go |
-| 2022.07.25 | [Go] Factory Pattern(팩토리 패턴) 구현 | Go |
-| 2022.07.24 | [Go] Channel 이용한 Queue | Go |
-| 2022.07.23 | [Go] Int, String, Struct 정렬 | Go |
-| 2022.07.23 | [Go] Linked List 구현 | Go |
-| 2022.07.23 | [Go] Panic recover 하기 | Go |
-| 2022.07.22 | [Go] File 정보 확인 | Go |
-| 2022.07.22 | [Go lang] Excel 읽기, 쓰기 | Go |
-| 2022.07.21 | [Go] variable type별 printf format | Go |
-| 2022.07.21 | [Go]  대용량 파일 chunk 단위로 나누기 | Go |
-| 2022.02.05 | Golang | Go |
 
 ### 기록 (7)
 
