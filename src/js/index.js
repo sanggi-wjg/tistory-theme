@@ -4,6 +4,7 @@
 // 그래서 모든 모듈을 개별 try/catch로 감싼다. 한 모듈의 예외가 다음 모듈을 막지 않는다.
 
 import initTheme from './theme.js'
+import initNotice from './notice.js'
 import initCode from './code.js'
 import initTables from './tables.js'
 import initLinks from './links.js'
@@ -24,6 +25,9 @@ function safe(name, fn) {
 
 function boot() {
   safe('theme', initTheme)
+  // 공지 본문에 .contents_style이 없으면 붙인다. 아래 본문 모듈들이 그 클래스로 찾으므로
+  // 반드시 먼저 돈다 — hooks.md §5.7
+  safe('notice', initNotice)
   safe('code', initCode)
   safe('tables', initTables)
   safe('links', initLinks)

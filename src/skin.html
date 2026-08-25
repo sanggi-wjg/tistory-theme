@@ -103,7 +103,12 @@ gtag('config', 'G-PHQ5FKMZ37');
   <article class="notice">
     <header class="notice-head">
       <span class="notice-badge">공지</span>
-      <h1 class="notice-title"><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></h1>
+      <!-- h1이 아니다. 공지 영역은 반복이라 공지가 여러 개면 h1이 여러 개가 된다.
+           공식 예제도 h2를 쓴다(docs/tistory-skin-reference.txt:925). 글 페이지에서는
+           .entry-title이 이미 h1이므로 h1을 쓰면 한 페이지에 h1이 둘이 된다.
+           ※ 주석 안에 그룹 치환자 태그를 그대로 쓰지 않는다 — 치환 엔진이 주석을
+             가리지 않고 텍스트로 찾는다. 린트 SUB007이 잡는다. -->
+      <h2 class="notice-title"><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></h2>
       <time class="notice-date">[##_notice_rep_simple_date_##]</time>
     </header>
     <div class="notice-body">[##_notice_rep_desc_##]</div>

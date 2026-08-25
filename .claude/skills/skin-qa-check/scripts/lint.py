@@ -46,7 +46,26 @@ def lint_substitutions(skin, xml, wl):
     groups = set(wl["groups"])
     values = set(v[4:-4] for v in wl["values"])   # [##_x_##] → x
 
+    # 주석 안에 그룹 태그를 쓰면 치환 엔진이 그것을 여는 태그로 집는다.
+    # 로컬 렌더러에서 실제로 재현했다 — 바깥 <article> 껍데기가 반복에서 빠지고
+    # <s_...> 태그가 출력에 그대로 남았다. 티스토리도 같은 방식으로 텍스트를 찾을
+    # 가능성이 높고, 그러면 그 영역이 통째로 망가진다. 아예 금지한다.
+    for c in re.finditer(r"<!--.*?-->", skin, re.S):
+        for t in sorted(set(re.findall(r"</?s_[a-zA-Z0-9_]+>", c.group(0)))):
+            err("SUB007", "주석 안에 그룹 치환자 태그 %s가 그대로 쓰였다. 치환 엔진은 "
+                "주석을 가리지 않는다 — 꺾쇠 없이 이름만 적어라." % t, "src/skin.html")
+
+    # HTML 주석 안의 치환자는 티스토리에도 무의미하다. 세면 오탐이 난다 —
+    # 왜 이 태그를 쓰지 않았는지 주석으로 설명하는 순간 SUB005 짝이 어긋난다.
+    # (주석 안에서만 여는 태그를 지우고 닫는 태그를 남기는 실수는 주석을 지운
+    #  이 본문 기준으로 여전히 잡힌다.)
+    skin = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+
+    # 여는 태그만 모으면 **여는 태그를 지웠을 때 고아가 된 닫는 태그를 못 잡는다** —
+    # 그 그룹이 목록에 없어서 아래 짝 검사가 아예 돌지 않기 때문이다.
+    # 닫는 태그 이름도 함께 모아야 양쪽 방향이 다 걸린다.
     used_g = set(m.group(1).lower() for m in re.finditer(r"<(s_[a-zA-Z0-9_]+)(?:\s[^>]*)?>", skin))
+    used_g |= set(m.group(1).lower() for m in re.finditer(r"</(s_[a-zA-Z0-9_]+)>", skin))
     used_v = set(re.findall(r"\[##_([a-zA-Z0-9_]+)_##\]", skin))
 
     # 동적 치환자는 index.xml과 대조한다

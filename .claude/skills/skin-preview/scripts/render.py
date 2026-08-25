@@ -31,6 +31,10 @@ PAGE_TYPES = {
     "archive":   "tt-body-archive",
     "guestbook": "tt-body-guestbook",
     "empty":     "tt-body-search",   # 결과 0건 시나리오
+    # 소제목이 3개 이상이라 목차가 생기는 글. page는 2개뿐이라 목차가 안 생긴다.
+    # 둘 다 내지 않으면 **실측 68%인 다수 경로가 프리뷰에 한 번도 안 나온다.**
+    # 레이아웃도 갈린다 — body.no-toc 유무로 폭이 1,136 ↔ 848로 바뀐다(layout.css).
+    "page_toc":  "tt-body-page",
 }
 
 LIST_PAGES = {"category", "search", "tag", "archive", "empty"}
@@ -60,6 +64,17 @@ Total: reserved=2841MB, committed=1974MB
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
 </div>"""
+
+
+# 소제목 3개 이상(h2 3 + h3 1). 목차·스크롤스파이·데스크톱 2단 경로를 여기서 본다.
+ARTICLE_BODY_TOC = ARTICLE_BODY.replace("</div>", """
+<h2 data-ke-size="size26">커넥션 유효성 검사</h2>
+<p data-ke-size="size16">세 번째 소제목이다. 이 글은 목차가 생긴다.</p>
+<h3 data-ke-size="size23">test-query를 쓰지 않는 이유</h3>
+<p data-ke-size="size16">JDBC4 드라이버는 <code>isValid()</code>를 쓴다.</p>
+<table><thead><tr><th>항목</th><th>값</th><th>비고</th><th>기본</th></tr></thead>
+<tbody><tr><td>maxLifetime</td><td>240000</td><td>DB wait_timeout보다 짧게</td><td>1800000</td></tr></tbody></table>
+</div>""", 1)
 
 
 def load_fixtures():
@@ -141,7 +156,7 @@ def globals_for(page, posts, cats, category_html, skin_vars):
     return g
 
 
-def item_scope(p, prefix):
+def item_scope(p, prefix, page=""):
     d = p["date"] or "2026.01.01"
     parts = (d.split(".") + ["01", "01"])[:3]
     y, m, dd = parts[0].strip(), parts[1].strip(), parts[2].strip()
@@ -154,7 +169,8 @@ def item_scope(p, prefix):
         prefix + "_simple_date": d, prefix + "_regdate": d,
         prefix + "_date_year": y, prefix + "_date_month": m, prefix + "_date_day": dd,
         prefix + "_date_hour": "14", prefix + "_date_minute": "22", prefix + "_date_second": "05",
-        prefix + "_summary": p["_summary"], prefix + "_desc": ARTICLE_BODY,
+        prefix + "_summary": p["_summary"],
+        prefix + "_desc": ARTICLE_BODY_TOC if page == "page_toc" else ARTICLE_BODY,
         prefix + "_rp_cnt": str((p["_i"] * 7) % 13),
         prefix + "_author": "상쾌한기분",
         prefix + "_thumbnail": "https://placehold.co/400x250/eeeeee/999999?text=thumb",
@@ -213,7 +229,7 @@ def repeat(inner, items, prefix, ctx, page, posts):
     buf = []
     for p in items:
         sub = dict(ctx)
-        sub.update(item_scope(p, prefix))
+        sub.update(item_scope(p, prefix, page))
         buf.append(render(inner, sub, page, posts))
     return "".join(buf)
 
@@ -233,10 +249,10 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     if name == "s_index_article_rep":
         return repeat(inner, posts[:12], "article_rep", ctx, page, posts) if page == "index" else ""
     if name == "s_permalink_article_rep":
-        return R(inner, {**ctx, **item_scope(posts[0], "article_rep")}) if page == "page" else ""
+        return R(inner, {**ctx, **item_scope(posts[0], "article_rep", page)}) if page in ("page", "page_toc") else ""
     if name == "s_article_rep":
-        if page == "page":
-            return R(inner, {**ctx, **item_scope(posts[0], "article_rep")})
+        if page in ("page", "page_toc"):
+            return R(inner, {**ctx, **item_scope(posts[0], "article_rep", page)})
         if page == "index":
             return repeat(inner, posts[:12], "article_rep", ctx, page, posts)
         return ""
@@ -257,12 +273,12 @@ def handle_group(name, attrs, inner, ctx, page, posts):
 
     # 글 페이지 부속
     if name in ("s_article_related", "s_tag_label", "s_rp", "s_article_prev", "s_article_next"):
-        if page != "page":
+        if page not in ("page", "page_toc"):
             return ""
         if name == "s_article_prev":
-            return R(inner, {**ctx, **item_scope(posts[1], "article_prev")})
+            return R(inner, {**ctx, **item_scope(posts[1], "article_prev", page)})
         if name == "s_article_next":
-            return R(inner, {**ctx, **item_scope(posts[2], "article_next")})
+            return R(inner, {**ctx, **item_scope(posts[2], "article_next", page)})
         return R(inner)
     if name == "s_article_related_rep":
         return repeat(inner, posts[3:8], "article_related_rep", ctx, page, posts)
@@ -326,9 +342,49 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             return "".join(buf)
         return R(inner)
 
+    # 공지 — 본문 공지와 사이드바 공지 모듈.
+    # 예전에는 통째로 버렸다. 그 결과 <s_notice_rep> 블록이 **한 번도 렌더된 적이 없어**
+    # 그 안의 결함(반복 영역인데 h1을 쓴 것, .notice-body에 CSS가 없는 것)을
+    # 프리뷰로는 볼 수 없었다. 리뷰에서 눈으로 찾았다 — 그러라고 있는 도구가 아니다.
+    #
+    # ⚠ 재현하지 못하는 것: 티스토리가 [##_notice_rep_desc_##]를 어떤 래퍼로 감싸는지
+    #    모른다. 여기서는 .contents_style을 **씌우지 않은** 형태로 낸다 — 최악의 경우를
+    #    보여 주는 쪽이 안전하고, js/notice.js가 그 경우를 받는지도 같이 보인다.
+    if name == "s_notice_rep":
+        if page not in ("index", "page", "page_toc"):
+            return ""
+        buf = []
+        for i, pst in enumerate(posts[:2]):
+            sub = dict(ctx)
+            sub.update({
+                "notice_rep_link": "/notice/%d" % (i + 1),
+                "notice_rep_title": ["블로그 카테고리를 개편했습니다",
+                                     "댓글 정책 안내"][i],
+                "notice_rep_date": pst["date"], "notice_rep_simple_date": pst["date"],
+                "notice_rep_desc": ('<p>본문 문단이다. 인라인 색이 섞인 옛 글을 흉내낸다 — '
+                                    '<span style="color: #000000;">검은 글자</span>와 '
+                                    '<span style="background-color: #ffffff;">흰 배경</span>.</p>'
+                                    '<p>두 번째 문단.</p>'),
+            })
+            buf.append(render(inner, sub, page, posts))
+        return "".join(buf)
+
+    if name in ("s_rct_notice", "s_rct_notice_rep"):
+        if not (is_list or page == "index"):
+            return ""
+        if name == "s_rct_notice":
+            return R(inner)
+        buf = []
+        for i in range(2):
+            sub = dict(ctx)
+            sub.update({"notice_rep_link": "/notice/%d" % (i + 1),
+                        "notice_rep_title": ["블로그 카테고리를 개편했습니다",
+                                             "댓글 정책 안내"][i]})
+            buf.append(render(inner, sub, page, posts))
+        return "".join(buf)
+
     # 표시하지 않는 것들
-    if name in ("s_ad_div", "s_article_protected", "s_notice_rep", "s_rct_notice",
-                "s_rct_notice_rep", "s_cover_group", "s_cover_rep", "s_cover",
+    if name in ("s_ad_div", "s_article_protected", "s_cover_group", "s_cover_rep", "s_cover",
                 "s_cover_item", "s_cover_item_article_info", "s_cover_item_not_article_info",
                 "s_cover_url", "s_page_rep"):
         return ""

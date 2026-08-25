@@ -376,6 +376,15 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 ---
 
+### 5.7 공지 본문 정규화 — `.notice-body`
+
+| 계약 | 내용 |
+|---|---|
+| 하는 일 | `.notice-body`에 `.contents_style`이 **없으면** 붙인다. 이미 있거나 안쪽에 있으면 아무것도 하지 않는다 |
+| 순서 | **다른 본문 모듈보다 먼저 돈다.** code·tables·lightbox·inline-fix가 `contentRoots()`(= `.contents_style`)로 대상을 찾기 때문이다 |
+| 왜 필요한가 | `[##_notice_rep_desc_##]`가 `.contents_style` 래퍼를 달고 오는지 **확인할 방법이 없다.** 안 달고 오면 `content.css`(전부 그 스코프)와 빌드가 만든 인라인색 보정이 통째로 비껴간다 — 에러 없이 무스타일 본문 + 다크에서 묻힌 옛 글 색 |
+| 확인 방법 | 프리뷰 `index.html` · `page.html` · `page_toc.html`에 공지 2건이 렌더된다. 렌더러는 일부러 **래퍼 없이** 낸다(최악의 경우) |
+
 ## 6. 사이드바 — `aside.sidebar`
 
 모듈 7개. 전부 같은 뼈대다.

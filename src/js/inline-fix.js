@@ -48,6 +48,15 @@ function flatten(fg, bg) {
   return [fg[0] * a + bg[0] * (1 - a), fg[1] * a + bg[1] * (1 - a), fg[2] * a + bg[2] * (1 - a), 1]
 }
 
+/** OS가 다크인가. matchMedia가 없으면 라이트로 본다(기존 동작). */
+function systemDark() {
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  } catch (e) {
+    return false
+  }
+}
+
 /** 실제로 뒤에 깔린 색. 불투명한 배경을 만날 때까지 조상을 거슬러 오른다. */
 function effectiveBackground(el) {
   let node = el
@@ -61,7 +70,13 @@ function effectiveBackground(el) {
     node = node.parentElement
   }
   // 전부 투명이면 캔버스를 추정한다. 다크에서 흰색으로 잘못 보는 것을 막는다.
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+  //
+  // ⚠ data-theme만 보면 안 된다. **stamp 없음 + 시스템 다크**가 저장된 선택이 없는
+  //    첫 방문자의 기본 상태이고, 거기서 속성은 null이다. theme.js의 current()와
+  //    같은 판단을 해야 한다 — 세 상태 중 하나를 빠뜨리는 실수를 이 프로젝트에서
+  //    이미 두 번 했다(DESIGN.md §8.1).
+  const stamped = document.documentElement.getAttribute('data-theme')
+  const dark = stamped === 'dark' || (stamped !== 'light' && systemDark())
   const fallback = dark ? [0, 0, 0, 1] : [255, 255, 255, 1]
   return acc ? flatten(acc, fallback) : fallback
 }
