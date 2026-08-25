@@ -325,7 +325,8 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 - 접기/펼치기가 필요하면 JS로 DOM을 조작한다.
 - `index.xml`의 `<tree>` 설정(색·글자수·글수 표시)도 함께 관리한다.
-- 상위 11종 / 하위 36종 (**개편 전 값**. [개편안](./docs/category-taxonomy.md) 적용 시 상위 13 / 하위 19, 사이드바 47줄 → 32줄). `span.c_cnt`는 `--ink-mute`, `tabular-nums`.
+- **상위 14종 / 하위 21종 → 트리 36줄** (`분류 전체보기` 1 + 14 + 21). 개편 전 47줄. 전체 목록과 순서는 `DECISIONS.md` §3, 정본은 `data/categories.json`.
+- `span.c_cnt`는 `--ink-mute`, `tabular-nums`.
 
 ### 5.4 댓글·방명록
 
@@ -368,25 +369,28 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 ```css
 .post .thumb { background: center/cover var(--ph-default); }
 
-.post[data-cat="IT"] .thumb,
-.post[data-cat^="IT/"] .thumb                    { background-image: var(--ph-it); }
+/* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
+.post[data-cat="인프라"] .thumb,
+.post[data-cat^="인프라/"] .thumb                  { background-image: var(--ph-infra); }
+.post[data-cat="Kotlin·Java"] .thumb             { background-image: var(--ph-jvm); }
 .post[data-cat="Python"] .thumb,
 .post[data-cat^="Python/"] .thumb                { background-image: var(--ph-python); }
-.post[data-cat="Infrastructure"] .thumb,
-.post[data-cat^="Infrastructure/"] .thumb        { background-image: var(--ph-infra); }
-.post[data-cat="Database"] .thumb,
-.post[data-cat^="Database/"] .thumb              { background-image: var(--ph-db); }
-.post[data-cat="Kotlin & Java"] .thumb,
-.post[data-cat^="Kotlin & Java/"] .thumb         { background-image: var(--ph-jvm); }
-.post[data-cat="OS"] .thumb,
-.post[data-cat^="OS/"] .thumb                    { background-image: var(--ph-os); }
-.post[data-cat="Go"] .thumb                      { background-image: var(--ph-go); }
-.post[data-cat="Search Engine"] .thumb,
-.post[data-cat^="Search Engine/"] .thumb         { background-image: var(--ph-search); }
 .post[data-cat="PHP"] .thumb,
 .post[data-cat^="PHP/"] .thumb                   { background-image: var(--ph-php); }
-.post[data-cat="일상"] .thumb                     { background-image: var(--ph-life); }
-.post[data-cat="책책책 책을 읽읍시다"] .thumb        { background-image: var(--ph-book); }
+.post[data-cat="아키텍처"] .thumb,
+.post[data-cat^="아키텍처/"] .thumb                { background-image: var(--ph-arch); }
+.post[data-cat="데이터베이스"] .thumb,
+.post[data-cat^="데이터베이스/"] .thumb             { background-image: var(--ph-db); }
+.post[data-cat="네트워크"] .thumb                  { background-image: var(--ph-net); }
+.post[data-cat="보안"] .thumb                     { background-image: var(--ph-sec); }
+.post[data-cat="AI"] .thumb                      { background-image: var(--ph-ai); }
+.post[data-cat="코드 품질"] .thumb,
+.post[data-cat^="코드 품질/"] .thumb               { background-image: var(--ph-quality); }
+.post[data-cat="Go"] .thumb                      { background-image: var(--ph-go); }
+.post[data-cat="알고리즘"] .thumb                  { background-image: var(--ph-algo); }
+.post[data-cat="개발 도구"] .thumb,
+.post[data-cat^="개발 도구/"] .thumb               { background-image: var(--ph-tool); }
+.post[data-cat="기록"] .thumb                     { background-image: var(--ph-note); }
 
 .post .thumb img { position: relative; width: 100%; height: 100%; object-fit: cover; }
 
@@ -394,7 +398,10 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 #tt-body-category .post:not(:has(.thumb img)) .thumb { display: none; }
 ```
 
-- 접두사 충돌이 없다 (상위 11종 이름끼리 겹치지 않음). ⚠️ **위 선택자는 개편 전 카테고리 이름 기준이다.** [개편안](./docs/category-taxonomy.md)이 적용되면 상위 13종으로 값을 전부 교체하고 장수도 11 → 13이 된다. 개편안은 이름에 `&`를 쓰지 않아 이스케이프 걱정이 없다.
+- **접두사 충돌이 없다** — 상위 14종 중 어느 이름도 다른 이름의 접두사가 아니다. `^=`가 옆 카테고리를 물지 않는다.
+- **하위가 없는 7종**(`Kotlin·Java` `네트워크` `보안` `AI` `Go` `알고리즘` `기록`)은 `^=` 줄을 두지 않았다. 하위가 생기면 두 줄짜리로 바꾼다 — 안 바꾸면 새 하위 글이 `--ph-default`로 조용히 떨어진다.
+- 이름에 `&`가 없어 이스케이프 걱정은 사라졌지만 **`코드 품질`·`개발 도구`에는 공백이 있으므로** 값은 계속 따옴표로 감싼다.
+- **카테고리를 늘리거나 이름을 바꾸면 이 블록과 `--ph-*` 변수를 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
 - **기본 이미지는 SVG를 `data:` URI로 `style.css`에 인라인한다.** 배포가 수동이므로 업로드할 파일 수를 줄인다.
 - 기본 이미지는 라이트/다크 양쪽에서 성립해야 한다. `currentColor`를 못 쓰므로 두 벌을 만들고 토큰으로 교체한다.
 - **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.**
@@ -463,6 +470,6 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 ## 8. 알려진 빈틈
 
 - **다크 팔레트는 파생값이다.** 원본 Vercel 분석은 단일 모드다. 실제 화면에서 대비를 검증한 뒤 조정한다.
-- **기본 이미지 도안이 아직 없다.** 라이트/다크 두 벌이 필요하다. ⏸ **카테고리 개편이 진행 중이라 대기.** §6.2의 상위 카테고리 11종 규칙은 개편 전 기준이고, [개편안](./docs/category-taxonomy.md)이 적용되면 **13종 13장**이 된다. 개편 후 `data/categories.json`을 갱신하면 린트 `BND003`이 빠진 카테고리를 알려준다.
+- **기본 이미지 도안이 아직 없다.** 상위 14종 × 라이트/다크 두 벌 = **28장.** 카테고리 개편이 끝나 §6.2의 선택자와 `data/categories.json`은 확정됐고, 남은 것은 도안뿐이다. 착수 전에 `DECISIONS.md` 미결 8(`PHP` 2편 존치 여부)을 정한다 — 옮기면 13종 26장이 된다. 도안을 넣으면 린트 `BND003`이 빠진 카테고리를 알려준다.
 - **`preview.gif` / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`** 스킨 미리보기 이미지가 필요하다.
 - **인라인 색 열거 목록은 2026-08-24 기준 275편 전수 조사 결과다.** 새 글이 쌓이면 다시 세야 하며, 그때까지는 JS 안전망이 막는다.

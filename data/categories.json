@@ -1,57 +1,97 @@
 {
  "note": "'(상위)' 접미사는 하위 카테고리를 합산한 값",
  "categories": {
-  "IT  (상위)": {
-   "total": 122,
-   "withThumbnail": 55
-  },
-  "Python  (상위)": {
-   "total": 44,
-   "withThumbnail": 22
-  },
-  "Infrastructure  (상위)": {
-   "total": 37,
-   "withThumbnail": 15
-  },
-  "IT": {
-   "total": 35,
+  "인프라  (상위)": {
+   "total": 42,
    "withThumbnail": 18
   },
-  "Python/Python": {
+  "Python  (상위)": {
+   "total": 41,
+   "withThumbnail": 20
+  },
+  "코드 품질  (상위)": {
+   "total": 31,
+   "withThumbnail": 6
+  },
+  "데이터베이스  (상위)": {
    "total": 28,
-   "withThumbnail": 10
+   "withThumbnail": 11
   },
-  "Database  (상위)": {
-   "total": 24,
-   "withThumbnail": 9
-  },
-  "Database/MySQL": {
-   "total": 21,
+  "아키텍처  (상위)": {
+   "total": 25,
    "withThumbnail": 7
   },
-  "IT/Web": {
-   "total": 18,
-   "withThumbnail": 10
+  "데이터베이스/MySQL": {
+   "total": 23,
+   "withThumbnail": 8
   },
-  "IT/Clean Code": {
+  "AI": {
+   "total": 19,
+   "withThumbnail": 14
+  },
+  "AI  (상위)": {
+   "total": 19,
+   "withThumbnail": 14
+  },
+  "코드 품질/Clean Code": {
    "total": 16,
    "withThumbnail": 1
   },
-  "Kotlin & Java  (상위)": {
+  "Kotlin·Java": {
    "total": 15,
    "withThumbnail": 14
   },
-  "IT/알고리즘": {
-   "total": 14,
+  "Kotlin·Java  (상위)": {
+   "total": 15,
+   "withThumbnail": 14
+  },
+  "알고리즘": {
+   "total": 15,
    "withThumbnail": 6
   },
-  "OS  (상위)": {
+  "알고리즘  (상위)": {
+   "total": 15,
+   "withThumbnail": 6
+  },
+  "Python/성능과 동시성": {
+   "total": 15,
+   "withThumbnail": 5
+  },
+  "개발 도구  (상위)": {
    "total": 14,
+   "withThumbnail": 8
+  },
+  "보안": {
+   "total": 13,
+   "withThumbnail": 6
+  },
+  "보안  (상위)": {
+   "total": 13,
+   "withThumbnail": 6
+  },
+  "아키텍처/분산 시스템": {
+   "total": 13,
+   "withThumbnail": 4
+  },
+  "인프라/모니터링": {
+   "total": 13,
+   "withThumbnail": 5
+  },
+  "네트워크": {
+   "total": 12,
+   "withThumbnail": 8
+  },
+  "네트워크  (상위)": {
+   "total": 12,
+   "withThumbnail": 8
+  },
+  "아키텍처/원칙": {
+   "total": 12,
    "withThumbnail": 3
   },
-  "IT/AI": {
-   "total": 12,
-   "withThumbnail": 10
+  "인프라/데이터 파이프라인": {
+   "total": 11,
+   "withThumbnail": 7
   },
   "Go": {
    "total": 11,
@@ -61,99 +101,59 @@
    "total": 11,
    "withThumbnail": 2
   },
-  "Infrastructure/Fluentd": {
+  "인프라/리눅스": {
    "total": 11,
-   "withThumbnail": 5
-  },
-  "Kotlin & Java/Spring": {
-   "total": 10,
-   "withThumbnail": 9
-  },
-  "OS/Centos": {
-   "total": 10,
    "withThumbnail": 2
   },
-  "IT/Git": {
-   "total": 9,
-   "withThumbnail": 5
-  },
-  "IT/리팩토링": {
-   "total": 9,
-   "withThumbnail": 0
-  },
-  "IT/Langchain": {
-   "total": 8,
-   "withThumbnail": 4
-  },
-  "Infrastructure/Micro Service Architecture": {
-   "total": 8,
-   "withThumbnail": 0
-  },
-  "Python/Open Source": {
-   "total": 6,
+  "Python/Django·Flask": {
+   "total": 10,
    "withThumbnail": 6
   },
-  "Python/Django": {
-   "total": 6,
-   "withThumbnail": 3
+  "개발 도구/Git": {
+   "total": 9,
+   "withThumbnail": 4
   },
-  "Kotlin & Java": {
-   "total": 5,
+  "코드 품질/리팩토링": {
+   "total": 9,
+   "withThumbnail": 0
+  },
+  "Python/라이브러리": {
+   "total": 8,
    "withThumbnail": 5
   },
-  "Infrastructure/Kafka": {
+  "Python/기초": {
+   "total": 8,
+   "withThumbnail": 4
+  },
+  "기록": {
+   "total": 7,
+   "withThumbnail": 4
+  },
+  "기록  (상위)": {
+   "total": 7,
+   "withThumbnail": 4
+  },
+  "코드 품질/테스트": {
+   "total": 6,
+   "withThumbnail": 5
+  },
+  "개발 도구/에디터·터미널": {
    "total": 5,
    "withThumbnail": 4
   },
-  "Infrastructure/CDC": {
-   "total": 4,
+  "인프라/CI·CD": {
+   "total": 5,
    "withThumbnail": 3
   },
-  "Python/Flask": {
-   "total": 4,
-   "withThumbnail": 3
-  },
-  "Database/Redis": {
+  "데이터베이스/Redis": {
    "total": 3,
    "withThumbnail": 2
   },
-  "OS/Ubuntu": {
-   "total": 3,
-   "withThumbnail": 1
-  },
-  "일상": {
+  "인프라/쿠버네티스": {
    "total": 2,
    "withThumbnail": 1
   },
-  "일상  (상위)": {
-   "total": 2,
-   "withThumbnail": 1
-  },
-  "책책책 책을 읽읍시다": {
-   "total": 2,
-   "withThumbnail": 2
-  },
-  "책책책 책을 읽읍시다  (상위)": {
-   "total": 2,
-   "withThumbnail": 2
-  },
-  "Infrastructure": {
-   "total": 2,
-   "withThumbnail": 2
-  },
-  "Infrastructure/VPN": {
-   "total": 2,
-   "withThumbnail": 1
-  },
-  "Infrastructure/Airflow": {
-   "total": 2,
-   "withThumbnail": 0
-  },
-  "Infrastructure/Prometheus": {
-   "total": 2,
-   "withThumbnail": 0
-  },
-  "Search Engine  (상위)": {
+  "데이터베이스/검색엔진": {
    "total": 2,
    "withThumbnail": 1
   },
@@ -161,31 +161,11 @@
    "total": 2,
    "withThumbnail": 0
   },
-  "IT/수학": {
-   "total": 1,
-   "withThumbnail": 1
-  },
-  "Infrastructure/Docker": {
-   "total": 1,
-   "withThumbnail": 0
-  },
-  "OS/Mac": {
-   "total": 1,
-   "withThumbnail": 0
-  },
-  "Search Engine/ElasticSearch": {
-   "total": 1,
-   "withThumbnail": 1
-  },
   "PHP/Codeigniter": {
    "total": 1,
    "withThumbnail": 0
   },
   "PHP/Laravel": {
-   "total": 1,
-   "withThumbnail": 0
-  },
-  "Search Engine/Lucene Solr": {
    "total": 1,
    "withThumbnail": 0
   }
