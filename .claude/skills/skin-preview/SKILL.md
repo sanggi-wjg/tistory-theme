@@ -87,5 +87,5 @@ open _preview/index.html
 ## 주의
 
 - `_preview/`는 산출물이므로 커밋하지 않는다 (`.gitignore`)
-- `data-cat`은 HTML 이스케이프되어 `Kotlin &amp; Java/Spring`으로 출력된다. CSS 속성 선택자는 **파싱된 값**(`Kotlin & Java/Spring`)과 매칭하므로 `[data-cat^="Kotlin & Java/"]`가 맞다
+- `data-cat` 값에는 **공백이 들어간다**(`코드 품질/Clean Code`, `개발 도구/Git`). 선택자는 반드시 따옴표로 감싼다 — `[data-cat^="코드 품질/"]`. 2026-08-25 개편으로 `&`는 사라졌지만, 이스케이프되는 문자가 다시 생기면 **CSS 속성 선택자는 파싱된 값과 매칭**한다는 점을 기억한다 (HTML에 `&amp;`로 나와도 선택자에는 `&`를 쓴다)
 - 프리뷰가 깨졌을 때 **스킨이 아니라 렌더러가 문제**일 수 있다. 경고를 먼저 읽는다
