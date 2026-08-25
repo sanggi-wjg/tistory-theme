@@ -8,7 +8,11 @@
 
 import { readFile, writeFile, mkdir, readdir, rm, cp } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import path from 'node:path'
+
+const exec = promisify(execFile)
 
 const ROOT = process.cwd()
 const SRC = path.join(ROOT, 'src')
@@ -190,6 +194,37 @@ async function buildJs() {
   return r.outputFiles[0].text
 }
 
+// 스킨 편집기의 파일업로드 탭은 올린 파일을 images/ 아래에 둔다. 그런데 preview*는
+// **스킨 루트**에 있어야 한다(docs/tistory-skin-reference.txt:51). 그래서 편집기로는
+// 미리보기 이미지를 넣을 방법이 없고, 없으면 관리 화면과 스킨 보관함에 엑박이 뜬다.
+//
+// 남는 길은 스킨 보관함의 직접 업로드뿐이다 — 이 zip이 그것이다.
+// 붙여넣기 배포를 대체하지 않는다. HTML·CSS만 바뀌었으면 지금까지대로 편집기에서
+// 붙여넣는 게 빠르다. zip은 **미리보기 이미지가 바뀔 때** 쓴다.
+const ZIP_FILES = ['index.xml', 'skin.html', 'style.css',
+                   'preview.gif', 'preview256.jpg', 'preview560.jpg', 'preview1600.jpg',
+                   'images/script.js']
+
+async function packZip() {
+  const files = ZIP_FILES.filter((f) => existsSync(path.join(DIST, f)))
+  // 미리보기가 없으면 zip을 만들지 않는다. 엑박이 든 스킨을 배포용으로 포장해 두면
+  // "zip이 있으니 됐겠지"가 되어 문제를 덮는다.
+  if (files.length < ZIP_FILES.length) return null
+
+  const out = path.join(DIST, 'skin.zip')
+  await rm(out, { force: true })
+  try {
+    // 파일을 하나씩 명시한다. -r 로 dist를 통째로 넣으면 zip이 자기 자신을 삼킨다.
+    // 경로는 dist 기준 상대경로여야 한다 — 티스토리는 zip 루트에서 index.xml을 찾는다.
+    await exec('zip', ['-q', '-X', out, ...files], { cwd: DIST })
+  } catch {
+    console.warn('  ⚠️ zip 명령이 없어 dist/skin.zip을 만들지 못했다. ' +
+                 '미리보기 이미지는 편집기로 올릴 수 없으므로 수동 압축이 필요하다.')
+    return null
+  }
+  return out
+}
+
 async function run() {
   await rm(DIST, { recursive: true, force: true })
   await mkdir(path.join(DIST, 'images'), { recursive: true })
@@ -209,14 +244,20 @@ async function run() {
   const js = await buildJs()
   if (js) await writeFile(path.join(DIST, 'images', 'script.js'), js)
 
-  // 스킨 미리보기 이미지가 있으면 그대로 복사한다
+  // 스킨 미리보기 이미지가 있으면 스킨 **루트**로 복사한다.
+  // 티스토리는 여기서 찾는다 — images/ 아래가 아니다.
   const prev = path.join(SRC, 'preview')
   if (existsSync(prev)) await cp(prev, DIST, { recursive: true })
 
+  await packZip()
+
   const uploads = existsSync(path.join(DIST, 'images'))
     ? (await readdir(path.join(DIST, 'images'))).length : 0
+  const zipped = existsSync(path.join(DIST, 'skin.zip'))
   console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? '✓' : '—'}` +
-              `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개`)
+              `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
+              `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}` +
+              `  skin.zip ${zipped ? '✓' : '—'}`)
   if (uploads > 1) {
     console.warn('  ⚠️ images/에 파일이 2개 이상이다. 배포가 수동이므로 1개로 줄여야 한다 —\n' +
                  '     SVG는 data: URI로 CSS에 인라인하고, 폰트는 CDN에서 받는다.')

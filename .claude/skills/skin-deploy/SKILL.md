@@ -51,6 +51,33 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 | 5 | 저장 후 **미리보기**로 확인 | | 적용 전 마지막 관문 |
 | 6 | 적용 | | |
 
+### 미리보기 이미지는 이 경로로 못 올린다
+
+`preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg`는 스킨 **루트**에
+있어야 한다(`docs/tistory-skin-reference.txt:51`). 그런데 **파일업로드 탭은 올린 파일을
+`images/` 아래에 둔다.** 그래서 편집기로는 넣을 방법이 없고, 없으면 관리 화면의
+"사용중인 스킨"과 스킨 보관함에 **깨진 이미지가 뜬다**.
+
+남는 길은 **스킨 보관함 → 직접 업로드(zip)** 하나뿐이다.
+
+```bash
+npm run build          # dist/skin.zip 을 만든다
+```
+
+`dist/skin.zip`은 `index.xml` · `skin.html` · `style.css` · `preview*` 4종 · `images/script.js`를
+zip 루트에 담는다. 관리 → 꾸미기 → 스킨 보관함에서 업로드하고 적용한다.
+
+**이게 붙여넣기 배포를 대체하지는 않는다.** HTML·CSS만 바뀌었으면 위 표대로 편집기에서
+붙여넣는 게 빠르고, 적용 중인 스킨을 그대로 고친다. zip은 **미리보기 이미지가 바뀌었거나
+처음 스킨을 심을 때** 쓴다.
+
+미리보기 이미지를 다시 만들려면:
+
+```bash
+npm run preview                 # 로컬 프리뷰 먼저
+node scripts/gen-preview.mjs    # macOS + Chrome 필요
+```
+
 ### `index.xml`이 마지막인 이유
 
 이 파일을 바꾸면 스킨 설정이 초기화된다. 먼저 올리면 이후 작업 중에 사용자가 설정을 다시 맞춰야 하고, 그 사이 라이브 화면이 어중간한 상태가 된다. **바꿀 내용이 없으면 아예 올리지 않는다.**
