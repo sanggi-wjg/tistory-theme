@@ -11,11 +11,20 @@ description: "티스토리 스킨을 수동으로 배포하기 위한 절차와 
 
 ```bash
 npm run build
-python3 .claude/skills/skin-qa-check/scripts/lint.py    # 오류 0이어야 한다
-python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 확인
+python3 .claude/skills/skin-qa-check/scripts/lint.py    # 오류 0이어야 한다 (SEO001~002 포함)
+python3 .claude/skills/skin-preview/scripts/render.py   # 10개 페이지 육안 확인
+
+# 배포 전 라이브 상태를 기준선으로 남긴다. 배포 후 회귀 비교의 근거가 된다.
+python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로그> --save-baseline
 ```
 
 **린트 오류가 남아 있으면 배포하지 않는다.** 이 도메인의 오류는 조용히 실패하므로, 배포 후에는 발견이 늦다.
+
+**baseline을 먼저 찍는 이유** — 배포 후 "내부링크가 줄었다"를 알려면 배포 전 값이 있어야 한다. 이 단계를 건너뛰면 배포 사고를 절대값으로만 판단하게 되고, 그러면 대부분 놓친다.
+
+⚠️ **`--save-baseline`은 오류를 내고 exit 1로 끝나는 것이 정상이다.** 이 시점의 라이브는 아직 **이전 스킨**이라 `V009`(라이브 CSS ≠ `dist/style.css`)는 반드시 뜨고, `V003`·`V010`도 이전 스킨의 상태를 그대로 보고한다. 위의 "린트 오류가 남아 있으면 배포하지 않는다"는 `lint.py`에 대한 말이지 이 명령에 대한 말이 아니다 — 여기서 멈추지 마라.
+
+**딱 하나 예외는 `V014`다.** 이게 뜨면 baseline이 **저장되지 않았다** — 페이지를 못 받았다는 뜻이다. 그대로 배포하면 배포 후 `--compare`가 비교할 것이 없어 회귀를 못 잡는다. 원인을 고치고 baseline부터 다시 찍어라.
 
 ## 첫 배포 — 백업이 먼저다
 
@@ -47,7 +56,19 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
 라이브에서 직접 확인해야 하는 것들 — **로컬 프리뷰가 원리적으로 재현하지 못하는 영역이다.**
 치환자·고정 마크업은 조용히 실패하므로, 아래를 안 보면 "잘 나온다"와 "안 나온다"를 구분할 수 없다.
 
-### 🔴 0. 카테고리 트리 색 — 다크모드에서 가장 먼저
+### 1. 먼저 스크립트를 돌린다
+
+```bash
+python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로그> --compare
+```
+
+**소스가 맞아도 프로덕션이 틀릴 수 있다.** 붙여넣다 잘린 마크업, 안 올라간 `script.js`, 반영 안 된 CSS는 배포 전 린트가 절대 잡지 못한다. 이 스크립트가 잡는 것: 미치환 치환자 잔존, `h1` 개수, 내부링크 렌더 여부, 라이브 CSS ↔ `dist/style.css` 대조, 8개 페이지 응답, baseline 대비 회귀. 자세한 것은 `/seo-verify-live`.
+
+`V010`(모바일웹 자동 연결)이 뜨면 **코드로 못 고친다** — 아래 모바일웹 OFF 항목을 보라.
+
+### 🔴 2. 눈으로 볼 것 중 첫 번째 — 카테고리 트리 색
+
+**스크립트가 잡지 못한다.** 색이 인라인으로 박히는지는 HTML 텍스트가 아니라 계산 스타일의 문제이고, 다크로 전환해야만 드러난다.
 
 `index.xml`의 `<tree>`가 색을 **라이트 기준값으로만** 갖고 있다 (`color=4d4d4d` `bgColor=ffffff`).
 티스토리가 이 값을 인라인 `style`로 박으면 우리 CSS(`tistory.css`의 `.tt_category a`)는 **이길 수 없다** —
@@ -60,7 +81,7 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
       `!important` 예외를 여는 것 외에 방법이 없다. **`components.css:6`의 규범을 깨는 일이므로 사용자 승인이 필요하다**
 - ⚠ `index.xml`을 고치면 **스킨의 모든 설정이 초기화된다** (`DECISIONS.md` 결정 1). 사후 비용이 가장 크다
 
-### 1. 페이지 · 영역이 실제로 나오는가
+### 3. 페이지 · 영역이 실제로 나오는가
 
 - [ ] 홈 · 글 · 카테고리 · 검색 · 태그 · 보관함 · 방명록 각 URL
 - [ ] **공지** (`<s_notice_rep>`) — 홈 상단에 공지 전문이 깔리는가, 아니면 퍼머링크에서만 나오는가.
@@ -77,7 +98,7 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
 - [ ] 사이드바 **공지 모듈**(`<s_rct_notice>`)
 - [ ] **보호글** 화면
 
-### 2. 티스토리가 통짜로 렌더하는 것
+### 4. 티스토리가 통짜로 렌더하는 것
 
 - [ ] **댓글 UI** — React 출력. `tistory.css`의 `tt-*` 클래스 이름이 실제와 맞는지. 틀리면 무스타일로 나온다
 - [ ] **카테고리 트리 클래스** — 우리가 가정한 구조(`중첩 ul을 가진 li`)와 같은지.
@@ -90,7 +111,7 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
       "댓글 0"이 실제로 남으면 그때 감싸고 목록 4종을 다시 본다
 - [ ] **`.list-desc`** — 검색·태그·보관함에서 비는가. 안 비면 "카테고리 설명"이 검색 결과 위에 남는다
 
-### 3. 다크모드 — 여섯 상태
+### 5. 다크모드 — 여섯 상태
 
 `data-theme` 3상태 × OS 2상태다. **저장된 선택이 없는 첫 방문자**가 기본값이므로 그것부터 본다.
 
@@ -99,7 +120,7 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
 - [ ] **본문 인라인색** — 옛 글(2018~2020)의 `style="color: #000000"`이 다크에서 읽히는가
 - [ ] JS를 끄고 한 번 — `inline-fix.js` 없이 CSS만으로 보정되는지
 
-### 4. 그 밖
+### 6. 그 밖
 
 - [ ] **광고 노출** — 글 페이지 본문 광고가 그대로 나오는지 (수익 영향)
 - [ ] **읽기 진행바** — 댓글이 React로 늦게 렌더된 뒤에도 100%가 문서 끝과 맞는가
@@ -116,12 +137,12 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
 | 항목 | 내용 |
 |---|---|
 | **이전해야 할 것** | GA4 `G-PHQ5FKMZ37`, 네이버 사이트 인증 `100d6799251e62ceaf64af174e2d502e98f5f804` — 둘 다 현재 스킨 HTML 안에 있다 |
-| **이전 불필요** | 애드센스·애드핏·OG·트위터카드·JSON-LD·구글 서치콘솔 — 티스토리가 처리한다 |
+| **이전 불필요** | 애드센스·애드핏·OG·트위터카드·`canonical`·`meta description`·구글 서치콘솔 — 티스토리가 처리한다. JSON-LD도 넣어 주지만 **글 페이지에는 `BlogPosting`만** 있고 빵부스러기가 없다 (`DECISIONS.md` 결정 28) |
 | **모바일웹 OFF** | 스킨 적용과 **별개 설정**이다. 전환 전 모바일 광고 수익 영향을 확인한다 (`DECISIONS.md` §4-4) |
 | **미확인** | 스킨 편집기의 **파일 개수·용량 제한**. 첫 업로드 때 실측하고 `DECISIONS.md`에 기록한다 |
 
 ## 테스트 블로그 우선
 
-`DECISIONS.md` #22에 따라 **개발은 테스트 블로그에서 한다.** 본 블로그 배포는 테스트 블로그에서 8개 페이지가 모두 정상 확인된 뒤에만 진행한다.
+`DECISIONS.md` #22에 따라 **개발은 테스트 블로그에서 한다.** 본 블로그 배포는 테스트 블로그에서 페이지 종류가 모두 정상 확인된 뒤에만 진행한다.
 
 테스트 블로그 준비물: 상위 카테고리 11개 + 더미 글 20편(대표이미지 있는 것 15 / 없는 것 5).

@@ -9,6 +9,7 @@ _workspace/
 _workspace_*/
 
 node_modules/
+__pycache__/
 
 # 린트/렌더러를 파이썬으로 직접 import해 시험할 때 생긴다
 __pycache__/

@@ -30,6 +30,21 @@ python3 .claude/skills/skin-qa-check/scripts/lint.py --json   # 자동화용
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |
 | `ROB001~002`, `A11Y001~002` | `localStorage` try/catch, `MutationObserver`, `lang`, viewport |
+| `SEO001~005` | 반복 블록 안의 `h1`, 내부링크 치환자 누락, `<title>` 템플릿, `img` alt, `BreadcrumbList` |
+
+## SEO 규칙 — 화면으로는 절대 안 보이는 것
+
+`SEO001`·`SEO002`, 그리고 `<title>` 자체가 없는 경우의 `SEO003`은 **오류다. 남은 채로 배포하지 않는다.** `SEO003`의 나머지(치환자 미사용·중복)와 `SEO004`는 경고, `SEO005`는 정보다.
+
+| 코드 | 검사 | 왜 |
+|---|---|---|
+| `SEO001` | 반복 블록(`<s_list_rep>`·`<s_sidebar_element>` 등 18종) 안의 `<h1>` | 한 페이지에 `h1`이 항목 수만큼 생긴다. `<s_article_rep>`은 **`h1`의 위치로 판정** — 그 `h1`이 `<s_permalink_article_rep>` 영역 안에 있으면 한 번만 렌더되므로 맞다. 두 블록의 중첩 순서는 스킨마다 다르므로 블록이 아니라 `h1`을 본다 |
+| `SEO002` | `<s_article_related>` `<s_article_prev>` `<s_article_next>` | 셋 다 없으면 **모든 글이 고아 페이지**가 된다(오류). 일부만 없으면 연결이 얇아진다(경고) |
+| `SEO003` | `<title>` 유무(**오류**) · `[##_page_title_##]` 사용 · `[##_title_##]` 중복 | 안 쓰면 모든 페이지 제목이 같아진다. 둘을 같이 쓰면 홈이 `블로그명 — 블로그명`이 된다 |
+| `SEO004` | 스킨이 출력하는 `<img>`의 `alt` | 이미지 검색·접근성 |
+| `SEO005` | `BreadcrumbList` JSON-LD (info) | 티스토리가 **글 페이지에는** 안 넣어 준다 |
+
+이건 소스 게이트다. **배포 후에는 `/seo-verify-live`로 프로덕션 실물을 다시 본다** — 소스가 맞아도 붙여넣다 잘리면 여기까지는 잡히지 않는다.
 
 ## 린트가 못 잡는 것 — 눈으로 봐야 한다
 
@@ -40,7 +55,8 @@ npm run build && python3 .claude/skills/skin-preview/scripts/render.py && open _
 ```
 
 ### 페이지 커버리지
-8개 페이지가 **빈 화면 없이** 나오는가. 특히 `empty`(검색 결과 0건)와 `guestbook`은 빠뜨리기 쉽다.
+10개 페이지가 **빈 화면 없이** 나오는가. 특히 `empty`(검색 결과 0건)와 `guestbook`은 빠뜨리기 쉽다.
+`page_toc`(목차 생기는 글)과 `tag_cloud`(태그 클라우드)는 `page`·`tag`와 **body_id가 같지만 렌더되는 영역이 다르다** — 둘 다 봐야 한다.
 
 ### 다크모드 — 세 상태를 모두 본다
 1. `:root[data-theme="dark"]`
