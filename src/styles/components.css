@@ -203,21 +203,18 @@
   border-radius: var(--radius-lg);
 }
 
-.thumb {
-  display: block;
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 16 / 10;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--dur) var(--ease);
-}
+/* .thumb의 상자 속성은 여기 없다 — 아래 기본이미지 블록이 통째로 갖는다.
+   display·position·overflow는 장식이 아니라 3층 구조의 기계장치라
+   두 곳에서 정의하면 갈라진다 (DESIGN.md §6.1). */
 
 .thumb-img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* 3층. position이 없으면 2층 ::before(위치 지정됨)가 이 이미지를 덮는다. */
+  position: relative;
+  z-index: 1;
 }
 
 .post-link:hover .thumb { border-color: var(--hairline-strong); }
@@ -351,38 +348,71 @@
    ║ ⚠ 값에 공백(코드 품질·개발 도구)과 가운뎃점(Kotlin·Java)이 들어간다. ║
    ║   따옴표를 벗기면 선택자가 통째로 무효가 된다.                       ║
    ║                                                                    ║
-   ║ ⚠ SVG 도안이 아직 없다(DESIGN.md §8, 미결 6 — 도안만 남았다).        ║
-   ║   빌드가 src/assets/placeholders/*.svg에서 --ph-*를 만들기 전까지    ║
-   ║   var(--ph-*, var(--ph-fallback))의 폴백으로 떨어진다.               ║
-   ║   변수명 = 파일명이다(arch.svg → --ph-arch). 파일명을 틀리면         ║
-   ║   변수가 정의되지 않고 카드는 조용히 기본값으로 떨어진다.            ║
+   ║ ⚠ 변수명 = 파일명이다(arch.svg → --ph-arch). 빌드가                 ║
+   ║   src/assets/placeholders/*.svg를 훑어 --ph-*를 만들 뿐 이름을      ║
+   ║   검사하지 않는다. 파일명을 틀리면 변수가 정의되지 않고,             ║
+   ║   **마스크 방식에서는 그것이 단색 판으로 나타난다** — 그래서 모든    ║
+   ║   줄에 var(--ph-*, var(--ph-fallback))로 투명 폴백을 건다.          ║
+   ║   빠진 상위 카테고리는 린트 BND003이 잡는다.                        ║
    ╚════════════════════════════════════════════════════════════════════╝ */
 
+/* 3층으로 쌓는다. 격자는 CSS, 모티프는 마스크, 진짜 이미지는 그 위. (DESIGN.md §6.2)
+
+   0층 — 상자. 아래 세 줄은 장식이 아니라 기계장치다. 지우면 조용히 무너진다.
+     · display   <span class="thumb">는 기본이 inline이라 크기를 못 갖는다
+     · position  없으면 2층 ::before가 .thumb가 아니라 페이지 전체에 붙는다
+     · overflow  모티프와 img를 radius로 잘라낸다
+   1층 — 점격자. 순수 CSS라 SVG 용량이 0이고 토큰을 그냥 따른다. */
 .post .thumb {
-  background: center / cover no-repeat var(--ph-default, var(--ph-fallback));
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--dur) var(--ease);
+
+  background-color: var(--canvas-soft);
+  background-image: radial-gradient(circle, var(--hairline) 1.1px, transparent 1.2px);
+  background-size: 8px 8px;
+  background-position: -1px -1px;
 }
 
-.post[data-cat="인프라"] .thumb,
-.post[data-cat^="인프라/"] .thumb          { background-image: var(--ph-infra, var(--ph-fallback)); }
-.post[data-cat="Kotlin·Java"] .thumb      { background-image: var(--ph-jvm, var(--ph-fallback)); }
-.post[data-cat="Python"] .thumb,
-.post[data-cat^="Python/"] .thumb         { background-image: var(--ph-python, var(--ph-fallback)); }
-.post[data-cat="PHP"] .thumb,
-.post[data-cat^="PHP/"] .thumb            { background-image: var(--ph-php, var(--ph-fallback)); }
-.post[data-cat="아키텍처"] .thumb,
-.post[data-cat^="아키텍처/"] .thumb        { background-image: var(--ph-arch, var(--ph-fallback)); }
-.post[data-cat="데이터베이스"] .thumb,
-.post[data-cat^="데이터베이스/"] .thumb     { background-image: var(--ph-db, var(--ph-fallback)); }
-.post[data-cat="네트워크"] .thumb          { background-image: var(--ph-net, var(--ph-fallback)); }
-.post[data-cat="보안"] .thumb             { background-image: var(--ph-sec, var(--ph-fallback)); }
-.post[data-cat="AI"] .thumb               { background-image: var(--ph-ai, var(--ph-fallback)); }
-.post[data-cat="코드 품질"] .thumb,
-.post[data-cat^="코드 품질/"] .thumb       { background-image: var(--ph-quality, var(--ph-fallback)); }
-.post[data-cat="Go"] .thumb               { background-image: var(--ph-go, var(--ph-fallback)); }
-.post[data-cat="알고리즘"] .thumb          { background-image: var(--ph-algo, var(--ph-fallback)); }
-.post[data-cat="개발 도구"] .thumb,
-.post[data-cat^="개발 도구/"] .thumb       { background-image: var(--ph-tool, var(--ph-fallback)); }
-.post[data-cat="기록"] .thumb             { background-image: var(--ph-note, var(--ph-fallback)); }
+/* 2층 — 모티프. 모양은 마스크가, 색은 토큰이 정한다.
+   ⚠ --ph-*가 없으면 mask-image 선언이 무효가 되어 **마스크 없는 단색 판**이 카드를 덮는다.
+     그래서 폴백을 준다 — --ph-fallback은 완전 투명이라 아무것도 안 그린다(tokens.css). */
+.post .thumb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--ink-mute);
+  opacity: .62;
+  -webkit-mask: var(--ph-default, var(--ph-fallback)) center / cover no-repeat;
+          mask: var(--ph-default, var(--ph-fallback)) center / cover no-repeat;
+}
+
+/* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
+.post[data-cat="인프라"] .thumb::before,
+.post[data-cat^="인프라/"] .thumb::before    { -webkit-mask-image: var(--ph-infra, var(--ph-fallback)); mask-image: var(--ph-infra, var(--ph-fallback)); }
+.post[data-cat="Kotlin·Java"] .thumb::before { -webkit-mask-image: var(--ph-jvm, var(--ph-fallback)); mask-image: var(--ph-jvm, var(--ph-fallback)); }
+.post[data-cat="Python"] .thumb::before,
+.post[data-cat^="Python/"] .thumb::before { -webkit-mask-image: var(--ph-python, var(--ph-fallback)); mask-image: var(--ph-python, var(--ph-fallback)); }
+.post[data-cat="PHP"] .thumb::before,
+.post[data-cat^="PHP/"] .thumb::before    { -webkit-mask-image: var(--ph-php, var(--ph-fallback)); mask-image: var(--ph-php, var(--ph-fallback)); }
+.post[data-cat="아키텍처"] .thumb::before,
+.post[data-cat^="아키텍처/"] .thumb::before   { -webkit-mask-image: var(--ph-arch, var(--ph-fallback)); mask-image: var(--ph-arch, var(--ph-fallback)); }
+.post[data-cat="데이터베이스"] .thumb::before,
+.post[data-cat^="데이터베이스/"] .thumb::before { -webkit-mask-image: var(--ph-db, var(--ph-fallback)); mask-image: var(--ph-db, var(--ph-fallback)); }
+.post[data-cat="네트워크"] .thumb::before     { -webkit-mask-image: var(--ph-net, var(--ph-fallback)); mask-image: var(--ph-net, var(--ph-fallback)); }
+.post[data-cat="보안"] .thumb::before       { -webkit-mask-image: var(--ph-sec, var(--ph-fallback)); mask-image: var(--ph-sec, var(--ph-fallback)); }
+.post[data-cat="AI"] .thumb::before       { -webkit-mask-image: var(--ph-ai, var(--ph-fallback)); mask-image: var(--ph-ai, var(--ph-fallback)); }
+.post[data-cat="코드 품질"] .thumb::before,
+.post[data-cat^="코드 품질/"] .thumb::before  { -webkit-mask-image: var(--ph-quality, var(--ph-fallback)); mask-image: var(--ph-quality, var(--ph-fallback)); }
+.post[data-cat="Go"] .thumb::before       { -webkit-mask-image: var(--ph-go, var(--ph-fallback)); mask-image: var(--ph-go, var(--ph-fallback)); }
+.post[data-cat="알고리즘"] .thumb::before     { -webkit-mask-image: var(--ph-algo, var(--ph-fallback)); mask-image: var(--ph-algo, var(--ph-fallback)); }
+.post[data-cat="개발 도구"] .thumb::before,
+.post[data-cat^="개발 도구/"] .thumb::before  { -webkit-mask-image: var(--ph-tool, var(--ph-fallback)); mask-image: var(--ph-tool, var(--ph-fallback)); }
+.post[data-cat="기록"] .thumb::before       { -webkit-mask-image: var(--ph-note, var(--ph-fallback)); mask-image: var(--ph-note, var(--ph-fallback)); }
 
 /* 카테고리 목록에서는 같은 그림이 한 화면에 최대 15번 반복된다. 그 경우만 감춘다.
    대표이미지가 있는 글은 그대로 보인다. */
