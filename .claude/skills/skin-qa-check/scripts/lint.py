@@ -265,14 +265,21 @@ def main():
         print("ℹ️  src/skin.html이 없어 검사할 대상이 없다. 아직 구현 전이면 정상이다.")
         sys.exit(0)
 
+    # src/styles와 dist/style.css를 모두 읽는다.
+    # 인라인 스타일 보정 규칙은 빌드가 data/inline-styles.json에서 생성해
+    # dist에만 존재하므로, src만 보면 INL001이 오탐한다.
     css_dir = os.path.join(SRC, "styles")
     css = ""
     if os.path.isdir(css_dir):
         for f in sorted(os.listdir(css_dir)):
             if f.endswith(".css"):
                 css += "\n" + read(os.path.join(css_dir, f))
-    if not css:
-        css = read(os.path.join(ROOT, "dist", "style.css")) or ""
+    built = read(os.path.join(ROOT, "dist", "style.css"))
+    if built:
+        css += "\n" + built
+    elif css:
+        info("dist/style.css가 없어 생성된 인라인 보정 규칙을 검사하지 못했다. "
+             "npm run build 후 다시 실행하라.")
 
     js_dir = os.path.join(SRC, "js")
     js = ""

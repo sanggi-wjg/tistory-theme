@@ -269,48 +269,48 @@ radius:
 
 **`inherit`이어야 하는 이유** — 5곳(`Menlo/Consolas/Monaco/monospace` 2 · `monaco` 2 · `hack` 1)은 코드 문맥의 고정폭 지정이다. `var(--font-sans)`로 덮으면 코드가 가변폭이 되어 정렬이 깨진다. `inherit`은 부모에서 물려받으므로, `<pre>`/`<code>` 안이면 우리가 지정한 `--font-mono`를, 본문이면 `--font-sans`를 자동으로 받는다.
 
-**색 — 다크 모드에서만 보정.** 어두운 색 14종 593곳, 밝은 색 3종 16곳, 배경 11종 106곳.
+**색 — 빌드가 `data/inline-styles.json`에서 생성한다.** 어두운 색 14종 593곳, 밝은 색 3종 16곳, 배경 11종 106곳.
+
+**손으로 쓰지 않는 이유가 두 가지다.**
+
+첫째, **공백**. 실제 블로그의 인라인 스타일은 `style="color: #000000;"` — 콜론 뒤에 공백이 있다. 609곳 중 **608곳이 공백형**이다. CSS 속성 선택자는 문자열을 문자 그대로 매칭하므로 `[style*="color:#000000"]`은 **609곳 중 1곳에만** 걸린다. 두 형태를 모두 써야 한다.
+
+둘째, **동기화**. 색 목록은 글이 늘면 바뀐다. 손으로 관리하면 실측과 어긋나고, 어긋난 사실이 조용히 묻힌다.
+
+`scripts/build.mjs`가 측정 데이터에서 규칙을 생성해 `style.css` 끝에 붙인다. 생성 결과의 모양은 이렇다:
 
 ```css
+/* ── 인라인 스타일 보정 (data/inline-styles.json에서 생성) ── */
+
 /* 다크에서 죽는 어두운 텍스트 → 본문 색으로 */
 :root[data-theme="dark"] .contents_style [style*="color:#000000"],
+:root[data-theme="dark"] .contents_style [style*="color: #000000"],
 :root[data-theme="dark"] .contents_style [style*="color:#333333"],
-:root[data-theme="dark"] .contents_style [style*="color:#252525"],
-:root[data-theme="dark"] .contents_style [style*="color:#666666"],
-:root[data-theme="dark"] .contents_style [style*="color:#555544"],
-:root[data-theme="dark"] .contents_style [style*="color:#383a42"],
-:root[data-theme="dark"] .contents_style [style*="color:#404040"],
-:root[data-theme="dark"] .contents_style [style*="color:#353638"],
-:root[data-theme="dark"] .contents_style [style*="color:#555555"],
-:root[data-theme="dark"] .contents_style [style*="color:#242424"],
-:root[data-theme="dark"] .contents_style [style*="color:#ad0000"],
-:root[data-theme="dark"] .contents_style [style*="color:#001d35"] { color: var(--ink-body) !important; }
+:root[data-theme="dark"] .contents_style [style*="color: #333333"],
+/* … 14종 × 2형태 … */ { color: var(--ink-body) !important; }
 
 /* 강조색은 죽이지 말고 다크용으로 매핑 */
-:root[data-theme="dark"] .contents_style [style*="color:#006dd7"] { color: var(--link) !important; }
-:root[data-theme="dark"] .contents_style [style*="color:#ee2323"] { color: var(--error) !important; }
+:root[data-theme="dark"] .contents_style [style*="color:#006dd7"],
+:root[data-theme="dark"] .contents_style [style*="color: #006dd7"] { color: var(--link) !important; }
+:root[data-theme="dark"] .contents_style [style*="color:#ee2323"],
+:root[data-theme="dark"] .contents_style [style*="color: #ee2323"] { color: var(--error) !important; }
 
-/* 라이트에서 대비가 부족한 밝은 텍스트 (지금도 잘 안 보이는 상태) */
-:root:not([data-theme="dark"]) .contents_style [style*="color:#eeffff"],
-:root:not([data-theme="dark"]) .contents_style [style*="color:#f8f8f2"],
-:root:not([data-theme="dark"]) .contents_style [style*="color:#8a8a8a"] { color: var(--ink-body) !important; }
+/* 라이트에서 대비가 부족한 밝은 텍스트 (지금도 잘 안 보인다) */
+:root:not([data-theme="dark"]) .contents_style [style*="color: #eeffff"],
+/* … 3종 × 2형태 … */ { color: var(--ink-body) !important; }
 
-/* 밝은 배경 5종 — 다크에서 흰 상자가 뜬다 */
-:root[data-theme="dark"] .contents_style [style*="background-color:#ffffff"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#f8f8f8"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#f2f2f2"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#fcfcfc"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#f9f9f9"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#f1f1f1"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#fbfaf8"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#f6f7f8"],
-:root[data-theme="dark"] .contents_style [style*="background-color:#dddddd"] { background-color: var(--canvas-soft) !important; }
+/* 밝은 배경 → 다크에서 흰 상자가 뜬다 */
+:root[data-theme="dark"] .contents_style [style*="background-color: #ffffff"],
+/* … 9종 × 2형태 … */ { background-color: var(--canvas-soft) !important; }
 
-/* 어두운 배경 2종 — 라이트에서 검은 상자가 뜬다 */
-:root:not([data-theme="dark"]) .contents_style [style*="background-color:#212121"],
-:root:not([data-theme="dark"]) .contents_style [style*="background-color:#272822"] { background-color: var(--canvas-soft-2) !important; }
+/* 어두운 배경 → 라이트에서 검은 상자가 뜬다 */
+:root:not([data-theme="dark"]) .contents_style [style*="background-color: #212121"],
+/* … 2종 × 2형태 … */ { background-color: var(--canvas-soft-2) !important; }
 ```
 
+**강조색 매핑은 생성기가 예외로 둔다.** `#006dd7`(파랑 강조) → `--link`, `#ee2323`(빨강 강조) → `--error`. 나머지는 휘도로 분류한다 — 0.5 미만이면 다크에서, 이상이면 라이트에서 보정한다.
+
+**색 목록이 바뀌면** `/blog-census --bodies`로 `data/inline-styles.json`을 갱신하고 다시 빌드한다. CSS를 손댈 필요가 없다.
 **JS 안전망**: 위 목록에 없는 색(앞으로 쓸 새 글)을 위해, 본문 인라인 색의 상대 휘도를 계산해 현재 모드에서 대비가 부족하면 제거한다. CSS가 먼저 적용되므로 깜박임은 없다.
 
 ### 5.3 카테고리 트리
