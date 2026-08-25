@@ -29,6 +29,13 @@ import { contentRoots } from './util.js'
 const LANGS = { python, bash, shell, sql, java, kotlin, go, json, yaml, xml }
 const SUBSET = Object.keys(LANGS)
 
+// ⚠ highlight.js의 xml 모듈은 HTML도 함께 처리한다. 그래서 HTML 코드블록에
+//   "XML" 라벨이 붙는다. **고치지 않는 것이 결정이다**(코드리뷰 ④).
+//   실측: 728개 중 html 라벨 4개, xml 라벨 0개. 다만 라벨이 붙은 건 39%뿐이고
+//   그마저 틀리므로, 나머지 443개에 Spring·Maven XML이 섞였을 가능성을 배제할 수 없다.
+//   xml을 목록에서 빼면 그런 블록이 하이라이팅을 통째로 잃는다 — 라벨 하나 틀리는
+//   쪽이 싸다. 내용을 보고 HTML/XML을 갈라 라벨을 새로 짓는 것도 하지 않는다:
+//   추측 라벨을 믿을 수 없어서 data-ke-language를 버린 것이 결정 9의 근거였다.
 const LABEL = {
   python: 'Python', bash: 'Bash', shell: 'Shell', sql: 'SQL', java: 'Java',
   kotlin: 'Kotlin', go: 'Go', json: 'JSON', yaml: 'YAML', xml: 'XML',

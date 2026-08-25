@@ -35,6 +35,12 @@ PAGE_TYPES = {
     # 둘 다 내지 않으면 **실측 68%인 다수 경로가 프리뷰에 한 번도 안 나온다.**
     # 레이아웃도 갈린다 — body.no-toc 유무로 폭이 1,136 ↔ 848로 바뀐다(layout.css).
     "page_toc":  "tt-body-page",
+    # /tag(클라우드)와 /tag/이름(목록)은 body_id가 둘 다 tt-body-tag지만
+    # 렌더되는 영역이 다르다. 한 페이지에 둘 다 그리면 h1이 두 개가 되어
+    # 실블로그에 없는 화면을 보게 된다. 그래서 나눈다 —
+    #   tag       → /tag/이름 : 목록 (LIST_PAGES에 있다)
+    #   tag_cloud → /tag      : 클라우드 (LIST_PAGES에 없다)
+    "tag_cloud": "tt-body-tag",
 }
 
 LIST_PAGES = {"category", "search", "tag", "archive", "empty"}
@@ -311,8 +317,9 @@ def handle_group(name, attrs, inner, ctx, page, posts):
         return "".join(buf)
     if name == "s_tag":
         # 태그 클라우드는 /tag 에서만 렌더된다. 양쪽 분기를 같게 두면
-        # 8개 페이지 전부에 태그 목록이 나와 스킨 결함처럼 보인다.
-        return R(inner) if page == "tag" else ""
+        # 전 페이지에 태그 목록이 나와 스킨 결함처럼 보인다.
+        # 목록이 나오는 /tag/이름(page="tag")과는 다른 페이지다 — PAGE_TYPES 주석 참조.
+        return R(inner) if page == "tag_cloud" else ""
 
     # 페이징
     if name == "s_paging":

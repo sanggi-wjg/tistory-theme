@@ -16,6 +16,11 @@ export default function initTables() {
       wrap.className = 'table-scroll'
       // 스크롤 되는 영역은 키보드로도 스크롤할 수 있어야 한다.
       // tabindex를 주면 role/이름이 필요하다(그러지 않으면 정체 불명의 탭 정거장이 된다).
+      //
+      // 넘치지 않는 표에도 붙는다 — 조건을 걸지 않는 것이 **결정이다**(코드리뷰 ②).
+      // scrollWidth > clientWidth로 거를 수 있지만 그 값은 폰트가 로드되면 바뀐다.
+      // 초기 측정으로 정하면 틀리고, 계속 관찰하면 그만큼 복잡해진다.
+      // 항상 붙이는 것이 관행이기도 하다. 다시 꺼내지 말 것.
       wrap.setAttribute('tabindex', '0')
       wrap.setAttribute('role', 'region')
       wrap.setAttribute('aria-label', '표')

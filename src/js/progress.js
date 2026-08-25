@@ -36,6 +36,9 @@ function initBar() {
 
   function paint() {
     const y = scrollY()
+    // span <= 0 = 본문이 화면보다 짧다. 그때는 본문 상단을 지나는 순간 100%로 튄다.
+    // 고치지 않는 것이 **결정이다**(코드리뷰 ③) — 잴 구간이 없으면 "다 읽었다"가 맞고,
+    // 본문 중앙값이 2,813자라 해당하는 글이 거의 없다. 다시 꺼내지 말 것.
     const p = span > 0 ? clamp01((y - start) / span) : y >= start ? 1 : 0
     bar.style.transform = 'scaleX(' + p.toFixed(4) + ')'
   }

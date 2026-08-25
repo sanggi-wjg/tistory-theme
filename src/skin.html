@@ -54,7 +54,13 @@ gtag('config', 'G-PHQ5FKMZ37');
 <header class="site-header">
   <div class="header-inner">
     <div class="site-brand">
-      <a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a>
+      <!-- 홈에서는 블로그 이름이 h1, 글 페이지에서는 .entry-title이 h1이다.
+           마크업은 한 장이라 페이지별로 태그를 바꿀 수 없다. 그래서 같은 내용을
+           h1과 p로 한 벌씩 놓고 body_id로 하나만 보인다(components.css).
+           감춘 쪽은 display:none이라 **접근성 트리에서도 빠진다** — 스크린리더에도
+           제목은 하나만 들리고, 화면에 이름이 두 번 나오지도 않는다. -->
+      <h1 class="brand-line brand-line-home"><a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a></h1>
+      <p  class="brand-line brand-line-sub"><a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a></p>
       <p class="brand-desc">[##_desc_##]</p>
     </div>
 
