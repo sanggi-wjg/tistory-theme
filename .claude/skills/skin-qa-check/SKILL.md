@@ -80,7 +80,7 @@ npm run build && python3 .claude/skills/skin-preview/scripts/render.py && open _
 |---|---|---|---|
 | 훅 이름 | `skin.html` class·data | CSS 선택자 / JS 셀렉터 | 조용한 무동작 |
 | `data-cat` | 마크업의 치환자 | CSS 접두 선택자 | **기본이미지 전부 무너짐** |
-| 카테고리 | `data/categories.json` | CSS 규칙 11종 | 새 카테고리 누락 |
+| 카테고리 | `data/categories.json` | CSS 규칙 14종 | 새 카테고리 누락 |
 | 스킨 옵션 | `index.xml` `<name>` | `[##_var_*_##]` | 빈 값 |
 | 영역 치환자 | 놓인 위치 | 유효한 페이지 타입 | **화면 통째로 빔** |
 | 인라인색 | `data/inline-styles.json` | CSS 보정 규칙 | 다크에서 글자 실종 |
