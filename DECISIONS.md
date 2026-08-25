@@ -238,7 +238,7 @@ for p in $(seq 1 14); do curl -sL "https://sanggi-jayg.tistory.com/?page=$p" -o 
 | 5 | **다크 팔레트 파생값 검증** — DESIGN.md의 다크 토큰은 파생값이라 실제 화면에서 대비 확인 필요 |
 | 6 | **기본 이미지 도안** (라이트/다크 두 벌) — ⏸ **카테고리 개편 적용 후 착수.** 개편 계획은 [`docs/category-taxonomy.md`](./docs/category-taxonomy.md)에 나왔다 (상위 13 / 하위 19, 275편 매핑 완료). **상위가 13종이 되므로 결정 5의 기본 이미지는 11장 → 13장**이고, 라이트/다크 두 벌이라 도안은 26장이다. 이름도 전부 바뀌므로 도안 주제를 새로 잡는다. 티스토리에 적용한 뒤 `/blog-census`로 `data/categories.json`을 갱신하고, 그 목록에 맞춰 도안과 `DESIGN.md` §6.2 규칙을 만든다 |
 | 7 | **스킨 미리보기 이미지 4종** (`preview.gif` 112x84 / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`) |
-| 8 | **카테고리 개편 적용** — 계획은 확정 대기([`docs/category-taxonomy.md`](./docs/category-taxonomy.md) §6의 애매한 11건은 **원문을 읽어 확정했고**(4건이 처음 배치와 달랐다) 남은 것은 비공개 3편과 결정 5의 11장 → 13장). 작업할 때는 [`docs/category-migration-worksheet.md`](./docs/category-migration-worksheet.md)를 띄워 두고 체크하며 진행한다. 티스토리 관리 화면에서 수동 작업이며 되돌리기가 없다 |
+| 8 | **카테고리 개편 적용** — 계획은 [`docs/category-taxonomy.md`](./docs/category-taxonomy.md), 작업은 [`docs/category-migration-worksheet.md`](./docs/category-migration-worksheet.md)를 띄워 두고 체크하며 진행한다. 제목만으로 갈렸던 11건은 **원문을 읽어 확정했다** (4건이 처음 배치와 달랐다). **남은 것은 비공개 3편 배치와 결정 5의 11장 → 13장.** 티스토리 관리 화면에서 수동 작업이며 되돌리기가 없다 |
 
 ---
 
