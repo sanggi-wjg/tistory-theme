@@ -22,7 +22,7 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 
 | 팀원 | 타입 | 역할 | 주 스킬 | 출력 |
 |---|---|---|---|---|
-| `skin-markup` | 커스텀 | `skin.html` · `index.xml` | `/tistory-substitutions` | `src/skin.html`, `src/index.xml`, `_workspace/hooks.md` |
+| `skin-markup` | 커스텀 | `skin.html` · `index.xml` | `/tistory-substitutions` | `src/skin.html`, `src/index.xml`, `docs/hooks.md` |
 | `skin-style` | 커스텀 | `style.css` | `/tistory-substitutions` | `src/styles/*.css` |
 | `skin-behavior` | 커스텀 | `script.js` | — | `src/js/*.js` |
 | `skin-qa` | 커스텀 | 검증 | `/skin-qa-check`, `/skin-preview` | `_workspace/qa-report.md` |
@@ -84,10 +84,10 @@ ToolSearch(query: "select:TeamCreate", max_results: 1)
 TeamCreate(team_name: "tistory-skin", members: [
   { name: "skin-markup",   agent_type: "skin-markup",   model: "opus",
     prompt: "DECISIONS.md·DESIGN.md를 읽고 src/skin.html·src/index.xml을 작성하라.
-             훅 계약을 _workspace/hooks.md에 먼저 확정하고 팀에 공표한 뒤 시작하라." },
+             훅 계약을 docs/hooks.md에 먼저 확정하고 팀에 공표한 뒤 시작하라." },
   { name: "skin-style",    agent_type: "skin-style",    model: "opus",
     prompt: "DESIGN.md를 규범으로 src/styles/*.css를 작성하라.
-             _workspace/hooks.md가 나올 때까지 토큰·리셋부터 작업하라." },
+             docs/hooks.md가 나올 때까지 토큰·리셋부터 작업하라." },
   { name: "skin-behavior", agent_type: "skin-behavior", model: "opus",
     prompt: "src/js/*.js를 작성하라. 생성하는 DOM의 클래스 이름은
              skin-style과 반드시 사전 합의하라." },
@@ -128,7 +128,7 @@ TaskCreate(tasks: [
 
 ### 통신 규칙
 
-- **`skin-markup`이 가장 먼저 `_workspace/hooks.md`를 쓰고 `SendMessage`로 공표한다.** 나머지 둘은 이걸 받기 전엔 훅에 의존하지 않는 작업(토큰 CSS, 다크모드 토글)부터 한다
+- **`skin-markup`이 가장 먼저 `docs/hooks.md`를 쓰고 `SendMessage`로 공표한다.** 나머지 둘은 이걸 받기 전엔 훅에 의존하지 않는 작업(토큰 CSS, 다크모드 토글)부터 한다
 - 훅 이름이 바뀌면 markup이 **style·behavior 양쪽에 동시 통보**한다
 - `skin-behavior`는 생성 DOM의 클래스를 `skin-style`과 합의한 뒤 구현한다
 - `skin-qa`는 모듈 완성 알림을 받으면 즉시 검증하고, 경계면 이슈는 **양쪽 모두에게** 알린다
@@ -143,7 +143,7 @@ TaskCreate(tasks: [
 
 | 팀원 | 경로 |
 |---|---|
-| skin-markup | `src/skin.html`, `src/index.xml`, `_workspace/hooks.md` |
+| skin-markup | `src/skin.html`, `src/index.xml`, `docs/hooks.md` |
 | skin-style | `src/styles/*.css` |
 | skin-behavior | `src/js/*.js`, `_workspace/head-inline.js` |
 | skin-qa | `_workspace/qa-report.md` |
@@ -156,7 +156,7 @@ TaskCreate(tasks: [
 훅 계약을 만드는 쪽을 완전히 끝낸 뒤 나머지를 띄운다.
 
 ```
-skin-markup (단독 선행) → _workspace/hooks.md 확정
+skin-markup (단독 선행) → docs/hooks.md 확정
         ↓ 리더가 hooks.md 내용을 프롬프트에 직접 넣어 전달
 skin-style · skin-behavior (병렬, 파일 담당을 겹치지 않게 나눠서)
         ↓

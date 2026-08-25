@@ -51,11 +51,11 @@ model: opus
 
 - 입력: `DESIGN.md` · `DECISIONS.md` · `data/substitutions.json` · `docs/tistory-skin-reference.txt`
 - 출력: `src/skin.html`, `src/index.xml`
-- 훅 계약: `_workspace/hooks.md` — 클래스·data 속성·영역 ID 목록. **변경 시 즉시 갱신하고 팀에 알린다.**
+- 훅 계약: `docs/hooks.md` — 클래스·data 속성·영역 ID 목록. **변경 시 즉시 갱신하고 팀에 알린다.**
 
 ## 팀 통신 프로토콜
 
-- **발신** → skin-style, skin-behavior: 훅 계약(`_workspace/hooks.md`) 확정·변경 시 즉시 통보
+- **발신** → skin-style, skin-behavior: 훅 계약(`docs/hooks.md`) 확정·변경 시 즉시 통보
 - **발신** → skin-qa: 새 영역 완성 시 검증 요청
 - **수신** ← skin-style: "이 선택자가 붙을 요소가 없다" → 마크업에 훅 추가
 - **수신** ← skin-behavior: "이 요소를 쿼리할 수 없다" → 훅 추가 또는 구조 조정

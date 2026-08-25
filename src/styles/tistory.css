@@ -1,0 +1,254 @@
+/* ══════════════════════════════════════════════════════════════════════
+   tistory.css — 티스토리가 통짜로 렌더링하는 마크업
+
+   마크업을 바꿀 수 없는 두 영역이다. 치환자 한 줄이 UI 전체를 만든다.
+     [##_category_##]       → ul.tt_category 트리 (DESIGN.md §5.3)
+     [##_comment_group_##]  → 티스토리 React 댓글 앱 (DESIGN.md §5.4)
+     [##_guestbook_group_##] → 같은 앱
+
+   댓글 쪽은 React가 나중에 렌더링하고 클래스 이름이 예고 없이 바뀔 수 있다.
+   그래서 **얕고 넓게** 잡는다 — 깊은 자손 선택자와 구조 의존을 피하고,
+   색·타이포·간격만 토큰으로 덮는다. 레이아웃은 티스토리에게 맡긴다.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══════════ 카테고리 트리 ══════════════════════════════════════
+   ul.tt_category > li > a.link_tit            "분류 전체보기" + span.c_cnt
+     ul.category_list > li > a.link_item       상위
+       ul.sub_category_list > li > a.link_sub_item  하위
+   렌더 결과의 앵커 안에는 앞뒤 공백이 들어 있다. 그대로 둔다. */
+
+.tt_category,
+.tt_category ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tt_category {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+}
+
+.tt_category a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 6px 0;
+  color: var(--ink-body);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+
+.tt_category a:hover { color: var(--link); }
+
+.tt_category .link_tit {
+  color: var(--ink);
+  font-weight: 600;
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.tt_category .link_item {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.tt_category .sub_category_list {
+  margin: 0 0 var(--sp-2) 3px;
+  padding-left: var(--sp-3);
+  border-left: 1px solid var(--hairline);
+}
+
+.tt_category .link_sub_item {
+  color: var(--ink-body);
+  font-weight: 400;
+}
+
+.tt_category .c_cnt {
+  flex: none;
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════ 접기/펼치기 ═══════════════════════════════════════
+   category.js가 하위 목록을 가진 li에 버튼(.cat-toggle)을 넣고
+   .has-toggle · .is-collapsed / .is-expanded를 붙인다 (hooks.md §5.6).
+   목록 자체에는 .cat-tree가 붙는다 — 토글이 하나라도 생겼을 때만.
+
+   JS가 없거나 실패하면 아무 클래스도 붙지 않는다. 그러면 이 블록의 규칙이
+   하나도 매칭되지 않아 트리는 전부 펼쳐진 채로 남는다 — 읽을 수는 있다.
+   "기본을 접힘으로 두고 JS가 펴는" 방식을 쓰지 않는 이유가 이것이다.
+
+   ⚠ 이 블록은 .tt_category가 아니라 .side-category로 스코프한다.
+   .tt_category · .sub_category_list라는 이름은 실블로그에서 확인된 것이 아니라
+   DESIGN.md §5.3의 기록이다(출처 없음). 이름이 하나라도 다르면 위쪽 치장 규칙은
+   조용히 안 먹지만 — 그건 밋밋해지고 끝이다 — 접기 규칙이 안 먹으면
+   버튼을 눌러도 아무 일도 일어나지 않는다. **기능 규칙은 우리가 보장하는
+   훅(.side-category, hooks.md §6)에 건다.** 대상도 이름이 아니라 자식 ul 전체다. */
+
+.side-category li.is-collapsed > ul { display: none; }
+
+/* 링크 · 버튼 · 하위목록이 한 li 안에 있다.
+   버튼은 링크 오른쪽 끝, 하위 목록은 다음 줄로 흘린다. */
+.side-category li.has-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.side-category li.has-toggle > a {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.side-category li.has-toggle > ul {
+  flex: 0 0 100%;
+}
+
+.cat-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;              /* WCAG 2.5.8 최소 타깃 */
+  height: 24px;
+  margin-left: var(--sp-1);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--ink-mute);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.cat-toggle:hover { color: var(--ink); }
+
+.cat-toggle-icon {
+  transition: transform var(--dur) var(--ease);
+}
+
+.side-category li.is-expanded > .cat-toggle .cat-toggle-icon {
+  transform: rotate(90deg);
+}
+
+/* 토글이 없는 형제 항목의 글 수도 같은 선에 세운다.
+   (버튼 24px + 왼쪽 여백 4px = 28px) */
+.side-category .cat-tree > li:not(.has-toggle) > a {
+  padding-right: 28px;
+}
+
+/* ══════════ 댓글 · 방명록 ══════════════════════════════════════ */
+
+.comments {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--hairline);
+  scroll-margin-top: var(--sp-5);
+}
+
+.comments,
+.guestbook {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  color: var(--ink-body);
+}
+
+/* 앱 전체 — 색만 우리 것으로 끌어온다 */
+.tt-comment-cont,
+.tt-area-reply,
+.tt-list-reply { color: var(--ink-body); }
+
+.tt-box-total {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: var(--fs-body);
+}
+
+.tt-item-reply {
+  border-top: 1px solid var(--hairline);
+  padding: var(--sp-4) 0;
+}
+
+.tt-thumbnail,
+.tt-box-thumb img { border-radius: 50%; }
+
+.tt-link-user {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tt_desc,
+.tt-cmt {
+  color: var(--ink-body);
+  line-height: var(--lh-body);
+}
+
+.tt_date {
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.comments a,
+.guestbook a { color: var(--link); }
+
+/* 입력 · 버튼 — React가 클래스를 바꿔도 살아남도록 요소로 잡는다 */
+.comments textarea,
+.comments input[type="text"],
+.comments input[type="password"],
+.guestbook textarea,
+.guestbook input[type="text"],
+.guestbook input[type="password"] {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.comments textarea:focus,
+.comments input:focus,
+.guestbook textarea:focus,
+.guestbook input:focus { border-color: var(--hairline-strong); }
+
+.tt-btn_register {
+  background: var(--ink);
+  color: var(--canvas);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-body-sm);
+  font-weight: 600;
+}
+
+.tt-btn_register:hover { background: var(--ink-body); border-color: var(--ink-body); }
+
+/* ══════════ 블로그 메뉴 ════════════════════════════════════════
+   [##_blog_menu_##]가 만든다. 항목에 붙는 클래스는 티스토리 설정에 따라
+   달라지므로 기대하지 않고 ul/li/a로만 잡는다 (hooks.md §7). */
+
+.site-nav ul {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.site-nav a {
+  display: block;
+  padding: var(--sp-1) 0;
+  font-size: var(--fs-body-sm);
+  color: var(--ink-body);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+
+.site-nav a:hover { color: var(--ink); }

@@ -1,0 +1,1450 @@
+/* ══════════════════════════════════════════════════════════════════════
+   components.css — 카드 · 헤더/푸터 · 목록 · 글 부속 · 목차 · 사이드바
+                    · 페이징 · 그리고 JS가 만드는 DOM
+
+   빌드 순서상 마지막이라 특이도가 가장 높다. 그래도 단일 클래스 위주로 쓴다.
+   !important는 쓰지 않는다 — 인라인 스타일 보정 전용이고, 그건 빌드가 생성한다.
+
+   카드의 모든 자식이 인라인 요소(span·strong·time)라는 점에 주의한다.
+   markup이 중첩 앵커를 피하려고 카드 전체를 하나의 <a>로 감쌌기 때문에
+   display를 여기서 일일이 지정해야 한다 (hooks.md §2).
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══════════ 헤더 ══════════════════════════════════════════════ */
+
+.site-header {
+  border-bottom: 1px solid var(--hairline);
+  background: var(--canvas);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-5);
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: var(--sp-4) var(--pad-x);
+}
+
+.site-brand {
+  margin-right: auto;
+  min-width: 0;
+}
+
+.brand-title {
+  display: block;
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  letter-spacing: var(--ls-display-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.brand-desc {
+  margin-top: 2px;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-mute);
+}
+
+.brand-desc:empty { display: none; }
+
+.header-util {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* ── 검색 ─────────────────────────────────────────────────────
+   테두리는 감싼 상자가 갖고, input은 벗는다. 포커스 링은 :focus-within으로
+   상자에 준다 — input에 outline:none을 주고 대체 표시가 없으면 키보드 사용자가 길을 잃는다. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-2);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur) var(--ease);
+}
+
+/* 테두리색 변화만으로는 표시가 안 된다 — 라이트 2.58:1 / 다크 2.06:1로
+   WCAG 2.4.11(3:1) 미달이었다 (qa-report F5). 전역 :focus-visible과 **같은** 링을
+   상자에 준다. input의 outline:none은 그대로 둔다 — 링이 input 테두리(없음) 대신
+   상자 테두리를 따라 그려져야 하기 때문이다.
+   .search-btn이 포커스를 받으면 상자 링 + 버튼 자체 링이 겹친다. 의도한 것이다 —
+   "검색 상자 안, 그중 버튼"을 함께 보여준다. */
+.search:focus-within {
+  border-color: var(--hairline-strong);
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.search-input {
+  width: 140px;
+  max-width: 40vw;
+  padding: 7px 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: var(--fs-body-sm);
+}
+
+.search-input::placeholder { color: var(--ink-mute); }
+.search-input:focus { outline: none; }
+
+.search-btn,
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-mute);
+  transition: color var(--dur) var(--ease);
+}
+
+.search-btn { width: 24px; height: 24px; }
+.search-btn:hover { color: var(--ink); }
+
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.theme-toggle:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+/* 아이콘 두 개가 둘 다 마크업에 있다. 현재 테마에 따라 하나만 보인다 —
+   라이트에서 달, 다크에서 해(누르면 갈 곳). 분기는 tokens.css의 토큰이 한다.
+   여기에 [data-theme] 블록을 두면 테마 분기가 컴포넌트로 샌다. */
+.icon-sun  { display: var(--icon-sun-display); }
+.icon-moon { display: var(--icon-moon-display); }
+
+@media (max-width: 767px) {
+  .site-nav {
+    order: 3;
+    flex-basis: 100%;
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--hairline);
+  }
+}
+
+/* ══════════ 광고 자리 ═════════════════════════════════════════
+   치환자가 빈 문자열이면 <div>가 정말로 비어 :empty가 참이 된다
+   (한 줄에 붙어 있어 공백 노드가 없다). 비었을 때 여백을 만들지 않는다. */
+
+.ad:not(:empty) {
+  max-width: var(--page-w);
+  margin: 0 auto;
+  padding: var(--sp-5) var(--pad-x) 0;
+}
+
+/* ══════════ 공지 ══════════════════════════════════════════════ */
+
+.notice {
+  margin-bottom: var(--sp-6);
+  padding: var(--sp-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+}
+
+.notice-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.notice-badge {
+  padding: 1px var(--sp-2);
+  border: 1px solid var(--link);
+  border-radius: var(--radius-sm);
+  color: var(--link);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+}
+
+.notice-title {
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  letter-spacing: var(--ls-display-sm);
+}
+
+.notice-date {
+  margin-left: auto;
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════ 카드 — 홈 그리드 · 목록 공용 ═══════════════════════
+   제목은 반드시 2줄에서 자른다. 홈 노출 20편 제목 중앙값 49자, 40자 초과 75%.
+   min-height로 2줄 자리를 미리 잡아 카드 높이를 고르게 만든다. */
+
+.post-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.post-link:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 4px;
+  border-radius: var(--radius-lg);
+}
+
+.thumb {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--dur) var(--ease);
+}
+
+.thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-link:hover .thumb { border-color: var(--hairline-strong); }
+
+.post-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.post-cat {
+  display: block;
+  color: var(--link);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+}
+
+.post-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: calc(var(--fs-display-sm) * var(--lh-display-sm) * 2);
+  color: var(--ink);
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  letter-spacing: var(--ls-display-sm);
+  font-weight: 600;
+  transition: color var(--dur) var(--ease);
+}
+
+.post-link:hover .post-title { color: var(--link); }
+
+.post-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+}
+
+.post-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-top: auto;
+  padding-top: var(--sp-1);
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-rp::before { content: "댓글 "; }
+
+/* ── 주목 글 (홈 첫 카드) ────────────────────────────────────── */
+@media (min-width: 641px) {
+  .card-grid > .post:first-child .post-link {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--sp-5);
+  }
+
+  .card-grid > .post:first-child .thumb {
+    flex: 0 0 46%;
+  }
+
+  .card-grid > .post:first-child .post-text {
+    justify-content: center;
+    gap: var(--sp-3);
+  }
+
+  .card-grid > .post:first-child .post-title {
+    min-height: 0;
+    font-size: var(--fs-display-md);
+    line-height: var(--lh-display-md);
+    letter-spacing: var(--ls-display-md);
+  }
+
+  .card-grid > .post:first-child .post-excerpt {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body-sm);
+  }
+
+  .card-grid > .post:first-child .post-meta { margin-top: 0; }
+}
+
+/* ── 목록 페이지의 카드는 가로 행 ─────────────────────────────── */
+.post-list .post { border-bottom: 1px solid var(--hairline); }
+
+.post-list .post-link {
+  padding: var(--sp-5) 0;
+  height: auto;
+}
+
+.post-list .post-title { min-height: 0; }
+
+@media (min-width: 561px) {
+  .post-list .post-link {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--sp-5);
+  }
+
+  .post-list .thumb { flex: 0 0 180px; }
+}
+
+/* ╔════════════════════════════════════════════════════════════════════╗
+   ║ 기본이미지 — 상위 카테고리 14종 (DESIGN.md §6.2)                    ║
+   ║                                                                    ║
+   ║ ⚠ 이 블록은 통째로 갈아끼우는 단위다. 카테고리를 늘리거나 이름을     ║
+   ║   바꾸면 블록 밖은 건드리지 말고 이 안만 교체한다.                   ║
+   ║   (2026-08-25 개편 반영: 옛 11종 → 새 14종. 살아남은 이름은          ║
+   ║    Python · Go · PHP 셋뿐이다.)                                     ║
+   ║                                                                    ║
+   ║ ⚠ 순서는 사이드바 노출 순이다(DECISIONS.md §3). 상위 14종 중 어느    ║
+   ║   이름도 다른 이름의 접두사가 아니라 ^=가 옆 카테고리를 물지 않는다.  ║
+   ║                                                                    ║
+   ║ ⚠ 하위가 없는 7종(Kotlin·Java 네트워크 보안 AI Go 알고리즘 기록)은   ║
+   ║   ^= 줄을 두지 않았다. 하위가 생기면 두 줄짜리로 바꾼다 —            ║
+   ║   안 바꾸면 새 하위 글이 조용히 --ph-default로 떨어진다.             ║
+   ║                                                                    ║
+   ║ ⚠ 값에 공백(코드 품질·개발 도구)과 가운뎃점(Kotlin·Java)이 들어간다. ║
+   ║   따옴표를 벗기면 선택자가 통째로 무효가 된다.                       ║
+   ║                                                                    ║
+   ║ ⚠ SVG 도안이 아직 없다(DESIGN.md §8, 미결 6 — 도안만 남았다).        ║
+   ║   빌드가 src/assets/placeholders/*.svg에서 --ph-*를 만들기 전까지    ║
+   ║   var(--ph-*, var(--ph-fallback))의 폴백으로 떨어진다.               ║
+   ║   변수명 = 파일명이다(arch.svg → --ph-arch). 파일명을 틀리면         ║
+   ║   변수가 정의되지 않고 카드는 조용히 기본값으로 떨어진다.            ║
+   ╚════════════════════════════════════════════════════════════════════╝ */
+
+.post .thumb {
+  background: center / cover no-repeat var(--ph-default, var(--ph-fallback));
+}
+
+.post[data-cat="인프라"] .thumb,
+.post[data-cat^="인프라/"] .thumb          { background-image: var(--ph-infra, var(--ph-fallback)); }
+.post[data-cat="Kotlin·Java"] .thumb      { background-image: var(--ph-jvm, var(--ph-fallback)); }
+.post[data-cat="Python"] .thumb,
+.post[data-cat^="Python/"] .thumb         { background-image: var(--ph-python, var(--ph-fallback)); }
+.post[data-cat="PHP"] .thumb,
+.post[data-cat^="PHP/"] .thumb            { background-image: var(--ph-php, var(--ph-fallback)); }
+.post[data-cat="아키텍처"] .thumb,
+.post[data-cat^="아키텍처/"] .thumb        { background-image: var(--ph-arch, var(--ph-fallback)); }
+.post[data-cat="데이터베이스"] .thumb,
+.post[data-cat^="데이터베이스/"] .thumb     { background-image: var(--ph-db, var(--ph-fallback)); }
+.post[data-cat="네트워크"] .thumb          { background-image: var(--ph-net, var(--ph-fallback)); }
+.post[data-cat="보안"] .thumb             { background-image: var(--ph-sec, var(--ph-fallback)); }
+.post[data-cat="AI"] .thumb               { background-image: var(--ph-ai, var(--ph-fallback)); }
+.post[data-cat="코드 품질"] .thumb,
+.post[data-cat^="코드 품질/"] .thumb       { background-image: var(--ph-quality, var(--ph-fallback)); }
+.post[data-cat="Go"] .thumb               { background-image: var(--ph-go, var(--ph-fallback)); }
+.post[data-cat="알고리즘"] .thumb          { background-image: var(--ph-algo, var(--ph-fallback)); }
+.post[data-cat="개발 도구"] .thumb,
+.post[data-cat^="개발 도구/"] .thumb       { background-image: var(--ph-tool, var(--ph-fallback)); }
+.post[data-cat="기록"] .thumb             { background-image: var(--ph-note, var(--ph-fallback)); }
+
+/* 카테고리 목록에서는 같은 그림이 한 화면에 최대 15번 반복된다. 그 경우만 감춘다.
+   대표이미지가 있는 글은 그대로 보인다. */
+#tt-body-category .post:not(:has(.thumb-img)) .thumb { display: none; }
+
+/* ╚══ 기본이미지 블록 끝 ═══════════════════════════════════════════════ */
+
+/* ══════════ 목록 페이지 ═══════════════════════════════════════ */
+
+/* 카테고리 대표이미지 배너. 검색·태그·보관함에서는 블로그 대표이미지가 나와
+   무의미하므로 카테고리에서만 보인다 (DECISIONS 결정 7 · hooks.md §3). */
+.list-banner { display: none; }
+
+#tt-body-category .list-banner {
+  display: block;
+  aspect-ratio: 5 / 1;
+  margin-bottom: var(--sp-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.list-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.list-title {
+  font-size: var(--fs-display-lg);
+  line-height: var(--lh-display-lg);
+  letter-spacing: var(--ls-display-lg);
+  font-weight: 700;
+}
+
+.list-count {
+  color: var(--ink-mute);
+  font-size: var(--fs-body-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.list-count::before { content: "글 "; }
+
+.list-desc {
+  flex-basis: 100%;
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+}
+
+.list-desc:empty { display: none; }
+
+.list-empty {
+  padding: var(--sp-9) 0;
+  text-align: center;
+}
+
+.list-empty-title {
+  color: var(--ink);
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  font-weight: 600;
+}
+
+.list-empty-desc {
+  margin-top: var(--sp-3);
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+}
+
+.list-empty-desc a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* ══════════ 태그 클라우드 ═════════════════════════════════════
+   /tag 페이지와 사이드바 모듈이 같은 클래스를 쓴다 (hooks.md §6). */
+
+.tagcloud-title {
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-display-lg);
+  line-height: var(--lh-display-lg);
+  letter-spacing: var(--ls-display-lg);
+  font-weight: 700;
+}
+
+.tagcloud-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagcloud-link {
+  display: inline-block;
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.tagcloud-link:hover {
+  color: var(--link);
+  border-color: var(--link);
+}
+
+/* cloud1~5는 티스토리가 사용 빈도에 따라 붙인다. 어느 쪽이 큰 값인지
+   실블로그에서 확인하지 못했으므로 차이를 한 단씩만 둔다. */
+.tagcloud-link.cloud1 { font-size: var(--fs-body-lg); }
+.tagcloud-link.cloud2 { font-size: var(--fs-body); }
+.tagcloud-link.cloud3 { font-size: var(--fs-body-sm); }
+.tagcloud-link.cloud4 { font-size: var(--fs-body-sm); color: var(--ink-mute); }
+.tagcloud-link.cloud5 { font-size: var(--fs-caption); color: var(--ink-mute); }
+
+/* ══════════ 글 페이지 ═════════════════════════════════════════ */
+
+.entry-head {
+  margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.entry-cat {
+  display: inline-block;
+  margin-bottom: var(--sp-3);
+  color: var(--link);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+}
+
+.entry-cat:hover { color: var(--link-deep); }
+
+.entry-title {
+  font-size: var(--fs-display-lg);
+  line-height: var(--lh-display-lg);
+  letter-spacing: var(--ls-display-lg);
+  font-weight: 700;
+}
+
+.entry-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.entry-rp:hover { color: var(--link); }
+
+@media (max-width: 640px) {
+  .entry-title,
+  .list-title,
+  .tagcloud-title {
+    font-size: var(--fs-display-md);
+    line-height: var(--lh-display-md);
+    letter-spacing: var(--ls-display-md);
+  }
+}
+
+/* ── 태그 ─────────────────────────────────────────────────────
+   안의 <a>는 [##_tag_label_rep_##]가 만든다. */
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-6);
+}
+
+.entry-tags a {
+  display: inline-block;
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.entry-tags a::before {
+  content: "#";
+  margin-right: 2px;
+  color: var(--ink-mute);
+}
+
+.entry-tags a:hover {
+  color: var(--link);
+  border-color: var(--link);
+}
+
+/* ── 관리자 전용 줄 : 조용히, 작게 ────────────────────────────── */
+.entry-admin {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+}
+
+.entry-admin a { color: var(--ink-mute); }
+.entry-admin a:hover { color: var(--ink); }
+
+/* ── 같은 카테고리의 다른 글 ─────────────────────────────────── */
+.related {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--hairline);
+}
+
+.related-title {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  letter-spacing: var(--ls-display-sm);
+}
+
+.related-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.related-link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  text-decoration: none;
+}
+
+.related-link:hover { color: var(--link); }
+
+.related-thumb {
+  display: block;
+  flex: none;
+  width: 56px;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+}
+
+.related-thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.related-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.related-date {
+  flex: none;
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.related-more {
+  display: inline-block;
+  margin-top: var(--sp-4);
+  color: var(--link);
+  font-size: var(--fs-body-sm);
+}
+
+/* ── 이전/다음 글 ────────────────────────────────────────────
+   .postnav-item에는 티스토리가 text_type / thumb_type을 함께 붙인다.
+   썸네일 칸을 그 클래스로 켜고 끈다. grid-column:-2는 "마지막 칸"이라
+   1칸(text_type)일 때도 2칸(thumb_type)일 때도 같은 규칙으로 동작한다. */
+.postnav {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+.postnav-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  color: var(--ink-body);
+  text-decoration: none;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.postnav-item:hover { border-color: var(--hairline-strong); }
+
+.postnav-thumb {
+  display: block;
+  grid-row: 1 / span 2;
+  width: 48px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+}
+
+.postnav-thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.postnav-label,
+.postnav-title { grid-column: -2; }
+
+.postnav-label {
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+}
+
+.postnav-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+}
+
+.postnav-next {
+  grid-template-columns: minmax(0, 1fr) auto;
+  text-align: right;
+}
+
+.postnav-next .postnav-thumb { grid-column: 2; }
+.postnav-next .postnav-label,
+.postnav-next .postnav-title { grid-column: 1; }
+
+/* text_type이면 썸네일 칸이 없다. .postnav-next보다 뒤에 둬야 이긴다. */
+.postnav-item.text_type { grid-template-columns: minmax(0, 1fr); }
+
+@media (min-width: 641px) {
+  .postnav { grid-template-columns: 1fr 1fr; }
+}
+
+/* ══════════ 목차 ══════════════════════════════════════════════
+   기본은 감춰 둔다. 소제목이 3개 이상일 때만 JS가 .is-ready를 붙인다
+   (hooks.md §5.1). 조건 미달이거나 JS가 죽어도 빈 상자가 남지 않는다. */
+
+.toc {
+  display: none;
+  font-size: var(--fs-body-sm);
+}
+
+.toc.is-ready { display: block; }
+
+.toc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-size: var(--fs-body-sm);
+  font-weight: 600;
+  text-align: left;
+}
+
+.toc-toggle::after {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+
+.toc.is-open .toc-toggle::after { transform: translateY(2px) rotate(-135deg); }
+
+.toc-list {
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc-link {
+  display: block;
+  padding: var(--sp-1) 0 var(--sp-1) var(--sp-3);
+  border-left: 2px solid transparent;
+  color: var(--ink-body);
+  line-height: var(--lh-body-sm);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.toc-link:hover { color: var(--ink); }
+
+.toc-link.is-current {
+  color: var(--link);
+  border-left-color: var(--link);
+}
+
+.toc-h3 .toc-link {
+  padding-left: var(--sp-5);
+  font-size: var(--fs-caption);
+}
+
+/* 1024px 미만 : 접이식. JS가 .is-open을 토글한다. */
+@media (max-width: 1024px) {
+  .toc:not(.is-open) .toc-list { display: none; }
+}
+
+/* 1025px 이상 : 항상 펼친 상태. 토글 버튼은 제목 라벨로만 남긴다. */
+@media (min-width: 1025px) {
+  .toc.is-ready {
+    max-height: calc(100vh - var(--sp-8));
+    overflow-y: auto;
+    padding-left: var(--sp-4);
+    border-left: 1px solid var(--hairline);
+  }
+
+  .toc-toggle {
+    padding: 0 0 var(--sp-3);
+    border: 0;
+    cursor: default;
+    pointer-events: none;
+    color: var(--ink-mute);
+    font-size: var(--fs-caption);
+    letter-spacing: var(--ls-label);
+    text-transform: uppercase;
+  }
+
+  .toc-toggle::after { display: none; }
+  .toc-list { margin-top: 0; }
+}
+
+/* ══════════ 읽기 진행바 ═══════════════════════════════════════
+   JS는 .reading-progress-bar의 transform: scaleX(p)만 건드린다.
+   width가 아니라 transform인 이유는 스크롤마다 레이아웃을 다시 계산하지 않기 위해서다. */
+
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: 3px;
+  pointer-events: none;
+}
+
+.reading-progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--link);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/* ══════════ 보호글 ════════════════════════════════════════════ */
+
+.protected {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: var(--sp-9) 0;
+  text-align: center;
+}
+
+.protected-title {
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-display-md);
+  letter-spacing: var(--ls-display-md);
+}
+
+.protected-desc {
+  margin-top: var(--sp-3);
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+}
+
+.protected-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+
+.protected-label {
+  flex-basis: 100%;
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+}
+
+.protected-input {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+}
+
+.protected-input:focus { border-color: var(--hairline-strong); }
+
+.protected-submit {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--ink);
+  color: var(--canvas);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body-sm);
+  font-weight: 600;
+}
+
+.protected-submit:hover {
+  background: var(--ink-body);
+  border-color: var(--ink-body);
+}
+
+/* ══════════ 방명록 ════════════════════════════════════════════ */
+
+.guestbook-title {
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--fs-display-lg);
+  line-height: var(--lh-display-lg);
+  letter-spacing: var(--ls-display-lg);
+  font-weight: 700;
+}
+
+/* ══════════ 페이징 ════════════════════════════════════════════
+   티스토리가 더 갈 곳이 없을 때 no_more_prev / no_more_next를 함께 붙인다. */
+
+.paging {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--hairline);
+}
+
+.paging a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.paging a:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+.paging-nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.paging .no_more_prev,
+.paging .no_more_next {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ══════════ 사이드바 ══════════════════════════════════════════ */
+
+.side-mod {
+  margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.side-mod:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.side-title {
+  margin-bottom: var(--sp-3);
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.side-list,
+.sidecmt-list,
+.count-list {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.side-link {
+  display: block;
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+
+.side-link:hover { color: var(--link); }
+
+/* 썸네일이 있는 모듈만 2칸 격자로 만든다. 공지 모듈은 <a> 안이 텍스트뿐이다. */
+.side-recent .side-link,
+.side-popular .side-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 2px var(--sp-3);
+}
+
+.side-thumb {
+  display: block;
+  grid-row: 1 / span 2;
+  width: 44px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+}
+
+.side-thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.side-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  grid-column: -2;
+}
+
+.side-meta {
+  display: flex;
+  gap: var(--sp-2);
+  grid-column: -2;
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.side-rp::before { content: "· "; }
+
+.sidecmt-item { font-size: var(--fs-body-sm); }
+
+.sidecmt-link {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  color: var(--ink-body);
+  line-height: var(--lh-body-sm);
+  text-decoration: none;
+}
+
+.sidecmt-link:hover { color: var(--link); }
+
+.sidecmt-name {
+  margin-right: var(--sp-2);
+  color: var(--ink);
+  font-size: var(--fs-caption);
+}
+
+.sidecmt-date {
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.count-list { gap: var(--sp-2); }
+
+.count-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-body-sm);
+}
+
+.count-label { color: var(--ink-mute); }
+
+.count-num {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════ 푸터 ══════════════════════════════════════════════ */
+
+.site-footer {
+  border-top: 1px solid var(--hairline);
+}
+
+.footer-inner {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-4) var(--sp-6);
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: var(--sp-7) var(--pad-x);
+}
+
+.footer-brand { margin-right: auto; }
+
+.footer-title {
+  color: var(--ink);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.footer-desc {
+  margin-top: var(--sp-1);
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-body-sm);
+}
+
+.footer-links a { color: var(--ink-body); }
+.footer-links a:hover { color: var(--link); }
+
+.footer-copy {
+  flex-basis: 100%;
+  color: var(--ink-mute);
+  font-size: var(--fs-caption);
+}
+
+/* ══════════ 맨 위로 ═══════════════════════════════════════════
+   display로 감추지 않는다 — 전환이 죽고, JS가 안 돌아도 튀어나오지 않아야 한다.
+   JS는 .is-visible만 토글한다 (hooks.md §5.3). */
+
+.to-top {
+  position: fixed;
+  right: var(--sp-5);
+  bottom: var(--sp-5);
+  z-index: 55;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  color: var(--ink-mute);
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease),
+              visibility var(--dur) var(--ease),
+              color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+
+.to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.to-top:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   JS가 만드는 DOM (hooks.md §5.6)
+
+   마크업에 자리가 없다. 이름만 합의되어 있고 skin-behavior가 런타임에 만든다.
+   여기에 스타일이 미리 없으면 JS가 붙는 순간 날것으로 보인다.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 코드블록 래퍼 · 언어 라벨 · 복사 버튼 ──────────────────────
+   라벨과 버튼은 같은 자리(우상단)를 쓴다. 평소엔 라벨, 호버·포커스하면 버튼. */
+.code-wrap {
+  position: relative;
+  margin: var(--sp-5) 0;
+}
+
+.code-wrap pre { margin: 0; }
+
+.code-lang {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-3);
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: 1;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.code-copy {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  padding: 3px var(--sp-2);
+  background: var(--surface);
+  color: var(--ink-mute);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.code-wrap:hover .code-lang,
+.code-wrap:focus-within .code-lang { opacity: 0; }
+
+.code-wrap:hover .code-copy,
+.code-wrap:focus-within .code-copy,
+.code-copy:focus-visible { opacity: 1; }
+
+.code-copy:hover { color: var(--ink); }
+.code-copy.is-copied { color: var(--link); border-color: var(--link); }
+
+/* ── 줄번호 거터 ─────────────────────────────────────────────
+   code.js는 <span class="code-lines">에 빈 <span>을 줄 수만큼 놓기만 한다.
+   숫자는 여기서 counter로 그린다 — 그래서 CSS가 없어도 화면에 아무것도 안 나온다.
+
+   거터는 .code-wrap(position:relative) 기준의 절대 위치라 pre가 가로로
+   스크롤해도 제자리에 남는다. pre의 padding-left 쪽 글자가 거터 밑으로
+   지나가므로 거터에 pre와 같은 배경을 깔아 가린다.
+
+   세로 정렬은 두 값이 맞아야 한다:
+     시작점  거터 top 1px + padding-top 16px  =  pre 테두리 1px + padding 16px
+     줄높이  둘 다 var(--fs-mono) × var(--lh-mono)
+   pre는 white-space:pre라 줄이 접히지 않으므로 줄 수가 정확히 일치한다. */
+.code-lines { display: none; }
+
+.code-wrap.has-lines pre {
+  padding-left: calc(3.4em + var(--sp-3));
+}
+
+.code-wrap.has-lines .code-lines {
+  display: block;
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 1px;
+  width: 3.4em;
+  padding: var(--sp-4) var(--sp-2) var(--sp-4) 0;
+  overflow: hidden;
+  background: var(--canvas-soft);
+  border-right: 1px solid var(--hairline);
+  border-radius: calc(var(--radius-lg) - 1px) 0 0 calc(var(--radius-lg) - 1px);
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: var(--lh-mono);
+  text-align: right;
+  counter-reset: code-line;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.code-lines > span {
+  display: block;
+  counter-increment: code-line;
+}
+
+.code-lines > span::before { content: counter(code-line); }
+
+/* ╔════════════════════════════════════════════════════════════════════╗
+   ║ 코드 하이라이팅 팔레트 (.hljs-*)                                    ║
+   ║                                                                    ║
+   ║ ⚠ DESIGN.md에 구문 색 규정이 없다. 임의로 새 색을 들이지 않으려고     ║
+   ║   **기존 토큰만으로** 짠 2톤 팔레트다 — 잉크 사다리 + 링크 파랑.      ║
+   ║   --accent-cyan / --warning은 일부러 쓰지 않았다. 라이트 캔버스 위   ║
+   ║   본문 크기 글자로 쓰면 대비가 2.4:1 / 1.9:1로 무너진다.             ║
+   ║   (DESIGN.md §8에 기록했다. 제대로 된 구문 팔레트는 리더 결정 사항.)  ║
+   ║                                                                    ║
+   ║ code.js는 신뢰도 미달이면 아예 칠하지 않는다. 그때는 이 규칙이       ║
+   ║ 하나도 매칭되지 않고 원문이 --ink 그대로 남는다.                     ║
+   ╚════════════════════════════════════════════════════════════════════╝ */
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--ink-mute);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type,
+.hljs-built_in,
+.hljs-meta-keyword { color: var(--link); }
+
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-addition { color: var(--ink-body); }
+
+.hljs-meta,
+.hljs-doctag,
+.hljs-tag,
+.hljs-punctuation { color: var(--ink-mute); }
+
+.hljs-deletion { color: var(--error); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+
+/* ╚══ 코드 하이라이팅 팔레트 끝 ═════════════════════════════════════════ */
+
+/* ── 표 가로 스크롤 래퍼 ─────────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  margin: var(--sp-5) 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* content.css가 표에 걸어 둔 열화용 display:block · overflow-x를 되돌린다.
+   래퍼가 스크롤을 맡으므로 표는 원래대로 display:table이어야 셀이 100%로 늘어난다.
+   같은 특이도(0,1,1)라 빌드 순서(content → components)가 승패를 정한다 —
+   CSS_ORDER를 바꾸면 여기가 조용히 뒤집힌다. */
+.table-scroll > table {
+  display: table;
+  overflow: visible;
+  margin: 0;
+  min-width: 480px;
+}
+
+/* ── 외부 링크 표시 ──────────────────────────────────────────── */
+.external-icon {
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  margin-left: 0.15em;
+  vertical-align: -0.02em;
+  opacity: 0.65;
+}
+
+/* ── 이미지 라이트박스 ───────────────────────────────────────── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+}
+
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--veil);
+}
+
+.lightbox-img {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: var(--sp-5);
+  right: var(--sp-5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--surface);
+  color: var(--ink-body);
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+}
+
+.lightbox-close:hover { color: var(--ink); }
+
+body.is-lightbox-open { overflow: hidden; }

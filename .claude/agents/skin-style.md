@@ -41,7 +41,7 @@ model: opus
 
 ## 입력/출력 프로토콜
 
-- 입력: `DESIGN.md`(규범) · `_workspace/hooks.md`(markup의 훅 계약) · `data/posts.json`(카테고리 목록)
+- 입력: `DESIGN.md`(규범) · `docs/hooks.md`(markup의 훅 계약) · `data/posts.json`(카테고리 목록)
 - 출력: `src/styles/*.css` (토큰·레이아웃·본문·고정마크업·컴포넌트로 분할, 빌드가 `style.css` 한 장으로 합침)
 - 기본이미지: SVG를 `data:` URI로 인라인한다. 배포가 수동이라 업로드 파일 수를 늘리면 안 된다
 

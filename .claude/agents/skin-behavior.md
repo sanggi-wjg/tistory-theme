@@ -41,7 +41,7 @@ model: opus
 
 ## 입력/출력 프로토콜
 
-- 입력: `_workspace/hooks.md`(markup의 훅) · skin-style과 합의한 클래스 이름 · `DESIGN.md` §6
+- 입력: `docs/hooks.md`(markup의 훅) · skin-style과 합의한 클래스 이름 · `DESIGN.md` §6
 - 출력: `src/js/*.js` (기능별 모듈, 빌드가 `images/script.js` 한 파일로 번들)
 - 인라인 조각: 다크모드 초기화 스니펫은 `_workspace/head-inline.js`에 두고 skin-markup에게 삽입을 요청
 

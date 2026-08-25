@@ -1,0 +1,250 @@
+/* ══════════════════════════════════════════════════════════════════════
+   content.css — 본문 .contents_style
+
+   티스토리가 통짜로 렌더링하는 영역이다. 클래스를 붙일 수 없고
+   래퍼의 실제 class는 "tt_article_useless_p_margin contents_style"이므로
+   반드시 **부분일치**(.contents_style)로 잡는다.
+   class 속성값 전체를 정확일치로 비교하는 속성 선택자를 쓰면 오래된 글이 통째로 누락된다.
+
+   에디터가 만드는 것들:
+     <p data-ke-size>  <h2|h3 data-ke-size>  <blockquote data-ke-style>
+     <pre data-ke-type="codeblock"><code>  <figure class="imageblock">  <table>
+     그리고 인라인 <code> — 274개로 코드블록보다 많다(글당 최대 68).
+
+   기존 글의 인라인 style 오염(색 609곳·배경 106곳·폰트 275곳) 보정 CSS는
+   여기 없다. 빌드가 data/inline-styles.json에서 생성해 style.css 끝에 붙인다
+   (scripts/build.mjs의 inlineFixCss). 여기 쓰면 중복된다.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.contents_style {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--ink-body);
+}
+
+.contents_style > *:first-child { margin-top: 0; }
+.contents_style > *:last-child  { margin-bottom: 0; }
+
+/* ── 문단 ───────────────────────────────────────────────────────
+   <p><figure>…</figure></p> 같은 무효 중첩을 브라우저가 쪼개면서
+   빈 <p>가 남는다. 그 자리에 24px 구멍이 생기지 않게 접는다. */
+.contents_style p {
+  margin: var(--sp-5) 0;
+}
+
+.contents_style p:empty { display: none; }
+
+/* ── 소제목 ─────────────────────────────────────────────────────
+   목차가 여기로 점프한다. id는 JS가 toc-h-1 형식으로 만든다(hooks.md §5.1). */
+.contents_style h2,
+.contents_style h3,
+.contents_style h4 {
+  color: var(--ink);
+  scroll-margin-top: var(--sp-5);
+}
+
+.contents_style h2 {
+  font-size: var(--fs-display-md);
+  line-height: var(--lh-display-md);
+  letter-spacing: var(--ls-display-md);
+  font-weight: 600;
+  margin: var(--sp-7) 0 var(--sp-4);
+}
+
+.contents_style h3 {
+  font-size: var(--fs-display-sm);
+  line-height: var(--lh-display-sm);
+  letter-spacing: var(--ls-display-sm);
+  font-weight: 600;
+  margin: var(--sp-6) 0 var(--sp-3);
+}
+
+.contents_style h4 {
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-body-lg);
+  font-weight: 600;
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+
+/* ── 링크 (DESIGN.md §6.5) ─────────────────────────────────────── */
+.contents_style a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  transition: color var(--dur) var(--ease);
+}
+
+.contents_style a:hover { color: var(--link-deep); }
+
+/* ── 목록 ───────────────────────────────────────────────────────
+   base.css가 list-style을 껐다. 본문에서만 다시 켠다. */
+.contents_style ul,
+.contents_style ol {
+  margin: var(--sp-5) 0;
+  padding-left: var(--sp-5);
+}
+
+.contents_style ul { list-style: disc; }
+.contents_style ol { list-style: decimal; }
+.contents_style ul ul { list-style: circle; }
+
+.contents_style li { margin: var(--sp-2) 0; }
+.contents_style li > ul,
+.contents_style li > ol { margin: var(--sp-2) 0; }
+.contents_style li::marker { color: var(--ink-mute); }
+
+/* ── 인용 : 면이 아니라 선으로 (DESIGN.md §7) ──────────────────── */
+.contents_style blockquote {
+  margin: var(--sp-5) 0;
+  padding: 0 0 0 var(--sp-4);
+  border-left: 3px solid var(--hairline-strong);
+  color: var(--ink-body);
+}
+
+.contents_style blockquote p { margin: var(--sp-3) 0; }
+
+/* ── 인라인 코드 : 본문의 1급 시민 (DESIGN.md §5.1) ─────────────── */
+.contents_style code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--canvas-soft-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+/* ── 코드블록 (DESIGN.md §6.3) ──────────────────────────────────
+   줄바꿈하지 않는다. 가장 긴 줄이 1,777자다 — 접으면 읽을 수 없다.
+   대신 블록 스스로 가로 스크롤한다. 페이지 본문은 스크롤되지 않는다. */
+.contents_style pre {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  line-height: var(--lh-mono);
+  background: var(--canvas-soft);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  margin: var(--sp-5) 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  tab-size: 2;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 코드블록 안의 <code>는 인라인 코드 장식을 벗는다 */
+.contents_style pre code {
+  font: inherit;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: inherit;
+  white-space: inherit;
+  word-break: normal;
+}
+
+/* ── 이미지 ─────────────────────────────────────────────────────
+   에디터는 <figure class="imageblock alignCenter"><span data-url><img>… 구조를 만든다.
+   span이 인라인이라 그대로 두면 이미지 아래 여백이 생긴다. */
+.contents_style figure {
+  margin: var(--sp-6) 0;
+}
+
+.contents_style figure span,
+.contents_style figure a {
+  display: block;
+}
+
+.contents_style img {
+  height: auto;
+  max-width: 100%;
+}
+
+.contents_style figure img {
+  display: block;
+  margin: 0 auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+}
+
+.contents_style figcaption {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-mute);
+  text-align: center;
+}
+
+.contents_style figure.alignLeft  { margin-right: auto; margin-left: 0; }
+.contents_style figure.alignRight { margin-left: auto; margin-right: 0; }
+.contents_style figure.alignCenter { margin-left: auto; margin-right: auto; }
+
+/* 확대 가능하다는 신호는 JS가 붙었을 때만 준다 (html.js — hooks.md §5.4) */
+.js .contents_style figure img { cursor: zoom-in; }
+
+.contents_style iframe,
+.contents_style video {
+  max-width: 100%;
+  border: 0;
+}
+
+/* ── 표 ─────────────────────────────────────────────────────────
+   JS가 .table-scroll로 감싼다(hooks.md §5.6). 그런데 감싸는 데 **의존**하면
+   JS가 죽었을 때 4열 표가 360px에서 페이지를 31px 민다 — width:100%는
+   표의 min-content 폭을 막지 못한다 (qa-report O4).
+
+   그래서 기본값을 display:block으로 둔다. 표가 스스로 가로 스크롤하고
+   페이지는 밀리지 않는다. 대신 셀이 폭에 맞춰 늘어나지 않는다(내용 폭이 된다) —
+   JS 없는 열화 경로에서만 보이는 모습이다.
+   JS가 감싸면 components.css의 .table-scroll > table이 display:table로 되돌려
+   래퍼가 스크롤을 맡고 표는 100%로 늘어난다. 스크롤 컨테이너는 항상 하나다. */
+.contents_style table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  margin: var(--sp-5) 0;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  border-collapse: collapse;
+}
+
+.contents_style th,
+.contents_style td {
+  border: 1px solid var(--hairline);
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.contents_style th {
+  background: var(--canvas-soft-2);
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.contents_style hr {
+  margin: var(--sp-7) 0;
+}
+
+/* ── 강조 ───────────────────────────────────────────────────── */
+.contents_style strong,
+.contents_style b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.contents_style mark {
+  background: var(--link-bg-soft);
+  color: var(--ink);
+  padding: 0 2px;
+  border-radius: var(--radius-sm);
+}
