@@ -22,7 +22,14 @@
 
 **예외는 읽기뿐이다.** 질문에 답하거나 코드를 훑어보는 것처럼 아무것도 바꾸지 않는 작업은 그냥 한다.
 
-`EnterWorktree`는 최신 `origin/main`에서 `.claude/worktrees/<이름>`에 worktree를 만들고 세션을 그리로 옮긴다. 브랜치 이름은 도구가 정한다(`worktree-<이름>`). 작업이 끝나 PR까지 올렸으면 `ExitWorktree`로 나온다 — `remove`면 정리하고, 이어서 할 일이 남았으면 `keep`.
+`EnterWorktree`는 최신 `origin/main`에서 `.claude/worktrees/<이름>`에 worktree를 만들고 세션을 그리로 옮긴다. 브랜치 이름은 도구가 정한다(`worktree-<이름>`).
+
+**나올 때는 `ExitWorktree`에 `keep`을 쓴다.** `remove`는 원래 브랜치에 없는 커밋이 있으면 거부하는데, 푸시 여부를 보지 않으므로 **PR을 올린 뒤에는 항상 거부된다.** 워크트리는 PR이 머지된 뒤에 정리한다.
+
+```bash
+git worktree remove .claude/worktrees/<이름>
+git branch -D worktree-<이름>
+```
 
 worktree 이름은 작업 범위로 짓는다 — `home-grid`, `toc-scrollspy`, `inline-fix`.
 
