@@ -45,37 +45,43 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 | 순서 | 대상 | 위치 | 주의 |
 |---|---|---|---|
 | 1 | `dist/images/script.js` | 스킨 편집 → **파일업로드** | 기존 동명 파일이 있으면 먼저 삭제 |
+| 1-b | `dist/preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg` | 스킨 편집 → **파일업로드** | 바뀌었을 때만. 이름 덕에 스킨 **루트**로 간다 |
 | 2 | `dist/style.css` | 스킨 편집 → **CSS** 탭 | 전체 선택 후 덮어쓰기 |
 | 3 | `dist/skin.html` | 스킨 편집 → **HTML** 탭 | 전체 선택 후 덮어쓰기 |
 | 4 | `dist/index.xml` | 스킨 편집 → **index.xml** | ⚠️ **스킨의 모든 설정이 초기화된다** |
 | 5 | 저장 후 **미리보기**로 확인 | | 적용 전 마지막 관문 |
 | 6 | 적용 | | |
 
-### 미리보기 이미지는 이 경로로 못 올린다
+### 미리보기 이미지도 파일업로드 탭으로 올린다
 
 `preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg`는 스킨 **루트**에
-있어야 한다(`docs/tistory-skin-reference.txt:51`). 그런데 **파일업로드 탭은 올린 파일을
-`images/` 아래에 둔다.** 그래서 편집기로는 넣을 방법이 없고, 없으면 관리 화면의
-"사용중인 스킨"과 스킨 보관함에 **깨진 이미지가 뜬다**.
+있어야 한다(`docs/tistory-skin-reference.txt:51`). 없으면 관리 화면의 "사용중인 스킨"과
+스킨 보관함에 **깨진 이미지가 뜬다.**
 
-남는 길은 **스킨 보관함 → 직접 업로드(zip)** 하나뿐이다.
+**파일업로드 탭이 이 이름들을 루트로 보낸다.** 목적지가 파일명으로 갈린다 —
+2026-08-25 실측:
+
+| 올린 파일 | 실제 위치 |
+|---|---|
+| `script.js` | `…/skin/images/script.js` |
+| `preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg` | `…/skin/` **루트** |
+
+⚠️ **zip 업로드는 받지 않는다.** 스킨 보관함의 "직접 업로드"로 스킨 패키지를 올리는
+경로는 이 블로그에서 동작하지 않았다(2026-08-25 실측). 배포는 편집기 붙여넣기 +
+파일업로드뿐이다.
+
+확인은 URL을 직접 두드리는 게 가장 빠르다. 스킨 루트는 라이브 HTML의 `style.css`
+주소에서 얻는다:
 
 ```bash
-npm run build          # dist/skin.zip 을 만든다
+curl -sS -o /dev/null -w "%{http_code}\n" \
+  https://tistory1.daumcdn.net/tistory/<블로그번호>/skin/preview256.jpg
 ```
-
-`dist/skin.zip`은 `index.xml` · `skin.html` · `style.css` · `preview*` 4종 · `images/script.js`를
-zip 루트에 담는다. 관리 → 꾸미기 → 스킨 보관함에서 업로드하고 적용한다.
-
-**이게 붙여넣기 배포를 대체하지는 않는다.** HTML·CSS만 바뀌었으면 위 표대로 편집기에서
-붙여넣는 게 빠르고, 적용 중인 스킨을 그대로 고친다. zip은 **미리보기 이미지가 바뀌었거나
-처음 스킨을 심을 때** 쓴다.
 
 미리보기 이미지를 다시 만들려면:
 
 ```bash
-npm run preview                 # 로컬 프리뷰 먼저
-node scripts/gen-preview.mjs    # macOS + Chrome 필요
+npm run preview:images    # macOS + Chrome 필요
 ```
 
 ### `index.xml`이 마지막인 이유
