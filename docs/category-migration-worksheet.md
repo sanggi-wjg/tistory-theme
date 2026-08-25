@@ -28,18 +28,19 @@
       └ 데이터 파이프라인
       └ 리눅스
       └ CI·CD
- 2. Kotlin·Spring
+ 2. Kotlin·Java
  3. 아키텍처
+      └ 분산 시스템
+      └ 원칙
  4. 데이터베이스
       └ MySQL
       └ NoSQL·검색
-      └ DB 이론
+      └ 이론
  5. 네트워크
  6. 보안
  7. AI
  8. 코드 품질
       └ Clean Code
-      └ 설계 원칙
       └ 리팩토링
       └ 테스트
  9. Python
@@ -51,7 +52,7 @@
 11. 알고리즘
 12. 개발 도구
       └ Git
-      └ 개발 환경
+      └ 에디터·터미널
 13. 기록
 ```
 
@@ -78,22 +79,22 @@
 | [ ] | `Infrastructure/Fluentd` | 11 | **인프라/모니터링** |
 | [ ] | `IT/리팩토링` | 9 | **코드 품질/리팩토링** |
 | [ ] | `IT/Langchain` | 8 | **AI** |
-| [ ] | `Infrastructure/Micro Service Architecture` | 8 | **아키텍처** |
+| [ ] | `Infrastructure/Micro Service Architecture` | 8 | **아키텍처/분산 시스템** |
 | [ ] | `Python/Django` | 6 | **Python/Django·Flask** |
-| [ ] | `Kotlin & Java` | 5 | **Kotlin·Spring** |
+| [ ] | `Kotlin & Java` | 5 | **Kotlin·Java** |
 | [ ] | `Infrastructure/Kafka` | 5 | **인프라/데이터 파이프라인** |
 | [ ] | `Infrastructure/CDC` | 4 | **인프라/데이터 파이프라인** |
 | [ ] | `Python/Flask` | 4 | **Python/Django·Flask** |
 | [ ] | `Database/Redis` | 3 | **데이터베이스/NoSQL·검색** |
 | [ ] | `일상` | 2 | **기록** |
 | [ ] | `책책책 책을 읽읍시다` | 2 | **기록** |
-| [ ] | `Infrastructure` | 2 | **아키텍처** |
+| [ ] | `Infrastructure` | 2 | **아키텍처/분산 시스템** |
 | [ ] | `Infrastructure/VPN` | 2 | **네트워크** |
 | [ ] | `Infrastructure/Airflow` | 2 | **인프라/데이터 파이프라인** |
 | [ ] | `Infrastructure/Prometheus` | 2 | **인프라/모니터링** |
 | [ ] | `IT/수학` | 1 | **알고리즘** |
 | [ ] | `Infrastructure/Docker` | 1 | **인프라/쿠버네티스** |
-| [ ] | `OS/Mac` | 1 | **개발 도구/개발 환경** |
+| [ ] | `OS/Mac` | 1 | **개발 도구/에디터·터미널** |
 | [ ] | `Search Engine/ElasticSearch` | 1 | **데이터베이스/NoSQL·검색** |
 | [ ] | `PHP/Codeigniter` | 1 | **인프라/리눅스** |
 | [ ] | `PHP/Laravel` | 1 | **인프라/리눅스** |
@@ -110,7 +111,7 @@
 
 ### `IT` — 35편 → 10곳
 
-**→ 코드 품질/설계 원칙** (11편)
+**→ 아키텍처/원칙** (11편)
 
 - [ ] 2024.12.19  의존성 주입에 대한 생각
 - [ ] 2024.08.01  멱등성 (Idempotence)와 HTTP API 설계
@@ -139,7 +140,7 @@
 - [ ] 2026.06.19  Chrome Local Overrides로 API 응답을 변경하고 UI를 테스트하는 방법
 - [ ] 2022.12.24  API, 서비스, 도메인 테스트 및 TDD 에서의 기어비
 
-**→ 개발 도구/개발 환경** (4편)
+**→ 개발 도구/에디터·터미널** (4편)
 
 - [ ] 2026.02.11  터미널 오픈소스 도구 모음: btop, k9s, Mole, Sniffnet
 - [ ] 2025.08.08  [Mac] 맥 환경, Jetbrains IDE 과거 버전 삭제
@@ -167,7 +168,7 @@
 
 - [ ] 2023.01.09  [Kubernetes] OpenLens 설치
 
-**→ 아키텍처** (1편)
+**→ 아키텍처/분산 시스템** (1편)
 
 - [ ] 2022.10.08  알림 서비스 디자인
 
@@ -228,7 +229,7 @@
 - [ ] 2024.12.24  HTTP (Hypertext Transfer Protocol) 개념알기
 - [ ] 2021.01.19  캐시 (Cache)  ⚠️ '캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터베이스/NoSQL·검색으로 갈 수도
 - [ ] 2021.01.15  DNS(Domain Name System) 작동원리
-- [ ] 2021.01.15  브라우저 동작 원리
+- [ ] 2021.01.15  브라우저 동작 원리  ⚠️ '브라우저 동작 원리' — 네트워크보다 프론트엔드에 가깝다. 이 블로그에 갈 곳이 없어 네트워크에 뒀다
 - [ ] 2021.01.14  HTTP Response Status Code (HTTP 응답 상태 코드)
 - [ ] 2021.01.13  HTTP Request Method (HTTP 요청 방법)
 - [ ] 2021.01.13  HTTP (HyperText Transfer Protocol) 란?
@@ -293,7 +294,7 @@
 - [ ] 2019.10.22  프로시저 언제 사용해야 하나?
 - [ ] 2019.10.22  MySQL's Storage Engies - MyISAM Engine
 
-**→ 데이터베이스/DB 이론** (4편)
+**→ 데이터베이스/이론** (4편)
 
 - [ ] 2019.10.22  Indexing for High Performance
 - [ ] 2019.10.22  데이터 베이스 설계 프로세스
@@ -319,7 +320,7 @@
 - [ ] 2021.01.22  프로그래머스 - 나머지 한 점
 - [ ] 2021.01.22  프로그래머스 - 순열 검사
 
-**→ 아키텍처** (1편)
+**→ 아키텍처/분산 시스템** (1편)
 
 - [ ] 2025.03.29  Consistent hashing, 일관된 해싱
 
@@ -335,7 +336,7 @@
 - [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 2편: Spring Batch REST API 서버 설계
 - [ ] 2026.03.27  K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 1편: CronJob 문제와 스케줄러 선택
 
-**→ Kotlin·Spring** (4편)
+**→ Kotlin·Java** (4편)
 
 - [ ] 2025.12.01  다중 DataSource 환경에서 장애 격리하기: LazyConnectionDataSourceProxy 활용기
 - [ ] 2024.07.28  Kotlin + Spring Boot 에서 data class 구현으로 Validation 로직 작성하기
@@ -424,20 +425,23 @@
 
 ## 작업 중 판단이 필요한 글
 
-제목만으로 분류해서 원문을 봐야 확정되는 것들이다. 위 목록에서 ⚠️ 로 표시해 뒀다.
+제목만으로 분류해서 원문을 봐야 확정되는 것들이다. 위 목록에서도 ⚠️ 로 표시해 뒀다.
+이 표는 `scripts/remap-categories.py`의 `NEEDS_REVIEW`에서 생성된다 — 손으로 고치지 않는다.
 **옮기기 전에 글을 한 번 열어 보고**, 다르게 판단되면 그쪽으로 옮긴다.
 
-| 글 | 넣어 둔 곳 | 이럴 땐 이쪽으로 |
-|---|---|---|
-| 캐시 (Cache) | 웹·보안/HTTP | 애플리케이션 캐시 얘기면 → 데이터/NoSQL·검색 |
-| OOMKilled 추적기 3부작 | 인프라/쿠버네티스 | Spring 설정 얘기가 중심이면 → 백엔드/Kotlin·Spring |
-| Argo Workflows 전환 3부작 | 인프라/쿠버네티스 | Spring Batch 설계가 중심이면 → 백엔드/Kotlin·Spring |
-| JVM GC 3부작 | 백엔드/Kotlin·Spring | 순수 런타임 얘기면 → `JVM` 상위를 따로 만들 수도 |
-| ChatGPT를 이용한 간단한 Web App | Python/라이브러리 | AI 활용이 중심이면 → AI/LLM 활용 |
-| 속도의 병목이 이동하고 있다 | AI/LLM 활용 | 에세이에 가까우면 → 기록 |
-| 토끼책 2편 (객체지향의 사실과 오해) | 백엔드/설계 원칙 | 독서 기록으로 보고 싶으면 → 기록 |
-| batch 프로그램으로 host 변경하기 | 개발 도구/개발 환경 | hosts 파일이 주제면 → 인프라/네트워크 |
-| fail2ban | 인프라/리눅스 | 침입 차단이 주제면 → 웹·보안/보안 |
+| 날짜 | 글 | 넣어 둔 곳 | 살펴볼 점 |
+|---|---|---|---|
+| 2026.05.09 | K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추… | 인프라/쿠버네티스 | OOMKilled 3부작 — Spring Boot 앱 문제이지만 K8s 운영 트러블슈팅으로 판단 |
+| 2026.03.27 | K8s CronJob 기반 Spring Batch, Argo Workflo… | 인프라/쿠버네티스 | Argo 전환 3부작 — Spring Batch 설계가 절반이지만 K8s 스케줄링이 주제 |
+| 2026.02.10 | 속도의 병목이 이동하고 있다 | AI | '속도의 병목이 이동하고 있다' — 에세이라 기록으로 볼 수도 |
+| 2024.03.08 | [CDC] MySQL Debezium Change Data Capture … | 인프라/데이터 파이프라인 | CDC 4편 — 전부 'MySQL Debezium'이라 데이터베이스/MySQL에 붙을 수도. 지금은 Kafka·Airflow와 같은 파이프라인으로 묶었다 |
+| 2023.03.14 | ChatGPT를 이용한 간단한 Web App 만들기 (python, str… | Python/라이브러리 | ChatGPT + streamlit 웹앱 — AI로 볼 수도 |
+| 2021.01.19 | 캐시 (Cache) | 네트워크 | '캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터베이스/NoSQL·검색으로 갈 수도 |
+| 2021.01.15 | 브라우저 동작 원리 | 네트워크 | '브라우저 동작 원리' — 네트워크보다 프론트엔드에 가깝다. 이 블로그에 갈 곳이 없어 네트워크에 뒀다 |
+| 2019.10.25 | batch 프로그램으로 host 변경하기 | 개발 도구/에디터·터미널 | 'batch 프로그램으로 host 변경' — hosts 파일이 주제면 네트워크로 |
+| 2019.10.23 | Centos7 Nginx, PHP, MySQL  Codeigniter 프로… | 인프라/리눅스 | PHP 2편 — 제목이 'Centos7 … 세팅'이라 설치 글로 보고 리눅스에 뒀다. 언어로 보면 갈 곳이 없다 |
+| 2019.10.22 | fail2ban | 인프라/리눅스 | fail2ban — 침입 차단 도구라 보안으로 볼 수도 |
+| 2019.10.22 | [토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체 | 아키텍처/원칙 | 토끼책 2편 — 책 요약이라 기록으로 볼 수도 (내용은 객체지향 설계) |
 
 **바꾸기로 했다면** `scripts/remap-categories.py`의 해당 인덱스를 옮기고 다시 돌린다 — 매핑과 문서가 같이 갱신된다.
 

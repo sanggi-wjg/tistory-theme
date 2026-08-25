@@ -139,24 +139,19 @@ w("---")
 w("")
 w("## 작업 중 판단이 필요한 글")
 w("")
-w("제목만으로 분류해서 원문을 봐야 확정되는 것들이다. 위 목록에서 ⚠️ 로 표시해 뒀다.")
+w("제목만으로 분류해서 원문을 봐야 확정되는 것들이다. 위 목록에서도 ⚠️ 로 표시해 뒀다.")
+w("이 표는 `scripts/remap-categories.py`의 `NEEDS_REVIEW`에서 생성된다 — 손으로 고치지 않는다.")
 w("**옮기기 전에 글을 한 번 열어 보고**, 다르게 판단되면 그쪽으로 옮긴다.")
 w("")
-w("| 글 | 넣어 둔 곳 | 이럴 땐 이쪽으로 |")
-w("|---|---|---|")
-rows = [
-    ("캐시 (Cache)", "웹·보안/HTTP", "애플리케이션 캐시 얘기면 → 데이터/NoSQL·검색"),
-    ("OOMKilled 추적기 3부작", "인프라/쿠버네티스", "Spring 설정 얘기가 중심이면 → 백엔드/Kotlin·Spring"),
-    ("Argo Workflows 전환 3부작", "인프라/쿠버네티스", "Spring Batch 설계가 중심이면 → 백엔드/Kotlin·Spring"),
-    ("JVM GC 3부작", "백엔드/Kotlin·Spring", "순수 런타임 얘기면 → `JVM` 상위를 따로 만들 수도"),
-    ("ChatGPT를 이용한 간단한 Web App", "Python/라이브러리", "AI 활용이 중심이면 → AI/LLM 활용"),
-    ("속도의 병목이 이동하고 있다", "AI/LLM 활용", "에세이에 가까우면 → 기록"),
-    ("토끼책 2편 (객체지향의 사실과 오해)", "백엔드/설계 원칙", "독서 기록으로 보고 싶으면 → 기록"),
-    ("batch 프로그램으로 host 변경하기", "개발 도구/개발 환경", "hosts 파일이 주제면 → 인프라/네트워크"),
-    ("fail2ban", "인프라/리눅스", "침입 차단이 주제면 → 웹·보안/보안"),
-]
-for a, b, c in rows:
-    w(f"| {a} | {b} | {c} |")
+w("| 날짜 | 글 | 넣어 둔 곳 | 살펴볼 점 |")
+w("|---|---|---|---|")
+for p in sorted(posts, key=lambda p: p["date"], reverse=True):
+    if not p.get("review"):
+        continue
+    title = p["title"].replace("|", "\\|")
+    if len(title) > 42:
+        title = title[:41] + "…"
+    w(f'| {p["date"]} | {title} | {p["to"]} | {p["review"]} |')
 w("")
 w("**바꾸기로 했다면** `scripts/remap-categories.py`의 해당 인덱스를 옮기고 다시 돌린다 — 매핑과 문서가 같이 갱신된다.")
 w("")

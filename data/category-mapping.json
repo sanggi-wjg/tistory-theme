@@ -1,5 +1,5 @@
 {
-  "note": "TAXONOMY 순서 = 티스토리 카테고리 정렬 순서 (백엔드 스택 계층 순)",
+  "note": "TAXONOMY 순서 = 티스토리 카테고리 정렬 순서 (블로그 주력 순, docs/category-taxonomy.md §4)",
   "taxonomy": [
     {
       "order": 1,
@@ -29,7 +29,7 @@
     },
     {
       "order": 2,
-      "top": "Kotlin·Spring",
+      "top": "Kotlin·Java",
       "subs": [
         {
           "name": null,
@@ -42,8 +42,12 @@
       "top": "아키텍처",
       "subs": [
         {
-          "name": null,
+          "name": "분산 시스템",
           "count": 12
+        },
+        {
+          "name": "원칙",
+          "count": 11
         }
       ]
     },
@@ -60,7 +64,7 @@
           "count": 5
         },
         {
-          "name": "DB 이론",
+          "name": "이론",
           "count": 4
         }
       ]
@@ -102,10 +106,6 @@
         {
           "name": "Clean Code",
           "count": 16
-        },
-        {
-          "name": "설계 원칙",
-          "count": 11
         },
         {
           "name": "리팩토링",
@@ -168,7 +168,7 @@
           "count": 9
         },
         {
-          "name": "개발 환경",
+          "name": "에디터·터미널",
           "count": 5
         }
       ]
@@ -334,7 +334,7 @@
       "title": "터미널 오픈소스 도구 모음: btop, k9s, Mole, Sniffnet",
       "date": "2026.02.11",
       "from": "IT",
-      "to": "개발 도구/개발 환경",
+      "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
       "review": null
     },
@@ -379,7 +379,7 @@
       "title": "다중 DataSource 환경에서 장애 격리하기: LazyConnectionDataSourceProxy 활용기",
       "date": "2025.12.01",
       "from": "Kotlin & Java/Spring",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -406,7 +406,7 @@
       "title": "[Mac] 맥 환경, Jetbrains IDE 과거 버전 삭제",
       "date": "2025.08.08",
       "from": "IT",
-      "to": "개발 도구/개발 환경",
+      "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
       "review": null
     },
@@ -433,7 +433,7 @@
       "title": "JVM Garbage Collection Tuning - Spring Boot GC 부하 테스트",
       "date": "2025.04.10",
       "from": "Kotlin & Java",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -442,7 +442,7 @@
       "title": "JVM Garbage Collection Algorithm",
       "date": "2025.04.10",
       "from": "Kotlin & Java",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -451,7 +451,7 @@
       "title": "JVM Garbage Collection",
       "date": "2025.04.06",
       "from": "Kotlin & Java",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -469,7 +469,7 @@
       "title": "Consistent hashing, 일관된 해싱",
       "date": "2025.03.29",
       "from": "IT/알고리즘",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
       "review": null
     },
@@ -478,7 +478,7 @@
       "title": "[분산 시스템] Raft Consensus Algorithm, 뗏목 합의 알고리즘",
       "date": "2025.03.27",
       "from": "Infrastructure",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
       "review": null
     },
@@ -487,7 +487,7 @@
       "title": "[분산 시스템] CAP Theorem: Consistency, Availability, Partition tolerance",
       "date": "2025.03.26",
       "from": "Infrastructure",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
       "review": null
     },
@@ -523,7 +523,7 @@
       "title": "의존성 주입에 대한 생각",
       "date": "2024.12.19",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": true,
       "review": null
     },
@@ -667,7 +667,7 @@
       "title": "멱등성 (Idempotence)와 HTTP API 설계",
       "date": "2024.08.01",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -676,7 +676,7 @@
       "title": "Kotlin + Spring Boot 에서 data class 구현으로 Validation 로직 작성하기",
       "date": "2024.07.28",
       "from": "Kotlin & Java/Spring",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -685,7 +685,7 @@
       "title": "[Gradle] Gradle dependency (그래들 종속성 선언)",
       "date": "2024.03.10",
       "from": "Kotlin & Java",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -696,14 +696,14 @@
       "from": "Infrastructure/CDC",
       "to": "인프라/데이터 파이프라인",
       "hasThumbnail": false,
-      "review": null
+      "review": "CDC 4편 — 전부 'MySQL Debezium'이라 데이터베이스/MySQL에 붙을 수도. 지금은 Kafka·Airflow와 같은 파이프라인으로 묶었다"
     },
     {
       "index": 57,
       "title": "[Jetbrains]  Intellij 인텔리제이 Live Template 사용 방법",
       "date": "2024.02.26",
       "from": "IT",
-      "to": "개발 도구/개발 환경",
+      "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
       "review": null
     },
@@ -748,7 +748,7 @@
       "title": "Pessimistic Locking in JPA",
       "date": "2024.02.06",
       "from": "Kotlin & Java/Spring",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": false,
       "review": null
     },
@@ -811,7 +811,7 @@
       "title": "Intellij에서 Kotlin을 Java로 변환 확인 하는 방법",
       "date": "2023.10.29",
       "from": "Kotlin & Java",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -964,7 +964,7 @@
       "title": "[Code Execution API] 1. 프로그래밍 코드 실행 API 만들어보기",
       "date": "2023.03.22",
       "from": "Kotlin & Java/Spring",
-      "to": "Kotlin·Spring",
+      "to": "Kotlin·Java",
       "hasThumbnail": true,
       "review": null
     },
@@ -1045,7 +1045,7 @@
       "title": "알림 서비스 디자인",
       "date": "2022.10.08",
       "from": "IT",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": true,
       "review": null
     },
@@ -1072,7 +1072,7 @@
       "title": "[Mac] 사용 중인 Port 찾기, Kill 하기",
       "date": "2022.09.19",
       "from": "OS/Mac",
-      "to": "개발 도구/개발 환경",
+      "to": "개발 도구/에디터·터미널",
       "hasThumbnail": false,
       "review": null
     },
@@ -1549,7 +1549,7 @@
       "title": "Micro Service Architecture - 6. IPC 3",
       "date": "2021.09.27",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1558,7 +1558,7 @@
       "title": "Micro Service Architecture - 6. IPC 2",
       "date": "2021.09.27",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1567,7 +1567,7 @@
       "title": "Micro Service Architecture - 6. IPC",
       "date": "2021.09.27",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1576,7 +1576,7 @@
       "title": "Micro Service Architecture - 5.분해전략 2",
       "date": "2021.09.27",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1585,7 +1585,7 @@
       "title": "Micro Service Architecture - 4.분해전략",
       "date": "2021.09.27",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1594,7 +1594,7 @@
       "title": "Micro Service Architecture - 3.패턴",
       "date": "2021.09.07",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1603,7 +1603,7 @@
       "title": "Micro Service Architecture - 2.FTGO 예시",
       "date": "2021.09.06",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -1612,7 +1612,7 @@
       "title": "Micro Service Architecture - 1. MSA",
       "date": "2021.09.06",
       "from": "Infrastructure/Micro Service Architecture",
-      "to": "아키텍처",
+      "to": "아키텍처/분산 시스템",
       "hasThumbnail": false,
       "review": null
     },
@@ -2008,7 +2008,7 @@
       "title": "소프트웨어 개발원칙 YAGNI",
       "date": "2021.01.22",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2017,7 +2017,7 @@
       "title": "소프트웨어 개발원칙 KISS",
       "date": "2021.01.22",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2026,7 +2026,7 @@
       "title": "소프트웨어 개발 원칙 DRY",
       "date": "2021.01.22",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2035,7 +2035,7 @@
       "title": "객체지향 설계 5대 원리 SOLID - IRP",
       "date": "2021.01.22",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2044,7 +2044,7 @@
       "title": "객체지향 설계 5대 원리 SOLID - OCP",
       "date": "2021.01.21",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2053,7 +2053,7 @@
       "title": "객체지향 설계 5대 원리 SOLID  - SRP",
       "date": "2021.01.21",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": true,
       "review": null
     },
@@ -2062,7 +2062,7 @@
       "title": "객체지향 설계 5대 원리 SOLID",
       "date": "2021.01.21",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2109,7 +2109,7 @@
       "from": "IT/Web",
       "to": "네트워크",
       "hasThumbnail": true,
-      "review": null
+      "review": "'브라우저 동작 원리' — 네트워크보다 프론트엔드에 가깝다. 이 블로그에 갈 곳이 없어 네트워크에 뒀다"
     },
     {
       "index": 214,
@@ -2332,7 +2332,7 @@
       "title": "batch 프로그램으로 host 변경하기",
       "date": "2019.10.25",
       "from": "IT",
-      "to": "개발 도구/개발 환경",
+      "to": "개발 도구/에디터·터미널",
       "hasThumbnail": true,
       "review": "'batch 프로그램으로 host 변경' — hosts 파일이 주제면 네트워크로"
     },
@@ -2530,7 +2530,7 @@
       "title": "[토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체",
       "date": "2019.10.22",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": true,
       "review": "토끼책 2편 — 책 요약이라 기록으로 볼 수도 (내용은 객체지향 설계)"
     },
@@ -2539,7 +2539,7 @@
       "title": "[토끼책] 객체지향의 사실과 오해 1장 - 협력하는 객체들의 공동체",
       "date": "2019.10.22",
       "from": "IT",
-      "to": "코드 품질/설계 원칙",
+      "to": "아키텍처/원칙",
       "hasThumbnail": false,
       "review": null
     },
@@ -2557,7 +2557,7 @@
       "title": "Indexing for High Performance",
       "date": "2019.10.22",
       "from": "Database/MySQL",
-      "to": "데이터베이스/DB 이론",
+      "to": "데이터베이스/이론",
       "hasThumbnail": true,
       "review": null
     },
@@ -2566,7 +2566,7 @@
       "title": "데이터 베이스 설계 프로세스",
       "date": "2019.10.22",
       "from": "Database/MySQL",
-      "to": "데이터베이스/DB 이론",
+      "to": "데이터베이스/이론",
       "hasThumbnail": false,
       "review": null
     },
@@ -2575,7 +2575,7 @@
       "title": "Isolation level (트랜잭션 고립(격리) 수준)",
       "date": "2019.10.22",
       "from": "Database/MySQL",
-      "to": "데이터베이스/DB 이론",
+      "to": "데이터베이스/이론",
       "hasThumbnail": true,
       "review": null
     },
@@ -2602,7 +2602,7 @@
       "title": "트랜잭션 너는 누구니?",
       "date": "2019.10.22",
       "from": "Database/MySQL",
-      "to": "데이터베이스/DB 이론",
+      "to": "데이터베이스/이론",
       "hasThumbnail": true,
       "review": null
     },
