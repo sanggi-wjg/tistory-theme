@@ -27,7 +27,8 @@ UA_PC = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
 UA_MOBILE = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 "
              "(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1")
 
-# .claude/skills/seo-verify-live/scripts/verify.py 에서 네 단계 위가 저장소 루트다.
+# .claude/skills/seo-verify-live/scripts/verify.py 에서 디렉터리 네 단계 위
+# (scripts → seo-verify-live → skills → .claude → 루트)가 저장소 루트다.
 # os.getcwd()를 쓰면 다른 디렉터리에서 돌릴 때 엉뚱한 곳에 baseline을 만들고,
 # 배포 전/후 두 실행이 서로 다른 파일을 보게 된다.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
@@ -253,7 +254,16 @@ def page_targets(base):
         posts = d.get("posts") or []
         url = (posts[0].get("url") or "") if posts else ""
         if url:
-            targets.append(("page", base + url if url.startswith("/") else url))
+            # posts.json은 절대 URL을 담을 수도 있다. 경로만 떼어 --base에 붙인다.
+            # 그러지 않으면 테스트 블로그를 검증한다면서 본 블로그를 두드린다.
+            parsed = urllib.parse.urlparse(url)
+            path = parsed.path or "/"
+            if parsed.query:
+                path += "?" + parsed.query
+            if parsed.netloc and not same_host(parsed.netloc, urllib.parse.urlparse(base).netloc):
+                info("data/posts.json의 글 URL이 %s 인데 검증 대상은 %s 다. "
+                     "경로만 떼어 검증 대상에 붙인다." % (parsed.netloc, base))
+            targets.append(("page", base + (path if path.startswith("/") else "/" + path)))
         else:
             unverified("V000", "data/posts.json에 글 URL이 없어 글 페이지를 검증하지 못했다.",
                        "data/posts.json")
@@ -320,8 +330,16 @@ def verify_page(name, url, doc, status, base_host, stats, final=None):
                  + re.findall(r"</?s_[a-zA-Z0-9_]+>", scannable))
     if leftovers:
         uniq = sorted(set(leftovers))[:5]
-        err("V002", "치환자가 그대로 출력됐다: %s. 티스토리가 해석하지 못한 것이고, "
-            "방문자에게도 보인다." % ", ".join(uniq), where)
+        if name == "page":
+            err("V002", "치환자가 그대로 출력됐다: %s. 티스토리가 해석하지 못한 것이고, "
+                "방문자에게도 보인다." % ", ".join(uniq), where)
+        else:
+            # 목록 페이지의 요약문은 본문에서 마크업을 걷어낸 평문이라
+            # <pre>/<code> 제거가 통하지 않는다. 치환자를 인용한 글 한 편이
+            # 여러 목록을 동시에 터뜨리므로 경고로 둔다.
+            warn("V002", "치환자로 보이는 문자열이 있다: %s. 목록 페이지의 글 요약은 "
+                 "마크업이 걷힌 평문이라, 치환자를 인용한 글이 실렸을 수도 있다 — "
+                 "글 페이지에서 함께 떴는지 보고 판단하라." % ", ".join(uniq), where)
 
     # V003 — 헤딩 계층
     if h1 == 0:
@@ -373,15 +391,13 @@ def verify_page(name, url, doc, status, base_host, stats, final=None):
                      % (name, len(imgs), with_alt))
 
 
-def verify_skin_applied(base, home_doc):
-    """V009 — 라이브 CSS가 우리가 빌드한 것인가."""
-    dist = os.path.join(ROOT, "dist", "style.css")
-    if not os.path.exists(dist):
-        unverified("V009", "dist/style.css가 없어 스킨 반영 여부를 대조하지 못했다. "
-                   "npm run build 후 다시 실행하라.", "dist/style.css")
-        return
+def skin_css_of(doc, base):
+    """문서가 거는 스킨 스타일시트의 (표준경로 URL, 대체후보)를 돌려준다.
+
+    V009와 V010이 같은 기준을 써야 한다 — 한쪽은 미검증으로, 다른 쪽은 오류로
+    처리하면 같은 상황이 실행마다 다른 결론이 된다."""
     live_url, fallback = None, None
-    for tag in re.findall(r"<link\b[^>]*>", head_of(home_doc), re.I):
+    for tag in re.findall(r"<link\b[^>]*>", head_of(doc), re.I):
         h = href_of(tag)
         if not h or not h.endswith(".css") and ".css?" not in h:
             continue
@@ -391,9 +407,19 @@ def verify_skin_applied(base, home_doc):
             break
         # 티스토리가 스스로 붙이는 시트는 후보가 아니다. 실물 홈에서 첫 style.css는
         # 항상 .../static/plugin/BusinessLicenseInfo/style.css 다.
-        if ("style.css" in h and fallback is None
-                and "tistory_admin" not in h and "daumcdn.net/tistory_admin" not in h):
+        if "style.css" in h and fallback is None and "tistory_admin" not in h:
             fallback = h
+    return live_url, fallback
+
+
+def verify_skin_applied(base, home_doc):
+    """V009 — 라이브 CSS가 우리가 빌드한 것인가. 찾은 스킨 CSS URL을 돌려준다."""
+    live_url, fallback = skin_css_of(home_doc, base)
+    dist = os.path.join(ROOT, "dist", "style.css")
+    if not os.path.exists(dist):
+        unverified("V009", "dist/style.css가 없어 스킨 반영 여부를 대조하지 못했다. "
+                   "npm run build 후 다시 실행하라.", "dist/style.css")
+        return live_url
     if not live_url:
         if fallback:
             # 스킨 CSS인지 단정할 수 없다. 오류로 적으면 멀쩡한 배포를 막는다.
@@ -403,11 +429,11 @@ def verify_skin_applied(base, home_doc):
         else:
             err("V009", "홈에 스킨 스타일시트가 하나도 없다. 커스텀 스킨이 적용되지 "
                 "않았거나 <head>가 깨졌다.", base + "/")
-        return
+        return None
     status, live_css, _ = fetch(live_url)
     if status != 200 or not live_css:
         unverified("V009", "라이브 style.css를 받지 못했다 (HTTP %s)." % status, live_url)
-        return
+        return live_url
     local = open(dist, encoding="utf-8").read()
     # 스킨 편집기는 textarea라 제출 시 개행이 CRLF로 정규화될 수 있다.
     # 그걸 차이로 세면 멀쩡한 배포가 "붙여넣기가 잘렸다"가 된다.
@@ -418,10 +444,15 @@ def verify_skin_applied(base, home_doc):
         err("V009", "라이브 style.css가 dist/style.css와 다르다 (라이브 %d bytes / 로컬 %d bytes). "
             "붙여넣기가 잘렸거나 이번 빌드가 아직 반영되지 않았다."
             % (len(live_css), len(local)), live_url)
+    return live_url
 
 
-def verify_mobile(base, post_url):
-    """V010 — 모바일 우선 색인. 이 프로젝트의 최대 SEO 리스크다."""
+def verify_mobile(base, post_url, pc_skin_css=None):
+    """V010 — 모바일 우선 색인. 이 프로젝트의 최대 SEO 리스크다.
+
+    pc_skin_css는 PC 홈이 실제로 건 스킨 CSS URL이다. 스마트폰이 같은 것을
+    받는지 대조해야 "같은 스킨"이라 말할 수 있다 — 경로가 있다는 것만으로는
+    티스토리 기본 스킨과 구별되지 않는다."""
     if not post_url:
         unverified("V010", "글 URL이 없어 모바일 동등성을 확인하지 못했다.", "")
         return
@@ -437,20 +468,29 @@ def verify_mobile(base, post_url):
         return
     if MOBILE_PREFIX not in final:
         # 리다이렉트가 없다고 곧 OFF는 아니다. UA를 보고 같은 URL에 다른 스킨을
-        # 줄 수도 있다. 스마트폰이 실제로 커스텀 스킨을 받았는지까지 확인한다.
+        # 줄 수도 있다. PC가 건 스킨 CSS와 같은 것을 받았는지로 판정한다.
         mob_h1 = count_tag(doc, "h1")
-        if "/skin/style.css" not in doc:
-            err("V010", "리다이렉트는 없는데 스마트폰 UA가 받은 문서에 커스텀 스킨 CSS가 "
-                "없다. 같은 URL에서 UA로 다른 스킨을 주고 있을 수 있다 — h1 %d개. "
-                "모바일 우선 색인이 보는 쪽이 이 문서다." % mob_h1, final)
-            return
-        info("모바일웹 OFF 확인 — 스마트폰 UA도 PC URL과 같은 커스텀 스킨을 받는다 "
-             "(h1 %d개). 반응형 스킨이 양쪽을 담당한다 (DECISIONS.md 결정 2)." % mob_h1)
+        mob_css, _ = skin_css_of(doc, base)
+        if pc_skin_css and mob_css and mob_css == pc_skin_css:
+            info("모바일웹 OFF 확인 — 스마트폰 UA가 PC와 같은 스킨 CSS를 받는다 "
+                 "(%s, h1 %d개). 반응형 스킨이 양쪽을 담당한다 (DECISIONS.md 결정 2)."
+                 % (mob_css, mob_h1))
+        elif pc_skin_css and mob_css and mob_css != pc_skin_css:
+            err("V010", "리다이렉트는 없는데 스마트폰이 PC와 다른 스타일시트를 받는다 "
+                "(PC %s / 모바일 %s). 같은 URL에서 UA로 다른 스킨을 주고 있다 — "
+                "h1 %d개. 모바일 우선 색인이 보는 쪽이 이 문서다."
+                % (pc_skin_css, mob_css, mob_h1), final)
+        else:
+            # 한쪽이라도 스킨 CSS를 못 찾았다. V009와 같은 기준으로 미검증이다.
+            unverified("V010", "리다이렉트는 없으나 PC/모바일 스킨 CSS를 대조하지 못해 "
+                       "(PC %s / 모바일 %s) 동등성을 단정할 수 없다 — h1 %d개. "
+                       "눈으로 확인하라."
+                       % (pc_skin_css or "없음", mob_css or "없음", mob_h1), final)
         return
     # /m/ 으로 넘어갔다 = 모바일웹 자동 연결이 켜져 있다
     h1 = count_tag(doc, "h1")
     elinks = len(entry_links(doc, urllib.parse.urlparse(base).netloc, self_path=final)[0])
-    has_skin = "/skin/style.css" in doc
+    has_skin = skin_css_of(doc, base)[0] is not None
     err("V010", "모바일웹 자동 연결이 켜져 있다. 스마트폰 UA가 %s 로 302되고, 거기서 "
         "커스텀 스킨은 %s. 구글은 모바일 우선 색인이므로 크롤러가 보는 쪽은 이 페이지다 "
         "— h1 %d개, 다른 글로 가는 링크 %d개. 관리 → 꾸미기 → 모바일 → "
@@ -483,6 +523,8 @@ def verify_paging_canonical(base):
         return
     canon = canonical_of(doc)
     if not canon:
+        warn("V013", "목록 2페이지에 canonical이 없다. 다른 페이지에는 티스토리가 "
+             "넣어 주므로 확인이 필요하다.", url)
         return
     if urllib.parse.urlparse(canon).path.rstrip("/") in ("", "/"):
         info("목록 2페이지의 canonical이 사이트 루트를 가리킨다 (%s → %s). 티스토리 동작이고 "
@@ -517,7 +559,11 @@ def compare_baseline(stats, base):
             "--save-baseline으로 기준선을 먼저 만들어야 한다.", BASELINE)
         return
     saved = load_json(BASELINE, "baseline")
-    if saved is None:
+    if not isinstance(saved, dict):
+        # 파싱은 되지만 모양이 다를 수 있다. load_json은 깨진 JSON만 막는다.
+        if saved is not None:
+            unverified("V015", "baseline의 형식이 예상과 다르다(최상위가 객체가 아니다). "
+                       "--save-baseline으로 다시 만들어라.", BASELINE)
         return
     prev_base = saved.get("base")
     if prev_base and prev_base.rstrip("/") != base.rstrip("/"):
@@ -560,15 +606,23 @@ def compare_baseline(stats, base):
             warn("V012", "%s의 h1이 %s → %s로 바뀌었다."
                  % (name, prev.get("h1"), cur["h1"]), name)
         if cur["entryLinks"] < prev.get("entryLinks", 0):
-            err("V012", "%s의 내부링크가 %d → %d로 줄었다. 회귀다."
-                % (name, prev.get("entryLinks", 0), cur["entryLinks"]), name)
+            if name == "page":
+                # 글 페이지의 링크 수는 관련글·이전/다음 치환자가 만든다 — 스킨 소관이다.
+                err("V012", "%s의 내부링크가 %d → %d로 줄었다. 회귀다."
+                    % (name, prev.get("entryLinks", 0), cur["entryLinks"]), name)
+            else:
+                # 목록 페이지의 링크 수는 글이 몇 편 실렸는가다 — 콘텐츠 소관이다.
+                # 글을 지우거나 카테고리를 옮기면 줄어든다. 배포 회귀가 아니다.
+                warn("V012", "%s의 내부링크가 %d → %d로 줄었다. 목록 페이지라 글 삭제·"
+                     "카테고리 이동으로도 줄 수 있다 — 배포 때문인지 확인하라."
+                     % (name, prev.get("entryLinks", 0), cur["entryLinks"]), name)
         lost = set(prev.get("jsonld", [])) - set(cur["jsonld"])
         if lost:
             err("V012", "%s의 구조화 데이터가 사라졌다: %s"
                 % (name, ", ".join(sorted(lost))), name)
 
 
-def save_baseline(base, stats, expected):
+def save_baseline(base, stats, expected, allow_missing=False):
     """기준선을 남긴다. 단, 불완전한 기준선으로 좋은 기준선을 덮지 않는다.
 
     verify_page는 HTTP 200일 때만 stats에 쓴다. 네트워크가 한 번 흔들리면
@@ -580,11 +634,12 @@ def save_baseline(base, stats, expected):
         err("V014", "받은 페이지가 하나도 없어 baseline을 저장하지 않았다. "
             "기존 baseline은 그대로 두었다.", BASELINE)
         return
-    if missing:
+    if missing and not allow_missing:
         # 첫 실행이면 덮어쓸 기준선이 없어 아래 가드가 안 돈다. 그렇다고 경고로
         # 넘기면, 배포 문서의 "exit 1은 정상" 안내와 겹쳐 잘린 게이트가 통과한다.
         err("V014", "%s 를 받지 못해 baseline을 저장하지 않았다. 이대로 두면 이 "
-            "페이지들이 배포 후 회귀 감시에서 빠진다 — 원인을 고치고 다시 실행하라."
+            "페이지들이 배포 후 회귀 감시에서 빠진다 — 원인을 고쳐라. 그 페이지 타입이 "
+            "원래 없는 것이면(방명록을 껐다든가) --allow-missing 으로 명시하고 진행하라."
             % ", ".join(missing), BASELINE)
         return
 
@@ -613,6 +668,9 @@ def save_baseline(base, stats, expected):
     with open(BASELINE, "w", encoding="utf-8") as f:
         json.dump({"base": base, "pages": stats, "missing": missing},
                   f, ensure_ascii=False, indent=1)
+    if missing:
+        warn("V014", "--allow-missing 으로 %s 를 빼고 저장했다. 이 페이지 타입들은 "
+             "배포 후 회귀 감시 대상이 아니다." % ", ".join(missing), BASELINE)
     info("baseline을 %s 에 저장했다 (페이지 %d종)."
          % (os.path.relpath(BASELINE, ROOT), len(stats)))
 
@@ -625,6 +683,9 @@ def main():
                     help="검증할 블로그 루트 URL (예: https://sanggi-jayg.tistory.com)")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--save-baseline", action="store_true")
+    ap.add_argument("--allow-missing", action="store_true",
+                    help="일부 페이지 타입이 원래 없을 때(방명록 끔 등) 그것을 빼고 "
+                         "baseline을 저장한다. 빠진 것은 회귀 감시에서 제외된다.")
     ap.add_argument("--compare", action="store_true")
     args = ap.parse_args()
 
@@ -652,18 +713,20 @@ def main():
         time.sleep(0.4)   # 크롤링이 아니라 검증이다. 8회면 예의를 지키기에 충분하다
 
     if home_doc:
-        verify_skin_applied(base, home_doc)
+        pc_skin_css = verify_skin_applied(base, home_doc)
     else:
         # 행이 아예 없으면 통과로 읽힌다. 이 저장소의 규칙은 미검증을 미검증으로 적는 것이다.
+        pc_skin_css = None
         unverified("V009", "홈을 받지 못해 스킨 반영 여부를 확인하지 못했다.", base + "/")
-    verify_mobile(base, post_url)
+    verify_mobile(base, post_url, pc_skin_css=pc_skin_css)
     verify_paging_canonical(base)
     verify_platform_assets(base)
 
     if args.compare:
         compare_baseline(stats, base)
     if args.save_baseline:
-        save_baseline(base, stats, [n for n, _ in targets])
+        save_baseline(base, stats, [n for n, _ in targets],
+                      allow_missing=args.allow_missing)
 
     if args.json:
         print(json.dumps({"base": base, "pages": stats, "errors": ERRORS,
