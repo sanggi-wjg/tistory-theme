@@ -15,3 +15,6 @@ backup/
 
 .DS_Store
 *.log
+
+# Claude Code worktree — 작업 디렉터리이지 소스가 아니다
+.claude/worktrees/
