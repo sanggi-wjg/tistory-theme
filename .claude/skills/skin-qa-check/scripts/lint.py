@@ -260,7 +260,10 @@ def main():
     skin = read(os.path.join(SRC, "skin.html"))
     xml = read(os.path.join(SRC, "index.xml"))
     if skin is None:
-        sys.exit("src/skin.html이 없다. 아직 구현 전이면 정상이다.")
+        # 검사할 대상이 없는 것은 실패가 아니다. 구현 전에도 npm run check가 통과해야
+        # 문서·인프라 변경을 커밋할 수 있다.
+        print("ℹ️  src/skin.html이 없어 검사할 대상이 없다. 아직 구현 전이면 정상이다.")
+        sys.exit(0)
 
     css_dir = os.path.join(SRC, "styles")
     css = ""
