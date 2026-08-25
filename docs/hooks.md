@@ -76,19 +76,23 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 ### ⚠️ CSS 게이트 두 개
 
 **① `.sidebar`** — `s_sidebar`가 페이지를 가리지 않아 **모든 페이지 DOM에 남는다.**
-빈 채로 여백만 차지하지 않도록 body_id로 잠근다.
+빈 채로 여백만 차지하지 않도록 body_id로 잠근다. 켜는 곳은 홈·글·목록 4종이고,
+자리는 **왼쪽**이다(결정 30). 방명록·보호글은 1단이라 끈다.
 
 **② `.post-list`** — `s_list`는 홈에서도 렌더된다(2026-08-25 실측). 지우는 게이트가
 아니라 **모양을 가르는 게이트**가 필요하다. 홈은 카드 그리드, 목록 4종은 세로 행이다.
 범위를 안 걸면 홈 카드에 밑줄이 깔리고 썸네일이 180px로 눌린다.
 
 ```css
-/* ① 사이드바 — 2단인 목록 4종에서만 */
+/* ① 사이드바 — 좌측 레일. 홈·글·목록 4종 */
 .sidebar { display: none; }
-#tt-body-category .sidebar,
-#tt-body-search   .sidebar,
-#tt-body-tag      .sidebar,
-#tt-body-archive  .sidebar { display: block; }
+#tt-body-index .sidebar, #tt-body-page .sidebar,
+#tt-body-category .sidebar, … { display: block; }
+
+/* 1025px~ : DOM은 .content → .sidebar 순서다. 왼쪽에 세우려면 명시 배치가 필요하다 */
+#tt-body-index .layout, … { grid-template-columns: var(--sidebar-w) minmax(0, 1fr); }
+#tt-body-index .sidebar, … { grid-column: 1; grid-row: 1; }
+#tt-body-index .content, … { grid-column: 2; grid-row: 1; }
 
 /* ② 목록의 모양 — 홈은 그리드 */
 #tt-body-index .post-list { display: grid; }
@@ -97,16 +101,26 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 
 `:empty`로는 잡히지 않는다. 치환자가 사라져도 줄바꿈 공백이 남아 `:empty`가 거짓이 된다.
 
-### 레이아웃 (DESIGN.md §4 E안)
+### 레이아웃 (DESIGN.md §4)
 
-`main#main.layout`이 `.content` + `.sidebar` 2칸 그리드다.
+`main#main.layout`이 `.sidebar` + `.content` 2칸 그리드다. **사이드바가 1칸이다.**
+마크업에서는 `.content`가 먼저 오므로(스크린리더·JS 없는 경로에서 본문이 먼저 읽혀야
+한다) 좌측 배치는 `grid-column`으로 명시한다. auto placement에 맡기면 오른쪽에 남는다.
 
-| body_id | 구성 |
+⚠️ **1단 페이지에는 이 규칙을 걸지 않는다.** `.content`에 `grid-column: 2`를 주면
+1칸짜리 그리드에 **암묵 열이 생겨** 본문이 오른쪽으로 밀린다.
+
+| body_id | 구성 (1025px~) |
 |---|---|
-| `tt-body-index` | 1단 (`.sidebar` 없음) — `.post-list`가 3열, **`.post:first-child`가 주목 글** |
-| `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` | 2단 — `.content` + `.sidebar` |
-| `tt-body-page` | 1단 — 목차는 `.entry-layout` 안의 `.entry-aside` |
-| `tt-body-guestbook` 외 | 1단 |
+| `tt-body-index` | 레일 + `.post-list` (1240px~ 3열, **`.post:first-child`가 주목 글**) |
+| `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` | 레일 + 목록 |
+| `tt-body-page` | 레일 + 본문 + 목차 (`.entry-aside`는 1400px~ 우측) |
+| `tt-body-guestbook` 외 | 1단, 레일 없음 |
+
+**`--page-w`는 레일 페이지에서 전부 `--wrap`(1400px)이다.** 페이지마다 폭이 다르면
+컨테이너가 다른 폭으로 가운데 정렬되어 레일 x좌표가 달라진다 — 홈에서 글로 넘어갈 때
+카테고리가 옆으로 뛴다. 본문은 `--content-w`(800px)로 잠그고 남는 자리는 비워 둔다.
+실측 1440px: 레일 x=44 폭 240 (홈·글·목록 동일), 글 본문 x=316 폭 800 (**목차 유무 무관**).
 
 **주목 글에 별도 클래스가 없는 이유**: 반복 치환자는 첫 항목을 구분해 주지 않는다.
 `#tt-body-index .post-list > .post:first-child`로 잡고 `grid-column: 1 / -1`을 준다.

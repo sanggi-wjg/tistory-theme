@@ -31,8 +31,8 @@ model: opus
 
 | 페이지 | `body_id` | 구성 |
 |---|---|---|
-| 홈 | `tt-body-index` | 주목 글 1 + 3열 카드 그리드 |
-| 목록 | `tt-body-category` 등 | 2단 — 목록 + 우측 사이드바 |
+| 홈 | `tt-body-index` | 좌측 레일 + (주목 글 1 + 3열 카드 그리드) |
+| 목록 | `tt-body-category` 등 | 좌측 레일 + 목록 |
 | 글 | `tt-body-page` | 1단 본문 + 우측 목차 |
 
 **필수 훅** (skin-style·skin-behavior와의 계약):

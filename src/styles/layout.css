@@ -39,66 +39,45 @@
   gap: var(--sp-5);
 }
 
-/* ── 게이트 ② 사이드바 — 2단인 목록 4종에서만 ───────────────────── */
+/* ── 게이트 ② 사이드바 — 좌측 레일 ───────────────────────────────
+   홈·글·목록 4종에서 켠다. 카테고리가 **전 페이지에서 같은 자리**에 오도록
+   사이드바를 통째로 왼쪽에 세웠다(결정 30). 방명록·보호글은 1단이라 끈다.
+
+   1024px 이하에서는 .layout이 1칸이라 레일이 본문 아래로 내려간다.
+   그 폭에서 240px 레일을 세우면 본문이 읽을 수 없게 좁아진다. */
 .sidebar { display: none; }
 
+#tt-body-index    .sidebar,
+#tt-body-page     .sidebar,
 #tt-body-category .sidebar,
 #tt-body-search   .sidebar,
 #tt-body-tag      .sidebar,
 #tt-body-archive  .sidebar { display: block; min-width: 0; }
 
-/* ── 1단으로 좁히는 페이지 ───────────────────────────────────────
+/* ── 페이지별 폭 ─────────────────────────────────────────────────
    본문 폭 800px은 index.xml <contentWidth>와의 계약이다(hooks.md §4).
-   글 페이지는 본문 800 + 간격 48 + 목차 240 = 1088을 담는다.
 
    --page-w를 body에서 갈아끼운다. 본체(.layout)와 광고 자리(.ad)가 같은 토큰을
-   보므로 둘이 어긋나지 않는다. .ad에 따로 max-width를 쓰면 반드시 어긋난다. */
-#tt-body-page {
-  --page-w: calc(var(--content-w) + var(--sp-7) + var(--toc-w) + var(--pad-x) * 2);
-}
+   보므로 둘이 어긋나지 않는다. .ad에 따로 max-width를 쓰면 반드시 어긋난다.
 
-#tt-body-guestbook {
-  --page-w: calc(var(--content-w) + var(--pad-x) * 2);
-}
-
-/* ── 목차가 없는 글 : 목차 없는 폭으로 갈아끼운다 ────────────────────
-   소제목 3개 미만이면 toc.js가 .is-ready를 붙이지 않아 .toc가 display:none인데
-   240px 트랙과 48px 간격은 그대로 남는다. 그러면 본문이 288px 왼쪽으로 치우친다
-   (1265px에서 좌 89 / 우 377 — qa-report F4). 실측 32%, 275편 중 약 88편이 이 경우다.
-
-   여기서도 .ad에 따로 max-width를 주지 않고 --page-w 한 곳만 갈아끼운다.
-   본체만 좁히면 광고 자리가 1128px에 남아 본문과 어긋난다 — 위 주석의 그 함정이다.
-
-   ⚠ 신호를 .toc:not(.is-ready)가 아니라 body.no-toc로 잡는 이유 — 레이아웃 시프트.
-   .is-ready는 JS가 붙인다. 그걸 조건으로 쓰면 **첫 페인트에서는 모든 글이 1단**이고
-   스크립트가 실행되는 순간 목차가 있는 글이 2단으로 바뀐다. script.js는 </body>
-   직전에 defer 없이 걸려 있어(skin.html) 네트워크가 느리면 페인트가 먼저다.
-   실측: 1400px에서 본문 좌단이 292.5 → 148.5, **144px 밀린다.**
-   목차가 있는 글이 68%이므로 그 방식은 다수를 밀어 버린다.
-
-   body.no-toc는 반대로 **목차를 못 만들 때만** toc.js가 붙인다(hooks.md §5.1).
-   기본값이 2단이므로 목차가 있는 68%는 한 픽셀도 움직이지 않고, 밀리는 것은
-   목차가 없는 32%뿐이다. 시프트 거리는 같고 대상만 줄어든다.
-
-   JS가 아예 실행되지 않으면 no-toc가 안 붙어 모든 글이 2단으로 남는다 —
-   목차 없는 글에서 F4의 치우침이 되살아난다. 그 경로는 아래 (scripting: none)이 받는다. */
-#tt-body-page.no-toc {
-  --page-w: calc(var(--content-w) + var(--pad-x) * 2);
-}
-
-/* JS가 꺼져 있으면 목차는 어떤 글에도 생기지 않는다. 전부 1단으로 둔다.
-   (scripting: none)을 모르는 브라우저는 치우침으로 떨어진다 — 깨지지는 않는다. */
-@media (scripting: none) {
-  #tt-body-page { --page-w: calc(var(--content-w) + var(--pad-x) * 2); }
-}
-
-/* 1024px 미만에서는 목차가 본문 위로 올라가 옆 트랙을 쓰지 않는다.
-   그런데 --page-w는 2단용 1,136px 그대로라 컨테이너가 본문보다 넓다.
-   본문(800)은 max-width에 걸려 왼쪽에 붙고 오른쪽에 최대 176px이 빈다
-   (1024px에서 좌 24 / 우 200 — 실측). F4와 같은 원인이 다른 폭에 남아 있던 것이다.
-   여기서도 --page-w 한 곳만 갈아끼운다. 광고 자리가 따라온다. */
+   ⚠ 레일이 서는 1025px 이상에서는 **모든 레일 페이지가 --wrap을 그대로 쓴다.**
+   페이지마다 --page-w가 다르면 컨테이너가 다른 폭으로 가운데 정렬되고,
+   그러면 좌측 레일의 x좌표가 페이지마다 달라진다 — 홈에서 글로 넘어갈 때
+   카테고리가 옆으로 뛴다. 카테고리를 한자리에 두는 것이 이 배치의 목적이므로
+   폭을 맞추는 쪽이 우선이다. 본문이 800px보다 넓어지는 일은 없다.
+   .entry-main·.entry-head가 --content-w로 잠그고 남는 자리는 비워 둔다. */
 @media (max-width: 1024px) {
   #tt-body-page { --page-w: calc(var(--content-w) + var(--pad-x) * 2); }
+}
+
+/* 글 페이지에 공지가 렌더되는지는 아직 확인하지 못했다 — 테스트 블로그에 공지가
+   0건이라 2026-08-25 배포에서도 못 봤다. 렌더된다면 콘텐츠 칸(1,064px)을 다 써서
+   제목·본문(800px)과 어긋난다. 폭을 맞춰 두면 어느 쪽이든 정렬된다. */
+#tt-body-page .notice { max-width: var(--content-w); }
+
+/* 방명록은 레일이 없다. 좁은 폭 그대로 둔다. */
+#tt-body-guestbook {
+  --page-w: calc(var(--content-w) + var(--pad-x) * 2);
 }
 
 /* ── 글 페이지 : 본문 + 목차 ─────────────────────────────────────
@@ -147,23 +126,63 @@
   }
 }
 
-/* ══ 1025px~ : 3열 · 2단 · 목차 우측 ═══════════════════════════ */
-@media (min-width: 1025px) {
-  #tt-body-index .post-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+/* ══ 1025px~ : 좌측 레일이 선다 ════════════════════════════════
+   DOM 순서는 .content → .sidebar 다(마크업에서 본문이 먼저 와야 스크린리더와
+   JS 없는 경로에서 본문이 먼저 읽힌다). 왼쪽에 세우려면 명시 배치가 필요하다 —
+   auto placement에 맡기면 순서대로 1칸·2칸에 들어가 사이드바가 오른쪽에 남는다.
 
+   1단 페이지(방명록 등)에는 이 규칙을 걸지 않는다. .content에 grid-column: 2를
+   주면 1칸짜리 그리드에 **암묵 열이 생겨** 본문이 오른쪽으로 밀린다. */
+@media (min-width: 1025px) {
+  #tt-body-index    .layout,
+  #tt-body-page     .layout,
   #tt-body-category .layout,
   #tt-body-search   .layout,
   #tt-body-tag      .layout,
   #tt-body-archive  .layout {
-    grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     align-items: start;
   }
 
+  #tt-body-index    .sidebar,
+  #tt-body-page     .sidebar,
+  #tt-body-category .sidebar,
+  #tt-body-search   .sidebar,
+  #tt-body-tag      .sidebar,
+  #tt-body-archive  .sidebar { grid-column: 1; grid-row: 1; }
+
+  #tt-body-index    .content,
+  #tt-body-page     .content,
+  #tt-body-category .content,
+  #tt-body-search   .content,
+  #tt-body-tag      .content,
+  #tt-body-archive  .content { grid-column: 2; grid-row: 1; }
+
+}
+
+/* ══ 1240px~ : 홈 3열 ══════════════════════════════════════════
+   하한의 근거 — (1240 - 여백 48 - 레일 240 - 간격 48 - 카드간격 48) / 3 = 285px.
+   280px 아래로 내려가면 카드 제목이 두 줄에서 매번 잘린다.
+   1025~1239px에서는 2열이고 카드가 332px로 오히려 넓다. */
+@media (min-width: 1240px) {
+  #tt-body-index .post-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ══ 1400px~ : 글 페이지 3단 — 레일 + 본문 + 목차 ═══════════════
+   240 + 32 + 800 + 32 + 240 + 여백 48 = 1392. --wrap 1400 안에 들어간다.
+   여기서만 .layout 간격을 --sp-6(32)로 줄인다. --sp-7(48)이면 1424가 되어
+   1440 모니터가 아슬아슬해진다.
+
+   1399px 이하에서는 목차가 본문 위 접이식으로 올라가고 레일은 그대로 남는다.
+   카테고리를 모든 데스크톱 폭에서 보이게 하는 것이 이 배치의 목적이다. */
+@media (min-width: 1400px) {
+  #tt-body-page .layout { gap: var(--sp-6); }
+
   .entry-layout {
     grid-template-columns: minmax(0, 1fr) var(--toc-w);
-    gap: var(--sp-7);
+    gap: var(--sp-6);
     align-items: start;
   }
 
@@ -174,38 +193,28 @@
     max-width: none;
   }
 
-  /* 제목 줄을 본문 칸과 정확히 맞춘다.
-     .entry-layout의 본문 트랙 = 100% - 목차 - 간격 이므로 같은 식을 쓴다. */
-  .entry-head {
-    max-width: calc(100% - var(--toc-w) - var(--sp-7));
-  }
+  /* ── 목차가 없는 글 : 트랙을 지운다 ─────────────────────────────
+     실측 32%, 275편 중 약 88편이다. 트랙만 지우고 --page-w는 건드리지 않는다.
+     .entry-main·.entry-head가 --content-w로 잠겨 있어 본문은 트랙 왼쪽에
+     그대로 남는다 — 목차 있는 글과 x좌표가 같다. 글을 넘겨도 본문이 안 움직인다.
+     오른쪽에 남는 자리는 목차가 있는 글에서 목차가 서는 자리다.
 
-  /* ── 목차가 없는 글 : 트랙도 지운다 ─────────────────────────────
-     위에서 --page-w를 840px로 줄였으니 트랙까지 지워야 한다. 안 지우면
-     800 - 48 - 240 = 512px가 되어 본문이 오히려 찌그러진다.
+     ⚠ 신호를 .toc:not(.is-ready)가 아니라 body.no-toc로 잡는 이유 — 레이아웃 시프트.
+     .is-ready는 JS가 붙인다. 그걸 조건으로 쓰면 **첫 페인트에서는 모든 글이 1칸**이고
+     스크립트가 실행되는 순간 목차가 있는 글이 2칸으로 바뀐다. script.js는 </body>
+     직전에 defer 없이 걸려 있어(skin.html) 네트워크가 느리면 페인트가 먼저다.
+     목차가 있는 글이 68%이므로 그 방식은 다수를 밀어 버린다.
 
-     .entry-head도 같은 조건을 봐야 한다. 함께 풀지 않으면 제목만 512px로 남아
-     본문과 어긋난다. 신호가 body에 붙으므로 둘 다 후손 선택자 하나로 잡힌다.
-
-     margin-inline은 지금 계산으로는 트랙이 정확히 800px이라 아무 일도 하지 않는다.
-     폭 공식이 바뀌어도 치우침이 되살아나지 않게 남겨 둔다. */
+     body.no-toc는 반대로 **목차를 못 만들 때만** toc.js가 붙인다(hooks.md §5.1).
+     기본값이 2칸이므로 68%는 한 픽셀도 움직이지 않는다. 그리고 본문 x가 고정이라
+     32%도 실제로는 움직이지 않는다 — 사라지는 것은 오른쪽 빈자리뿐이다. */
   .no-toc .entry-layout {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .no-toc .entry-layout > .entry-main {
-    margin-inline: auto;
-  }
-
-  .no-toc .entry-head {
-    max-width: var(--content-w);
-    margin-inline: auto;
-  }
-
-  /* JS가 꺼진 경로. 위 세 규칙과 값이 같아야 한다 — 함께 고친다. */
+  /* JS가 꺼진 경로. 목차는 어떤 글에도 생기지 않으므로 위와 값이 같아야 한다.
+     (scripting: none)을 모르는 브라우저는 빈 목차 트랙이 남는다 — 깨지지는 않는다. */
   @media (scripting: none) {
     .entry-layout { grid-template-columns: minmax(0, 1fr); }
-    .entry-layout > .entry-main { margin-inline: auto; }
-    .entry-head { max-width: var(--content-w); margin-inline: auto; }
   }
 }
