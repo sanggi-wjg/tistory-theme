@@ -18,18 +18,14 @@
 3. … 작업 …
 4. npm run check          ← 빌드 → 린트 → 프리뷰. 통과해야 커밋
 5. 커밋 → 푸시 → gh pr create --base main
+6. 머지되면 정리           ← 아래 「머지 후 정리」
 ```
 
 **예외는 읽기뿐이다.** 질문에 답하거나 코드를 훑어보는 것처럼 아무것도 바꾸지 않는 작업은 그냥 한다.
 
 `EnterWorktree`는 최신 `origin/main`에서 `.claude/worktrees/<이름>`에 worktree를 만들고 세션을 그리로 옮긴다. 브랜치 이름은 도구가 정한다(`worktree-<이름>`).
 
-**나올 때는 `ExitWorktree`에 `keep`을 쓴다.** `remove`는 원래 브랜치에 없는 커밋이 있으면 거부하는데, 푸시 여부를 보지 않으므로 **PR을 올린 뒤에는 항상 거부된다.** 워크트리는 PR이 머지된 뒤에 정리한다.
-
-```bash
-git worktree remove .claude/worktrees/<이름>
-git branch -D worktree-<이름>
-```
+**나올 때는 `ExitWorktree`에 `keep`을 쓴다.** `remove`는 원래 브랜치에 없는 커밋이 있으면 거부하는데, 푸시 여부를 보지 않으므로 **PR을 올린 뒤에는 항상 거부된다.**
 
 worktree 이름은 작업 범위로 짓는다 — `home-grid`, `toc-scrollspy`, `inline-fix`.
 
@@ -62,7 +58,25 @@ cmux를 쓰든 창을 여러 개 띄우든 마찬가지다. **터미널은 나�
 
 **커밋 전 필수** — `npm run check`가 통과해야 한다. 린트 오류가 남은 채로 커밋하지 않는다. 이 도메인은 조용히 실패하므로 린트가 유일한 조기 경보다.
 
-**작업 한 사이클은 PR 생성까지가 기본이다.** 사용자가 매번 요청하지 않아도 worktree → 커밋 → 푸시 → PR까지 진행한다. 다만 **PR을 merge하지는 않는다** — 병합은 사용자의 판단이다. 확신이 서지 않는 변경은 `--draft`로 연다.
+**작업 한 사이클은 PR 생성까지가 기본이다.** 사용자가 매번 요청하지 않아도 worktree → 커밋 → 푸시 → PR까지 진행한다. 다만 **PR을 merge하지는 않는다** — 병합은 사용자의 판단이다. 확신이 서지 않는 변경은 `--draft`로 연다. **머지된 뒤의 정리는 다시 내 몫이다** — 아래 「머지 후 정리」.
+
+### 머지 후 정리 — 요청을 기다리지 않는다
+
+**PR이 머지된 것을 확인하면 그 자리에서 worktree를 정리한다.** 내가 머지했든 사용자가 직접 했든 같다. 정리를 사용자 숙제로 남기면 죽은 worktree와 브랜치가 쌓이고, `git worktree list`가 길어지면 **어느 것이 살아 있는 작업인지 구분이 안 된다** — 그러면 남의 작업을 지우는 사고로 이어진다.
+
+```bash
+gh pr view <번호> --json state --jq .state     # MERGED 여야 한다. 이것부터 확인한다
+# 세션이 그 worktree 안에 있으면 ExitWorktree(keep)로 먼저 나온다 — 안에서는 지울 수 없다
+git worktree remove .claude/worktrees/<이름>
+git branch -D worktree-<이름>                  # 스쿼시 머지는 커밋을 그대로 남기지 않아 -d는 거부한다
+git push origin --delete worktree-<이름>       # 이 저장소는 머지해도 원격 브랜치를 지우지 않는다
+```
+
+**확인하지 않은 것은 지우지 않는다.** `MERGED`가 아니면 그대로 둔다. 닫히기만 한 PR(`CLOSED`)의 worktree에는 **아직 아무 데도 없는 작업**이 들어 있다.
+
+**내가 만든 것만 정리한다.** `git worktree list`에 `locked`로 뜨는 것은 다른 세션이 쓰는 중이다. git이 거부하지만, 애초에 대상으로 삼지 않는다.
+
+`git worktree remove`가 거부하면 커밋되지 않은 변경이 남은 것이다. **무엇인지 보고 나서** 판단한다 — `--force`부터 쓰지 않는다.
 
 ## 하네스: 티스토리 스킨 제작
 
@@ -88,4 +102,5 @@ cmux를 쓰든 창을 여러 개 띄우든 마찬가지다. **터미널은 나�
 | 2026-08-25 | 기본 이미지 15장 도안 + 마스크 방식 채택 | src/assets/placeholders/, scripts/gen-placeholders.py, DESIGN.md §6.2, DECISIONS.md 결정 5·6 | 마스크로 쓰면 색이 토큰에서만 나와 라이트/다크가 한 파일로 갈린다 — 28장이 15장이 되고 팔레트가 바뀌어도 도안이 따라온다 |
 | 2026-08-25 | SEO 하네스 추가 — 에이전트 `seo-auditor`, 스킬 `seo-verify-live`, 린트 `SEO001~005` | .claude/agents, .claude/skills, DECISIONS.md(결정 28), skin-deploy, skin-qa-check | 레딧 SEO 워크플로 검토 결과, 5단계 중 **배포 후 프로덕션 실물 검증**이 우리에게 가장 잘 맞고 지금 없었다. 배포가 수동 복붙이라 소스와 프로덕션이 갈라지는 경로가 여럿인데 소스 린트가 하나도 못 잡는다. 동시에 실측으로 **모바일 우선 색인이 커스텀 스킨을 통째로 우회한다**는 것을 확인했다 |
 | 2026-08-25 | 스킨 첫 구현 — 훅 계약을 `docs/`로 이동, 린트 `SUB007`, 렌더러 8 → 10페이지 | src/ 전체, docs/hooks.md, skin-qa-check, skin-preview | `_workspace/`가 gitignore라 CSS 주석이 참조하는 계약 문서가 저장소에 없었다. 렌더러가 공지와 "목차 있는 글"을 한 번도 렌더하지 않아 그 안의 결함을 눈으로 찾아야 했다 |
+| 2026-08-25 | 머지 후 worktree 정리를 자동 절차로 | CLAUDE.md | 정리를 사용자 숙제로 남기면 죽은 worktree가 쌓이고, 목록이 길어지면 살아 있는 작업과 구분이 안 된다. 머지 확인(`MERGED`)을 조건으로 달아 닫히기만 한 PR의 작업은 지우지 않게 했다 |
 | 2026-08-25 | 라이브 검증 대상을 대상 블로그에서 찾도록 — `--post-path`·`--category`, baseline에 대상 고정 | seo-verify-live, skin-deploy | 테스트 블로그 첫 baseline이 `V014`로 저장되지 않았다. 검증기가 `data/posts.json`(본 블로그 실측)의 글·카테고리를 테스트 블로그에 붙여 404를 냈다. 실측이 늘어도 배포 전/후가 같은 글을 비교하도록 기준선에 대상을 박았다 |
