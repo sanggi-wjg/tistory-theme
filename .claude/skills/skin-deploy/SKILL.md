@@ -52,7 +52,7 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 8개 페이지 육안 
 `index.xml`의 `<tree>`가 색을 **라이트 기준값으로만** 갖고 있다 (`color=4d4d4d` `bgColor=ffffff`).
 티스토리가 이 값을 인라인 `style`로 박으면 우리 CSS(`tistory.css`의 `.tt_category a`)는 **이길 수 없다** —
 이 스킨의 수기 CSS에는 `!important`가 0개다. 그러면 다크에서 `#4d4d4d` on `#000000` = **대비 2.44:1**,
-사이드바에서 가장 큰 모듈(47줄)이 읽히지 않는다.
+사이드바에서 가장 큰 모듈(35줄)이 읽히지 않는다.
 
 - [ ] 카테고리 페이지 → **다크로 전환** → 사이드바 트리 글자가 읽히는가
 - [ ] 개발자도구로 `.tt_category a`에 **인라인 `style`이 박혔는지** 확인
