@@ -1,7 +1,8 @@
 // 티스토리 스킨 빌드.
 //
-// 산출물은 붙여넣는 파일 3개 + 업로드하는 파일 1개여야 한다. 배포를 사람이 손으로 하기 때문이다.
+// 산출물은 붙여넣는 파일 3개 + 업로드하는 파일 5개여야 한다. 배포를 사람이 손으로 하기 때문이다.
 // images/에 파일이 2개 이상 생기면 설계가 잘못된 것이다 — 기본이미지 SVG는 data: URI로 CSS에 인라인한다.
+// 미리보기 4종은 images/에 세지 않는다. 파일업로드 탭이 그 이름들만 스킨 루트로 보낸다(2026-08-25 실측).
 //
 //   node scripts/build.mjs
 //   node scripts/build.mjs --watch
@@ -209,14 +210,16 @@ async function run() {
   const js = await buildJs()
   if (js) await writeFile(path.join(DIST, 'images', 'script.js'), js)
 
-  // 스킨 미리보기 이미지가 있으면 그대로 복사한다
+  // 스킨 미리보기 이미지가 있으면 스킨 **루트**로 복사한다.
+  // 티스토리는 여기서 찾는다 — images/ 아래가 아니다.
   const prev = path.join(SRC, 'preview')
   if (existsSync(prev)) await cp(prev, DIST, { recursive: true })
 
   const uploads = existsSync(path.join(DIST, 'images'))
     ? (await readdir(path.join(DIST, 'images'))).length : 0
   console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? '✓' : '—'}` +
-              `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개`)
+              `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
+              `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}`)
   if (uploads > 1) {
     console.warn('  ⚠️ images/에 파일이 2개 이상이다. 배포가 수동이므로 1개로 줄여야 한다 —\n' +
                  '     SVG는 data: URI로 CSS에 인라인하고, 폰트는 CDN에서 받는다.')

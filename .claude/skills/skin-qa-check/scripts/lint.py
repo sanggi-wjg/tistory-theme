@@ -111,6 +111,28 @@ def lint_substitutions(skin, xml, wl):
         err("SUB006", "<s_t3>가 없다. 티스토리 공통 JS가 삽입되지 않아 댓글·공유가 전부 죽는다.",
             "src/skin.html")
 
+    # SUB008 — s_article_rep의 하위 영역은 반드시 그 안에 있어야 한다.
+    #
+    # 2026-08-25 배포에서 실제로 당했다. <s_permalink_article_rep>를 최상위에 두었더니
+    # 티스토리가 그 영역을 **통째로 버렸다** — 글 페이지에 본문·제목·목차·관련글이
+    # 하나도 없었고, 에러도 빈 껍데기도 없었다. 홈은 s_list가 대신 그려 줘서
+    # 멀쩡해 보였기 때문에 발견이 더 늦었다.
+    #
+    # 짝 검사(SUB005)로는 절대 못 잡는다 — 짝은 맞고 위치만 틀리기 때문이다.
+    for child in ("s_permalink_article_rep", "s_index_article_rep"):
+        if child not in used_g:
+            continue
+        for m in re.finditer(r"<%s(?:\s[^>]*)?>" % child, skin, re.I):
+            before = skin[:m.start()]
+            opened = len(re.findall(r"<s_article_rep(?:\s[^>]*)?>", before, re.I))
+            closed = len(re.findall(r"</s_article_rep>", before, re.I))
+            if opened <= closed:
+                err("SUB008", "<%s>가 <s_article_rep> 바깥에 있다. 이건 독립 영역이 아니라 "
+                    "s_article_rep의 하위 영역이라, 바깥에 두면 티스토리가 통째로 버린다 — "
+                    "에러도 빈 껍데기도 없이 글 본문이 사라진다 (DECISIONS.md 결정 29)." % child,
+                    "src/skin.html")
+                break
+
     info("치환자: 그룹 %d종 / 값 %d종 사용" % (len(used_g), len(used_v)))
 
 

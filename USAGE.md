@@ -74,10 +74,16 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py \
 스킨 편집기에 이 순서로 올린다.
 
 1. `dist/images/script.js` — 파일업로드 (동명 파일이 있으면 먼저 삭제)
-2. `dist/style.css` — CSS 탭
-3. `dist/skin.html` — HTML 탭
-4. `dist/index.xml` — **바꿀 내용이 없으면 올리지 않는다.** 올리면 스킨 설정이 전부 초기화된다
-5. 저장 → 미리보기로 확인 → 적용
+2. `dist/preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg` — 파일업로드.
+   **바뀌었을 때만.** 이 이름들은 `images/`가 아니라 스킨 **루트**로 간다 —
+   목적지가 파일명으로 갈린다(공식 문서에 없는 동작, 2026-08-25 실측).
+   없으면 관리 화면과 스킨 보관함에 깨진 이미지가 뜬다
+3. `dist/style.css` — CSS 탭
+4. `dist/skin.html` — HTML 탭
+5. `dist/index.xml` — **바꿀 내용이 없으면 올리지 않는다.** 올리면 스킨 설정이 전부 초기화된다
+6. 저장 → 미리보기로 확인 → 적용
+
+zip 업로드는 받지 않는다. 스킨 보관함의 "직접 업로드" 경로는 동작하지 않았다.
 
 ### 배포 후
 

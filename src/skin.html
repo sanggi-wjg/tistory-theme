@@ -65,10 +65,10 @@ gtag('config', 'G-PHQ5FKMZ37');
              클라우드 .tagcloud-title (s_tag)
              방명록 .guestbook-title  (s_guest)
 
-           **홈에는 h1이 없다. 알고 남긴 예외다.** 티스토리에는 홈에서 한 번만
-           렌더되는 영역이 없어(areaScope의 홈은 s_index_article_rep 반복과
-           커버뿐) 홈 전용 h1을 놓을 자리가 없다. 홈의 이름은 <title>과
-           아래 링크 텍스트가 담는다. 자세한 것은 DESIGN.md §3. -->
+           **홈도 .list-title이 h1을 갖는다.** 목록 영역은 홈에서도 렌더되고,
+           거기서 [##_list_conform_##]이 "전체 글"로 채워진다(2026-08-25 실측).
+           예전에는 홈만 h1이 없는 예외였는데, 그건 홈 목록을 s_index_article_rep로
+           그리려다 그 영역이 통째로 죽어서 생긴 착시였다. 자세한 것은 DESIGN.md §3. -->
       <a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a>
       <p class="brand-desc">[##_desc_##]</p>
     </div>
@@ -130,34 +130,6 @@ gtag('config', 'G-PHQ5FKMZ37');
   </article>
   </s_notice_rep>
 
-  <!-- ────────── 홈 : 주목 글 1 + 3열 카드 그리드 ──────────
-       .card-grid의 자식은 반드시 .post 뿐이어야 한다.
-       주목 글은 .card-grid > .post:first-child 로 잡는다 (반복 치환자는 첫 항목을 표시해 주지 않는다).
-       .card-grid는 모든 페이지 DOM에 남으므로 layout.css가 body_id로 잠근다 — hooks.md §1
-       커버로 전환할 때는 이 블록만 통째로 커버 치환자로 감싼다 (결정 4). -->
-  <div class="card-grid">
-    <s_index_article_rep>
-    <article class="post" data-cat="[##_article_rep_category_##]">
-      <a class="post-link" href="[##_article_rep_link_##]">
-        <span class="thumb">
-          <s_article_rep_thumbnail>
-          <img class="thumb-img" src="[##_article_rep_thumbnail_url_##]" alt="" loading="lazy" decoding="async">
-          </s_article_rep_thumbnail>
-        </span>
-        <span class="post-text">
-          <span class="post-cat">[##_article_rep_category_##]</span>
-          <strong class="post-title">[##_article_rep_title_##]</strong>
-          <span class="post-excerpt">[##_article_rep_summary_##]</span>
-          <span class="post-meta">
-            <time class="post-date">[##_article_rep_simple_date_##]</time>
-            <s_rp_count><span class="post-rp">[##_article_rep_rp_cnt_##]</span></s_rp_count>
-          </span>
-        </span>
-      </a>
-    </article>
-    </s_index_article_rep>
-  </div>
-
   <!-- ────────── 목록 : 카테고리 · 검색 · 태그 · 보관함 ────────── -->
   <s_list>
   <section class="list">
@@ -215,7 +187,14 @@ gtag('config', 'G-PHQ5FKMZ37');
   </section>
   </s_tag>
 
-  <!-- ────────── 글 (퍼머링크) ────────── -->
+  <!-- ────────── 글 (퍼머링크) ──────────
+       ⚠ 아래 s_permalink_article_rep는 s_article_rep의 **하위 영역**이다. 바깥에 두면
+         티스토리가 통째로 버린다 — 에러도 빈 껍데기도 없이 글 본문이 사라진다.
+         2026-08-25 배포에서 실제로 당했다 (DECISIONS.md 결정 29). 린트 SUB008이 지킨다.
+         s_article_rep는 글 하나당 한 번 도는 반복 영역이고 자기 마크업은 없다.
+         목록 페이지에서는 안쪽이 비므로 아무것도 출력하지 않는다.
+         ※ 주석에 꺾쇠를 쓰지 않는 이유는 위 공지 블록 주석과 같다 — 린트 SUB007. -->
+  <s_article_rep>
   <s_permalink_article_rep>
   <article class="entry">
     <div class="reading-progress" id="reading-progress"><span class="reading-progress-bar"></span></div>
@@ -309,6 +288,7 @@ gtag('config', 'G-PHQ5FKMZ37');
     </div>
   </article>
   </s_permalink_article_rep>
+  </s_article_rep>
 
   <!-- ────────── 보호글 ────────── -->
   <s_article_protected>

@@ -27,8 +27,8 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
   ├ main#main.layout
   │  ├ .content
   │  │  ├ article.notice           (공지)
-  │  │  ├ .card-grid > article.post (홈)
-  │  │  ├ section.list             (카테고리·검색·태그·보관함)
+  │  │  ├ section.list             (홈·카테고리·검색·태그·보관함)
+  │  │  │   └ .post-list > article.post
   │  │  ├ section.tagcloud         (/tag 클라우드)
   │  │  ├ article.entry            (글)
   │  │  ├ section.protected        (보호글)
@@ -50,33 +50,49 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 | 영역 | 클래스 | 감싸는 치환자 | 존재하는 body_id |
 |---|---|---|---|
 | 공지 | `article.notice` | `s_notice_rep` | 공지 글 (그리고 홈에 노출될 수 있음 — §9 미확인) |
-| 홈 그리드 | `div.card-grid` | 없음 ⚠️ | **모든 페이지** (내용만 홈에서 채워짐) |
-| 목록 | `section.list` | `s_list` | `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` |
+| 목록 | `section.list` | `s_list` | **`tt-body-index`** `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` |
 | 태그 클라우드 | `section.tagcloud` | `s_tag` | `tt-body-tag` (`/tag`) |
-| 글 | `article.entry` | `s_permalink_article_rep` | `tt-body-page` |
+| 글 | `article.entry` | `s_article_rep` > `s_permalink_article_rep` ⚠️ | `tt-body-page` |
 | 보호글 | `section.protected` | `s_article_protected` | 보호글 |
 | 방명록 | `section.guestbook` | `s_guest` | `tt-body-guestbook` |
 | 페이징 | `nav.paging` | `s_paging` | 홈·목록 |
 | 사이드바 | `aside.sidebar` | `s_sidebar` | **모든 페이지** ⚠️ |
 
-### ⚠️ CSS가 반드시 써야 하는 게이트 두 개
+### ⚠️ `<s_permalink_article_rep>`는 `<s_article_rep>` 안에 있어야 한다
 
-`.card-grid`와 `.sidebar`는 치환자로 지울 수 없어 **모든 페이지의 DOM에 남는다.**
-(`.card-grid`는 반복 치환자 `s_index_article_rep`를 감싸야 해서 바깥에 있어야 하고,
-`.sidebar`는 `s_sidebar`가 페이지를 가리지 않는다.)
-빈 채로 여백만 차지하지 않도록 `layout.css`가 body_id로 잠근다:
+`s_permalink_article_rep`와 `s_index_article_rep`는 **독립 영역이 아니라 `s_article_rep`의
+하위 영역**이다. 바깥에 두면 티스토리가 통째로 버린다 — 에러도, 빈 껍데기도 없이 사라진다.
+2026-08-25 배포에서 실제로 겪었다: 글 페이지에 본문·제목·목차·관련글이 전부 없었고,
+홈은 `s_list`가 대신 그려 준 덕에 멀쩡해 보였다. 린트 `SUB008`이 지킨다.
+
+```html
+<s_article_rep>            <!-- 글 하나당 한 번. 자기 마크업은 없다 -->
+  <s_permalink_article_rep>
+    <article class="entry">…</article>
+  </s_permalink_article_rep>
+</s_article_rep>
+```
+
+### ⚠️ CSS 게이트 두 개
+
+**① `.sidebar`** — `s_sidebar`가 페이지를 가리지 않아 **모든 페이지 DOM에 남는다.**
+빈 채로 여백만 차지하지 않도록 body_id로 잠근다.
+
+**② `.post-list`** — `s_list`는 홈에서도 렌더된다(2026-08-25 실측). 지우는 게이트가
+아니라 **모양을 가르는 게이트**가 필요하다. 홈은 카드 그리드, 목록 4종은 세로 행이다.
+범위를 안 걸면 홈 카드에 밑줄이 깔리고 썸네일이 180px로 눌린다.
 
 ```css
-/* 홈 그리드 — 홈에서만 */
-.card-grid { display: none; }
-#tt-body-index .card-grid { display: grid; }
-
-/* 사이드바 — 2단인 목록 4종에서만 */
+/* ① 사이드바 — 2단인 목록 4종에서만 */
 .sidebar { display: none; }
 #tt-body-category .sidebar,
 #tt-body-search   .sidebar,
 #tt-body-tag      .sidebar,
 #tt-body-archive  .sidebar { display: block; }
+
+/* ② 목록의 모양 — 홈은 그리드 */
+#tt-body-index .post-list { display: grid; }
+#tt-body-category .post-list, … { display: flex; flex-direction: column; }
 ```
 
 `:empty`로는 잡히지 않는다. 치환자가 사라져도 줄바꿈 공백이 남아 `:empty`가 거짓이 된다.
@@ -87,14 +103,14 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 
 | body_id | 구성 |
 |---|---|
-| `tt-body-index` | 1단 (`.sidebar` 없음) — `.card-grid`가 3열, **`.post:first-child`가 주목 글** |
+| `tt-body-index` | 1단 (`.sidebar` 없음) — `.post-list`가 3열, **`.post:first-child`가 주목 글** |
 | `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` | 2단 — `.content` + `.sidebar` |
 | `tt-body-page` | 1단 — 목차는 `.entry-layout` 안의 `.entry-aside` |
 | `tt-body-guestbook` 외 | 1단 |
 
 **주목 글에 별도 클래스가 없는 이유**: 반복 치환자는 첫 항목을 구분해 주지 않는다.
-`.card-grid > .post:first-child`로 잡고 `grid-column: 1 / -1`을 준다.
-그래서 **`.card-grid`의 자식은 `.post`뿐이어야 한다** — 광고·공지를 안에 넣으면 `:first-child`가 깨진다.
+`#tt-body-index .post-list > .post:first-child`로 잡고 `grid-column: 1 / -1`을 준다.
+그래서 **`.post-list`의 자식은 `.post`뿐이어야 한다** — 광고·공지를 안에 넣으면 `:first-child`가 깨진다.
 
 ---
 
@@ -138,18 +154,24 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 **카테고리가 링크가 아닌 이유**: 카드 전체를 하나의 `<a>`로 만들었다. 중첩 앵커는 무효 HTML이고
 `:has()` 없이는 클릭 영역이 갈라진다. 카테고리로 가는 링크는 사이드바 트리와 글 페이지에 있다.
 
-### 치환자 대응표 (⚠️ 섞으면 빈 화면)
+### 카드는 `s_list_rep` 한 벌뿐이다
 
-| 자리 | 홈 (`s_index_article_rep`) | 목록 (`s_list_rep`) |
-|---|---|---|
-| `data-cat` | `[##_article_rep_category_##]` | `[##_list_rep_category_##]` |
-| 링크 | `[##_article_rep_link_##]` | `[##_list_rep_link_##]` |
-| 썸네일 조건 | `s_article_rep_thumbnail` | `s_list_rep_thumbnail` |
-| 썸네일 src | `[##_article_rep_thumbnail_url_##]` | `[##_list_rep_thumbnail_##]` |
-| 제목 | `[##_article_rep_title_##]` | **`[##_list_rep_title_text_##]`** (`_title_`엔 New 아이콘 img가 섞인다) |
-| 요약 | `[##_article_rep_summary_##]` | `[##_list_rep_summary_##]` |
-| 날짜 | `[##_article_rep_simple_date_##]` | `[##_list_rep_regdate_##]` |
-| 댓글 수 | `[##_article_rep_rp_cnt_##]` (`s_rp_count` 안) | `[##_list_rep_rp_cnt_##]` |
+홈도 목록도 같은 `s_list_rep` 마크업을 쓴다. 예전에는 홈을 `s_index_article_rep`로
+따로 그렸는데, 그 영역이 `s_article_rep` 밖에 있어 통째로 죽어 있었다(§1 경고).
+`s_list`가 홈에서도 정상 동작하는 것을 확인하고 한 벌로 합쳤다.
+
+| 자리 | 치환자 |
+|---|---|
+| `data-cat` | `[##_list_rep_category_##]` |
+| 링크 | `[##_list_rep_link_##]` |
+| 썸네일 조건 | `s_list_rep_thumbnail` |
+| 썸네일 src | `[##_list_rep_thumbnail_##]` |
+| 제목 | **`[##_list_rep_title_text_##]`** (`_title_`엔 New 아이콘 img가 섞인다) |
+| 요약 | `[##_list_rep_summary_##]` |
+| 날짜 | `[##_list_rep_regdate_##]` |
+| 댓글 수 | `[##_list_rep_rp_cnt_##]` |
+
+⚠️ 글 페이지 안에서는 `[##_article_rep_*_##]`를 쓴다. 목록 치환자와 섞으면 빈 화면이 된다.
 
 ---
 
