@@ -1,0 +1,2659 @@
+{
+  "taxonomy": [
+    {
+      "top": "언어 & 런타임",
+      "subs": [
+        {
+          "name": "Python 기초 & 도구",
+          "count": 9
+        },
+        {
+          "name": "Python 성능 & 동시성",
+          "count": 14
+        },
+        {
+          "name": "Python 활용 & 오픈소스",
+          "count": 8
+        },
+        {
+          "name": "JVM (Java · Kotlin)",
+          "count": 5
+        },
+        {
+          "name": "Go",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "top": "백엔드 & 아키텍처",
+      "subs": [
+        {
+          "name": "Spring",
+          "count": 4
+        },
+        {
+          "name": "웹 프레임워크",
+          "count": 12
+        },
+        {
+          "name": "분산 시스템 & MSA",
+          "count": 12
+        },
+        {
+          "name": "설계 원칙 & 패턴",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "top": "데이터",
+      "subs": [
+        {
+          "name": "MySQL",
+          "count": 19
+        },
+        {
+          "name": "데이터베이스 기초",
+          "count": 4
+        },
+        {
+          "name": "NoSQL & 검색 엔진",
+          "count": 5
+        },
+        {
+          "name": "데이터 파이프라인",
+          "count": 11
+        }
+      ]
+    },
+    {
+      "top": "인프라 & 운영",
+      "subs": [
+        {
+          "name": "쿠버네티스 & 컨테이너",
+          "count": 8
+        },
+        {
+          "name": "로그 & 모니터링",
+          "count": 15
+        },
+        {
+          "name": "리눅스 서버 운영",
+          "count": 6
+        },
+        {
+          "name": "네트워크",
+          "count": 6
+        },
+        {
+          "name": "CI/CD",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "top": "코드 품질",
+      "subs": [
+        {
+          "name": "Clean Code",
+          "count": 16
+        },
+        {
+          "name": "리팩토링",
+          "count": 9
+        },
+        {
+          "name": "테스트",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "top": "웹 & 보안",
+      "subs": [
+        {
+          "name": "HTTP & 브라우저",
+          "count": 10
+        },
+        {
+          "name": "보안",
+          "count": 13
+        }
+      ]
+    },
+    {
+      "top": "AI",
+      "subs": [
+        {
+          "name": "LLM 활용 & 에이전트",
+          "count": 6
+        },
+        {
+          "name": "Langchain",
+          "count": 9
+        },
+        {
+          "name": "로컬 모델",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "top": "알고리즘 & CS",
+      "subs": [
+        {
+          "name": null,
+          "count": 15
+        }
+      ]
+    },
+    {
+      "top": "개발 도구",
+      "subs": [
+        {
+          "name": "Git",
+          "count": 9
+        },
+        {
+          "name": "에디터 & 터미널",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "top": "기록",
+      "subs": [
+        {
+          "name": "책",
+          "count": 2
+        },
+        {
+          "name": "일상",
+          "count": 2
+        },
+        {
+          "name": "개발자 생각",
+          "count": 3
+        }
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "index": 0,
+      "title": "타이밍 어택, 어디까지 막아야 할까? == 비교부터 프레임워크 CVE까지",
+      "date": "2026.08.12",
+      "from": "IT",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 1,
+      "title": "AI 코딩 에이전트 git worktree 병렬 개발의 테스트 인프라, Testcontainers로 전환하기 - 2편",
+      "date": "2026.07.17",
+      "from": "IT",
+      "to": "코드 품질/테스트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 2,
+      "title": "AI 코딩 에이전트 git worktree 병렬 개발의 테스트 인프라, Testcontainers로 전환하기 - 1편",
+      "date": "2026.07.17",
+      "from": "IT",
+      "to": "코드 품질/테스트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 3,
+      "title": "Chrome Local Overrides로 API 응답을 변경하고 UI를 테스트하는 방법",
+      "date": "2026.06.19",
+      "from": "IT",
+      "to": "코드 품질/테스트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 4,
+      "title": "맛있는 치킨스톡",
+      "date": "2026.05.29",
+      "from": "일상",
+      "to": "기록/일상",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 5,
+      "title": "출근길, 직우차로 한대의 경찰차",
+      "date": "2026.05.27",
+      "from": "일상",
+      "to": "기록/일상",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 6,
+      "title": "유출된 AWS AccessKey 무중단 교체하기: 출근길에마주한 IAM 유저 생성 시도 알림",
+      "date": "2026.05.22",
+      "from": "IT",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 7,
+      "title": "K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 3편: HikariCP 설정으로인한 Socket 메모리 누수",
+      "date": "2026.05.09",
+      "from": "Kotlin & Java/Spring",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": "OOMKilled 3부작 — Spring Boot 앱 문제이지만 K8s 운영 트러블슈팅으로 판단"
+    },
+    {
+      "index": 8,
+      "title": "K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 2편: K8s 팟 힙 덤프 추출과 논힙 메모리 추적",
+      "date": "2026.04.21",
+      "from": "Kotlin & Java/Spring",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 9,
+      "title": "K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기 - 1편: OOM 레벨 구분과 QoS 확인",
+      "date": "2026.04.06",
+      "from": "Kotlin & Java/Spring",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 10,
+      "title": "통신사별 DNS IP 리스트 (구글, SKT, KT, LG, Cloudflare)",
+      "date": "2026.04.02",
+      "from": "IT",
+      "to": "인프라 & 운영/네트워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 11,
+      "title": "K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 3편: Argo Workflows로 스케줄링하기",
+      "date": "2026.03.27",
+      "from": "Kotlin & Java/Spring",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": "Argo 전환 3부작 — Spring Batch 설계가 절반이지만 K8s 스케줄링이 주제"
+    },
+    {
+      "index": 12,
+      "title": "K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 2편: Spring Batch REST API 서버 설계",
+      "date": "2026.03.27",
+      "from": "Kotlin & Java/Spring",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 13,
+      "title": "K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 1편: CronJob 문제와 스케줄러 선택",
+      "date": "2026.03.27",
+      "from": "Kotlin & Java/Spring",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 14,
+      "title": "구글 제미나이(Gemini), 데스크탑 앱처럼 쓰는 방법 - PWA 설치 가이드",
+      "date": "2026.03.26",
+      "from": "IT/AI",
+      "to": "AI/LLM 활용 & 에이전트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 15,
+      "title": "쿠버네티스 패턴 (빌긴 이브리암 , 롤란트 후스 저자), 후기",
+      "date": "2026.03.18",
+      "from": "책책책 책을 읽읍시다",
+      "to": "기록/책",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 16,
+      "title": "터미널 오픈소스 도구 모음: btop, k9s, Mole, Sniffnet",
+      "date": "2026.02.11",
+      "from": "IT",
+      "to": "개발 도구/에디터 & 터미널",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 17,
+      "title": "속도의 병목이 이동하고 있다",
+      "date": "2026.02.10",
+      "from": "IT/AI",
+      "to": "AI/LLM 활용 & 에이전트",
+      "hasThumbnail": false,
+      "review": "'속도의 병목이 이동하고 있다' — 에세이라 기록/개발자 생각으로 볼 수도"
+    },
+    {
+      "index": 18,
+      "title": "Git Worktree 주요 명령어 정리 (add / list / remove)",
+      "date": "2026.02.05",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 19,
+      "title": "Run Claude Code with Ollama Local & Cloud Models",
+      "date": "2026.02.05",
+      "from": "IT/AI",
+      "to": "AI/로컬 모델",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 20,
+      "title": "백엔드 관점에서 본 개인정보 보호법 및 안전성 확보조치 핵심 요약",
+      "date": "2025.12.03",
+      "from": "IT",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 21,
+      "title": "다중 DataSource 환경에서 장애 격리하기: LazyConnectionDataSourceProxy 활용기",
+      "date": "2025.12.01",
+      "from": "Kotlin & Java/Spring",
+      "to": "백엔드 & 아키텍처/Spring",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 22,
+      "title": "2025년 실서비스 보안 취약점 발견 후기",
+      "date": "2025.11.28",
+      "from": "IT",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 23,
+      "title": "프로그래머의 뇌, 후기",
+      "date": "2025.10.22",
+      "from": "책책책 책을 읽읍시다",
+      "to": "기록/책",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 24,
+      "title": "[Mac] 맥 환경, Jetbrains IDE 과거 버전 삭제",
+      "date": "2025.08.08",
+      "from": "IT",
+      "to": "개발 도구/에디터 & 터미널",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 25,
+      "title": "좋은 엔지니어 되기: 핵심 원칙과 실천 방안",
+      "date": "2025.05.26",
+      "from": "IT",
+      "to": "기록/개발자 생각",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 26,
+      "title": "Jira와 GitHub 연동을 통한 태스크 상태 전환 및 버전 릴리스 자동화",
+      "date": "2025.05.02",
+      "from": "IT",
+      "to": "인프라 & 운영/CI/CD",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 27,
+      "title": "JVM Garbage Collection Tuning - Spring Boot GC 부하 테스트",
+      "date": "2025.04.10",
+      "from": "Kotlin & Java",
+      "to": "언어 & 런타임/JVM (Java · Kotlin)",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 28,
+      "title": "JVM Garbage Collection Algorithm",
+      "date": "2025.04.10",
+      "from": "Kotlin & Java",
+      "to": "언어 & 런타임/JVM (Java · Kotlin)",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 29,
+      "title": "JVM Garbage Collection",
+      "date": "2025.04.06",
+      "from": "Kotlin & Java",
+      "to": "언어 & 런타임/JVM (Java · Kotlin)",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 30,
+      "title": "HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/3",
+      "date": "2025.04.01",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 31,
+      "title": "Consistent hashing, 일관된 해싱",
+      "date": "2025.03.29",
+      "from": "IT/알고리즘",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 32,
+      "title": "[분산 시스템] Raft Consensus Algorithm, 뗏목 합의 알고리즘",
+      "date": "2025.03.27",
+      "from": "Infrastructure",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 33,
+      "title": "[분산 시스템] CAP Theorem: Consistency, Availability, Partition tolerance",
+      "date": "2025.03.26",
+      "from": "Infrastructure",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 34,
+      "title": "Ollama Model Update 모델 일괄 업데이트 방법",
+      "date": "2025.01.15",
+      "from": "IT/AI",
+      "to": "AI/로컬 모델",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 35,
+      "title": "HTTP (Hypertext Transfer Protocol) 개념알기, HTTP/2",
+      "date": "2024.12.25",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 36,
+      "title": "HTTP (Hypertext Transfer Protocol) 개념알기",
+      "date": "2024.12.24",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 37,
+      "title": "의존성 주입에 대한 생각",
+      "date": "2024.12.19",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 38,
+      "title": "[AI] 오디오 녹음 요약하기 (OpenAI Whisper, Langchain, Exaone)",
+      "date": "2024.12.14",
+      "from": "IT/AI",
+      "to": "AI/Langchain",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 39,
+      "title": "ORM 사용에 관한 에이전트 토론 들어보기",
+      "date": "2024.12.12",
+      "from": "IT/AI",
+      "to": "AI/LLM 활용 & 에이전트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 40,
+      "title": "[Langchain] Chatbot 챗봇 구현",
+      "date": "2024.12.09",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 41,
+      "title": "[Langchain] 이미지 분석",
+      "date": "2024.12.07",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 42,
+      "title": "[Langchain] 계엄령 기념, 집밥 같은 랭체인 코드로 계엄령 뉴스 보기",
+      "date": "2024.12.05",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 43,
+      "title": "[Langchain] AI vs AI 토론을 가장한 말싸움 하기",
+      "date": "2024.12.02",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 44,
+      "title": "[Stable Diffusion] Stable Diffusion 3.5 Text to Image 이미지 생성",
+      "date": "2024.11.28",
+      "from": "IT/AI",
+      "to": "AI/로컬 모델",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 45,
+      "title": "[Langchain] 웹 요약 Agent",
+      "date": "2024.11.26",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 46,
+      "title": "[Langchain] PDF 요약 Agent",
+      "date": "2024.11.25",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 47,
+      "title": "[Langchain] Math Agent",
+      "date": "2024.11.25",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 48,
+      "title": "[Langchain] 네이버 뉴스 요약",
+      "date": "2024.11.24",
+      "from": "IT/Langchain",
+      "to": "AI/Langchain",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 49,
+      "title": "Prompt Engineering Guide: Prompting Techniques",
+      "date": "2024.11.24",
+      "from": "IT/AI",
+      "to": "AI/LLM 활용 & 에이전트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 50,
+      "title": "Prompt Engineering Guide: LLM Arguments",
+      "date": "2024.11.22",
+      "from": "IT/AI",
+      "to": "AI/LLM 활용 & 에이전트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 51,
+      "title": "Ollama로 Github PR AI 코드 리뷰 하기",
+      "date": "2024.08.07",
+      "from": "IT/AI",
+      "to": "AI/로컬 모델",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 52,
+      "title": "[AI] Markdown 을 사용한 Prompts 작성 방법",
+      "date": "2024.08.06",
+      "from": "IT/AI",
+      "to": "AI/LLM 활용 & 에이전트",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 53,
+      "title": "멱등성 (Idempotence)와 HTTP API 설계",
+      "date": "2024.08.01",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 54,
+      "title": "Kotlin + Spring Boot 에서 data class 구현으로 Validation 로직 작성하기",
+      "date": "2024.07.28",
+      "from": "Kotlin & Java/Spring",
+      "to": "백엔드 & 아키텍처/Spring",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 55,
+      "title": "[Gradle] Gradle dependency (그래들 종속성 선언)",
+      "date": "2024.03.10",
+      "from": "Kotlin & Java",
+      "to": "언어 & 런타임/JVM (Java · Kotlin)",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 56,
+      "title": "[CDC] MySQL Debezium Change Data Capture 따라해보기 - 3",
+      "date": "2024.03.08",
+      "from": "Infrastructure/CDC",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 57,
+      "title": "[Jetbrains]  Intellij 인텔리제이 Live Template 사용 방법",
+      "date": "2024.02.26",
+      "from": "IT",
+      "to": "개발 도구/에디터 & 터미널",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 58,
+      "title": "[MySQL] Table lock 조회 쿼리",
+      "date": "2024.02.15",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 59,
+      "title": "[CDC] MySQL Debezium Change Data Capture 따라해보기 - 2",
+      "date": "2024.02.10",
+      "from": "Infrastructure/CDC",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 60,
+      "title": "[CDC] MySQL Debezium Change Data Capture 따라해보기 - 1",
+      "date": "2024.02.10",
+      "from": "Infrastructure/CDC",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 61,
+      "title": "[CDC] Change Data Capture 개념",
+      "date": "2024.02.10",
+      "from": "Infrastructure/CDC",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 62,
+      "title": "Pessimistic Locking in JPA",
+      "date": "2024.02.06",
+      "from": "Kotlin & Java/Spring",
+      "to": "백엔드 & 아키텍처/Spring",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 63,
+      "title": "[AI] stable-code-3b 기본적인 사용 가이드 (AI coding)",
+      "date": "2024.01.26",
+      "from": "IT/AI",
+      "to": "AI/로컬 모델",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 64,
+      "title": "[MySQL] GROUP BY Optimization",
+      "date": "2023.12.24",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 65,
+      "title": "[Git] .gitignore 적용이 안되는 경우",
+      "date": "2023.12.12",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 66,
+      "title": "[MySQL] ORDER BY Optimization",
+      "date": "2023.12.06",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 67,
+      "title": "[통계] 정규화(Normalization)와 표준화(Standardization)",
+      "date": "2023.12.04",
+      "from": "IT/수학",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 68,
+      "title": "[Docker] 도커 사용하지 않는 볼륨, 이미지 삭제하는 방법",
+      "date": "2023.12.02",
+      "from": "Infrastructure/Docker",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 69,
+      "title": "Intellij에서 Kotlin을 Java로 변환 확인 하는 방법",
+      "date": "2023.10.29",
+      "from": "Kotlin & Java",
+      "to": "언어 & 런타임/JVM (Java · Kotlin)",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 70,
+      "title": "[Kafka] 카프카 컨슈머",
+      "date": "2023.10.29",
+      "from": "Infrastructure/Kafka",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 71,
+      "title": "[Kafka] 카프카 프로듀서",
+      "date": "2023.09.17",
+      "from": "Infrastructure/Kafka",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 72,
+      "title": "[Kafka] 카프카 메시지 브로커",
+      "date": "2023.09.17",
+      "from": "Infrastructure/Kafka",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 73,
+      "title": "[Kafka] 카프카 에러 핸들링 패턴",
+      "date": "2023.09.15",
+      "from": "Infrastructure/Kafka",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 74,
+      "title": "Jetbrains IDE용 Git 팁",
+      "date": "2023.09.13",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 75,
+      "title": "[MySQL] Show Index",
+      "date": "2023.08.24",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 76,
+      "title": "[Web Hacking] Challange 54 풀이",
+      "date": "2023.05.18",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 77,
+      "title": "[Web Hacking] Challange 24 풀이",
+      "date": "2023.05.05",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 78,
+      "title": "[Web Hacking] Challange 16 풀이",
+      "date": "2023.05.01",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 79,
+      "title": "[보안] Cookie bomb attack",
+      "date": "2023.05.01",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 80,
+      "title": "[Web Hacking] Challange 26 풀이",
+      "date": "2023.04.30",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 81,
+      "title": "[Web Hacking] Challange 15 풀이",
+      "date": "2023.04.30",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 82,
+      "title": "[보안] XSS HTML Image 태그 주의할 점 - 2",
+      "date": "2023.04.13",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 83,
+      "title": "[보안] XSS HTML Image 태그 주의할 점",
+      "date": "2023.04.08",
+      "from": "IT/Web",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 84,
+      "title": "[Python] 파이썬 Thread and Pool Manager",
+      "date": "2023.04.05",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 85,
+      "title": "[Python] 파이썬 출력 문자 색 변경하기",
+      "date": "2023.04.04",
+      "from": "Python/Open Source",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 86,
+      "title": "[Code Execution API] 1. 프로그래밍 코드 실행 API 만들어보기",
+      "date": "2023.03.22",
+      "from": "Kotlin & Java/Spring",
+      "to": "백엔드 & 아키텍처/Spring",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 87,
+      "title": "[Locust] 2. Locust를 통한 언어와 프레임워크 별 테스트",
+      "date": "2023.03.15",
+      "from": "Python/Open Source",
+      "to": "코드 품질/테스트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 88,
+      "title": "[Locust] 1. Locust 부하 테스트 툴(load testing tool)",
+      "date": "2023.03.15",
+      "from": "Python/Open Source",
+      "to": "코드 품질/테스트",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 89,
+      "title": "ChatGPT를 이용한 간단한 Web App 만들기 (python, streamlit)",
+      "date": "2023.03.14",
+      "from": "Python/Open Source",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": true,
+      "review": "ChatGPT + streamlit 웹앱 — AI/LLM 활용으로 볼 수도"
+    },
+    {
+      "index": 90,
+      "title": "[Kafka] Python confluent Kafka 설치 및 테스트",
+      "date": "2023.02.07",
+      "from": "Infrastructure/Kafka",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 91,
+      "title": "[Ubuntu 20.04] OpenVPN Server Docker 설치 및 Client",
+      "date": "2023.01.29",
+      "from": "Infrastructure/VPN",
+      "to": "인프라 & 운영/네트워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 92,
+      "title": "[Kubernetes] OpenLens 설치",
+      "date": "2023.01.09",
+      "from": "IT",
+      "to": "인프라 & 운영/쿠버네티스 & 컨테이너",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 93,
+      "title": "API, 서비스, 도메인 테스트 및 TDD 에서의 기어비",
+      "date": "2022.12.24",
+      "from": "IT",
+      "to": "코드 품질/테스트",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 94,
+      "title": "[Python] Linter 비교",
+      "date": "2022.10.31",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 95,
+      "title": "알림 서비스 디자인",
+      "date": "2022.10.08",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 96,
+      "title": "[Python] lru_cache",
+      "date": "2022.09.28",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 97,
+      "title": "[Python] Object class __slots__를 이용한 성능 개선",
+      "date": "2022.09.28",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 98,
+      "title": "[Mac] 사용 중인 Port 찾기, Kill 하기",
+      "date": "2022.09.19",
+      "from": "OS/Mac",
+      "to": "개발 도구/에디터 & 터미널",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 99,
+      "title": "[Python] Concurrency Thread Decorator - 3",
+      "date": "2022.08.14",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 100,
+      "title": "[Python] Concurrency PDF 파일 생성  - 2",
+      "date": "2022.08.12",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 101,
+      "title": "[Python] Concurrency 어떤 경우에 어떤 것을 사용하는게 좋을까 - 1",
+      "date": "2022.08.12",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 102,
+      "title": "[Go] Time",
+      "date": "2022.08.02",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 103,
+      "title": "[Go] Factory Pattern(팩토리 패턴) 구현",
+      "date": "2022.07.25",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 104,
+      "title": "[Go] Channel 이용한 Queue",
+      "date": "2022.07.24",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 105,
+      "title": "[Go] Int, String, Struct 정렬",
+      "date": "2022.07.23",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 106,
+      "title": "[Python] 음성인식(Speech Recognition) 과 TTS 구현 - 3",
+      "date": "2022.07.23",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 107,
+      "title": "[Go] Linked List 구현",
+      "date": "2022.07.23",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 108,
+      "title": "[Redis] 활용 방법",
+      "date": "2022.07.23",
+      "from": "Database/Redis",
+      "to": "데이터/NoSQL & 검색 엔진",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 109,
+      "title": "[Redis] Command",
+      "date": "2022.07.23",
+      "from": "Database/Redis",
+      "to": "데이터/NoSQL & 검색 엔진",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 110,
+      "title": "[Redis] 간단 개요",
+      "date": "2022.07.23",
+      "from": "Database/Redis",
+      "to": "데이터/NoSQL & 검색 엔진",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 111,
+      "title": "[Go] Panic recover 하기",
+      "date": "2022.07.23",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 112,
+      "title": "[Go] File 정보 확인",
+      "date": "2022.07.22",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 113,
+      "title": "[Go lang] Excel 읽기, 쓰기",
+      "date": "2022.07.22",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 114,
+      "title": "Git Commit Message Convention 정리",
+      "date": "2022.07.21",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 115,
+      "title": "[Go] variable type별 printf format",
+      "date": "2022.07.21",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 116,
+      "title": "[Go]  대용량 파일 chunk 단위로 나누기",
+      "date": "2022.07.21",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 117,
+      "title": "[Python] 음성인식(Speech Recognition) 과 TTS 구현 - 2",
+      "date": "2022.07.13",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 118,
+      "title": "[Python] 음성인식(Speech Recognition) 과 TTS 구현 - 1",
+      "date": "2022.07.13",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 119,
+      "title": "[Python] Thread와 Async를 이용한 비동기 방법",
+      "date": "2022.07.09",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 120,
+      "title": "[Python] DTO, Dataclass Validate 방법",
+      "date": "2022.07.08",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 121,
+      "title": "Ubuntu 20.04 고정 IP 할당 방법",
+      "date": "2022.05.16",
+      "from": "OS/Ubuntu",
+      "to": "인프라 & 운영/네트워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 122,
+      "title": "[Python] 후위표기법(postifx) 계산 코드",
+      "date": "2022.05.12",
+      "from": "Python/Python",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 123,
+      "title": "[MySQL] binlog to SQL(텍스트) 변환",
+      "date": "2022.05.09",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 124,
+      "title": "Python 에서 go 함수 사용 하는 방법",
+      "date": "2022.02.05",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 125,
+      "title": "Github Action",
+      "date": "2022.02.05",
+      "from": "IT/Git",
+      "to": "인프라 & 운영/CI/CD",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 126,
+      "title": "Golang",
+      "date": "2022.02.05",
+      "from": "Go",
+      "to": "언어 & 런타임/Go",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 127,
+      "title": "[백준] 4963 파이썬(python)",
+      "date": "2022.01.08",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 128,
+      "title": "[백준] 2468 파이썬(python)",
+      "date": "2022.01.08",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 129,
+      "title": "[백준] 1697 파이썬(python)",
+      "date": "2022.01.08",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 130,
+      "title": "[백준] 11403 파이썬(python)",
+      "date": "2022.01.08",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 131,
+      "title": "[백준] 9372 파이썬(python)",
+      "date": "2022.01.08",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 132,
+      "title": "[백준] 7569 파이썬(python)",
+      "date": "2022.01.08",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 133,
+      "title": "[Python] __slots__ method",
+      "date": "2022.01.03",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 134,
+      "title": "[Python] __new__ method",
+      "date": "2021.12.23",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 135,
+      "title": "[Python] 파이썬 multiprocessing",
+      "date": "2021.11.25",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 136,
+      "title": "[Python] 파이썬 비동기 I/O",
+      "date": "2021.11.25",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 137,
+      "title": "[Python] 사전(dict) 와 셋(set) 의 성능",
+      "date": "2021.11.15",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 138,
+      "title": "[Python] 튜플(tuple) 성능",
+      "date": "2021.11.12",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 139,
+      "title": "[Python] 리스트(list) 성능",
+      "date": "2021.11.12",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 140,
+      "title": "[Python] 프로파일링 cProfile, memory_profiler",
+      "date": "2021.11.12",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 141,
+      "title": "[Python] 검색 방법 profile 해보기",
+      "date": "2021.11.09",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 성능 & 동시성",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 142,
+      "title": "[Python] 백준 11724 - 연결 요소의 개수",
+      "date": "2021.11.07",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 143,
+      "title": "[Python] 백준 7576 - 토마토",
+      "date": "2021.11.06",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 144,
+      "title": "[Python] 백준 1012 - 유기농 배추",
+      "date": "2021.11.06",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 145,
+      "title": "[Python] 백준 2667 - 단지번호붙이기",
+      "date": "2021.11.06",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 146,
+      "title": "[Airflow] DAGs 생성하기",
+      "date": "2021.11.04",
+      "from": "Infrastructure/Airflow",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 147,
+      "title": "[Airflow] Ubuntu 20.04 docker-compose 설치",
+      "date": "2021.10.26",
+      "from": "Infrastructure/Airflow",
+      "to": "데이터/데이터 파이프라인",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 148,
+      "title": "WEB RTC",
+      "date": "2021.09.27",
+      "from": "IT",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 149,
+      "title": "JWT (JSON Web Token)",
+      "date": "2021.09.27",
+      "from": "IT",
+      "to": "웹 & 보안/보안",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 150,
+      "title": "Jenkins Nexus Docker 연동하기",
+      "date": "2021.09.27",
+      "from": "IT",
+      "to": "인프라 & 운영/CI/CD",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 151,
+      "title": "Micro Service Architecture - 6. IPC 3",
+      "date": "2021.09.27",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 152,
+      "title": "Micro Service Architecture - 6. IPC 2",
+      "date": "2021.09.27",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 153,
+      "title": "Micro Service Architecture - 6. IPC",
+      "date": "2021.09.27",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 154,
+      "title": "Micro Service Architecture - 5.분해전략 2",
+      "date": "2021.09.27",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 155,
+      "title": "Micro Service Architecture - 4.분해전략",
+      "date": "2021.09.27",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 156,
+      "title": "Micro Service Architecture - 3.패턴",
+      "date": "2021.09.07",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 157,
+      "title": "Micro Service Architecture - 2.FTGO 예시",
+      "date": "2021.09.06",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 158,
+      "title": "Micro Service Architecture - 1. MSA",
+      "date": "2021.09.06",
+      "from": "Infrastructure/Micro Service Architecture",
+      "to": "백엔드 & 아키텍처/분산 시스템 & MSA",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 159,
+      "title": "[Clean Code] 11-1 Concern",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 160,
+      "title": "[Clean Code] 10-2 응집도",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 161,
+      "title": "[Clean Code] 10-1 클래스",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 162,
+      "title": "[Clean Code] 9-3 깨끗한 테스트",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 163,
+      "title": "[Clean Code] 9-2 도메인 특화 테스트",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 164,
+      "title": "[Clean Code] 9-1 TDD",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 165,
+      "title": "[Clean Code] 7-1 예외처리",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 166,
+      "title": "[Clean Code] 6-2 객체지향 절차지향 2",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 167,
+      "title": "[Clean Code] 6-1 객체지향 절차지향",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 168,
+      "title": "[Clean Code] 5-1 형식",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 169,
+      "title": "[Clean Code] 4-1 주석",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 170,
+      "title": "[Clean Code] 3-2 Functions",
+      "date": "2021.09.06",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 171,
+      "title": "Git 프로젝트 별로 다른 계정 사용하기",
+      "date": "2021.08.19",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 172,
+      "title": "[Clean Code] 3-1 Parameter",
+      "date": "2021.08.18",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 173,
+      "title": "[Clean Code] 2-2 Method",
+      "date": "2021.08.18",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 174,
+      "title": "[Clean Code] 2-1 Class 와 Method 이름",
+      "date": "2021.08.18",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 175,
+      "title": "[Python] Colorful print",
+      "date": "2021.08.12",
+      "from": "Python/Open Source",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 176,
+      "title": "[Fluentd] MySQL slow log 연동",
+      "date": "2021.08.12",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 177,
+      "title": "Promtheus + MySQL Exporter 연동",
+      "date": "2021.06.29",
+      "from": "Infrastructure/Prometheus",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 178,
+      "title": "Prometheus + Node Exporter + Grafana 연동",
+      "date": "2021.06.29",
+      "from": "Infrastructure/Prometheus",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 179,
+      "title": "[Ubuntu 20.04] MySQL 5.6.xx 설치",
+      "date": "2021.06.17",
+      "from": "OS/Ubuntu",
+      "to": "데이터/MySQL",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 180,
+      "title": "[Fluentd] Php 연동",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 181,
+      "title": "[Fluentd] Python 연동",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 182,
+      "title": "[Fluentd] 8. Prometheus 연동",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 183,
+      "title": "[Fluentd] 7. Nginx 연동",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 184,
+      "title": "[Fluentd] 6. 서버간 연동",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 185,
+      "title": "[Fluentd] 5. Output plugin",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 186,
+      "title": "[Fluentd] 4. Input plugin",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 187,
+      "title": "[Fluentd] 3. 설정 파라미터",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 188,
+      "title": "[Fluentd] 2. 설정 개요",
+      "date": "2021.05.11",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 189,
+      "title": "[Fluentd] 1. 설치",
+      "date": "2021.05.06",
+      "from": "Infrastructure/Fluentd",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 190,
+      "title": "[CentOS] CPU, Memory 사용량 로그",
+      "date": "2021.04.09",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 191,
+      "title": "[CentOS 7] Prometheus + Grafana 설치",
+      "date": "2021.04.08",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/로그 & 모니터링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 192,
+      "title": "Git Branch 를 통한 Gitflow",
+      "date": "2021.02.18",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 193,
+      "title": "Git Branch 사용법",
+      "date": "2021.02.17",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 194,
+      "title": "Gitlab 에서 Github 로 저장소 log 유지하며 옮기기",
+      "date": "2021.02.17",
+      "from": "IT/Git",
+      "to": "개발 도구/Git",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 195,
+      "title": "[Jenkins] 젠킨스 Dockerfile 설치",
+      "date": "2021.02.08",
+      "from": "IT",
+      "to": "인프라 & 운영/CI/CD",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 196,
+      "title": "[Jenkins] 젠킨스란 무엇인가",
+      "date": "2021.02.05",
+      "from": "IT",
+      "to": "인프라 & 운영/CI/CD",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 197,
+      "title": "Cent OS 6 버전 yum 에러",
+      "date": "2021.02.04",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/리눅스 서버 운영",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 198,
+      "title": "프로그래머스 - 가장 큰 정사각형 찾기",
+      "date": "2021.01.23",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 199,
+      "title": "프로그래머스 - 나머지 한 점",
+      "date": "2021.01.22",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 200,
+      "title": "프로그래머스 - 순열 검사",
+      "date": "2021.01.22",
+      "from": "IT/알고리즘",
+      "to": "알고리즘 & CS",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 201,
+      "title": "CentOS pyenv 설치",
+      "date": "2021.01.22",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 202,
+      "title": "소프트웨어 개발원칙 YAGNI",
+      "date": "2021.01.22",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 203,
+      "title": "소프트웨어 개발원칙 KISS",
+      "date": "2021.01.22",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 204,
+      "title": "소프트웨어 개발 원칙 DRY",
+      "date": "2021.01.22",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 205,
+      "title": "객체지향 설계 5대 원리 SOLID - IRP",
+      "date": "2021.01.22",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 206,
+      "title": "객체지향 설계 5대 원리 SOLID - OCP",
+      "date": "2021.01.21",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 207,
+      "title": "객체지향 설계 5대 원리 SOLID  - SRP",
+      "date": "2021.01.21",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 208,
+      "title": "객체지향 설계 5대 원리 SOLID",
+      "date": "2021.01.21",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 209,
+      "title": "캐시 (Cache)",
+      "date": "2021.01.19",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": false,
+      "review": "'캐시 (Cache)' — HTTP 캐시인지 애플리케이션 캐시인지에 따라 데이터/NoSQL & 검색 엔진으로 갈 수도"
+    },
+    {
+      "index": 210,
+      "title": "[Ubuntu 18] docker 를 이용한 MariaDB Sharding (샤딩)",
+      "date": "2021.01.15",
+      "from": "OS/Ubuntu",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 211,
+      "title": "[Python] builtin dir() 함수",
+      "date": "2021.01.15",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 212,
+      "title": "DNS(Domain Name System) 작동원리",
+      "date": "2021.01.15",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 213,
+      "title": "브라우저 동작 원리",
+      "date": "2021.01.15",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 214,
+      "title": "HTTP Response Status Code (HTTP 응답 상태 코드)",
+      "date": "2021.01.14",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 215,
+      "title": "HTTP Request Method (HTTP 요청 방법)",
+      "date": "2021.01.13",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 216,
+      "title": "HTTP (HyperText Transfer Protocol) 란?",
+      "date": "2021.01.13",
+      "from": "IT/Web",
+      "to": "웹 & 보안/HTTP & 브라우저",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 217,
+      "title": "2020년 백엔드(Back-end) 개발자 로드맵",
+      "date": "2021.01.13",
+      "from": "IT/Web",
+      "to": "기록/개발자 생각",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 218,
+      "title": "[Python 오픈소스] Diagrams",
+      "date": "2021.01.13",
+      "from": "Python/Open Source",
+      "to": "언어 & 런타임/Python 활용 & 오픈소스",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 219,
+      "title": "[Python] builtin all() 함수",
+      "date": "2021.01.08",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 220,
+      "title": "[Python] builtin abs() 함수",
+      "date": "2021.01.07",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 221,
+      "title": "MariaDB sharding using docker",
+      "date": "2020.07.14",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 222,
+      "title": "Django demo project (chatting, monggo db, sample)",
+      "date": "2020.07.14",
+      "from": "Python/Django",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 223,
+      "title": "[Clean Code] 0. 앞 부분...",
+      "date": "2019.11.13",
+      "from": "IT/Clean Code",
+      "to": "코드 품질/Clean Code",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 224,
+      "title": "5. Django - Nginx 연동",
+      "date": "2019.11.11",
+      "from": "Python/Django",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 225,
+      "title": "4. Django 모델 및 관리자",
+      "date": "2019.11.07",
+      "from": "Python/Django",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 226,
+      "title": "3. Django 뷰 작성 및 라우팅",
+      "date": "2019.10.28",
+      "from": "Python/Django",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 227,
+      "title": "2.  Django 프로젝트 생성",
+      "date": "2019.10.25",
+      "from": "Python/Django",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 228,
+      "title": "1. Django 및 기타 설치",
+      "date": "2019.10.25",
+      "from": "Python/Django",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 229,
+      "title": "[리팩토링] 임수변수 내용 직접 삽입",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 230,
+      "title": "[리팩토링] 메소드 삽입",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 231,
+      "title": "[리팩토링] 메소드 추출",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 232,
+      "title": "리팩토링 - 코드 개선 방법",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 233,
+      "title": "[리팩토링] 클래스 멤버변수 이동",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 234,
+      "title": "[리팩토링] 객체간 메소드 이동",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 235,
+      "title": "[리팩토링] 메소드를 메소드 객체로 전환",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 236,
+      "title": "[리팩토링] 매개변수로의 값 대입 제거",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 237,
+      "title": "[리팩토링] 직관적 임시변수 사용",
+      "date": "2019.10.25",
+      "from": "IT/리팩토링",
+      "to": "코드 품질/리팩토링",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 238,
+      "title": "batch 프로그램으로 host 변경하기",
+      "date": "2019.10.25",
+      "from": "IT",
+      "to": "개발 도구/에디터 & 터미널",
+      "hasThumbnail": true,
+      "review": "'batch 프로그램으로 host 변경' — 윈도우 배치 스크립트라 인프라/네트워크로 볼 수도"
+    },
+    {
+      "index": 239,
+      "title": "Flask Flask-SQLAlchemy",
+      "date": "2019.10.25",
+      "from": "Python/Flask",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 240,
+      "title": "Flask  Request Handler, Error Handler",
+      "date": "2019.10.23",
+      "from": "Python/Flask",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 241,
+      "title": "Centos7 ElasticSearch 설치",
+      "date": "2019.10.23",
+      "from": "Search Engine/ElasticSearch",
+      "to": "데이터/NoSQL & 검색 엔진",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 242,
+      "title": "Centos7 Nginx, PHP, MySQL  Codeigniter 프로젝트 세팅",
+      "date": "2019.10.23",
+      "from": "PHP/Codeigniter",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 243,
+      "title": "개발에 있어서...",
+      "date": "2019.10.23",
+      "from": "IT",
+      "to": "기록/개발자 생각",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 244,
+      "title": "Centos  Laravel 설치",
+      "date": "2019.10.23",
+      "from": "PHP/Laravel",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 245,
+      "title": "설치 에러 발생시 대처",
+      "date": "2019.10.23",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/리눅스 서버 운영",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 246,
+      "title": "GitLab - SVN 마이그레이션 및 Clone",
+      "date": "2019.10.23",
+      "from": "IT",
+      "to": "개발 도구/Git",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 247,
+      "title": "Centos7 + Lucene Solr 8.2 설치 및 실행",
+      "date": "2019.10.23",
+      "from": "Search Engine/Lucene Solr",
+      "to": "데이터/NoSQL & 검색 엔진",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 248,
+      "title": "Flask 관련...",
+      "date": "2019.10.23",
+      "from": "Python/Flask",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 249,
+      "title": "Centos 7 Flask 설치",
+      "date": "2019.10.23",
+      "from": "Python/Flask",
+      "to": "백엔드 & 아키텍처/웹 프레임워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 250,
+      "title": "fail2ban",
+      "date": "2019.10.22",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/리눅스 서버 운영",
+      "hasThumbnail": false,
+      "review": "fail2ban — 침입 차단 도구라 웹 & 보안/보안으로 볼 수도"
+    },
+    {
+      "index": 251,
+      "title": "CentOS 7 / 고정 IP 설정하는 방법",
+      "date": "2019.10.22",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/네트워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 252,
+      "title": "넷기어 VPN - L2TP 설정",
+      "date": "2019.10.22",
+      "from": "Infrastructure/VPN",
+      "to": "인프라 & 운영/네트워크",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 253,
+      "title": "MySQL Replication 연결",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 254,
+      "title": "MySQL DB 명세서 쿼리 작성",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 255,
+      "title": "MySQL innodb 버퍼 할당 에러",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 256,
+      "title": "MySQL 프로시저 디버그",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 257,
+      "title": "MySQL error 1364 Field doesn't have a default values",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 258,
+      "title": "MySQL Dump시 테이블 Lock 에러",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 259,
+      "title": "MySQL 접속 유저 추가",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 260,
+      "title": "[토끼책] 객체지향의 사실과 오해 - 2장. 이상한 나라의 객체",
+      "date": "2019.10.22",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": true,
+      "review": "토끼책 2편 — 책 요약이라 기록/책으로 볼 수도 (내용은 객체지향 설계)"
+    },
+    {
+      "index": 261,
+      "title": "[토끼책] 객체지향의 사실과 오해 1장 - 협력하는 객체들의 공동체",
+      "date": "2019.10.22",
+      "from": "IT",
+      "to": "백엔드 & 아키텍처/설계 원칙 & 패턴",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 262,
+      "title": "MySQL 5.7 설정 튜닝",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 263,
+      "title": "Indexing for High Performance",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/데이터베이스 기초",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 264,
+      "title": "데이터 베이스 설계 프로세스",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/데이터베이스 기초",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 265,
+      "title": "Isolation level (트랜잭션 고립(격리) 수준)",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/데이터베이스 기초",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 266,
+      "title": "MySQL's Storage Engines - InnoDB Engine",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 267,
+      "title": "프로시저 언제 사용해야 하나?",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 268,
+      "title": "트랜잭션 너는 누구니?",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/데이터베이스 기초",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 269,
+      "title": "MySQL's Storage Engies - MyISAM Engine",
+      "date": "2019.10.22",
+      "from": "Database/MySQL",
+      "to": "데이터/MySQL",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 270,
+      "title": "Centos 파일, 디렉토리 찾기",
+      "date": "2019.10.22",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/리눅스 서버 운영",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 271,
+      "title": "Centos 6, 7 포트 추가",
+      "date": "2019.10.22",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/네트워크",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 272,
+      "title": "PIP 꼬임",
+      "date": "2019.10.22",
+      "from": "Python/Python",
+      "to": "언어 & 런타임/Python 기초 & 도구",
+      "hasThumbnail": true,
+      "review": null
+    },
+    {
+      "index": 273,
+      "title": "파이선, 쉘스크립트 윈도우 -> 리눅스 되었을때 발생하는 문제",
+      "date": "2019.10.22",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/리눅스 서버 운영",
+      "hasThumbnail": false,
+      "review": null
+    },
+    {
+      "index": 274,
+      "title": "쉘 접속 지연 문제 해결 방법",
+      "date": "2019.10.22",
+      "from": "OS/Centos",
+      "to": "인프라 & 운영/리눅스 서버 운영",
+      "hasThumbnail": true,
+      "review": null
+    }
+  ]
+}
