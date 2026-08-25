@@ -390,7 +390,7 @@ def verify_page(name, url, doc, status, base_host, stats, final=None):
             alt_re = re.compile(r"""(?:^|\s)alt\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s"'>]+))""", re.I)
             with_alt = sum(1 for i in imgs if alt_re.search(i))
             if with_alt < len(imgs):
-                info("%s — 이미지 %d장 중 alt가 있는 것은 %d장. 본문 이미지는 에디터에서 "
+                info("V008 — %s — 이미지 %d장 중 alt가 있는 것은 %d장. 본문 이미지는 에디터에서 "
                      "쓰므로 스킨으로 고칠 수 없다. 사용자에게 보고할 항목."
                      % (name, len(imgs), with_alt))
 

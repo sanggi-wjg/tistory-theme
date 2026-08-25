@@ -378,7 +378,7 @@ def lint_seo(skin):
 
     # SEO005 — BreadcrumbList
     if "BreadcrumbList" not in skin:
-        info("BreadcrumbList JSON-LD가 없다. 티스토리는 글 페이지에 BlogPosting만 "
+        info("SEO005 — BreadcrumbList JSON-LD가 없다. 티스토리는 글 페이지에 BlogPosting만 "
              "주입하고 빵부스러기는 카테고리 페이지에만 넣는다. 글 페이지 빵부스러기는 "
              "스킨이 채울 수 있는 자리다 (DECISIONS.md 결정 28). 필수는 아니다.")
 

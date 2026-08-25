@@ -355,7 +355,12 @@ for p in $(seq 1 14); do curl -sL "https://sanggi-jayg.tistory.com/?page=$p" -o 
 
 ## 4. 미결 / 착수 전 확인할 것
 
-| # | 항목 |
+> **새 항목은 번호 대신 슬러그를 쓴다** (`tree-color`, `notice-scope` 처럼).
+> 여러 세션이 동시에 "다음 번호"를 집으면 반드시 겹친다 — 2026-08-25에 세 번 연속으로
+> 겹쳤고(9→11, 11→13, 13→14) 매번 병합 때 손으로 옮겨야 했다.
+> **기존 번호는 그대로 둔다.** `§4-4`처럼 다른 문서가 번호로 참조하고 있다.
+
+| # / 키 | 항목 |
 |---|---|
 | 1 | 스킨 편집기의 **파일 개수·용량 제한** (공식 문서에 없음) — 업로드가 수동이므로 실측 필요 |
 | 4 | **모바일웹 OFF가 모바일 광고 수익에 주는 영향** — 티스토리 기본 모바일의 하단바·구독 버튼·자동광고 배치를 잃는다 |
@@ -386,8 +391,8 @@ for p in $(seq 1 14); do curl -sL "https://sanggi-jayg.tistory.com/?page=$p" -o 
 
 | | |
 |---|---|
-| 레이아웃 골격 5안 비교 | https://claude.ai/code/artifact/0706af2f-b0fb-4520-b4e1-b686e7fb46f8 |
-| 디자인 시스템 4종 샘플 | https://claude.ai/code/artifact/3d85ceb5-190b-405a-825e-e914c715a99a |
+| 레이아웃 골격 5안 비교 | ~~https://claude.ai/code/artifact/0706af2f-b0fb-4520-b4e1-b686e7fb46f8~~ **(2026-08-25 확인: 사라짐)** — 판단 근거는 문서로 옮겨져 있다 |
+| 디자인 시스템 4종 샘플 | ~~https://claude.ai/code/artifact/3d85ceb5-190b-405a-825e-e914c715a99a~~ **(2026-08-25 확인: 사라짐)** — 판단 근거는 문서로 옮겨져 있다 |
 | 티스토리 스킨 공식 문서 | https://tistory.github.io/document-tistory-skin/ |
 | getdesign.md | https://getdesign.md |
 

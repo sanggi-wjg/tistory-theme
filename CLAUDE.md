@@ -33,6 +33,10 @@ git branch -D worktree-<이름>
 
 worktree 이름은 작업 범위로 짓는다 — `home-grid`, `toc-scrollspy`, `inline-fix`.
 
+**여러 세션이 같은 목록에 항목을 더할 때는 번호를 쓰지 않는다.** `DECISIONS.md` 미결처럼
+번호로 식별하는 목록은 동시 작업에서 반드시 겹친다 — 슬러그를 쓴다. 기존 번호는 다른 문서가
+참조하므로 그대로 둔다.
+
 **`main`에 직접 커밋하지 않는다.** worktree를 쓰면 자연히 지켜진다.
 
 **PR 본문에 담을 것**
@@ -79,7 +83,8 @@ cmux를 쓰든 창을 여러 개 띄우든 마찬가지다. **터미널은 나�
 | 2026-08-25 | worktree·cmux 동시 작업 지침 추가 | CLAUDE.md, .gitignore | 여러 세션이 같은 디렉터리에서 브랜치를 바꿔 서로 밟는 것을 막기 위해 |
 | 2026-08-25 | worktree를 조건 없는 기본 절차로 | CLAUDE.md, 오케스트레이터 Phase 0 | "다른 세션이 도는지" 는 확인할 방법이 없어 결국 건너뛰게 된다. 브랜치처럼 무조건 하는 절차로 바꿨다 |
 | 2026-08-25 | HANDOFF를 요청 시에만 읽도록 | CLAUDE.md, HANDOFF.md | 스냅샷이라 시간이 지나면 살아 있는 문서와 어긋난다. 자동으로 읽으면 낡은 상태를 현재로 오인한다 |
-| 2026-08-25 | SEO 하네스 추가 — 에이전트 `seo-auditor`, 스킬 `seo-verify-live`, 린트 `SEO001~005` | .claude/agents, .claude/skills, DECISIONS.md(결정 28), skin-deploy, skin-qa-check | 레딧 SEO 워크플로 검토 결과, 5단계 중 **배포 후 프로덕션 실물 검증**이 우리에게 가장 잘 맞고 지금 없었다. 배포가 수동 복붙이라 소스와 프로덕션이 갈라지는 경로가 여럿인데 소스 린트가 하나도 못 잡는다. 동시에 실측으로 **모바일 우선 색인이 커스텀 스킨을 통째로 우회한다**는 것을 확인했다 |
 | 2026-08-25 | 카테고리 개편 적용 후 문서 정리 — 개편안·매핑·생성 스크립트 삭제, 실측 반영 | DECISIONS.md(결정 27 신설), DESIGN.md, HANDOFF.md, data/ | 개편안이 실물이 된 뒤에도 남아 있으면 계획과 현재가 두 벌로 갈린다. 살릴 근거(축·이름 규칙·정렬 판단)는 DECISIONS.md로 옮겼다 |
-| 2026-08-25 | 기본 이미지 15장 도안 + 마스크 방식 채택 | src/assets/placeholders/, scripts/gen-placeholders.py, DESIGN.md §6.2, DECISIONS.md 결정 5·6 | 마스크로 쓰면 색이 토큰에서만 나와 라이트/다크가 한 파일로 갈린다 — 28장이 15장이 되고 팔레트가 바뀌어도 도안이 따라온다 |
 | 2026-08-25 | 오케스트레이터를 `TeamCreate` 가용 여부로 분기 | 오케스트레이터 Phase 2·3·5 | 첫 실행에서 이 환경에 `TeamCreate`가 없어 Phase 2·3이 통째로 실행 불가였다. 환경마다 다르므로 두 모드를 모두 담았다 |
+| 2026-08-25 | 기본 이미지 15장 도안 + 마스크 방식 채택 | src/assets/placeholders/, scripts/gen-placeholders.py, DESIGN.md §6.2, DECISIONS.md 결정 5·6 | 마스크로 쓰면 색이 토큰에서만 나와 라이트/다크가 한 파일로 갈린다 — 28장이 15장이 되고 팔레트가 바뀌어도 도안이 따라온다 |
+| 2026-08-25 | SEO 하네스 추가 — 에이전트 `seo-auditor`, 스킬 `seo-verify-live`, 린트 `SEO001~005` | .claude/agents, .claude/skills, DECISIONS.md(결정 28), skin-deploy, skin-qa-check | 레딧 SEO 워크플로 검토 결과, 5단계 중 **배포 후 프로덕션 실물 검증**이 우리에게 가장 잘 맞고 지금 없었다. 배포가 수동 복붙이라 소스와 프로덕션이 갈라지는 경로가 여럿인데 소스 린트가 하나도 못 잡는다. 동시에 실측으로 **모바일 우선 색인이 커스텀 스킨을 통째로 우회한다**는 것을 확인했다 |
+| 2026-08-25 | 스킨 첫 구현 — 훅 계약을 `docs/`로 이동, 린트 `SUB007`, 렌더러 8 → 10페이지 | src/ 전체, docs/hooks.md, skin-qa-check, skin-preview | `_workspace/`가 gitignore라 CSS 주석이 참조하는 계약 문서가 저장소에 없었다. 렌더러가 공지와 "목차 있는 글"을 한 번도 렌더하지 않아 그 안의 결함을 눈으로 찾아야 했다 |
