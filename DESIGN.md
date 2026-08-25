@@ -118,6 +118,14 @@ radius:
   --accent-cyan:   #29bc9b;
   --selection-bg:  #171717;
   --selection-fg:  #f2f2f2;
+
+  /* 모서리 — 테마와 무관하므로 여기서 한 번만 정의한다.
+     frontmatter의 `radius:`는 YAML 메타데이터일 뿐 CSS가 아니다.
+     정의하지 않은 채 var()를 쓰면 폴백이 없어 border-radius가 0으로 조용히 떨어진다. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -353,6 +361,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 - **제목은 반드시 2줄에서 자른다.** 홈에 노출되는 최신 20편의 제목 중앙값이 49자, 40자 초과가 75%다.
 - 카드 높이를 고정해 그리드 정렬을 유지한다.
+- **`.thumb`의 CSS는 §6.2가 통째로 갖는다.** 여기서 따로 쓰지 않는다 — 상자 속성(`display` `position` `overflow`)이 §6.2의 기본 이미지 3층 구조를 떠받치고 있어서, 두 곳에서 정의하면 갈라진다.
 
 ### 6.2 대표이미지 기본값
 
@@ -369,8 +378,20 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 **3층으로 쌓는다.** 격자는 CSS, 모티프는 마스크, 진짜 이미지는 그 위.
 
 ```css
-/* 1층 — 점격자. 순수 CSS라 SVG 용량이 0이고 토큰을 그냥 따른다 */
+/* 0층 — 상자. 위의 세 줄은 장식이 아니라 기계장치다. 지우면 조용히 무너진다.
+   · display   — `<span class="thumb">`는 기본이 inline이라 크기를 못 갖는다
+   · position  — 없으면 2층 ::before가 .thumb가 아니라 페이지 전체에 붙는다
+                 (실측: 높이 1028px짜리 모티프가 화면을 덮었다)
+   · overflow  — 모티프와 img를 radius로 잘라낸다 */
 .post .thumb {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+
+  /* 1층 — 점격자. 순수 CSS라 SVG 용량이 0이고 토큰을 그냥 따른다 */
   background-color: var(--canvas-soft);
   background-image: radial-gradient(circle, var(--hairline) 1.1px, transparent 1.2px);
   background-size: 8px 8px;
