@@ -250,6 +250,117 @@ def lint_robustness(js, skin):
             err("A11Y002", "viewport 메타 태그가 없다. 반응형이 동작하지 않는다.", "src/skin.html")
 
 
+# ────────────────────── 7. SEO — 크롤러에게 보이는 것 ──────────────────────
+
+# 한 페이지에 여러 번 렌더되는 블록. 여기 h1이 들어가면 h1이 항목 수만큼 생긴다.
+# data/substitutions.json의 그룹 62종 중 "_rep"·"_item" 계열을 훑어 추린 것이다.
+REPEATING_BLOCKS = [
+    "s_index_article_rep", "s_list_rep", "s_article_related_rep",
+    "s_rctps_rep", "s_rctps_popular_rep", "s_notice_rep", "s_rct_notice_rep",
+    "s_cover_item", "s_cover_rep", "s_paging_rep", "s_page_rep",
+    "s_tag_rep", "s_rp_rep", "s_rp2_rep", "s_rctrp_rep",
+    "s_guest_rep", "s_guest_reply_rep",
+    "s_sidebar_element",   # 사이드바 모듈마다 한 번씩 — 이름에 _rep이 없어 놓치기 쉽다
+]
+
+# <s_article_rep>은 문맥에 따라 갈린다. <s_index_article_rep> 안에서는 글 수만큼
+# 반복되지만, <s_permalink_article_rep> 안에서는 딱 한 번 렌더된다 — 거기서는
+# h1이 오히려 정답이다. 그래서 위 목록에 넣지 않고 따로 판정한다.
+CONTEXTUAL_SINGLE = "s_permalink_article_rep"
+
+# 글 페이지의 내부링크를 만드는 치환자. 셋 다 없으면 글끼리 링크가 0이 된다.
+INTERNAL_LINK_GROUPS = ["s_article_related", "s_article_prev", "s_article_next"]
+
+
+def lint_seo(skin):
+    """화면은 멀쩡한데 유입만 사라지는 결함. skin-qa-check가 보는 것 중
+    유일하게 '보기에 맞는가'로는 절대 드러나지 않는 부류다."""
+    if not skin:
+        return
+    # 주석 안의 <h1>·<img>는 렌더되지 않는다. 그걸 오류로 잡으면 아무것도
+    # 출력하지 않는 마크업이 배포를 막는다. 줄 번호를 보존하려고 지우지 않고
+    # 같은 길이의 공백으로 덮는다.
+    skin = re.sub(r"<!--.*?-->",
+                  lambda m: re.sub(r"[^\n]", " ", m.group(0)), skin, flags=re.S)
+
+    # SEO001 — 반복 블록 안의 h1
+    repeating_spans = []
+    for tag in REPEATING_BLOCKS:
+        for m in re.finditer(r"<%s(?:\s[^>]*)?>(.*?)</%s>" % (tag, tag), skin, re.S | re.I):
+            repeating_spans.append((m.start(), m.end()))
+            if re.search(r"<h1[\s>]", m.group(1), re.I):
+                line = skin[:m.start()].count("\n") + 1
+                err("SEO001", "<%s>는 한 페이지에서 반복 렌더되는 블록인데 그 안에 <h1>이 있다. "
+                    "h1이 항목 수만큼 생긴다. h2 이하로 내려라." % tag,
+                    "src/skin.html:%d" % line)
+
+    # SEO001 — <s_article_rep>은 문맥에 따라 갈린다.
+    #
+    # 두 배치가 다 쓰인다:
+    #   <s_article_rep><s_permalink_article_rep><h1>…  (글 템플릿 하나에 페이지별 분기)
+    #   <s_permalink_article_rep><s_article_rep><h1>…  (페이지 영역 안에 글 템플릿)
+    # 그래서 "블록이 글 상세 안에 있는가"로 물으면 첫 배치의 올바른 h1이 오류가 된다.
+    # 물어야 할 것은 h1 **자신**이 글 상세 영역 안에 있는가다.
+    single_spans = [(m.start(), m.end()) for m in re.finditer(
+        r"<%s(?:\s[^>]*)?>.*?</%s>" % (CONTEXTUAL_SINGLE, CONTEXTUAL_SINGLE),
+        skin, re.S | re.I)]
+    for m in re.finditer(r"<s_article_rep(?:\s[^>]*)?>(.*?)</s_article_rep>", skin, re.S | re.I):
+        if any(a <= m.start() and m.end() <= b for a, b in repeating_spans):
+            continue   # 위 루프가 바깥 블록으로 이미 신고했다. 같은 결함을 두 번 적지 않는다
+        body_start = m.start(1)
+        for h in re.finditer(r"<h1[\s>]", m.group(1), re.I):
+            at = body_start + h.start()
+            if any(a <= at < b for a, b in single_spans):
+                continue   # 글 상세 영역 안의 h1 — 한 번만 렌더되므로 맞다
+            line = skin[:at].count("\n") + 1
+            err("SEO001", "<s_article_rep> 안의 <h1>이 <%s> 영역 밖에 있다. 홈·목록에서는 "
+                "이 블록이 글 수만큼 반복되므로 h1도 그만큼 생긴다. 글 상세에서만 h1을 쓰려면 "
+                "<%s> 안으로 넣어라." % (CONTEXTUAL_SINGLE, CONTEXTUAL_SINGLE),
+                "src/skin.html:%d" % line)
+
+    # SEO002 — 내부링크 치환자
+    present = [g for g in INTERNAL_LINK_GROUPS if re.search(r"<%s[\s>]" % g, skin, re.I)]
+    if not present:
+        err("SEO002", "관련글·이전글·다음글 치환자(%s)가 하나도 없다. 글에서 글로 가는 "
+            "내부링크가 0이 되고, 모든 글이 고아 페이지가 된다. 내부링크는 스킨이 쥔 "
+            "가장 큰 SEO 레버다 (DECISIONS.md 결정 28)."
+            % ", ".join("<%s>" % g for g in INTERNAL_LINK_GROUPS), "src/skin.html")
+    elif len(present) < len(INTERNAL_LINK_GROUPS):
+        missing = [g for g in INTERNAL_LINK_GROUPS if g not in present]
+        warn("SEO002", "내부링크 치환자 중 %s 가 없다. 글끼리 연결이 그만큼 얇아진다."
+             % ", ".join("<%s>" % g for g in missing), "src/skin.html")
+
+    # SEO003 — <title>
+    m = re.search(r"<title>(.*?)</title>", skin, re.S | re.I)
+    if not m:
+        err("SEO003", "<title>이 없다.", "src/skin.html")
+    else:
+        t = m.group(1)
+        if "[##_page_title_##]" not in t:
+            warn("SEO003", "<title>이 [##_page_title_##]을 쓰지 않는다. 모든 페이지의 제목이 "
+                 "같아지면 카테고리·태그·검색 페이지가 서로 구분되지 않는다.", "src/skin.html")
+        elif "[##_title_##]" in t:
+            # 티스토리의 page_title은 홈에서 블로그 제목 그 자체다. 뒤에 [##_title_##]을
+            # 또 붙이면 홈 제목이 "상쾌한기분 — 상쾌한기분"이 된다 (2026-08-25 라이브 실측).
+            warn("SEO003", "<title>에 [##_page_title_##]과 [##_title_##]이 같이 있다. "
+                 "홈에서는 page_title이 이미 블로그 제목이라 '블로그명 — 블로그명'이 된다. "
+                 "현재 라이브가 정확히 이 상태다. page_title 하나만 쓰거나, "
+                 "홈만 <s_if_...>로 분기하라.", "src/skin.html")
+
+    # SEO004 — img alt
+    noalt = [i for i in re.findall(r"<img[^>]*>", skin, re.I)
+             if not re.search(r"\balt\s*=", i, re.I)]
+    if noalt:
+        warn("SEO004", "스킨이 출력하는 <img> %d개에 alt가 없다. 썸네일이면 "
+             'alt="[##_..._title_##]" 처럼 제목을 넣는다.' % len(noalt), "src/skin.html")
+
+    # SEO005 — BreadcrumbList
+    if "BreadcrumbList" not in skin:
+        info("BreadcrumbList JSON-LD가 없다. 티스토리는 글 페이지에 BlogPosting만 "
+             "주입하고 빵부스러기는 카테고리 페이지에만 넣는다. 글 페이지 빵부스러기는 "
+             "스킨이 채울 수 있는 자리다 (DECISIONS.md 결정 28). 필수는 아니다.")
+
+
 # ─────────────────────────────── main ───────────────────────────────
 
 def main():
@@ -297,6 +408,7 @@ def main():
     lint_tokens(css)
     lint_inline_coverage(css)
     lint_robustness(js, skin)
+    lint_seo(skin)
 
     if args.json:
         print(json.dumps({"errors": ERRORS, "warnings": WARNINGS, "info": INFO},

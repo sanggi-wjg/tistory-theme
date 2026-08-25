@@ -24,6 +24,7 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 | `skin-behavior` | 커스텀 | `script.js` | — | `src/js/*.js` |
 | `skin-qa` | 커스텀 | 검증 | `/skin-qa-check`, `/skin-preview` | `_workspace/qa-report.md` |
 | `blog-analyst` | 커스텀 (서브) | 실측 | `/blog-census` | `data/*.json` |
+| `seo-auditor` | 커스텀 (서브) | 검색엔진에 보이는 것 | `/seo-verify-live`, `/skin-qa-check` | `_workspace/seo-report.md`, `data/seo-baseline.json` |
 
 모든 Agent 호출에 **`model: "opus"`**를 명시한다.
 
@@ -139,8 +140,10 @@ TaskCreate(tasks: [
 
 1. `/skin-build` — `npm run build`
 2. `/skin-preview` — 8개 페이지 렌더, 경고 확인
-3. `/skin-qa-check` — 린트. **오류 0이 될 때까지 Phase 3로 되돌린다** (최대 3회)
+3. `/skin-qa-check` — 린트. **오류 0이 될 때까지 Phase 3로 되돌린다** (최대 3회). `SEO001`(반복 블록 안의 `h1`)과 `SEO002`(내부링크 치환자 **전부** 누락)도 오류다 — 일부만 빠지면 경고다
 4. `_workspace/qa-report.md` 최종본 확인 — **"미검증" 항목을 사용자에게 그대로 보고**
+
+**`seo-auditor`는 여기서 팀원이 아니다.** Phase 3의 SEO 관심사는 `SEO001~005` 린트가 이미 덮으므로 팀을 5명으로 늘릴 이유가 없다. 이 에이전트는 **배포 전후**에 서브 에이전트로 부른다 — 배포 직전 `--save-baseline`, 배포 직후 `--compare`. 그때가 프로덕션 실물이 존재하는 유일한 시점이다.
 
 ---
 
