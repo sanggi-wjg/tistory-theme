@@ -189,7 +189,10 @@ def lint_tokens(css):
     for m in re.finditer(r"(@media[^{]*prefers-color-scheme[^{]*|:root\[data-theme[^{]*)\{(.*?)\n\}",
                          css, re.S):
         block = m.group(2)
-        non_token = [l.strip() for l in block.split("\n")
+        # `[style*="color: #000000"]` 같은 속성 선택자 줄은 **매칭 대상**이지 선언이 아니다.
+        # 걷어내지 않으면 인라인 보정 규칙이 통째로 오탐된다.
+        lines = [re.sub(r'\[style\*="[^"]*"\]', "", l) for l in block.split("\n")]
+        non_token = [l.strip() for l in lines
                      if re.search(r"(?<!-)(?:color|background)\s*:", l) and "--" not in l]
         if non_token:
             err("TOK002", "다크모드 블록 안에서 토큰이 아닌 색을 직접 지정한다: %s. "

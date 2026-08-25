@@ -294,7 +294,9 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             buf.append(render(inner, sub, page, posts))
         return "".join(buf)
     if name == "s_tag":
-        return R(inner) if page == "tag" else R(inner)
+        # 태그 클라우드는 /tag 에서만 렌더된다. 양쪽 분기를 같게 두면
+        # 8개 페이지 전부에 태그 목록이 나와 스킨 결함처럼 보인다.
+        return R(inner) if page == "tag" else ""
 
     # 페이징
     if name == "s_paging":

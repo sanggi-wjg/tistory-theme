@@ -237,6 +237,7 @@ for p in $(seq 1 14); do curl -sL "https://sanggi-jayg.tistory.com/?page=$p" -o 
 | 4 | **모바일웹 OFF가 모바일 광고 수익에 주는 영향** — 티스토리 기본 모바일의 하단바·구독 버튼·자동광고 배치를 잃는다 |
 | 5 | **다크 팔레트 파생값 검증** — DESIGN.md의 다크 토큰은 파생값이라 실제 화면에서 대비 확인 필요 |
 | 6 | **기본 이미지 도안** (라이트/다크 두 벌) — ⏸ **카테고리 개편 적용 후 착수.** 개편 계획은 [`docs/category-taxonomy.md`](./docs/category-taxonomy.md)에 나왔다 (상위 13 / 하위 19, 275편 매핑 완료). **상위가 13종이 되므로 결정 5의 기본 이미지는 11장 → 13장**이고, 라이트/다크 두 벌이라 도안은 26장이다. 이름도 전부 바뀌므로 도안 주제를 새로 잡는다. 티스토리에 적용한 뒤 `/blog-census`로 `data/categories.json`을 갱신하고, 그 목록에 맞춰 도안과 `DESIGN.md` §6.2 규칙을 만든다 |
+| 9 | 🔴 **`index.xml`의 `<tree>` 색이 다크모드에서 어떻게 주입되는가** — 값이 전부 라이트 기준(`color=4d4d4d` `bgColor=ffffff`)이다. 티스토리가 인라인 `style`로 박으면 우리 CSS가 이길 수 없고(수기 `!important` 0개), 다크에서 대비 **2.44:1**이 되어 사이드바 최대 모듈(카테고리 47줄)이 읽히지 않는다. **로컬 프리뷰가 `<tree>` 색을 재현하지 않아 원리적으로 확인 불가**이고 라이트에서는 정상이라 배포 전까지 신호가 없다. `/skin-deploy` 체크리스트의 **0번 항목**으로 올려뒀다. 인라인으로 박히면 `.tt_category a` 계열에 `!important` 예외를 여는 것 외에 방법이 없고, **그 예외는 `components.css:6` 규범을 깨므로 사용자 승인이 필요하다** |
 | 7 | **스킨 미리보기 이미지 4종** (`preview.gif` 112x84 / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`) |
 | 8 | **카테고리 개편 적용** — 계획은 [`docs/category-taxonomy.md`](./docs/category-taxonomy.md), 작업은 [`docs/category-migration-worksheet.md`](./docs/category-migration-worksheet.md)를 띄워 두고 체크하며 진행한다. 제목만으로 갈렸던 11건은 **원문을 읽어 확정했다** (4건이 처음 배치와 달랐다). **남은 것은 비공개 3편 배치와 결정 5의 11장 → 13장.** 티스토리 관리 화면에서 수동 작업이며 되돌리기가 없다 |
 
