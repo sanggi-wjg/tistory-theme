@@ -45,7 +45,8 @@ src/
 1. **CSS 병합** — `styles/*.css`를 정해진 순서로 이어붙인다. 순서가 곧 특이도 순서이므로 임의로 바꾸지 않는다: `tokens → base → layout → content → tistory → components`
 2. **SVG 인라인** — `assets/placeholders/*.svg`를 base64 `data:` URI로 바꿔 CSS 변수(`--ph-it` 등)로 주입한다
 3. **JS 번들** — esbuild로 `js/index.js`부터 단일 파일로 묶는다. highlight.js는 필요한 언어만 담는다 (`python bash shell sql java kotlin go json yaml xml`)
-4. **skin.html 복사** — 치환자가 있으므로 어떤 변환도 하지 않는다. HTML 최소화도 하지 않는다 (치환자가 깨질 수 있다)
+4. **인라인 보정 CSS 생성** — `data/inline-styles.json`에서 색 17종 + 배경 11종을 읽어 **공백 유/무 두 형태**의 선택자를 만든다. 실제 마크업이 `style="color: #000000;"`(공백 있음)이라 무공백형만 쓰면 609곳 중 1곳에만 걸린다. 손으로 쓰지 않는다
+5. **skin.html 복사** — 치환자가 있으므로 어떤 변환도 하지 않는다. HTML 최소화도 하지 않는다 (치환자가 깨질 수 있다)
 
 ## 명령
 
