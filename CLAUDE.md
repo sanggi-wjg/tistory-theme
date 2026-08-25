@@ -10,19 +10,23 @@
 
 ## 작업 방식
 
-**`main`에 직접 커밋하지 않는다.** 모든 작업은 `main`에서 브랜치를 따서 시작하고 PR로 마무리한다.
+**파일을 바꾸는 작업은 worktree에서 시작한다.** 브랜치를 따는 것과 같은 급의 기본 절차다. 조건을 따지지 않는다 — 다른 세션이 도는지 확인할 방법이 없고, 확인해야 하는 절차는 결국 건너뛰게 된다.
 
-```bash
-git switch main && git pull            # 항상 최신 main에서 출발
-git switch -c feat/home-grid           # 브랜치 생성
-# … 작업 …
-npm run check                          # 빌드 → 린트 → 프리뷰. 통과해야 커밋
-git add -A && git commit
-git push -u origin feat/home-grid
-gh pr create --base main --fill-first  # 초안이 필요하면 --draft
+```
+1. EnterWorktree          ← 파일을 바꾸기 전에 먼저
+2. npm install            ← worktree마다 필요하다
+3. … 작업 …
+4. npm run check          ← 빌드 → 린트 → 프리뷰. 통과해야 커밋
+5. 커밋 → 푸시 → gh pr create --base main
 ```
 
-**브랜치 이름** — `feat/` 기능 · `fix/` 수정 · `docs/` 문서 · `chore/` 인프라·설정. 뒤에 하이픈으로 범위를 붙인다 (`feat/dark-mode-toggle`, `fix/toc-scrollspy`).
+**예외는 읽기뿐이다.** 질문에 답하거나 코드를 훑어보는 것처럼 아무것도 바꾸지 않는 작업은 그냥 한다.
+
+`EnterWorktree`는 최신 `origin/main`에서 `.claude/worktrees/<이름>`에 worktree를 만들고 세션을 그리로 옮긴다. 브랜치 이름은 도구가 정한다(`worktree-<이름>`). 작업이 끝나 PR까지 올렸으면 `ExitWorktree`로 나온다 — `remove`면 정리하고, 이어서 할 일이 남았으면 `keep`.
+
+worktree 이름은 작업 범위로 짓는다 — `home-grid`, `toc-scrollspy`, `inline-fix`.
+
+**`main`에 직접 커밋하지 않는다.** worktree를 쓰면 자연히 지켜진다.
 
 **PR 본문에 담을 것**
 - **무엇을** 바꿨는가 — 파일 나열이 아니라 결과로
@@ -30,31 +34,11 @@ gh pr create --base main --fill-first  # 초안이 필요하면 --draft
 - **어떻게 확인했는가** — 린트 결과, 프리뷰에서 본 페이지, **검증하지 못한 것**
 - 스킨 변경이면 프리뷰 스크린샷
 
-### 동시 작업은 worktree로 분리한다
+### 왜 worktree인가
 
-여러 세션이 같은 디렉터리에서 브랜치를 바꾸면 서로의 작업 트리를 밟는다. **다른 작업이 이미 돌고 있으면 worktree를 쓴다.**
+여러 세션이 같은 디렉터리에서 일하면 서로의 작업 트리를 밟는다. 한쪽이 브랜치를 바꾸면 다른 쪽 파일이 그대로 바뀌고, 각자 `git add -A`를 돌리면 **커밋에 남의 변경이 섞인다.** 이 저장소에서 실제로 한 번 일어났다 — 커밋 메시지와 내용이 어긋난 이력이 남아 있다.
 
-Claude Code 세션에서는 `EnterWorktree` 도구를 쓴다. 직접 만들 때는:
-
-```bash
-git worktree add ../tistory-theme-<작업명> -b feat/<작업명>
-cd ../tistory-theme-<작업명>
-npm install                      # worktree마다 필요하다
-```
-
-끝나면 정리한다.
-
-```bash
-git worktree remove ../tistory-theme-<작업명>
-```
-
-**cmux를 쓸 때** — cmux는 터미널을 나누지 파일시스템을 나누지 않는다. 두 워크스페이스가 같은 경로를 가리키면 **같은 git 작업 트리를 공유**하므로, 한쪽에서 브랜치를 바꾸면 다른 쪽 파일이 그대로 바뀐다. **워크스페이스와 worktree를 1:1로 맞춘다.**
-
-```bash
-CMUX_QUIET=1 cmux workspace list --json   # 같은 디렉터리를 쓰는 워크스페이스가 있는지 먼저 확인
-git worktree add ../tistory-theme-<작업명> -b feat/<작업명>
-cmux new-workspace --name "<작업명>" --cwd "$PWD/../tistory-theme-<작업명>"
-```
+cmux를 쓰든 창을 여러 개 띄우든 마찬가지다. **터미널은 나뉘어도 파일시스템은 하나다.** worktree만이 작업 트리를 실제로 분리한다.
 
 **worktree에서 주의할 것**
 
@@ -67,7 +51,7 @@ cmux new-workspace --name "<작업명>" --cwd "$PWD/../tistory-theme-<작업명>
 
 **커밋 전 필수** — `npm run check`가 통과해야 한다. 린트 오류가 남은 채로 커밋하지 않는다. 이 도메인은 조용히 실패하므로 린트가 유일한 조기 경보다.
 
-**작업 한 사이클은 PR 생성까지가 기본이다.** 사용자가 매번 요청하지 않아도 브랜치 → 커밋 → 푸시 → PR까지 진행한다. 다만 **PR을 merge하지는 않는다** — 병합은 사용자의 판단이다. 확신이 서지 않는 변경은 `--draft`로 연다.
+**작업 한 사이클은 PR 생성까지가 기본이다.** 사용자가 매번 요청하지 않아도 worktree → 커밋 → 푸시 → PR까지 진행한다. 다만 **PR을 merge하지는 않는다** — 병합은 사용자의 판단이다. 확신이 서지 않는 변경은 `--draft`로 연다.
 
 ## 하네스: 티스토리 스킨 제작
 
@@ -84,3 +68,4 @@ cmux new-workspace --name "<작업명>" --cwd "$PWD/../tistory-theme-<작업명>
 | 2026-08-24 | 초기 구성 — 에이전트 5, 스킬 7 | 전체 | — |
 | 2026-08-25 | 브랜치·PR 작업 방식 지침 추가 | CLAUDE.md, 오케스트레이터 Phase 5 | main 직접 커밋을 막고 변경을 PR 단위로 검토하기 위해 |
 | 2026-08-25 | worktree·cmux 동시 작업 지침 추가 | CLAUDE.md, .gitignore | 여러 세션이 같은 디렉터리에서 브랜치를 바꿔 서로 밟는 것을 막기 위해 |
+| 2026-08-25 | worktree를 조건 없는 기본 절차로 | CLAUDE.md, 오케스트레이터 Phase 0 | "다른 세션이 도는지" 는 확인할 방법이 없어 결국 건너뛰게 된다. 브랜치처럼 무조건 하는 절차로 바꿨다 |
