@@ -236,8 +236,9 @@ for p in $(seq 1 14); do curl -sL "https://sanggi-jayg.tistory.com/?page=$p" -o 
 | 3 | ~~git 저장소 초기화~~ — 완료 (2026-08-25 확인). `.gitignore` 작성됨 |
 | 4 | **모바일웹 OFF가 모바일 광고 수익에 주는 영향** — 티스토리 기본 모바일의 하단바·구독 버튼·자동광고 배치를 잃는다 |
 | 5 | **다크 팔레트 파생값 검증** — DESIGN.md의 다크 토큰은 파생값이라 실제 화면에서 대비 확인 필요 |
-| 6 | **기본 이미지 도안** (라이트/다크 두 벌) — ⏸ **카테고리 개편 완료 후 착수.** 개편 결과에 따라 필요한 장수와 도안이 달라진다. 개편이 끝나면 `/blog-census`로 `data/categories.json`을 갱신하고, 그 목록에 맞춰 도안과 `DESIGN.md` §6.2 규칙을 만든다 |
+| 6 | **기본 이미지 도안** (라이트/다크 두 벌) — ⏸ **카테고리 개편 적용 후 착수.** 개편 계획은 [`docs/category-taxonomy.md`](./docs/category-taxonomy.md)에 나왔다 (상위 10 / 하위 31, 275편 매핑 완료). **적용되면 결정 5의 기본 이미지가 11장 → 10장**이 된다. 티스토리에 적용한 뒤 `/blog-census`로 `data/categories.json`을 갱신하고, 그 목록에 맞춰 도안과 `DESIGN.md` §6.2 규칙을 만든다 |
 | 7 | **스킨 미리보기 이미지 4종** (`preview.gif` 112x84 / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`) |
+| 8 | **카테고리 개편 적용** — 계획은 확정 대기([`docs/category-taxonomy.md`](./docs/category-taxonomy.md) §4의 확인 필요 8건 + 비공개 3편). 티스토리 관리 화면에서 수동 작업이며 되돌리기가 없다 |
 
 ---
 
