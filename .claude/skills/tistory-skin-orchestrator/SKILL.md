@@ -7,19 +7,22 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 
 `sanggi-jayg.tistory.com` 커스텀 스킨을 만드는 팀을 조율한다.
 
-## 실행 모드: 하이브리드
+## 실행 모드: 환경을 먼저 확인한다
 
-| Phase | 모드 | 이유 |
+**`TeamCreate`가 있는 환경과 없는 환경이 둘 다 있다.** 있다고 전제하면 Phase 2·3이 통째로 실행 불가가 된다
+(2026-08-25 첫 실행에서 실제로 그랬다). **Phase 2 시작 전에 `ToolSearch`로 `TeamCreate`를 조회해 분기한다.**
+
+| Phase | `TeamCreate` 있음 | 없음 |
 |---|---|---|
-| Phase 1 (실측, 필요 시) | 서브 에이전트 | `blog-analyst` 단독 조사. 팀 통신 불필요 |
-| Phase 3 (구현) | **에이전트 팀** | 마크업↔CSS↔JS가 훅으로 강하게 얽혀 있어 실시간 조율이 품질을 좌우 |
-| Phase 4 (배포 준비) | 리더 직접 | 사람이 손으로 하는 절차 안내 |
+| Phase 1 (실측, 필요 시) | 서브 에이전트 | 서브 에이전트 |
+| Phase 3 (구현) | **에이전트 팀** — 마크업↔CSS↔JS가 훅으로 얽혀 실시간 조율이 품질을 좌우한다 | **서브 에이전트 파이프라인** (§Phase 3-B) |
+| Phase 4 (배포 준비) | 리더 직접 | 리더 직접 |
 
 ## 팀 구성
 
 | 팀원 | 타입 | 역할 | 주 스킬 | 출력 |
 |---|---|---|---|---|
-| `skin-markup` | 커스텀 | `skin.html` · `index.xml` | `/tistory-substitutions` | `src/skin.html`, `src/index.xml`, `_workspace/hooks.md` |
+| `skin-markup` | 커스텀 | `skin.html` · `index.xml` | `/tistory-substitutions` | `src/skin.html`, `src/index.xml`, `docs/hooks.md` |
 | `skin-style` | 커스텀 | `style.css` | `/tistory-substitutions` | `src/styles/*.css` |
 | `skin-behavior` | 커스텀 | `script.js` | — | `src/js/*.js` |
 | `skin-qa` | 커스텀 | 검증 | `/skin-qa-check`, `/skin-preview` | `_workspace/qa-report.md` |
@@ -64,16 +67,28 @@ Agent(subagent_type: "blog-analyst", model: "opus", run_in_background: false,
 
 ---
 
-## Phase 2: 팀 구성
+## Phase 2: 실행 모드 분기
+
+```
+ToolSearch(query: "select:TeamCreate", max_results: 1)
+```
+
+- **나오면** → Phase 2-A(팀 구성) → Phase 3-A
+- **안 나오면** → Phase 2-A를 건너뛰고 **Phase 3-B**로 간다. 사용자에게 한 줄로 알린다:
+  "`TeamCreate`가 없어 서브 에이전트 파이프라인으로 진행합니다 — 병렬성과 실시간 조율이 줄어듭니다."
+
+---
+
+## Phase 2-A: 팀 구성 (`TeamCreate` 있을 때만)
 
 ```
 TeamCreate(team_name: "tistory-skin", members: [
   { name: "skin-markup",   agent_type: "skin-markup",   model: "opus",
     prompt: "DECISIONS.md·DESIGN.md를 읽고 src/skin.html·src/index.xml을 작성하라.
-             훅 계약을 _workspace/hooks.md에 먼저 확정하고 팀에 공표한 뒤 시작하라." },
+             훅 계약을 docs/hooks.md에 먼저 확정하고 팀에 공표한 뒤 시작하라." },
   { name: "skin-style",    agent_type: "skin-style",    model: "opus",
     prompt: "DESIGN.md를 규범으로 src/styles/*.css를 작성하라.
-             _workspace/hooks.md가 나올 때까지 토큰·리셋부터 작업하라." },
+             docs/hooks.md가 나올 때까지 토큰·리셋부터 작업하라." },
   { name: "skin-behavior", agent_type: "skin-behavior", model: "opus",
     prompt: "src/js/*.js를 작성하라. 생성하는 DOM의 클래스 이름은
              skin-style과 반드시 사전 합의하라." },
@@ -108,13 +123,13 @@ TaskCreate(tasks: [
 
 ---
 
-## Phase 3: 구현
+## Phase 3-A: 구현 — 에이전트 팀
 
 **실행 모드:** 에이전트 팀. 팀원이 공유 작업 목록에서 작업을 요청해 자체 조율한다.
 
 ### 통신 규칙
 
-- **`skin-markup`이 가장 먼저 `_workspace/hooks.md`를 쓰고 `SendMessage`로 공표한다.** 나머지 둘은 이걸 받기 전엔 훅에 의존하지 않는 작업(토큰 CSS, 다크모드 토글)부터 한다
+- **`skin-markup`이 가장 먼저 `docs/hooks.md`를 쓰고 `SendMessage`로 공표한다.** 나머지 둘은 이걸 받기 전엔 훅에 의존하지 않는 작업(토큰 CSS, 다크모드 토글)부터 한다
 - 훅 이름이 바뀌면 markup이 **style·behavior 양쪽에 동시 통보**한다
 - `skin-behavior`는 생성 DOM의 클래스를 `skin-style`과 합의한 뒤 구현한다
 - `skin-qa`는 모듈 완성 알림을 받으면 즉시 검증하고, 경계면 이슈는 **양쪽 모두에게** 알린다
@@ -129,17 +144,47 @@ TaskCreate(tasks: [
 
 | 팀원 | 경로 |
 |---|---|
-| skin-markup | `src/skin.html`, `src/index.xml`, `_workspace/hooks.md` |
+| skin-markup | `src/skin.html`, `src/index.xml`, `docs/hooks.md` |
 | skin-style | `src/styles/*.css` |
 | skin-behavior | `src/js/*.js`, `_workspace/head-inline.js` |
 | skin-qa | `_workspace/qa-report.md` |
 
 ---
 
+## Phase 3-B: 구현 — 서브 에이전트 파이프라인 (`TeamCreate` 없을 때)
+
+에이전트는 한 번 실행되고 끝난다. **"공표를 기다리며 다른 일을 한다"가 불가능하므로**
+훅 계약을 만드는 쪽을 완전히 끝낸 뒤 나머지를 띄운다.
+
+```
+skin-markup (단독 선행) → docs/hooks.md 확정
+        ↓ 리더가 hooks.md 내용을 프롬프트에 직접 넣어 전달
+skin-style · skin-behavior (병렬, 파일 담당을 겹치지 않게 나눠서)
+        ↓
+skin-qa (일괄 검증)
+        ↓ 실패 항목을 담당 에이전트에 되돌린다
+```
+
+**리더가 직접 져야 하는 책임 — 팀 모드에서는 팀원이 하던 일이다**
+
+1. **훅 중계.** markup이 정한 이름을 style·behavior 프롬프트에 **그대로 복사해 넣는다.** 링크만 주지 마라
+2. **파일 담당을 겹치지 않게 못박는다.** 두 에이전트가 같은 파일을 동시에 고치면 한쪽이 덮인다.
+   프롬프트에 "네가 건드릴 파일은 X뿐이다. Y는 절대 건드리지 마라 — 지금 다른 에이전트가 고치고 있다"를 **명시**한다
+3. **협상이 필요한 결정을 미리 내린다.** behavior가 만드는 DOM 클래스는 협상할 상대가 없으므로 훅 계약에 미리 박혀 있어야 한다.
+   빠졌으면 리더가 정해서 양쪽에 같은 문장으로 전달한다
+4. **incremental QA를 포기한 대가를 인정한다.** 검증이 끝에 몰리므로 경계면 어긋남이 팀 모드보다 많이 나온다.
+   `skin-qa` 프롬프트에 **"서브 에이전트 모드라 경계면이 어긋났을 가능성이 높다"**를 배경으로 넣고,
+   각 에이전트가 "확인 못 했다"고 남긴 항목 목록을 함께 넘긴다
+
+**QA 프롬프트에 반드시 넣을 것** — `_workspace/qa-report.md`에 **통과 / 실패 / 미검증 3분류**로 쓰고,
+**"미검증을 통과로 적지 말 것"**. 이 도메인은 조용히 실패하므로 "아마 될 것"이 가장 위험한 문장이다.
+
+---
+
 ## Phase 4: 빌드·프리뷰·검증
 
 1. `/skin-build` — `npm run build`
-2. `/skin-preview` — 8개 페이지 렌더, 경고 확인
+2. `/skin-preview` — 10개 페이지 렌더, 경고 확인
 3. `/skin-qa-check` — 린트. **오류 0이 될 때까지 Phase 3로 되돌린다** (최대 3회). `SEO001`(반복 블록 안의 `h1`)과 `SEO002`(내부링크 치환자 **전부** 누락)도 오류다 — 일부만 빠지면 경고다
 4. `_workspace/qa-report.md` 최종본 확인 — **"미검증" 항목을 사용자에게 그대로 보고**
 
@@ -149,7 +194,7 @@ TaskCreate(tasks: [
 
 ## Phase 5: 정리
 
-1. 팀원 종료 요청 (`SendMessage`) → `TeamDelete`
+1. 팀 모드였으면 팀원 종료 요청(`SendMessage`) → `TeamDelete`. 파이프라인 모드였으면 할 일 없다
 2. `_workspace/` **보존** (사후 추적용)
 3. `npm run check` 통과 확인 후 커밋. **린트 오류가 남은 채로 커밋하지 않는다**
 4. 사용자에게 보고: 완료 항목 · 미검증 항목 · 배포 절차(`/skin-deploy`)
@@ -169,15 +214,18 @@ TaskCreate(tasks: [
 ```
 [리더] → (조건부) blog-analyst 서브 → data/*.json
           ↓
-       TeamCreate + TaskCreate
+    ToolSearch("select:TeamCreate")
           ↓
-   skin-markup ──hooks.md──→ skin-style
-        │                        │
-        └──hooks.md──→ skin-behavior ←─클래스 합의─┘
+  ┌───────┴────────────────────────────────┐
+  │ 있음: TeamCreate + TaskCreate          │ 없음: 파이프라인
+  │  skin-markup ─hooks.md→ skin-style     │  skin-markup 완료
+  │       │                    │           │      ↓ 리더가 hooks.md를 프롬프트에 복사
+  │       └→ skin-behavior ←합의┘          │  skin-style ∥ skin-behavior (파일 담당 분리)
+  └───────┬────────────────────────────────┘
                     ↓
                  src/**
                     ↓
-              skin-qa (모듈 완성 즉시, 반복)
+              skin-qa (팀: 모듈 완성 즉시 반복 / 파이프라인: 끝에 일괄)
                     ↓
           빌드 → 프리뷰 → 린트
                     ↓

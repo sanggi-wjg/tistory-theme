@@ -63,8 +63,18 @@ async function inlineFixCss() {
     return ''
   }
   const d = JSON.parse(await readFile(p, 'utf8'))
-  const DARK = ':root[data-theme="dark"] .contents_style'
-  const LIGHT = ':root:not([data-theme="dark"]) .contents_style'
+  // 다크 규칙은 두 스코프로 낸다.
+  //   ① [data-theme="dark"]                      — 사용자가 다크를 명시
+  //   ② @media dark + :not([data-theme="light"]) — stamp 없음(시스템 따름)
+  // ②가 빠지면 저장된 선택이 없는 첫 방문자(=기본 상태)에게 보정이 하나도 걸리지 않는다.
+  // 라이트도 같은 이유로 두 스코프다. 라이트 보정을 :not([data-theme="dark"]) 하나로만
+  // 두면 stamp 없음 + 시스템 다크에서도 발화해, 다크에서 멀쩡히 읽히던 밝은 글자까지
+  // --ink-body로 끌어내린다. 여섯 상태(명시 2 × OS 2 + stamp 없음 × OS 2) 전부에서
+  // 다크 규칙과 라이트 규칙이 겹치지 않도록 대칭으로 만든다.
+  const DARK_EXPLICIT  = ':root[data-theme="dark"] .contents_style'
+  const DARK_SYSTEM    = ':root:not([data-theme="light"]) .contents_style'
+  const LIGHT_EXPLICIT = ':root[data-theme="light"] .contents_style'
+  const LIGHT_SYSTEM   = ':root:not([data-theme="dark"]) .contents_style'
   // 강조색은 죽이지 않고 다크용으로 매핑한다
   const ACCENT = { '#006dd7': 'var(--link)', '#ee2323': 'var(--error)' }
 
@@ -72,38 +82,64 @@ async function inlineFixCss() {
   const sel = (scope, prop, hex) =>
     [`${scope} [style*="${prop}:${hex}"]`, `${scope} [style*="${prop}: ${hex}"]`]
 
-  const darkText = [], lightText = [], darkBg = [], lightBg = [], accents = []
+  // 색을 분류만 해 둔다 (선택자는 스코프별로 나중에 만든다)
+  const darkTextHex = [], lightTextHex = [], darkBgHex = [], lightBgHex = [], accentHex = []
   for (const hex of Object.keys(d.color || {})) {
     const L = luminance(hex)
     if (L === null) continue
-    if (ACCENT[hex.toLowerCase()]) {
-      accents.push([hex, ACCENT[hex.toLowerCase()]])
-    } else if (L < 0.5) darkText.push(...sel(DARK, 'color', hex))
-    else lightText.push(...sel(LIGHT, 'color', hex))
+    if (ACCENT[hex.toLowerCase()]) accentHex.push(hex)
+    else if (L < 0.5) darkTextHex.push(hex)
+    else lightTextHex.push(hex)
   }
   for (const hex of Object.keys(d.backgroundColor || {})) {
     const L = luminance(hex)
     if (L === null) continue
-    if (L >= 0.5) darkBg.push(...sel(DARK, 'background-color', hex))
-    else lightBg.push(...sel(LIGHT, 'background-color', hex))
+    if (L >= 0.5) darkBgHex.push(hex)
+    else lightBgHex.push(hex)
   }
 
   const block = (sels, decl, note) =>
     sels.length ? `/* ${note} */\n${sels.join(',\n')} { ${decl} }\n` : ''
 
+  const flat = (scope, prop, list) => list.flatMap(h => sel(scope, prop, h))
+
+  /** 한 스코프분의 다크 보정 규칙 전체 */
+  const darkRules = (scope) => [
+    block(flat(scope, 'color', darkTextHex),
+          'color: var(--ink-body) !important;', '다크에서 죽는 어두운 텍스트'),
+    ...accentHex.map(hex =>
+      block(sel(scope, 'color', hex),
+            `color: ${ACCENT[hex.toLowerCase()]} !important;`, `강조색 → 다크 대응색`)),
+    block(flat(scope, 'background-color', darkBgHex),
+          'background-color: var(--canvas-soft) !important;', '다크에서 흰 상자가 되는 배경'),
+  ].filter(Boolean).join('\n')
+
+  /** 한 스코프분의 라이트 보정 규칙 전체 */
+  const lightRules = (scope) => [
+    block(flat(scope, 'color', lightTextHex),
+          'color: var(--ink-body) !important;', '라이트에서 대비가 부족한 밝은 텍스트'),
+    block(flat(scope, 'background-color', lightBgHex),
+          'background-color: var(--canvas-soft-2) !important;', '라이트에서 검은 상자가 되는 배경'),
+  ].filter(Boolean).join('\n')
+
+  const indent = (s) => s.split('\n').map(l => l ? '  ' + l : l).join('\n')
+  const systemDark  = indent(darkRules(DARK_SYSTEM))
+  const systemLight = indent(lightRules(LIGHT_SYSTEM))
+
   const out = [
     `/* ── 인라인 스타일 보정 (data/inline-styles.json ${d.crawledAt ?? ''}에서 생성 — 직접 수정하지 말 것) ── */`,
     `/* 폰트 — 전부 무력화. inherit이므로 <pre> 안에서는 --font-mono를 물려받는다 */`,
     `.contents_style [style*="font-family"] { font-family: inherit !important; }`,
-    block(darkText, 'color: var(--ink-body) !important;', '다크에서 죽는 어두운 텍스트'),
-    ...accents.map(([hex, v]) =>
-      block(sel(DARK, 'color', hex), `color: ${v} !important;`, `강조색 ${hex} → 다크 대응색`)),
-    block(lightText, 'color: var(--ink-body) !important;', '라이트에서 대비가 부족한 밝은 텍스트'),
-    block(darkBg, 'background-color: var(--canvas-soft) !important;', '다크에서 흰 상자가 되는 배경'),
-    block(lightBg, 'background-color: var(--canvas-soft-2) !important;', '라이트에서 검은 상자가 되는 배경'),
+    darkRules(DARK_EXPLICIT),
+    `/* stamp 없음(시스템 따름) 상태 — 저장된 선택이 없는 첫 방문자의 기본값이다 */`,
+    `@media (prefers-color-scheme: dark) {\n${systemDark}\n}`,
+    lightRules(LIGHT_EXPLICIT),
+    `/* stamp 없음 + 시스템 라이트 */`,
+    `@media (prefers-color-scheme: light) {\n${systemLight}\n}`,
   ].filter(Boolean).join('\n')
 
-  const n = darkText.length + lightText.length + darkBg.length + lightBg.length + accents.length * 2
+  const n = (darkTextHex.length + darkBgHex.length + accentHex.length
+             + lightTextHex.length + lightBgHex.length) * 2 * 2
   console.log(`  인라인 보정 CSS 생성 — 선택자 ${n}개 (색 ${Object.keys(d.color || {}).length}종 + 배경 ${Object.keys(d.backgroundColor || {}).length}종 × 공백 2형태)`)
   return out
 }

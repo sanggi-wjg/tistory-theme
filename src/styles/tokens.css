@@ -1,0 +1,205 @@
+/* ══════════════════════════════════════════════════════════════════════
+   tokens.css — DESIGN.md §2·§3·§4를 CSS 변수로 옮긴 유일한 정의부
+
+   규칙 세 가지. 어기면 조용히 깨진다.
+   1. 색 리터럴은 이 파일의 :root 블록 안에서만 등장한다. 나머지는 전부 var().
+   2. 테마 블록에서는 "토큰만 재정의"한다. 그 안에서 색을 처음 정의하면,
+      stamp 없는 시스템 테마 상태에서 한쪽 테마 글자가 다른 쪽 배경에 얹힌다.
+   3. 세 상태를 모두 다룬다 — dark 지정 · light 지정 · stamp 없음(시스템 따름).
+      light 지정은 별도 블록이 필요 없다. 아래 :root가 곧 라이트이고,
+      시스템 다크 블록이 :not([data-theme="light"])로 스스로를 비켜 준다.
+
+   테마에 따라 달라지는 "색이 아닌 값"도 여기서 토큰으로 만든다.
+   (해/달 아이콘 표시 여부) 그래야 컴포넌트 CSS에 테마 분기가 새지 않는다.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light;
+
+  /* ── 색 : 라이트 (DESIGN.md §2) ───────────────────────────────── */
+  --canvas:          #ffffff;
+  --canvas-soft:     #fafafa;
+  --canvas-soft-2:   #f5f5f5;
+  --surface:         #ffffff;
+  --hairline:        #ebebeb;
+  --hairline-strong: #a1a1a1;
+  --ink:             #171717;
+  --ink-body:        #4d4d4d;
+  /* #888888은 흰 캔버스에서 3.54:1로 AA 미달이었다 (qa-report F1).
+     흰 캔버스만 보고 #767676으로 내렸더니 4.54:1로 통과했지만, --ink-mute는
+     코드블록 안(--canvas-soft)에서도 쓰인다 — .hljs-comment · .code-lang ·
+     .code-lines. 거기서는 4.35:1로 여전히 미달이었다.
+     **캡션이 놓이는 세 면 전부를 기준으로 잡는다:**
+        #707070 → --canvas 4.95 / --canvas-soft 4.74 / --canvas-soft-2 4.54
+     다크(#8f8f8f)는 6.49:1이라 그대로 둔다. */
+  --ink-mute:        #707070;
+  --link:            #0070f3;
+  --link-deep:       #0761d1;
+  --link-bg-soft:    #d3e5ff;
+  --error:           #ee0000;
+  --warning:         #f5a623;
+  --accent-cyan:     #29bc9b;
+  --selection-bg:    #171717;
+  --selection-fg:    #f2f2f2;
+
+  /* ── 테마 의존 비색상 값 ──────────────────────────────────────────
+     토글 버튼은 "누르면 갈 곳"을 보여준다 — 라이트에서 달, 다크에서 해. */
+  --icon-sun-display:  none;
+  --icon-moon-display: block;
+
+  /* ── 폰트 (DESIGN.md §3) ─────────────────────────────────────── */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+               "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "JetBrains Mono", "D2Coding", ui-monospace,
+               SFMono-Regular, Consolas, monospace;
+
+  /* ── 타입 스케일 ─────────────────────────────────────────────── */
+  --fs-display-xl: 48px;  --lh-display-xl: 1.05;  --ls-display-xl: -0.028em;
+  --fs-display-lg: 32px;  --lh-display-lg: 1.25;  --ls-display-lg: -0.022em;
+  --fs-display-md: 24px;  --lh-display-md: 1.33;  --ls-display-md: -0.018em;
+  --fs-display-sm: 20px;  --lh-display-sm: 1.4;   --ls-display-sm: -0.012em;
+  --fs-body-lg:    18px;  --lh-body-lg:    1.75;
+  --fs-body:       16px;  --lh-body:       1.75;
+  --fs-body-sm:    14px;  --lh-body-sm:    1.6;
+  --fs-caption:    12px;  --lh-caption:    1.5;
+  --fs-mono:       13px;  --lh-mono:       1.7;
+
+  /* 대문자 라벨(eyebrow·사이드바 제목)에만 쓰는 양수 자간 */
+  --ls-label: 0.1em;
+
+  /* ── 간격 : 4px 기준 사다리 (DESIGN.md §4) ────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* ── 모서리 ─────────────────────────────────────────────────── */
+  --radius-sm: 4px;   /* 태그·인라인 코드 */
+  --radius-md: 6px;   /* 버튼·입력 */
+  --radius-lg: 8px;   /* 카드·코드블록 */
+  --radius-xl: 12px;  /* 히어로 — 이보다 더 굴리지 않는다 */
+
+  /* 기본이미지 마스크 폴백 — 완전 투명한 1×1 SVG.
+     빌드가 src/assets/placeholders/*.svg에서 --ph-*를 만든다. 파일이 없거나
+     파일명을 틀리면 그 변수가 정의되지 않는데, 마스크 방식에서는 그것이
+     **mask-image 선언 무효 → 마스크 없는 --ink-mute 단색 판이 카드를 덮는 것**으로
+     나타난다(배경 방식일 때의 "그림이 안 나온다"보다 훨씬 나쁘다).
+     투명 마스크로 떨어뜨려 알파 0 = 아무것도 안 그리게 만든다. 카드는 점격자만 남는다. */
+  --ph-fallback: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E");
+
+  /* ── 폭 (DESIGN.md §4 E안) ───────────────────────────────────
+     --content-w 800px은 index.xml <contentWidth>800</contentWidth>과의 계약이다.
+     여기를 바꾸면 index.xml도 바꿔야 하고, index.xml을 바꾸면 스킨 설정이 초기화된다. */
+  --wrap:       1200px;
+  --content-w:  800px;
+  --toc-w:      240px;
+  --sidebar-w:  300px;
+  --pad-x:      20px;
+
+  /* 본문 레일 폭. 본체와 광고 자리가 같은 선에 서도록 둘 다 이 값을 쓴다.
+     좁은 페이지(글·방명록)에서 layout.css가 body_id로 재정의한다. */
+  --page-w:     var(--wrap);
+
+  /* ── 모션 : 상태 변화에만, 150ms 이내 (DESIGN.md §7) ───────────── */
+  --dur:  150ms;
+  --ease: cubic-bezier(0.2, 0.6, 0.3, 1);
+
+  /* 라이트박스 가림막.
+     새 값을 들이지 않고 기존 토큰으로만 만든다. 두 테마 모두 "어두운 막"이어야
+     사진·스크린샷이 떠 보이므로, 라이트에서는 --ink를, 다크에서는 --canvas를 쓴다.
+     (아래 다크 블록은 이 토큰을 재정의만 한다 — 색을 처음 정의하지 않는다.)
+
+     ⚠ 여기 정적 값은 파생이 아니라 **폴백**이다. rgba(23,23,23,.88) = --ink #171717 88%.
+        color-mix는 파일 끝 @supports 블록에서만 얹는다 — 이유는 그 주석 참조.
+        --ink를 바꾸면 이 줄도 같이 바꿔야 한다. */
+  --veil: rgba(23, 23, 23, 0.88);
+}
+
+/* ── 다크 : 시스템 따름 (stamp 없음) ──────────────────────────────
+   :not([data-theme="light"]) 가드가 없으면, 사용자가 라이트를 명시했는데
+   OS가 다크일 때 OS가 이긴다. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas:          #000000;
+    --canvas-soft:     #0a0a0a;
+    --canvas-soft-2:   #111111;
+    --surface:         #0a0a0a;
+    --hairline:        #2e2e2e;
+    --hairline-strong: #454545;
+    --ink:             #ededed;
+    --ink-body:        #a1a1a1;
+    --ink-mute:        #8f8f8f;
+    --link:            #3291ff;
+    --link-deep:       #52a8ff;
+    --link-bg-soft:    #10233f;
+    --error:           #ff6166;
+    --warning:         #f7b955;
+    --accent-cyan:     #50e3c2;
+    --selection-bg:    #ededed;
+    --selection-fg:    #171717;
+    --icon-sun-display:  block;
+    --icon-moon-display: none;
+    --veil: rgba(0, 0, 0, 0.88);   /* = --canvas #000000 88% (폴백) */
+  }
+}
+
+/* ── 다크 : 사용자가 명시 ──────────────────────────────────────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas:          #000000;
+  --canvas-soft:     #0a0a0a;
+  --canvas-soft-2:   #111111;
+  --surface:         #0a0a0a;
+  --hairline:        #2e2e2e;
+  --hairline-strong: #454545;
+  --ink:             #ededed;
+  --ink-body:        #a1a1a1;
+  --ink-mute:        #8f8f8f;
+  --link:            #3291ff;
+  --link-deep:       #52a8ff;
+  --link-bg-soft:    #10233f;
+  --error:           #ff6166;
+  --warning:         #f7b955;
+  --accent-cyan:     #50e3c2;
+  --selection-bg:    #ededed;
+  --selection-fg:    #171717;
+  --icon-sun-display:  block;
+  --icon-moon-display: none;
+  --veil: rgba(0, 0, 0, 0.88);   /* = --canvas #000000 88% (폴백) */
+}
+
+/* ── 가림막을 토큰에서 파생시키는 건 지원 브라우저에서만 ──────────
+   커스텀 속성은 "앞줄 정적값 + 뒷줄 color-mix" 캐스케이드 폴백이 통하지 않는다.
+   미지원 브라우저도 --veil: color-mix(…) 선언 자체는 유효한 토큰 열로 받아들여
+   뒷줄이 앞줄을 이기고, var(--veil)을 쓰는 순간 계산값 시점에 무효가 되어
+   background가 unset(=transparent)이 된다. 막이 아예 사라진다 (qa-report O5).
+
+   그래서 정적 rgba를 기본값으로 두고, 지원하는 브라우저에서만 여기서 덮는다.
+   ⚠ --veil 값을 바꿀 때는 위 세 블록과 이 블록을 **함께** 고쳐야 한다. */
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  :root { --veil: color-mix(in srgb, var(--ink) 88%, transparent); }
+
+  :root[data-theme="dark"] { --veil: color-mix(in srgb, var(--canvas) 88%, transparent); }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --veil: color-mix(in srgb, var(--canvas) 88%, transparent); }
+  }
+}
+
+/* ── 넓은 화면에서 여백을 한 단 올린다 ────────────────────────── */
+@media (min-width: 768px) {
+  :root { --pad-x: 24px; }
+}
+
+/* ── 모션 축소 요청 ───────────────────────────────────────────
+   전환 시간을 토큰에서 0으로 내린다. 컴포넌트가 전부 var(--dur)를 쓰므로
+   !important 없이 한 곳에서 끈다. (!important는 인라인 스타일 보정 전용) */
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0ms; }
+}

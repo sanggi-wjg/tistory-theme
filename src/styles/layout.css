@@ -1,0 +1,208 @@
+/* ══════════════════════════════════════════════════════════════════════
+   layout.css — body_id 게이트 · 본체 골격 · 반응형
+
+   skin.html은 한 장이고, 페이지별 영역은 치환자가 지우고 남긴다.
+   그런데 두 영역은 치환자로 지울 수 없어 **모든 페이지 DOM에 남는다**
+   (docs/hooks.md §1):
+
+     .card-grid — 반복 치환자 <s_index_article_rep>를 감싸야 해서 바깥에 있다
+     .sidebar   — <s_sidebar>가 페이지를 가리지 않는다
+
+   그래서 여기서 body_id로 잠근다. 빠뜨리면 글 페이지에 빈 그리드가,
+   방명록에 빈 사이드바 칸이 뜬다. :empty로는 못 잡는다 —
+   치환자가 사라져도 줄바꿈 공백이 남아 :empty가 거짓이 된다.
+
+   폭 기준 (DESIGN.md §4): ~640px 1열 / 641~1024px 2열 / 1025px~ 3열.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 본체 그리드 ─────────────────────────────────────────────────
+   .content + .sidebar 2칸. 기본은 1칸이고 목록 4종에서만 2칸이 된다. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-7);
+  max-width: var(--page-w);
+  margin: 0 auto;
+  padding: var(--sp-7) var(--pad-x) var(--sp-9);
+}
+
+/* min-width:0이 없으면 1,777자짜리 코드 줄이 그리드 트랙을 밀어
+   페이지 전체가 가로로 스크롤한다. */
+.content { min-width: 0; }
+
+/* ── 게이트 ① 홈 그리드 — 홈에서만 ─────────────────────────────── */
+.card-grid { display: none; }
+
+#tt-body-index .card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+}
+
+/* ── 게이트 ② 사이드바 — 2단인 목록 4종에서만 ───────────────────── */
+.sidebar { display: none; }
+
+#tt-body-category .sidebar,
+#tt-body-search   .sidebar,
+#tt-body-tag      .sidebar,
+#tt-body-archive  .sidebar { display: block; min-width: 0; }
+
+/* ── 1단으로 좁히는 페이지 ───────────────────────────────────────
+   본문 폭 800px은 index.xml <contentWidth>와의 계약이다(hooks.md §4).
+   글 페이지는 본문 800 + 간격 48 + 목차 240 = 1088을 담는다.
+
+   --page-w를 body에서 갈아끼운다. 본체(.layout)와 광고 자리(.ad)가 같은 토큰을
+   보므로 둘이 어긋나지 않는다. .ad에 따로 max-width를 쓰면 반드시 어긋난다. */
+#tt-body-page {
+  --page-w: calc(var(--content-w) + var(--sp-7) + var(--toc-w) + var(--pad-x) * 2);
+}
+
+#tt-body-guestbook {
+  --page-w: calc(var(--content-w) + var(--pad-x) * 2);
+}
+
+/* ── 목차가 없는 글 : 목차 없는 폭으로 갈아끼운다 ────────────────────
+   소제목 3개 미만이면 toc.js가 .is-ready를 붙이지 않아 .toc가 display:none인데
+   240px 트랙과 48px 간격은 그대로 남는다. 그러면 본문이 288px 왼쪽으로 치우친다
+   (1265px에서 좌 89 / 우 377 — qa-report F4). 실측 32%, 275편 중 약 88편이 이 경우다.
+
+   여기서도 .ad에 따로 max-width를 주지 않고 --page-w 한 곳만 갈아끼운다.
+   본체만 좁히면 광고 자리가 1128px에 남아 본문과 어긋난다 — 위 주석의 그 함정이다.
+
+   ⚠ 신호를 .toc:not(.is-ready)가 아니라 body.no-toc로 잡는 이유 — 레이아웃 시프트.
+   .is-ready는 JS가 붙인다. 그걸 조건으로 쓰면 **첫 페인트에서는 모든 글이 1단**이고
+   스크립트가 실행되는 순간 목차가 있는 글이 2단으로 바뀐다. script.js는 </body>
+   직전에 defer 없이 걸려 있어(skin.html) 네트워크가 느리면 페인트가 먼저다.
+   실측: 1400px에서 본문 좌단이 292.5 → 148.5, **144px 밀린다.**
+   목차가 있는 글이 68%이므로 그 방식은 다수를 밀어 버린다.
+
+   body.no-toc는 반대로 **목차를 못 만들 때만** toc.js가 붙인다(hooks.md §5.1).
+   기본값이 2단이므로 목차가 있는 68%는 한 픽셀도 움직이지 않고, 밀리는 것은
+   목차가 없는 32%뿐이다. 시프트 거리는 같고 대상만 줄어든다.
+
+   JS가 아예 실행되지 않으면 no-toc가 안 붙어 모든 글이 2단으로 남는다 —
+   목차 없는 글에서 F4의 치우침이 되살아난다. 그 경로는 아래 (scripting: none)이 받는다. */
+#tt-body-page.no-toc {
+  --page-w: calc(var(--content-w) + var(--pad-x) * 2);
+}
+
+/* JS가 꺼져 있으면 목차는 어떤 글에도 생기지 않는다. 전부 1단으로 둔다.
+   (scripting: none)을 모르는 브라우저는 치우침으로 떨어진다 — 깨지지는 않는다. */
+@media (scripting: none) {
+  #tt-body-page { --page-w: calc(var(--content-w) + var(--pad-x) * 2); }
+}
+
+/* 1024px 미만에서는 목차가 본문 위로 올라가 옆 트랙을 쓰지 않는다.
+   그런데 --page-w는 2단용 1,136px 그대로라 컨테이너가 본문보다 넓다.
+   본문(800)은 max-width에 걸려 왼쪽에 붙고 오른쪽에 최대 176px이 빈다
+   (1024px에서 좌 24 / 우 200 — 실측). F4와 같은 원인이 다른 폭에 남아 있던 것이다.
+   여기서도 --page-w 한 곳만 갈아끼운다. 광고 자리가 따라온다. */
+@media (max-width: 1024px) {
+  #tt-body-page { --page-w: calc(var(--content-w) + var(--pad-x) * 2); }
+}
+
+/* ── 글 페이지 : 본문 + 목차 ─────────────────────────────────────
+   1024px 미만에서는 1칸이고 목차가 본문 위로 올라간다(접이식). */
+.entry-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-6);
+}
+
+/* min-width:0이 없으면 코드블록이 트랙을 밀어 페이지가 가로 스크롤한다 — hooks.md §4.
+   max-width는 1024px 미만(1칸)에서 본문이 1,088px까지 늘어나는 것을 막는다.
+   1025px 이상에서는 트랙이 이미 800px 이하라 이 값이 걸리지 않는다. */
+.entry-main {
+  min-width: 0;
+  max-width: var(--content-w);
+}
+
+.entry-head,
+.entry-aside { max-width: var(--content-w); }
+
+.entry-aside {
+  order: -1;
+  min-width: 0;
+}
+
+/* ── 목록 : 카드 세로 나열 ──────────────────────────────────────── */
+.post-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══ 641px~ : 2열 ══════════════════════════════════════════════ */
+@media (min-width: 641px) {
+  #tt-body-index .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* 주목 글. 반복 치환자는 첫 항목을 표시해 주지 않으므로 :first-child로 잡는다.
+     그래서 .card-grid의 자식은 .post뿐이어야 한다 — 광고·공지를 넣으면 깨진다. */
+  #tt-body-index .card-grid > .post:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ══ 1025px~ : 3열 · 2단 · 목차 우측 ═══════════════════════════ */
+@media (min-width: 1025px) {
+  #tt-body-index .card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #tt-body-category .layout,
+  #tt-body-search   .layout,
+  #tt-body-tag      .layout,
+  #tt-body-archive  .layout {
+    grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
+    align-items: start;
+  }
+
+  .entry-layout {
+    grid-template-columns: minmax(0, 1fr) var(--toc-w);
+    gap: var(--sp-7);
+    align-items: start;
+  }
+
+  .entry-aside {
+    order: 0;
+    position: sticky;
+    top: var(--sp-5);
+    max-width: none;
+  }
+
+  /* 제목 줄을 본문 칸과 정확히 맞춘다.
+     .entry-layout의 본문 트랙 = 100% - 목차 - 간격 이므로 같은 식을 쓴다. */
+  .entry-head {
+    max-width: calc(100% - var(--toc-w) - var(--sp-7));
+  }
+
+  /* ── 목차가 없는 글 : 트랙도 지운다 ─────────────────────────────
+     위에서 --page-w를 840px로 줄였으니 트랙까지 지워야 한다. 안 지우면
+     800 - 48 - 240 = 512px가 되어 본문이 오히려 찌그러진다.
+
+     .entry-head도 같은 조건을 봐야 한다. 함께 풀지 않으면 제목만 512px로 남아
+     본문과 어긋난다. 신호가 body에 붙으므로 둘 다 후손 선택자 하나로 잡힌다.
+
+     margin-inline은 지금 계산으로는 트랙이 정확히 800px이라 아무 일도 하지 않는다.
+     폭 공식이 바뀌어도 치우침이 되살아나지 않게 남겨 둔다. */
+  .no-toc .entry-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .no-toc .entry-layout > .entry-main {
+    margin-inline: auto;
+  }
+
+  .no-toc .entry-head {
+    max-width: var(--content-w);
+    margin-inline: auto;
+  }
+
+  /* JS가 꺼진 경로. 위 세 규칙과 값이 같아야 한다 — 함께 고친다. */
+  @media (scripting: none) {
+    .entry-layout { grid-template-columns: minmax(0, 1fr); }
+    .entry-layout > .entry-main { margin-inline: auto; }
+    .entry-head { max-width: var(--content-w); margin-inline: auto; }
+  }
+}

@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="naver-site-verification" content="100d6799251e62ceaf64af174e2d502e98f5f804">
+<title>[##_page_title_##]</title>
+<link rel="alternate" type="application/rss+xml" title="[##_title_##]" href="[##_rss_url_##]">
+
+<!-- ─────────────────────────────────────────────────────────────
+     head-inline:start
+     skin-behavior가 _workspace/head-inline.js의 내용을 아래 script 안에 붙여넣는다.
+     빌드는 skin.html을 그대로 복사할 뿐 주입하지 않는다(scripts/build.mjs).
+
+     하는 일 (두 줄이면 된다):
+       1. localStorage의 'theme' 값이 'dark' | 'light' 이면 html에 data-theme를 즉시 찍는다.
+          값이 없으면 아무것도 찍지 않는다 = 시스템 따름(세 번째 상태).
+          반드시 try/catch — 시크릿 모드·사이트데이터 차단에서 예외가 난다.
+       2. html에 class 'js'를 더한다.
+
+     동기 스크립트여야 하고, style.css 링크보다 위에 있어야 한다.
+     여기서 실패하면 다크 사용자가 흰 화면 번쩍임을 본다.
+     상세 계약: docs/hooks.md §5.4
+     ───────────────────────────────────────────────────────────── -->
+<script>/* head-inline — hooks.md §5.4. 키 'theme', 값 'dark'|'light'. 없으면 아무것도 찍지 않는다(시스템 따름). */
+try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}
+document.documentElement.classList.add('js');
+</script>
+<!-- head-inline:end -->
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="./style.css">
+
+<!-- GA4 — 기존 스킨에서 이전 (DECISIONS.md 결정 25) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PHQ5FKMZ37"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-PHQ5FKMZ37');
+</script>
+</head>
+
+<body id="[##_body_id_##]">
+<s_t3>
+
+<a class="skip-link" href="#main">본문 바로가기</a>
+
+<!-- ══════════════════════════ 헤더 ══════════════════════════ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="site-brand">
+      <!-- ⚠ 여기는 h1이 아니다. 헤더는 모든 페이지에 있으므로 h1을 두면
+           글·목록 페이지에서 그 페이지의 h1과 겹쳐 **마크업에 h1이 둘**이 된다.
+           CSS로 감춰도 원시 HTML에는 남고, 크롤러와 seo-verify-live의 V003은
+           원시 HTML을 센다(실측: 감춤 방식일 때 홈 빼고 전 페이지 h1 2개).
+
+           h1은 각 페이지 자신의 영역이 갖는다 —
+             글    .entry-title      (s_permalink_article_rep)
+             목록  .list-title       (s_list)
+             클라우드 .tagcloud-title (s_tag)
+             방명록 .guestbook-title  (s_guest)
+
+           **홈에는 h1이 없다. 알고 남긴 예외다.** 티스토리에는 홈에서 한 번만
+           렌더되는 영역이 없어(areaScope의 홈은 s_index_article_rep 반복과
+           커버뿐) 홈 전용 h1을 놓을 자리가 없다. 홈의 이름은 <title>과
+           아래 링크 텍스트가 담는다. 자세한 것은 DESIGN.md §3. -->
+      <a class="brand-title" href="[##_blog_link_##]">[##_title_##]</a>
+      <p class="brand-desc">[##_desc_##]</p>
+    </div>
+
+    <nav class="site-nav" aria-label="블로그 메뉴">[##_blog_menu_##]</nav>
+
+    <div class="header-util">
+      <s_search>
+      <div class="search" role="search">
+        <label class="a11y-hidden" for="search-input">블로그 내 검색</label>
+        <input type="text" id="search-input" class="search-input" name="[##_search_name_##]" value="[##_search_text_##]"
+               placeholder="검색" autocomplete="off"
+               onkeypress="if (event.keyCode == 13) { [##_search_onclick_submit_##] }">
+        <button type="button" class="search-btn" onclick="[##_search_onclick_submit_##]" aria-label="검색">
+          <svg class="icon" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.7"></circle>
+            <path d="M13.5 13.5 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+      </s_search>
+
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="다크 모드 전환" aria-pressed="false">
+        <svg class="icon icon-sun" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <circle cx="10" cy="10" r="4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+          <path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.6 3.6l1.4 1.4M15 15l1.4 1.4M16.4 3.6 15 5M5 15l-1.4 1.4"
+                fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>
+        <svg class="icon icon-moon" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="M17 12.3A7.5 7.5 0 0 1 7.7 3a7.5 7.5 0 1 0 9.3 9.3Z"
+                fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- 홈·목록 상단 광고 자리 (DECISIONS.md 결정 21 — 노출은 티스토리 관리에서 결정) -->
+<div class="ad ad-upper">[##_revenue_list_upper_##]</div>
+
+<!-- ══════════════════════════ 본체 ══════════════════════════ -->
+<main class="layout" id="main">
+<div class="content">
+
+  <!-- ────────── 공지 ────────── -->
+  <s_notice_rep>
+  <article class="notice">
+    <header class="notice-head">
+      <span class="notice-badge">공지</span>
+      <!-- h1이 아니다. 공지 영역은 반복이라 공지가 여러 개면 h1이 여러 개가 된다.
+           공식 예제도 h2를 쓴다(docs/tistory-skin-reference.txt:925). 글 페이지에서는
+           .entry-title이 이미 h1이므로 h1을 쓰면 한 페이지에 h1이 둘이 된다.
+           ※ 주석 안에 그룹 치환자 태그를 그대로 쓰지 않는다 — 치환 엔진이 주석을
+             가리지 않고 텍스트로 찾는다. 린트 SUB007이 잡는다. -->
+      <h2 class="notice-title"><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></h2>
+      <time class="notice-date">[##_notice_rep_simple_date_##]</time>
+    </header>
+    <div class="notice-body">[##_notice_rep_desc_##]</div>
+  </article>
+  </s_notice_rep>
+
+  <!-- ────────── 홈 : 주목 글 1 + 3열 카드 그리드 ──────────
+       .card-grid의 자식은 반드시 .post 뿐이어야 한다.
+       주목 글은 .card-grid > .post:first-child 로 잡는다 (반복 치환자는 첫 항목을 표시해 주지 않는다).
+       .card-grid는 모든 페이지 DOM에 남으므로 layout.css가 body_id로 잠근다 — hooks.md §1
+       커버로 전환할 때는 이 블록만 통째로 커버 치환자로 감싼다 (결정 4). -->
+  <div class="card-grid">
+    <s_index_article_rep>
+    <article class="post" data-cat="[##_article_rep_category_##]">
+      <a class="post-link" href="[##_article_rep_link_##]">
+        <span class="thumb">
+          <s_article_rep_thumbnail>
+          <img class="thumb-img" src="[##_article_rep_thumbnail_url_##]" alt="" loading="lazy" decoding="async">
+          </s_article_rep_thumbnail>
+        </span>
+        <span class="post-text">
+          <span class="post-cat">[##_article_rep_category_##]</span>
+          <strong class="post-title">[##_article_rep_title_##]</strong>
+          <span class="post-excerpt">[##_article_rep_summary_##]</span>
+          <span class="post-meta">
+            <time class="post-date">[##_article_rep_simple_date_##]</time>
+            <s_rp_count><span class="post-rp">[##_article_rep_rp_cnt_##]</span></s_rp_count>
+          </span>
+        </span>
+      </a>
+    </article>
+    </s_index_article_rep>
+  </div>
+
+  <!-- ────────── 목록 : 카테고리 · 검색 · 태그 · 보관함 ────────── -->
+  <s_list>
+  <section class="list">
+    <s_list_image>
+    <div class="list-banner" style="background-image:url('[##_list_image_##]')"></div>
+    </s_list_image>
+
+    <header class="list-head">
+      <h1 class="list-title">[##_list_conform_##]</h1>
+      <span class="list-count">[##_list_count_##]</span>
+      <p class="list-desc">[##_list_description_##]</p>
+    </header>
+
+    <div class="post-list [##_list_style_##]">
+      <s_list_rep>
+      <article class="post" data-cat="[##_list_rep_category_##]">
+        <a class="post-link" href="[##_list_rep_link_##]">
+          <span class="thumb">
+            <s_list_rep_thumbnail>
+            <img class="thumb-img" src="[##_list_rep_thumbnail_##]" alt="" loading="lazy" decoding="async">
+            </s_list_rep_thumbnail>
+          </span>
+          <span class="post-text">
+            <span class="post-cat">[##_list_rep_category_##]</span>
+            <strong class="post-title">[##_list_rep_title_text_##]</strong>
+            <span class="post-excerpt">[##_list_rep_summary_##]</span>
+            <span class="post-meta">
+              <time class="post-date">[##_list_rep_regdate_##]</time>
+              <span class="post-rp">[##_list_rep_rp_cnt_##]</span>
+            </span>
+          </span>
+        </a>
+      </article>
+      </s_list_rep>
+    </div>
+
+    <s_list_empty>
+    <div class="list-empty">
+      <p class="list-empty-title">검색 결과가 없습니다.</p>
+      <p class="list-empty-desc">다른 검색어로 찾아보거나 <a href="[##_blog_link_##]">홈</a>으로 돌아가세요.</p>
+    </div>
+    </s_list_empty>
+  </section>
+  </s_list>
+
+  <!-- ────────── 태그 클라우드 (/tag) ────────── -->
+  <s_tag>
+  <section class="tagcloud">
+    <h1 class="tagcloud-title">태그</h1>
+    <ul class="tagcloud-list">
+      <s_tag_rep>
+      <li class="tagcloud-item"><a class="tagcloud-link [##_tag_class_##]" href="[##_tag_link_##]">[##_tag_name_##]</a></li>
+      </s_tag_rep>
+    </ul>
+  </section>
+  </s_tag>
+
+  <!-- ────────── 글 (퍼머링크) ────────── -->
+  <s_permalink_article_rep>
+  <article class="entry">
+    <div class="reading-progress" id="reading-progress"><span class="reading-progress-bar"></span></div>
+
+    <header class="entry-head">
+      <a class="entry-cat" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a>
+      <h1 class="entry-title">[##_article_rep_title_##]</h1>
+      <div class="entry-meta">
+        <time class="entry-date">[##_article_rep_date_##]</time>
+        <s_rp_count><a class="entry-rp" href="#comments">댓글 [##_article_rep_rp_cnt_##]</a></s_rp_count>
+      </div>
+    </header>
+
+    <div class="entry-layout">
+      <div class="entry-main">
+        <!-- 티스토리가 tt_article_useless_p_margin contents_style 래퍼째 넣는다 -->
+        <div class="entry-body">[##_article_rep_desc_##]</div>
+
+        <s_tag_label>
+        <div class="entry-tags">[##_tag_label_rep_##]</div>
+        </s_tag_label>
+
+        <s_ad_div>
+        <div class="entry-admin">
+          <a href="[##_s_ad_m_link_##]">수정</a>
+          <a href="#" onclick="[##_s_ad_s2_onclick_##]">[##_s_ad_s1_label_##] → [##_s_ad_s2_label_##]</a>
+          <a href="#" onclick="[##_s_ad_d_onclick_##]">삭제</a>
+        </div>
+        </s_ad_div>
+
+        <s_article_related>
+        <section class="related">
+          <h2 class="related-title">'[##_article_rep_category_##]'의 다른 글</h2>
+          <ul class="related-list">
+            <s_article_related_rep>
+            <li class="related-item [##_article_related_rep_type_##]">
+              <a class="related-link" href="[##_article_related_rep_link_##]">
+                <s_article_related_rep_thumbnail>
+                <span class="related-thumb">
+                  <img class="related-thumb-img" src="[##_article_related_rep_thumbnail_link_##]" alt="" loading="lazy" decoding="async">
+                </span>
+                </s_article_related_rep_thumbnail>
+                <span class="related-text">[##_article_related_rep_title_##]</span>
+                <time class="related-date">[##_article_related_rep_date_##]</time>
+              </a>
+            </li>
+            </s_article_related_rep>
+          </ul>
+          <a class="related-more" href="[##_article_rep_category_link_##]">카테고리 전체 보기</a>
+        </section>
+        </s_article_related>
+
+        <nav class="postnav" aria-label="이전 다음 글">
+          <s_article_prev>
+          <a class="postnav-item postnav-prev [##_article_prev_type_##]" href="[##_article_prev_link_##]">
+            <s_article_prev_thumbnail>
+            <span class="postnav-thumb">
+              <img class="postnav-thumb-img" src="[##_article_prev_thumbnail_link_##]" alt="" loading="lazy" decoding="async">
+            </span>
+            </s_article_prev_thumbnail>
+            <span class="postnav-label">이전 글</span>
+            <span class="postnav-title">[##_article_prev_title_##]</span>
+          </a>
+          </s_article_prev>
+          <s_article_next>
+          <a class="postnav-item postnav-next [##_article_next_type_##]" href="[##_article_next_link_##]">
+            <s_article_next_thumbnail>
+            <span class="postnav-thumb">
+              <img class="postnav-thumb-img" src="[##_article_next_thumbnail_link_##]" alt="" loading="lazy" decoding="async">
+            </span>
+            </s_article_next_thumbnail>
+            <span class="postnav-label">다음 글</span>
+            <span class="postnav-title">[##_article_next_title_##]</span>
+          </a>
+          </s_article_next>
+        </nav>
+
+        <!-- 댓글은 티스토리 React가 통짜로 렌더링한다. 치환자 한 줄만 (결정 17) -->
+        <div class="comments" id="comments">[##_comment_group_##]</div>
+      </div>
+
+      <aside class="entry-aside">
+        <!-- 목차는 JS가 채운다. 소제목 3개 미만이면 .is-ready가 붙지 않는다 — hooks.md §5.1 -->
+        <nav class="toc" id="toc" aria-label="목차">
+          <button type="button" class="toc-toggle" aria-expanded="false" aria-controls="toc-list">
+            <span class="toc-title">목차</span>
+          </button>
+          <ol class="toc-list" id="toc-list"></ol>
+        </nav>
+      </aside>
+    </div>
+  </article>
+  </s_permalink_article_rep>
+
+  <!-- ────────── 보호글 ────────── -->
+  <s_article_protected>
+  <section class="protected">
+    <h1 class="protected-title">[##_article_rep_title_##]</h1>
+    <p class="protected-desc">보호되어 있는 글입니다. 내용을 보려면 비밀번호를 입력하세요.</p>
+    <div class="protected-form">
+      <label class="protected-label" for="[##_article_password_##]">비밀번호</label>
+      <input class="protected-input" type="password" maxlength="16"
+             id="[##_article_password_##]" name="[##_article_password_##]" value=""
+             onkeydown="if (event.keyCode == 13) [##_article_dissolve_##]">
+      <button type="button" class="protected-submit" onclick="[##_article_dissolve_##]">확인</button>
+    </div>
+  </section>
+  </s_article_protected>
+
+  <!-- ────────── 방명록 ────────── -->
+  <s_guest>
+  <section class="guestbook">
+    <h1 class="guestbook-title">방명록</h1>
+    [##_guestbook_group_##]
+  </section>
+  </s_guest>
+
+  <!-- ────────── 페이징 (홈·목록 공용) ──────────
+       주의: 페이징 치환자는 href를 포함한 속성 문자열째 삽입된다. href="…"로 감싸면 깨진다. -->
+  <s_paging>
+  <nav class="paging" aria-label="페이지 이동">
+    <a class="paging-prev [##_no_more_prev_##]" [##_prev_page_##]>이전</a>
+    <span class="paging-nums">
+      <s_paging_rep>
+      <a class="paging-num" [##_paging_rep_link_##]>[##_paging_rep_link_num_##]</a>
+      </s_paging_rep>
+    </span>
+    <a class="paging-next [##_no_more_next_##]" [##_next_page_##]>다음</a>
+  </nav>
+  </s_paging>
+
+</div><!-- /.content -->
+
+<!-- ══════════════════════════ 사이드바 ══════════════════════════
+     모든 페이지 DOM에 남는다. 2단인 목록 4종에서만 보이도록 layout.css가 잠근다 — hooks.md §1 -->
+<aside class="sidebar">
+  <s_sidebar>
+
+    <s_sidebar_element>
+    <!-- 카테고리 -->
+    <div class="side-mod side-category">
+      <h2 class="side-title">카테고리</h2>
+      <div class="side-body">[##_category_##]</div>
+    </div>
+    </s_sidebar_element>
+
+    <s_sidebar_element>
+    <!-- 공지사항 -->
+    <s_rct_notice>
+    <div class="side-mod side-notice">
+      <h2 class="side-title">공지</h2>
+      <ul class="side-list">
+        <s_rct_notice_rep>
+        <li class="side-item"><a class="side-link" href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></li>
+        </s_rct_notice_rep>
+      </ul>
+    </div>
+    </s_rct_notice>
+    </s_sidebar_element>
+
+    <s_sidebar_element>
+    <!-- 최근 글 -->
+    <div class="side-mod side-recent">
+      <h2 class="side-title">최근 글</h2>
+      <ul class="side-list">
+        <s_rctps_rep>
+        <li class="side-item">
+          <a class="side-link" href="[##_rctps_rep_link_##]">
+            <s_rctps_rep_thumbnail>
+            <span class="side-thumb"><img class="side-thumb-img" src="[##_rctps_rep_thumbnail_##]" alt="" loading="lazy" decoding="async"></span>
+            </s_rctps_rep_thumbnail>
+            <span class="side-text">[##_rctps_rep_title_##]</span>
+            <span class="side-meta">
+              <time class="side-date">[##_rctps_rep_simple_date_##]</time>
+              <span class="side-rp">[##_rctps_rep_rp_cnt_##]</span>
+            </span>
+          </a>
+        </li>
+        </s_rctps_rep>
+      </ul>
+    </div>
+    </s_sidebar_element>
+
+    <s_sidebar_element>
+    <!-- 인기 글 -->
+    <div class="side-mod side-popular">
+      <h2 class="side-title">인기 글</h2>
+      <ul class="side-list">
+        <s_rctps_popular_rep>
+        <li class="side-item">
+          <a class="side-link" href="[##_rctps_rep_link_##]">
+            <s_rctps_rep_thumbnail>
+            <span class="side-thumb"><img class="side-thumb-img" src="[##_rctps_rep_thumbnail_##]" alt="" loading="lazy" decoding="async"></span>
+            </s_rctps_rep_thumbnail>
+            <span class="side-text">[##_rctps_rep_title_##]</span>
+            <span class="side-meta">
+              <time class="side-date">[##_rctps_rep_simple_date_##]</time>
+              <span class="side-rp">[##_rctps_rep_rp_cnt_##]</span>
+            </span>
+          </a>
+        </li>
+        </s_rctps_popular_rep>
+      </ul>
+    </div>
+    </s_sidebar_element>
+
+    <s_sidebar_element>
+    <!-- 최근 댓글 -->
+    <div class="side-mod side-comments">
+      <h2 class="side-title">최근 댓글</h2>
+      <ul class="sidecmt-list">
+        <s_rctrp_rep>
+        <li class="sidecmt-item">
+          <a class="sidecmt-link" href="[##_rctrp_rep_link_##]">[##_rctrp_rep_desc_##]</a>
+          <span class="sidecmt-name">[##_rctrp_rep_name_##]</span>
+          <time class="sidecmt-date">[##_rctrp_rep_time_##]</time>
+        </li>
+        </s_rctrp_rep>
+      </ul>
+    </div>
+    </s_sidebar_element>
+
+    <s_sidebar_element>
+    <!-- 태그 -->
+    <div class="side-mod side-tags">
+      <h2 class="side-title">태그</h2>
+      <ul class="tagcloud-list">
+        <s_random_tags>
+        <li class="tagcloud-item"><a class="tagcloud-link [##_tag_class_##]" href="[##_tag_link_##]">[##_tag_name_##]</a></li>
+        </s_random_tags>
+      </ul>
+    </div>
+    </s_sidebar_element>
+
+    <s_sidebar_element>
+    <!-- 방문자 수 -->
+    <div class="side-mod side-count">
+      <h2 class="side-title">방문자</h2>
+      <ul class="count-list">
+        <li class="count-item"><span class="count-label">Total</span><span class="count-num">[##_count_total_##]</span></li>
+        <li class="count-item"><span class="count-label">Today</span><span class="count-num">[##_count_today_##]</span></li>
+        <li class="count-item"><span class="count-label">Yesterday</span><span class="count-num">[##_count_yesterday_##]</span></li>
+      </ul>
+    </div>
+    </s_sidebar_element>
+
+  </s_sidebar>
+</aside>
+</main>
+
+<!-- 홈·목록 하단 광고 자리 -->
+<div class="ad ad-lower">[##_revenue_list_lower_##]</div>
+
+<!-- ══════════════════════════ 푸터 ══════════════════════════ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a class="footer-title" href="[##_blog_link_##]">[##_title_##]</a>
+      <p class="footer-desc">[##_desc_##]</p>
+    </div>
+    <ul class="footer-links">
+      <li><a href="[##_taglog_link_##]">태그</a></li>
+      <li><a href="[##_guestbook_link_##]">방명록</a></li>
+      <li><a href="[##_rss_url_##]">RSS</a></li>
+    </ul>
+    <p class="footer-copy">&copy; [##_blogger_##]. Powered by Tistory.</p>
+  </div>
+</footer>
+
+<!-- 스크롤 임계치에서 JS가 .is-visible을 토글한다. CSS 기본값은 보이지 않음 — hooks.md §5.3 -->
+<button type="button" class="to-top" id="to-top" aria-label="맨 위로">
+  <svg class="icon" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+    <path d="M10 16V4M4.5 9.5 10 4l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7"
+          stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+</button>
+
+<script src="./images/script.js"></script>
+</s_t3>
+</body>
+</html>

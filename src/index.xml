@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  이 파일이 바뀌면 스킨의 모든 설정이 초기화된다. 값을 늘리거나 이름을 바꾸기 전에 DECISIONS.md 결정 1을 읽을 것.
+  본인 블로그 전용 스킨이므로 <variables>(스킨 설정 화면)를 두지 않는다. 값은 CSS·HTML에 직접 박는다.
+  <liststyle>도 두지 않는다. skin.html은 [##_list_style_##]를 class로 이미 내보내므로,
+  나중에 필요해지면 이 파일에만 항목을 추가하면 된다.
+-->
+<skin>
+  <information>
+    <name>상쾌한기분</name>
+    <version>1.0</version>
+    <description>
+      <![CDATA[sanggi-jayg.tistory.com 전용 커스텀 스킨. 근백색 캔버스에 잉크 블랙, 촘촘한 그레이 사다리. 홈은 주목 글 1 + 3열 카드 그리드, 목록은 2단, 글은 1단 본문 + 우측 목차. 다크모드·목차·코드 하이라이팅·읽기 진행바 포함.]]>
+    </description>
+    <license>
+      <![CDATA[개인 사용 목적으로 제작한 스킨입니다.]]>
+    </license>
+  </information>
+
+  <author>
+    <name>상쾌한기분</name>
+    <homepage>https://sanggi-jayg.tistory.com</homepage>
+    <email>dev@fitpet.co.kr</email>
+  </author>
+
+  <default>
+    <!-- 홈: 주목 글 1 + 3열 그리드 4줄 = 13. 그리드가 어느 폭에서도 빈칸 없이 떨어진다 -->
+    <entriesOnPage>13</entriesOnPage>
+    <!-- 목록: 2단 레이아웃의 단일 열 카드 목록 -->
+    <entriesOnList>12</entriesOnList>
+
+    <!-- 0이면 카테고리·보관함이 글 본문으로 렌더된다. 이 스킨은 목록 치환자만 두었으므로 반드시 1 -->
+    <showListOnCategory>1</showListOnCategory>
+    <showListOnArchive>1</showListOnArchive>
+
+    <recentEntries>5</recentEntries>
+    <recentComments>5</recentComments>
+    <itemsOnGuestbook>20</itemsOnGuestbook>
+    <tagsInCloud>30</tagsInCloud>
+    <sortInCloud>1</sortInCloud>
+    <expandComment>1</expandComment>
+    <lengthOfRecentNotice>40</lengthOfRecentNotice>
+    <lengthOfRecentEntry>45</lengthOfRecentEntry>
+    <lengthOfRecentComment>40</lengthOfRecentComment>
+
+    <!-- 카테고리 트리는 티스토리가 통짜로 렌더링한다. 색은 라이트 팔레트 기준값 -->
+    <tree>
+      <color>4d4d4d</color>
+      <bgColor>ffffff</bgColor>
+      <activeColor>0070f3</activeColor>
+      <activeBgColor>f5f5f5</activeBgColor>
+      <labelLength>30</labelLength>
+      <showValue>1</showValue>
+    </tree>
+
+    <!-- 에디터 위지윅 폭. .entry-body의 실제 콘텐츠 폭과 같아야 한다 (docs/hooks.md §4) -->
+    <contentWidth>800</contentWidth>
+  </default>
+</skin>
