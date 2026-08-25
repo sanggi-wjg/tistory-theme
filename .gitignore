@@ -9,6 +9,7 @@ _workspace/
 _workspace_*/
 
 node_modules/
+__pycache__/
 
 # 라이브 스킨 백업 — 개인 블로그 자산이므로 저장소에 넣지 않는다
 backup/
