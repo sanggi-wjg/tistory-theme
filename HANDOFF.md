@@ -34,7 +34,7 @@ main = 8250446 · 열린 PR 없음 · npm run check exit 0
 tistory-skin-orchestrator 스킬 실행
 ```
 
-오케스트레이터가 팀 4명(마크업·스타일·동작·QA)을 꾸리고 `src/`를 만든다. Phase 0에서 브랜치·worktree를 먼저 잡는다.
+오케스트레이터가 팀 4명(마크업·스타일·동작·QA)을 꾸리고 `src/`를 만든다. Phase 0에서 `EnterWorktree`로 작업 공간을 먼저 잡으므로 사전 준비가 필요 없다.
 
 **첫 사이클에서 확인해야 할 것들** — 아직 아무도 검증하지 못했다:
 
