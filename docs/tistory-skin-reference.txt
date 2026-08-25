@@ -1,0 +1,1931 @@
+
+
+======================================================================
+## common/basic
+======================================================================
+치환자 구조
+티스토리의 치환자는 그룹치환자, 값치환자의 2가지 형태를 가지고 있습니다. 그룹치환자는 내부에 스킨 데이터를 포함하며 렌더링된 값으로 변환됩니다. 값치환자는 해당하는 값으로 변환됩니다.
+예
+<s_tag>
+    <div class="taglog">
+        <h3>태그</h3>
+        <ul>
+            <s_tag_rep>
+                <li><a href="[##_tag_link_##]" class="[##_tag_class_##]">[##_tag_name_##]</a></li>
+            </s_tag_rep>
+        </ul>
+    </div>
+</s_tag>
+
+그룹치환자: <s_tag>, <s_tag_rep>
+값치환자: [##_tag_link_##], [##_tag_class_##], [##_tag_name_##]
+
+그룹치환자
+<s_NAME>VALUE</s_NAME>
+
+값치환자
+[##_NAME_##]
+
+
+======================================================================
+## common/files
+======================================================================
+파일구조
+SKIN ─┬─ index.xml
+      ├─ skin.html
+      ├─ style.css
+      ├─ preview.gif
+      ├─ preview256.jpg
+      ├─ preview560.jpg
+      ├─ preview1600.jpg
+      └─ images ─┬─ script.js
+                 ├─ background.jpg
+                 ├─ background.jpg
+                 └─ background.jpg
+index.xml
+스킨 정보 파일로 자세한 내용은 '스킨 정보 파일' 장에서 다룹니다.
+skin.html
+스킨의 메인 템플릿 파일로 치환자를 사용해 각 url에 해당하는 HTML 결과물로 치환됩니다.
+style.css
+css 분리를 위한 파일이며 skin.html과 마찬가지로 스킨에디터에서 편집할 수 있습니다.
+preview
+티스토리 각 영역에서 미리보기를 표시하기 위한 파일입니다.
+
+preview.gif : 미리보기 기본 파일로 아래 파일이 없는 경우에 사용 (112x84)
+preview256.jpg : 사용 중인 스킨 미리보기 (256x192)
+preview560.jpg : 스킨 목록 미리보기 (560x420)
+preview1600.jpg : 스킨 상세보기 미리보기 (1600x1200)
+
+images
+필수요소가 아닌 파일은 모두 images 아래에 위치하게 됩니다. image, script, css 등을 업로드하여 스킨에서 사용합니다.
+
+
+======================================================================
+## common/index.xml
+======================================================================
+스킨 정보 파일
+스킨에 필요한 정보를 담고 있는 xml 파일로 이 파일이 변경되면 스킨의 모든 설정이 초기화됩니다.
+<?xml version="1.0" encoding="utf-8"?>
+<skin>
+  <information>
+    <name>기본 스킨</name>
+    <version>1.1</version>
+    <description>
+      <![CDATA[웹표준을 준수한 XHTML 기반의 Tistory 기본 스킨입니다.]]>
+    </description>
+    <license>
+      <![CDATA[자유롭게 수정이 가능하며, 저작권 표시하에 재배포 가능합니다.]]>
+    </license>
+  </information>
+  <author>
+    <name>tistory</name>
+    <homepage>http://notice.tistory.com</homepage>
+    <email>tistoryblog@daum.net</email>
+  </author>
+  <default>
+    <recentEntries>5</recentEntries>
+    <recentComments>5</recentComments>
+    <recentTrackbacks>5</recentTrackbacks>
+    <itemsOnGuestbook>10</itemsOnGuestbook>
+    <tagsInCloud>30</tagsInCloud>
+    <sortInCloud>3</sortInCloud>
+    <expandComment>0</expandComment>
+    <expandTrackback>0</expandTrackback>
+    <lengthOfRecentNotice>25</lengthOfRecentNotice>
+    <lengthOfRecentEntry>27</lengthOfRecentEntry>
+    <lengthOfRecentComment>30</lengthOfRecentComment>
+    <lengthOfRecentTrackback>30</lengthOfRecentTrackback>
+    <lengthOfLink>30</lengthOfLink>
+    <showListOnCategory>1</showListOnCategory>
+    <showListOnArchive>1</showListOnArchive>
+    <commentMessage>
+      <none>댓글이 없습니다.</none>
+      <single>댓글 &lt;span class="cnt"&gt;하나&lt;/span&gt; 달렸습니다.</single>
+    </commentMessage>
+    <trackbackMessage>
+      <none>받은 트랙백이 없고</none>
+      <single>트랙백이 &lt;span class="cnt"&gt;하나&lt;/span&gt;이고</single>
+    </trackbackMessage>
+    <tree>
+      <color>000000</color>
+      <bgColor>ffffff</bgColor>
+      <activeColor>000000</activeColor>
+      <activeBgColor>eeeeee</activeBgColor>
+      <labelLength>27</labelLength>
+      <showValue>1</showValue>
+    </tree>
+    <contentWidth>500</contentWidth>
+  </default>
+</skin>
+
+기본 정보
+스킨 목록, 상세보기에서 표시되는 정보입니다.
+
+name: 표시되는 이름
+version: 스킨 버전
+description: 스킨 상세 설명
+license: 저작권
+
+제작자
+스킨 정보에서 표시할 제작자 정보입니다.
+
+name: 표시되는 이름
+homepage: 제작자 웹사이트 주소
+email: 연락할 이메일 주소
+
+설정 기본값
+스킨의 설정 기본값입니다. 이를 통해 스킨 적용하면 제작자가 추천하는 설정을 제공할 수 있습니다.
+
+recentEntries: 사이드바의 최근글 표시 갯수
+recentComments: 사이드바의 최근 댓글 표시 갯수
+recentTrackbacks: 사이드바의 최근 트랙백 표시 갯수
+itemsOnGuestbook: 한페이지에 표시될 방명록 갯수 *
+tagsInCloud: 사이드바에 표시될 태그 갯수
+sortInCloud: 태그 클라우드 표현 방식 (1:인기도순, 2:이름순, 3:랜덤)
+expandComment: 댓글영역 표현 방식 (0:감추기, 1:펼치기)
+expandTrackback: 트랙백영역 표현 방식 (0:감추기, 1:펼치기)
+lengthOfRecentNotice: 최근 공지 표현될 글자수
+lengthOfRecentEntry: 최근 글 표현될 글자수
+lengthOfRecentComment: 최근 댓글에 표현될 글자수
+lengthOfRecentTrackback: 최근 트랙백에 표현될 글자수
+lengthOfLink: 링크에 표현될 글자수
+entriesOnPage: 홈 화면 글 수
+entriesOnList: 글 목록 글 수
+showListOnCategory: 커버 미사용 홈에서 글 목록 표현(0:내용만, 1:목록만, 2: 내용+목록)
+showListLock : 홈 설정과 기본 설정에서 '목록 구성 요소' 항목의 노출 여부 결정 (0: 노출, 1: 노출 안 함)
+tree: 카테고리
+color: 카테고리 글자색
+bgColor: 카테고리 배경색
+activeColor: 선택시 글자색
+activeBgColor: 선택시 배경색
+labelLength: 표현될 카테고리 글자 수
+showValue: 카테고리 글 수 표현(0:숨김, 1:보임)
+contentWidth: 콘텐츠영역 가로 사이즈, 이 사이즈에 맞춰 에디터의 위지윅이 제대로 구현된다.
+
+cover: 홈 커버 기본값으로 자세한 내용은 '홈 커버 > 기본값' 장에서 설명합니다.
+
+홈 커버
+홈 커버에 사용한 아이템을 정의합니다. 자세한 내용은 '홈 커버 > 정의' 장에서 설명합니다.
+스킨 옵션
+스킨 옵션에서 제공할 옵션을 정의합니다. 자세한 내용은 '스킨 옵션 > 옵션 정의' 장에서 설명합니다.
+리스트 스타일
+사용할 수 있는 글 목록 스타일을 정의합니다. 자세한 내용은 '리스트 > 리스트 스타일' 장에서 설명합니다.
+
+
+======================================================================
+## common/global
+======================================================================
+공통 치환자
+스킨 치환자 그룹
+
+<s_t3>: 티스토리 공통 javascript 삽입 (필수)
+
+<!-- 치환 전 -->
+<body>
+  <s_t3>
+  ...
+  </s_t3>
+</body>
+
+<!-- 치환 후 -->
+<body>
+  <script type="text/javascript" src="https://t1.daumcdn.net/tistory_admin/blogs/script/blog/common.js"></script>
+  <div style="margin:0; padding:0; border:none; background:none; float:none; clear:none; z-index:0"></div>
+
+  ...
+</body>
+
+기본 정보
+블로그 정보
+
+[##_title_##]: 블로그 제목
+[##_image_##]: 블로그 대표 이미지 url
+[##_blog_image_##]: 블로그 대표 이미지를 포함한 IMG 태그
+[##_desc_##]: 블로그 설명
+[##_blogger_##]: 블로그 소유자의 필명
+
+블로그 URL
+
+[##_blog_link_##]: 블로그 url
+[##_rss_url_##]: rss feed 주소
+[##_taglog_link_##]: 태그로그 url
+[##_guestbook_link_##]: 방명록 url
+
+기타
+
+[##_page_title_##]: 페이지 제목
+[##_blog_menu_##]: 블로그 메뉴 리스트
+[##_body_id_##]: 페이지 타입에 따른 id
+
+페이지 타입
+body_id
+
+홈화면
+tt-body-index
+
+글화면
+tt-body-page
+
+카테고리 글 리스트
+tt-body-category
+
+보관함 글 리스트
+tt-body-archive
+
+태그 리스트
+tt-body-tag
+
+검색결과 리스트
+tt-body-search
+
+방명록
+tt-body-guestbook
+
+지역로그
+tt-body-location
+
+광고 치환자
+
+[##revenue_list_upper##] : 블로그 홈/목록 상단
+[##revenue_list_lower##] : 블로그 홈/목록 하단
+
+사용 예
+<html>
+<head>
+  <title>[##_page_title_##]</title>
+</head>
+<body id='[##_body_id_##]'>
+<s_t3>
+  <header>
+    <h1><a href="[##_blog_link_##]">[##_title_##]</a></h1>
+    <!-- 블로그 홈/목록 상단 치환자 -->
+    [##_revenue_list_upper_##]
+
+    <!-- blog_menu사용 -->
+    [##_blog_menu_##]
+
+    <!-- 메뉴 직접 구성 -->
+    <ul class="blogMenu">
+      <li><a href="[##_rss_url_##]">RSS구독</a></li>
+      <li><a href="[##_taglog_link_##]">태그</a></li>
+      <li><a href="[##_guestbook_link_##]">방명록</a></li>
+    </ul>    
+  </header>
+
+  <section class="sidebar"> 
+    <!-- blog_image 사용 -->
+    <div class="blogInfo">
+      <div class="blogImage">[##_blog_image_##] </div>
+      <div class="blogDesc">[##_desc_##] <span class="userID">[##_blogger_##]</span></div>
+    </div>
+
+    <!-- image 사용 -->
+    <div class="blogInfo">
+      <div class="blogImage"><img src="[##_image_##]"></div>
+      <div class="blogDesc">[##_desc_##] <span class="userID">[##_blogger_##]</span></div>
+    </div>
+  </section>
+
+    <!-- 블로그 홈/목록 하단 -->
+    [##_revenue_list_lower_##]
+</s_t3>
+</body>
+</html>
+
+
+======================================================================
+## common/variable
+======================================================================
+스킨 옵션
+
+<s_if_var_{VARIABLE_NAME}>: 옵션의 값이 있으면 (bool 타입인 경우 true이면) 치환
+<s_not_var_{VARIABLE_NAME}>: 옵션의 값이 없으면 (bool 타입인 경우 false이면) 치환
+[##_var_{VARIABLE_NAME}_##]: 옵션의 값
+
+<style>
+  .wrap_sub {
+    background-image: url('[##_var_cover-image_##]');
+  }
+</style>
+
+<s_if_var_scroll-load>
+    <style>
+        .article_skin .area_paging .inner_paging.scroll_spinner {
+            width:48px; height:48px;
+            background:url('./images/spinner.gif') no-repeat;
+            height: 48px;
+            width: 48px;
+            margin: 0 auto;
+        }
+        .article_skin .area_paging .inner_paging.scroll_spinner * {
+            display:none
+        }
+    </style>
+    <script src="./images/scroll-load.js"></script>
+</s_if_var_scroll-load>
+
+옵션 정의 (index.xml)
+<variables>
+  <variablegroup name="그룹이름">
+    <variable>
+      <name>치환자에서 사용할 이름</name>
+      <label>사용자에게 표시할 이름</label>
+      <description>설명 (optional)</description>
+      <type>타입</type>
+      <option>max, min, select option등 값을 설정하는데 사용되는 정보 (optional: SELECT타입의 경우 필수)</option>
+      <default>설정하지 않은 경우 기본 값</default>
+    </variable>
+  </variablegroup>
+</variables>
+
+type
+
+STRING: 문자 입력
+SELECT: 옵션 선택 (옵션은 name, label, value 값을 가진 json객체로 정의)
+option 예<option><![CDATA[
+  [
+    {"name":"light", "label":"밝은색", "value":"light"},
+    {"name":"dark", "label":"어두운색", "value":"dark"}
+  ]
+]]></option>
+
+IMAGE: 이미지 url
+BOOL: true/false
+COLOR: 컬러값 (#000000)
+
+옵션 정의 사용 예
+<variables>
+  <variablegroup>
+    <variable>
+      <name>scroll-load</name>
+      <label>
+        <![CDATA[ 무한스크롤 ]]>
+      </label>
+      <type>BOOL</type>
+      <option />
+      <default>true</default>
+      <description>
+        <![CDATA[ 글 리스트 끝에 다다르면 다음 페이지를 불러옵니다. ]]>
+      </description>
+    </variable>
+  </variablegroup>
+  <variablegroup name="디자인">
+    <variable>
+      <name>cover-image</name>
+      <label>
+        <![CDATA[ 커버이미지 ]]>
+      </label>
+      <type>IMAGE</type>
+      <option />
+      <default>
+        <![CDATA[ https://t1.daumcdn.net/tistory/0/Ray2/images/header_default.jpg ]]>
+      </default>
+      <description>
+        <![CDATA[ 커버 이미지를 변경합니다. ]]>
+      </description>
+    </variable>
+    <variable>
+      <name>point-color</name>
+      <label>
+        <![CDATA[ 대표 색 ]]>
+      </label>
+      <type>COLOR</type>
+      <option />
+      <default><![CDATA[#6bacce]]></default>
+      <description>
+        <![CDATA[대표 색을 사용합니다.]]>
+      </description>
+    </variable>
+  </variablegroup>
+</variables>
+
+
+======================================================================
+## common/cover
+======================================================================
+홈 커버
+홈 커버는 홈화면을 꾸미기 위해 제공되는 치환자입니다.
+
+<s_cover_group>: 커버 그룹 치환자
+<s_cover_rep>: 개별 커버 표시
+<s_cover>: 개별 커버. name 애트리뷰트로 이름을 지정한다. 정의되지 않은 이름의 커버는 사용되지 않는다.
+[##_cover_title_##]: 개별 커버 타이틀
+<s_cover_url>: 커버 url이 있는 경우에만 치환
+[##_cover_url_##]: 개별 커버 url
+
+<s_cover_item>: 개별 커버 컨텐츠
+<s_cover_item_not_article_info>: 컨텐츠가 글이 아닌 경우에만 치환 (내부 치환자는 s_cover_item에 직접 사용 가능)
+[##_cover_item_title_##]: 컨텐츠 타이틀
+[##_cover_item_summary_##]: 컨텐츠 요약/내용
+[##_cover_item_url_##]: 컨텐츠 url
+<s_cover_item_thumbnail>: 컨텐츠 이미지가 있는 경우에만 치환
+[##_cover_item_thumbnail_##]: 컨텐츠 이미지
+
+<s_cover_item_article_info>: 컨텐츠가 글인 경우에만 치환
+[##_cover_item_title_##]: 컨텐츠 타이틀
+[##_cover_item_summary_##]: 컨텐츠 요약/내용
+[##_cover_item_url_##]: 컨텐츠 url
+<s_cover_item_thumbnail>: 컨텐츠 이미지가 있는 경우에만 치환
+[##_cover_item_thumbnail_##]: 컨텐츠 이미지
+
+[##_cover_item_category_##]: 카테고리 명
+[##_cover_item_category_url_##]: 카테고리 url
+[##_cover_item_date_##]: 글 발행 날짜/시간 (yyyy.mm.dd HH:MM)
+[##_cover_item_simple_date_##]: 글 발행 날짜 (yyyy.mm.dd)
+[##_cover_item_comment_count_##]: 댓글 수
+
+치환자 사용 예
+<s_cover_group>
+  <s_cover_rep>
+    <s_cover name='featured'>
+      <div class='featured'>
+        <s_cover_item>
+          <div class='featured-item'>
+            <s_cover_item_thumbnail>
+              <img class="image" src="[##_cover_item_thumbnail_##]">
+            </s_cover_item_thumbnail>
+            <strong class="title">[##_cover_item_title_##]</strong>
+            <a href="[##_cover_item_url_##]" class="action">자세히 보기</a>
+          </div>
+        </s_cover_item>
+        <button class='btn-prev'>&lt;</button>
+        <button class='btn-next'>&gt;</button>
+      </div>
+    </s_cover>
+
+    <s_cover name='list'>
+      <div id="mArticle" class="article_skin">
+        <s_cover_item>
+          <s_cover_item_article_info>
+            <div class="list_content">
+              <s_cover_item_thumbnail>
+                <a href="[##_cover_item_url_##]" class="thumbnail_post"><img src="//i1.daumcdn.net/thumb/C148x148/?fname=[##_cover_item_thumbnail_##]"></a>
+              </s_cover_item_thumbnail>
+              <a href="[##_cover_item_url_##]" class="link_post">
+                <strong class="tit_post">[##_cover_item_title_##]</strong>
+                <p class="txt_post">[##_cover_item_summary_##]</p>
+              </a>
+              <div class="detail_info">
+                <a href="[##_cover_item_category_url_##]" class="link_cate">[##_cover_item_category_##]</a>
+                <span class="txt_bar"></span>
+                [##_cover_item_date_##]
+              </div>
+            </div>
+          </s_cover_item_article_info>
+
+          <s_cover_item_not_article_info>
+            <div class="list_content">
+              <s_cover_item_thumbnail>
+                <a href="[##_cover_item_url_##]" class="thumbnail_post"><img src="//i1.daumcdn.net/thumb/C148x148/?fname=[##_cover_item_thumbnail_##]"></a>
+              </s_cover_item_thumbnail>
+              <a href="[##_cover_item_url_##]" class="link_post">
+                <strong class="tit_post">[##_cover_item_title_##]</strong>
+                <p class="txt_post">[##_cover_item_summary_##]</p>
+              </a>
+            </div>
+          </s_cover_item_not_article_info>
+        </s_cover_item>
+
+        <s_cover_url>
+          <a class="btn-more" href="[##_cover_url_##]">더보기</a>
+        </s_cover_url>
+      </div>
+    </s_cover>
+  </s_cover_rep>
+</s_cover_group>
+
+정의 (index.xml)
+커버를 사용하기 위해서는 스킨 정보 파일에 커버 아이템을 정의해야 합니다.
+<cover>
+  <item>
+    <name>커버 아이템 이름</name>
+    <label>사용자에게 표시할 이름</label>
+    <description>설명</description>
+  </item>
+</cover>
+
+정의 예
+<cover>
+  <item>
+    <name>featured</name>
+    <label><![CDATA[Featured]]></label>
+    <description><![CDATA[강조할 글을 표시합니다.]]></description>
+  </item>
+  <item>
+    <name>list</name>
+    <label><![CDATA[리스트]]></label>
+    <description><![CDATA[글 리스트를 표시합니다.]]></description>
+  </item>
+</cover>
+
+기본값
+커버 적용 즉시 제작자가 추천하는 홈커버가 적용되도록 하기 위해서 기본값을 사용할 수 있습니다. 스킨 정보 파일의 기본값에 JSON 값을 string으로 설정합니다.
+<default>
+  <cover>
+    <![CDATA[ 홈 커버 기본값 ]]>
+  </cover>
+</default>
+
+기본값 JSON 구조
+[
+  {
+    "name": "정의된 커버 아이템 name",
+    "title": "커버 타이틀",
+    "dataType": "내용의 데이터 타입",
+    "data": "타입에 해당하는 데이터"
+  },
+  ...
+]
+
+name: 정의된 커버 아이템으로 없는 커버를 사용할 경우 무시됩니다.
+title: 커버타이틀로 사용할 string 입니다.
+dataType: 내용유형으로 스킨 에디터에서 제공하는 유형 중 '최신 글', '직접 입력' 만 사용할 수 있습니다.
+RECENT: 최신 글
+CUSTOM: 직접 입력
+
+data: 커버 내용으로 유형별로 형태가 다릅니다.
+RECENT: 카테고리와 개수를 설정할 수 있습니다.{
+  "category": "ALL",
+  "size": 5
+}
+
+category: 사용자의 카테고리를 알 수 없으므로 전체(ALL), 공지사항(NOTICE)만 사용할 수 있습니다.
+size: 표시될 개수를 설정합니다. 1-100 까지 설정할 수 있습니다.
+
+CUSTOM: 표시될 내용을 모두 설정{
+  "title": "컨텐츠 타이틀",
+  "summary": "컨텐츠 타이틀",
+  "url": "컨텐츠 요약/내용",
+  "thumbnail": "컨텐츠 이미지"
+}
+
+기본값 예
+[
+  {
+    "name": "featured",
+    "title": "",
+    "dataType": "CUSTOM",
+    "data": [
+      {
+        "title": "첫번째 항목",
+        "summary": "첫번째 항목의 summary",
+        "url": "https://www.tistory.com",
+        "thumbnail": "https://www.tistory.com/sample.png"
+      },
+      {
+        "title": "두번째 항목",
+        "summary": "두번째 항목의 summary",
+        "url": "https://www.tistory.com",
+        "thumbnail": "https://www.tistory.com/sample.png"
+      }
+    ]
+  },
+  {
+    "name": "list",
+    "title": "",
+    "dataType": "RECENT",
+    "data": {
+      "category": "ALL",
+      "size": 5
+    }
+  }
+]
+
+
+======================================================================
+## list/list
+======================================================================
+리스트 치환자
+리스트 치환자는 카테고리, 검색, 태그의 글 리스트를 표시합니다.
+리스트 그룹
+
+<s_list>: 리스트 그룹 치환자
+[##_list_conform_##]: 카테고리 이름, 검색어, 태그명
+[##_list_count_##]: 글의 총 개수
+[##_list_description_##]: 리스트 설명 (카테고리인 경우 카테고리 설명, 그외 블로그 설명)
+[##_list_style_##]: 리스트 스타일 값 (class attribute로 활용 가능)
+<s_list_image>: 리스트 대표 이미지가 있는 경우 동작
+[##_list_image_##]: 리스트 대표 이미지 (카테고리인 경우 카테고리 대표이미지, 그외 블로그 대표이미지)
+
+아이템 반복 그룹
+
+<s_list_empty>: 리스트에 글이 없는 경우 보이는 영역
+<s_list_rep>: 리스트 아이템이 반복되는 영역
+[##_list_rep_link_##]: 글의 고유 주소
+[##_list_rep_regdate_##]: 글 작성 날짜 (yyyy.mm.dd)
+[##_list_rep_date_year_##]: 글 작성 세부시간 - 연도 (yyyy)
+[##_list_rep_date_month_##]: 글 작성 세부시간 - 월 (mm)
+[##_list_rep_date_day_##]: 글 작성 세부시간 - 일 (dd)
+[##_list_rep_date_hour_##]: 글 작성 세부시간 - 시 (HH)
+[##_list_rep_date_minute_##]: 글 작성 세부시간 - 분 (MM)
+[##_list_rep_date_second_##]: 글 작성 세부시간 - 초 (SS)
+[##_list_rep_title_##]: 글의 제목 (New 이미지 태그 포함)
+[##_list_rep_title_text_##]: 글의 제목
+[##_list_rep_category_##]: 글이 속한 카테고리 이름
+[##_list_rep_category_link_##]: 글이 속한 카테고리 글 목록 url
+[##_list_rep_rp_cnt_##]: 댓글 수
+[##_list_rep_author_##]: 작성자 이름
+[##_list_rep_summary_##]: 글 내용 요약
+[##_list_rep_thumbnail_url_##]: 대표 이미지 원본 주소
+<s_list_rep_thumbnail>: 대표 이미지가 있는 경우 치환
+[##_list_rep_thumbnail_##]: 대표 이미지
+
+리스트 스타일
+리스트 스타일을 사용하기 위해서는 스킨 정보 파일에 리스트 스타일 아이템을 정의해야 합니다. 리스트 스타일을 정의하면 카테고리 관리화면에서 리스트 스타일이 표시되고 사용자가 선택할 수 있습니다. 이를 사용하여 카테고리별로 다른 스타일을 적용할 때 사용할 수 있습니다.
+<default>
+    <liststyle>default liststyle 값</liststyle>
+</default>
+
+<liststyle>
+  <item>
+    <label>표시할 이름</label>
+    <value>사용될 값</value>
+  </item>
+</liststyle>
+
+사용 예
+<!-- 스킨 예 -->
+<s_list>
+  <div class="searchList [##_list_style_##]">
+    <div <s_list_image>style="background-image:url('[##_list_image_##]')"</s_list_image>>
+      <h3>'[##_list_conform_##]'에 해당되는 글 [##_list_count_##]건</h3>
+      <p>[##_list_description_##]</p>
+    </div>
+    <ol>
+      <s_list_rep>
+        <li>
+          <span class="date">[##_list_rep_regdate_##]</span>
+          <a href="[##_list_rep_link_##]">[##_list_rep_title_##]</a>
+          <span class="cnt">[##_list_rep_rp_cnt_##]</span>
+          <s_list_rep_thumbnail>
+            <img src="[##_list_rep_thumbnail_##]">
+          </s_list_rep_thumbnail>
+        </li>
+      </s_list_rep>
+    </ol>
+  </div>
+</s_list>
+
+<!-- 변환 예 -->
+<div class="searchList grid">
+  <div style="background-image:url('https://sample.com/image.jpg')">
+    <h3>'업데이트 소식'에 해당되는 글 2건</h3>
+    <p>새롭게 업데이트되는 내용을 알려드립니다.</p>
+  </div>
+  <ol>
+    <li>
+      <span class="date">2016.01.25</span>
+      <a href="/2289">1월 초대장이 배포되었습니다.</a>
+      <span class="cnt">8</span>
+      <img src="https://s1.daumcdn.net/cfile/tistory/1234">
+    </li>
+    <li>
+      <span class="date">2015.12.22</span>
+      <a href="/2283">12월 초대장이 배포되었습니다.</a>
+      <span class="cnt">19</span>
+      <img src="https://s1.daumcdn.net/cfile/tistory/5678">
+    </li>
+  </ol>
+</div>
+
+
+======================================================================
+## list/paging
+======================================================================
+페이징
+리스트, 글, 방명록에서 공통으로 사용하는 페이징 치환자
+
+<s_paging>: 페이지가 출력되는 영역입니다
+<s_paging_rep>: 페이지가 반복 출력됩니다
+[##_prev_page_##]: 이전 페이지 링크
+[##_paging_rep_link_##]: 페이지 링크
+[##_paging_rep_link_num_##]: 페이지 번호
+[##_next_page_##]: 다음 페이지 링크 
+
+<s_paging>
+  <div class="paging">
+    <a [##_prev_page_##] class="[##_no_more_prev_##]">◀ PREV </a>
+    <span class="numbox">
+      <s_paging_rep>
+        <a [##_paging_rep_link_##] class="num">[[##_paging_rep_link_num_##]]</a>
+      </s_paging_rep>
+    </span>
+    <a [##_next_page_##] class="[##_no_more_next_##]">NEXT ▶</a>
+  </div>
+</s_paging>
+
+
+======================================================================
+## contents/post
+======================================================================
+글 치환자
+글 정보
+
+<s_article_rep>: 글 그룹 치환자
+[##_article_rep_link_##]: 블로그 글의 고유 주소
+[##_article_rep_title_##]: 블로그 글의 제목
+[##_article_rep_category_link_##]: 카테고리 링크
+[##_article_rep_category_##]: 카테고리 명
+[##_article_rep_date_##]: 글쓴 날짜/시간 (yyyy. m. d. HH:MM)
+[##_article_rep_simple_date_##]: 글쓴 날짜 (yyyy. m. d.)
+[##_article_rep_date_year_##]: 글쓴 세부시간 - 연도 (yyyy)
+[##_article_rep_date_month_##]: 글쓴 세부시간 - 월 (mm)
+[##_article_rep_date_day_##]: 글쓴 세부시간 - 일 (dd)
+[##_article_rep_date_hour_##]: 글쓴 세부시간 - 시 (HH)
+[##_article_rep_date_minute_##]: 글쓴 세부시간 - 분 (MM)
+[##_article_rep_date_second_##]: 글쓴 세부시간 - 초 (SS)
+[##_article_rep_author_##]: 작성자 이름 (*팀블로그용 치환자)
+[##_article_rep_desc_##]: 블로그 본문 내용
+<s_article_rep_thumbnail>: 대표 이미지 썸네일이 표시되는 영역 (대표 이미지가 없는 경우 표시되지 않음)
+[##_article_rep_thumbnail_url_##]: 대표 이미지 썸네일 주소
+[##_article_rep_thumbnail_raw_url_##]: 대표 이미지 원본 주소
+
+[##_article_rep_rp_link_##]: 댓글을 열고 닫는 온클릭 이벤트
+<s_rp_count>: 댓글의 갯수를 출력하는 영역
+[##_article_rep_rp_cnt_##]: 답글 수 
+
+<s_article_rep>
+  <div class="titleWrap">
+    <h2><a href="[##_article_rep_link_##]">[##_article_rep_title_##]</a></h2>
+    <div class="category">
+      <a href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a>
+    </div>
+    <div class="date">[##_article_rep_date_##]</div>
+  </div>
+
+  <div class="article">
+    [##_article_rep_desc_##]
+  </div>
+</s_article_rep>
+
+관리기능
+
+<s_ad_div> : 글 관리기능 그룹치환자 (관리 권한 있는 경우만 표시)
+[##_s_ad_m_link_##]: 수정
+[##_s_ad_m_onclick_##]: 수정 온클릭 이벤트
+[##_s_ad_s1_label_##]: 글의 현재 상태
+[##_s_ad_s2_onclick_##]: 상태 변경 온클릭 이벤트
+[##_s_ad_s2_label_##]: 이후 상태
+[##_s_ad_t_onclick_##]: 트랙백 온클릭 이벤트
+[##_s_ad_d_onclick_##]: 삭제 온클릭 이벤트 
+
+  <s_ad_div>
+    <div class="admin">
+      <a href="[##_s_ad_m_link_##]">수정</a> :
+      <a href="#" onclick="[##_s_ad_m_onclick_##]">수정(창으로)</a> |
+      ([##_s_ad_s1_label_##])→<a href="#" onclick="[##_s_ad_s2_onclick_##]">[##_s_ad_s2_label_##]</a> |
+      <a href="#" onclick="[##_s_ad_t_onclick_##]">관련글(트랙백)</a> |
+      <a href="#" onclick="[##_s_ad_d_onclick_##]">삭제</a>
+    </div>
+  </s_ad_div>
+
+태그
+
+<s_tag_label>: 글과 관련된 태그가 출력되는 영역입니다.
+[##_tag_label_rep_##]: 태그 반복 출력 
+
+  <s_tag_label>
+    <div class="tagTrail">
+      <span class="tagText">TAG </span> [##_tag_label_rep_##]
+    </div>
+  </s_tag_label>
+
+퍼머링크 / 인덱스
+퍼머링크 페이지에서와 인덱스 페이지에서 표시될 내용을 구분할 수 있습니다.\
+(퍼머링크 페이지/인덱스 페이지 영역 밖에서 사용되는 치환자는 둘 모두에서 표시됩니다) 
+퍼머링크
+
+<s_permalink_article_rep>: 퍼머링크 페이지일 때만 표시되는 영역입니다
+(내부에서 사용하는 치환자는 <s_article_rep> 내부에서 사용하는 치환자와 동일합니다)
+
+인덱스
+
+<s_index_article_rep>: 인덱스 페이지일 때만 표시되는 영역입니다
+[##_article_rep_link_##]: 블로그 글의 고유 주소
+[##_article_rep_title_##]: 블로그 글의 제목
+[##_article_rep_category_link_##]: 카테고리 주소
+[##_article_rep_category_##]: 카테고리 이름
+[##_article_rep_date_##]: 글 발행 날짜/시간 (yyyy. m. d. HH:MM)
+[##_article_rep_simple_date_##]: 글 발행 날짜 (yyyy. m. d.)
+[##_article_rep_date_year_##]: 글쓴 세부시간 - 연도 (yyyy)
+[##_article_rep_date_month_##]: 글쓴 세부시간 - 월 (mm)
+[##_article_rep_date_day_##]: 글쓴 세부시간 - 일 (dd)
+[##_article_rep_date_hour_##]: 글쓴 세부시간 - 시 (HH)
+[##_article_rep_date_minute_##]: 글쓴 세부시간 - 분 (MM)
+[##_article_rep_date_second_##]: 글쓴 세부시간 - 초 (SS)
+[##_article_rep_author_##]: 작성자 이름
+[##_article_rep_summary_##]: 글 내용 요약
+<s_article_rep_thumbnail>: 대표 이미지 썸네일이 표시되는 영역 (대표 이미지가 없는 경우 표시되지 않음)
+[##_article_rep_thumbnail_url_##]: 대표 이미지 썸네일 주소
+[##_article_rep_thumbnail_raw_url_##]: 대표 이미지 원본 주소
+
+<s_rp_count>: 댓글의 갯수를 출력하는 영역
+[##_article_rep_rp_cnt_##]: 답글 수 
+
+<s_index_article_rep>
+  <div class="list_content">
+    <s_article_rep_thumbnail>
+      <img src="[##_article_rep_thumbnail_url_##]">
+    </s_article_rep_thumbnail>
+
+    <a href="[##_article_rep_link_##]" class="link_post">
+      <strong class="tit_post">[##_article_rep_title_##]</strong>
+      <p class="txt_post">[##_article_rep_summary_##]</p>
+    </a>
+
+    <div class="detail_info">
+      <a href="[##_article_rep_category_link_##]" class="link_cate">
+        [##_article_rep_category_##]
+      </a>
+      <span class="txt_bar"></span>
+      [##_article_rep_date_##]
+    </div>
+  </div>
+</s_index_article_rep>
+
+카테고리의 다른 글
+글이 속한 카테고리의 다른 글을 보여줄 수 있습니다.\
+카테고리에 속하지 않은 글에는 표시되지 않습니다. 
+
+<s_article_related>: 카테고리 글 더보기 영역
+[##_article_related_rep_type_##]: 글의 type (대표이미지 없음: text_type, 대표이미지 있음: thumb_type)
+[##_article_related_rep_link_##]: 글 주소
+[##_article_related_rep_title_##]: 글 제목
+[##_article_related_rep_date_##]: 글 발행시간
+<s_article_related_rep_thumbnail>: 대표 이미지 썸네일이 표시되는 그룹치환자 (대표 이미지가 있는 경우 표시)
+[##_article_related_rep_thumbnail_link_##]: 대표 이미지 썸네일 주소
+
+<s_article_related>
+  <div class="area_related">
+    <strong class="tit_related">'[##_article_rep_category_##]' Related Articles</strong>
+    <ul class="list_related">
+      <s_article_related_rep>
+        <li class="[##_article_related_rep_type_##]">
+          <a href="[##_article_related_rep_link_##]" class="link_related">
+            <s_article_related_rep_thumbnail>
+              <span class="thumb_related">
+                <img src="[##_article_related_rep_thumbnail_link_##]" class="img_related" alt="">
+              </span>
+            </s_article_related_rep_thumbnail>
+            <span class="txt_related">[##_article_related_rep_title_##]</span>
+            <span class="date_related">[##_article_related_rep_date_##]</span>
+            <span class="frame_related"></span>
+          </a>
+        </li>
+      </s_article_related_rep>
+    </ul>
+    <a href="[##_article_rep_category_link_##]" class="link_more">more</a>
+  </div>
+</s_article_related>
+
+이전 글 / 다음 글
+글의 이전 글과 다음 글을 보여줍니다. 페이징 치환자의 이전/다음 페이지 url과 동일한 글입니다.
+
+<s_article_prev>: 이전 글 그룹치환자. 이전 글이 있는 경우 사용됩니다.
+[##_article_prev_type_##]: 글의 type (대표이미지 없음: text_type, 대표이미지 있음: thumb_type)
+[##_article_prev_link_##]: 글 주소
+[##_article_prev_title_##]: 글 제목
+[##_article_prev_date_##]: 글 작성시간
+<s_article_prev_thumbnail>: 대표 이미지 썸네일이 표시되는 그룹치환자 (대표 이미지가 있는 경우 표시)
+[##_article_prev_thumbnail_link_##]: 대표 이미지 썸네일 주소
+
+<s_article_next>: 다음 글 그룹치환자. 다음 글이 있는 경우 사용됩니다.
+[##_article_next_type_##]: 글의 type (대표이미지 없음: text_type, 대표이미지 있음: thumb_type)
+[##_article_next_link_##]: 글 주소
+[##_article_next_title_##]: 글 제목
+[##_article_next_date_##]: 글 작성시간
+<s_article_next_thumbnail>: 대표 이미지 썸네일이 표시되는 그룹치환자 (대표 이미지가 있는 경우 표시)
+[##_article_next_thumbnail_link_##]: 대표 이미지 썸네일 주소
+
+
+======================================================================
+## contents/notice
+======================================================================
+공지사항 치환자
+
+<s_notice_rep>: 공지사항 그룹 치환자
+[##_notice_rep_link_##] : '공지사항'에 등록된 글의 고유 주소
+[##_notice_rep_title_##] : 글 제목
+[##_notice_rep_date_##]: 글 발행 날짜/시간 (yyyy.mm.dd HH:MM)
+[##_notice_rep_simple_date_##]: 글 발행 날짜 (yyyy.mm.dd)
+[##_notice_rep_date_year_##]: 글쓴 세부시간 - 연도 (yyyy)
+[##_notice_rep_date_month_##]: 글쓴 세부시간 - 월 (mm)
+[##_notice_rep_date_day_##]: 글쓴 세부시간 - 일 (dd)
+[##_notice_rep_date_hour_##]: 글쓴 세부시간 - 시 (HH)
+[##_notice_rep_date_minute_##]: 글쓴 세부시간 - 분 (MM)
+[##_notice_rep_date_second_##]: 글쓴 세부시간 - 초 (SS)
+[##_notice_rep_desc_##] : 본문 내용
+[##_notice_rep_author_##] : 작성자 이름 (*팀블로그용 치환자)
+<s_notice_rep_thumbnail>: 대표 이미지 썸네일이 표시되는 영역 (대표 이미지가 없는 경우 표시되지 않음)
+[##_notice_rep_thumbnail_url_##]: 대표 이미지 썸네일 주소
+[##_notice_rep_thumbnail_raw_url_##]: 대표 이미지 원본 주소
+
+<s_notice_rep>
+  <div class="entryNotice">
+    <div class="titleWrap">
+      <h2><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></h2>
+      <span class="date"> [##_notice_rep_date_##]</span>
+    </div>
+    <div class="article">
+      [##_notice_rep_desc_##]
+    </div>
+  </div>
+</s_notice_rep>
+
+퍼머링크 / 인덱스
+퍼머링크 페이지에서와 인덱스 페이지에서 표시될 내용을 구분할 수 있습니다.\
+(퍼머링크 페이지/인덱스 페이지 영역 밖에서 사용되는 치환자는 둘 모두에서 표시됩니다) 
+퍼머링크
+
+<s_permalink_article_rep>: 퍼머링크 페이지일 때만 표시되는 영역입니다
+(내부에서 사용하는 치환자는 <s_article_rep> 내부에서 사용하는 치환자와 동일합니다)
+
+인덱스
+
+<s_index_article_rep>: 인덱스 페이지일 때만 표시되는 영역입니다
+[##_notice_rep_link_##] : '공지사항'에 등록된 글의 고유 주소
+[##_notice_rep_title_##] : 글 제목
+[##_notice_rep_date_##]: 글 발행 날짜/시간 (yyyy.mm.dd HH:MM)
+[##_notice_rep_simple_date_##]: 글 발행 날짜 (yyyy.mm.dd)
+[##_notice_rep_date_year_##]: 글쓴 세부시간 - 연도 (yyyy)
+[##_notice_rep_date_month_##]: 글쓴 세부시간 - 월 (mm)
+[##_notice_rep_date_day_##]: 글쓴 세부시간 - 일 (dd)
+[##_notice_rep_date_hour_##]: 글쓴 세부시간 - 시 (HH)
+[##_notice_rep_date_minute_##]: 글쓴 세부시간 - 분 (MM)
+[##_notice_rep_date_second_##]: 글쓴 세부시간 - 초 (SS)
+[##_notice_rep_desc_##] : 본문 내용
+[##_notice_rep_author_##] : 작성자 이름 (*팀블로그용 치환자)
+[##_notice_rep_summary_##]: 글 내용 일부
+<s_notice_rep_thumbnail>: 대표 이미지 썸네일이 표시되는 영역 (대표 이미지가 없는 경우 표시되지 않음)
+[##_notice_rep_thumbnail_url_##]: 대표 이미지 썸네일 주소
+[##_notice_rep_thumbnail_raw_url_##]: 대표 이미지 원본 주소
+
+<s_index_article_rep>
+  <div class="list_content">
+    <s_notice_rep_thumbnail>
+      <img src="[##_notice_rep_thumbnail_url_##]">
+    </s_notice_rep_thumbnail>
+
+    <a href="[##_notice_rep_link_##]" class="link_post">
+      <strong class="tit_post">[##_notice_rep_title_##]</strong>
+      <p class="txt_post">[##_notice_rep_summary_##]</p>
+    </a>
+
+    <div class="detail_info">
+      <a href="[##_notice_rep_category_link_##]" class="link_cate">
+        [##_notice_rep_category_##]
+      </a>
+      <span class="txt_bar"></span>
+      [##_notice_rep_date_##]
+    </div>
+  </div>
+</s_index_article_rep>
+
+
+======================================================================
+## contents/page
+======================================================================
+공지사항 치환자
+
+<s_page_rep>: '페이지'가 출력되는 영역입니다.\
+(스킨에 페이지치환자가 존재하지 않는 경우 글 치환자에 페이지가 표시됩니다.)
+[##_article_rep_link_##]: 고유 주소
+[##_article_rep_title_##]: 제목
+[##_article_rep_date_##]: 글 발행 날짜/시간 (yyyy. m. d. HH:MM)
+[##_article_rep_simple_date_##]: 글 발행 날짜 (yyyy. m. d.)
+[##_article_rep_date_year_##]: 글쓴 세부시간 - 연도 (yyyy)
+[##_article_rep_date_month_##]: 글쓴 세부시간 - 월 (mm)
+[##_article_rep_date_day_##]: 글쓴 세부시간 - 일 (dd)
+[##_article_rep_date_hour_##]: 글쓴 세부시간 - 시 (HH)
+[##_article_rep_date_minute_##]: 글쓴 세부시간 - 분 (MM)
+[##_article_rep_date_second_##]: 글쓴 세부시간 - 초 (SS)
+[##_article_rep_desc_##]: 본문 내용
+[##_article_rep_author_##]: 작성자 이름 (*팀블로그용 치환자)
+
+<s_page_rep>
+  <div>
+    <h2><a href="[##_article_rep_link_##]">[##_article_rep_title_##]</a></h2>
+    <div>
+      [##_article_rep_desc_##]
+    </div>
+  </div>
+</s_page_rep>
+
+
+======================================================================
+## contents/protected
+======================================================================
+보호글 치환자
+
+<s_article_protected>: 보호글 그룹치환자
+[##_article_rep_link_##]: 보호글의 고유 주소
+[##_article_rep_title_##]: 보호글의 제목
+[##_article_rep_category_link_##]: 카테고리 링크
+[##_article_rep_category_##]: 카테고리 명
+[##_article_rep_date_##]: 글 발행 날짜/시간 (yyyy. m. d. HH:MM)
+[##_article_rep_simple_date_##]: 글 발행 날짜 (yyyy. m. d.)
+[##_article_rep_date_year_##]: 글쓴 세부시간 - 연도 (yyyy)
+[##_article_rep_date_month_##]: 글쓴 세부시간 - 월 (mm)
+[##_article_rep_date_day_##]: 글쓴 세부시간 - 일 (dd)
+[##_article_rep_date_hour_##]: 글쓴 세부시간 - 시 (HH)
+[##_article_rep_date_minute_##]: 글쓴 세부시간 - 분 (MM)
+[##_article_rep_date_second_##]: 글쓴 세부시간 - 초 (SS)
+[##_article_password_##]: 보호글의 비밀번호 텍스트 박스의 Id값(label 사용 용도)
+[##_article_dissolve_##]: 보호글의 비밀번호를 입력하고 엔터키나 확인버튼을 눌렀을 때 실행될 자바스크립트 코드가 들어갑니다.
+[##_article_rep_author_##]: 작성자 이름 (*팀블로그용 치환자)
+
+<s_article_protected>
+  <div class="entryProtected">
+    <h2><a href="[##_article_rep_link_##]">[##_article_rep_title_##]</a></h2>
+    <span class="date">[##_article_rep_date_##]</span>
+    <p>보호되어 있는 글입니다. 내용을 보시려면 비밀번호를 입력하세요.</p>
+    <p>
+      <label for="[##_article_password_##]">비밀번호 ::</label>
+      <input type="password" maxlength="16" id="[##_article_password_##]" name="[##_article_password_##]" value="" onkeydown="if (event.keyCode == 13)[##_article_dissolve_##]" />
+      <input type="button" class="submit" value="submit" onclick="[##_article_dissolve_##]" />
+    </p>
+  </div>
+</s_article_protected>
+
+
+======================================================================
+## contents/tag
+======================================================================
+태그 클라우드 치환자
+태그 클라우드는 사용한 태그 리스트를 출력합니다.
+
+url : /tag
+
+태그 그룹
+
+<s_tag> : 태그 클라우드 그룹치환자
+
+태그 정보
+
+<s_tag_rep> : 개별태그 그룹치환자
+[##_tag_link_##] : 태그가 포함된 글을 출력하기 위한 URL 
+[##_tag_class_##] : 총 5단계가 있는데 자주 사용한 순서로 cloud1-cloud5가 표시됩니다.
+[##_tag_name_##] : 태그의 이름 
+
+예
+<!-- 스킨 -->
+<s_tag>
+    <div class="taglog">
+        <h3>태그</h3>
+        <ul>
+            <s_tag_rep>
+            <li>
+                <a href="[##_tag_link_##]" class="[##_tag_class_##]">[##_tag_name_##]</a>
+            </li>
+            </s_tag_rep>
+        </ul>
+    </div>
+</s_tag>
+
+<!-- 변환 예 -->
+<div class="taglog">
+    <h3>태그</h3>
+    <ul>
+        <li>
+            <a href="/tag/tistory" class="cloud1">tistory</a>
+        </li>
+        <li>
+            <a href="/tag/kakao" class="cloud4">kakao</a>
+        </li>
+        <li>
+            <a href="/tag/blog" class="cloud5">blog</a>
+        </li>
+    </ul>
+</div>
+
+
+======================================================================
+## contents/comment
+======================================================================
+댓글
+댓글 그룹
+
+<s_rp> : 댓글으로 접근시 이 영역 내부의 치환자가 출력됩니다.
+
+<s_rp>
+  <div class="comment">
+    <h3>댓글을 달아 주세요 </h3>
+    <div class="commentList">18-6-1 리스트 </div>
+    <div class="commentWrite">18-6-2 글쓰기 </div>
+  </div>
+</s_rp>
+
+입력 폼
+
+<s_rp_input_form> : 댓글을 달기 위한 입력폼을 출력합니다
+[##_article_rep_id_##] : 댓글주소. 댓글들을 구분하기위해 사용합니다. 한 화면에 있는 댓글들은 각각 고유의 값을 가지고 있습니다.
+[##_rp_input_comment_##] : 댓글 입력 박스 이름
+[##_rp_onclick_submit_##] : 댓글 입력 온클릭 이벤트
+<s_rp_member> : 로그인을 하지 않았거나 블로그 소유자가 아닌경우 보여지는 영역
+[##_rp_input_is_secret_##] : 비밀글 체크박스 이름
+<s_rp_guest> : 로그인을 하지 않았을경우 보여지는 영역
+[##_rp_input_name_##] : 이름입력 박스 이름
+[##_guest_name_##] : 이름
+[##_rp_input_password_##] : 비밀번호 입력 박스 이름
+[##_rp_password_##] : 비밀번호
+[##_rp_input_homepage_##] : 홈페이지 입력 박스 이름
+[##_guest_homepage_##] : 홈페이지
+
+<s_rp_input_form>
+  <div class="commentWrite">
+    <s_rp_member>
+      <s_rp_guest>
+        <p>
+          <input type="text" name="[##_rp_input_name_##]" value="[##_guest_name_##]" />
+          <label for="name"> : 이름 </label>
+        </p>
+        <p>
+          <input type="password" maxlength="8" name="[##_rp_input_password_##]" value="[##_rp_admin_check_##]" />블로그 관리자일 경우 password field에 미리 비밀번호를 넣어놓기 위해 만들어 놓았던 치환자였으나, 지금은 사용되지 않음.. (현재는 블로그 관리자일 경우 password field가 나타나지
+          않음.)
+          <label for="password"> : 패스워드 </label>
+        </p>
+        <p>
+          <input type="text" class="homepage" name="[##_rp_input_homepage_##]" value="[##_guest_homepage_##]" />
+          <label for="homepage"> : 홈페이지 </label>
+        </p>
+      </s_rp_guest>
+      <p class="secretWrap">
+        <input type="checkbox" name="[##_rp_input_is_secret_##]" class="checkbox" />
+        <label for="secret"> 비밀글 </label>
+      </p>
+    </s_rp_member>
+    <p>
+      <textarea name="[##_rp_input_comment_##]" rows="10" cols="50"></textarea>
+    </p>
+    <p>
+      <input type="submit" value="댓글 달기" onclick="[##_rp_onclick_submit_##]" />
+    </p>
+  </div>
+</s_rp_input_form>
+
+댓글 리스트 구조
+
+<s_rp_container> : 등록된 '댓글' 리스트를 출력할 영역입니다
+<s_rp_rep> : '댓글' 리스트의 반복열입니다
+<s_rp2_container> : '댓글'의 댓글 리스트를 출력할 영역입니다.
+<s_rp2_rep> : '댓글' 댓글 리스트의 반복열입니다
+
+댓글 내용 (rep 내부)
+
+[##_rp_rep_id_##] : 댓글의 고유 ID
+[##_rp_rep_class_##] : 댓글의 글의 목록에 반복되는 스타일 + admin 아이디 앞에 아이콘
+[##_rp_rep_name_##] : 글쓴사람 이름
+[##_rp_rep_logo_##] : 댓글작성자의 프로필 이미지
+[##_rp_rep_date_##] : 글쓴 날짜
+[##_rp_rep_desc_##] : 글 내용
+[##_rp_rep_link_##] : 댓글 주소
+[##_rp_rep_onclick_delete_##] : 답글 삭제 온클릭 이벤트
+[##_rp_rep_onclick_reply_##] : 답글 수정 온클릭 이벤트
+
+<div class="commentList">
+  <s_rp_container>
+    <ol>
+      <s_rp_rep>
+        <li id='[##_rp_rep_id_##]'>
+          <div class="[##_rp_rep_class_##]">
+            <span class="image">[##_rp_rep_logo_##]</span>
+            <span class="name">[##_rp_rep_name_##]</span>
+            <span class="date"> [##_rp_rep_date_##]</span>
+            <span class="control">
+              <a href="[##_rp_rep_link_##]" class="address">&nbsp;
+                <span>댓글주소</span>
+              </a>
+              <a href="#" onclick="[##_rp_rep_onclick_delete_##]" class="modify">&nbsp;
+                <span>수정/삭제</span>
+              </a>
+              <a href="#" onclick="[##_rp_rep_onclick_reply_##]" class="write">&nbsp;
+                <span>댓글쓰기</span>
+              </a>
+            </span>
+            <p>[##_rp_rep_desc_##]</p>
+          </div>
+          <s_rp2_container>
+            <ul>
+              <s_rp2_rep>
+                <li id='[##_rp_rep_id_##]'>
+                  <div class="[##_rp_rep_class_##]">
+                    <span class="image">[##_rp_rep_logo_##]</span>
+                    <span class="name">[##_rp_rep_name_##]</span>
+                    <span class="date"> [##_rp_rep_date_##]</span>
+                    <span class="control">
+                      <a href="[##_rp_rep_link_##]" class="address">&nbsp;
+                        <span>댓글주소</span>
+                      </a>
+                      <a href="#" onclick="[##_rp_rep_onclick_delete_##]" class="modify">&nbsp;
+                        <span>수정/삭제</span>
+                      </a>
+                    </span>
+                    <p>[##_rp_rep_desc_##]</p>
+                  </div>
+                </li>
+              </s_rp2_rep>
+            </ul>
+          </s_rp2_container>
+        </li>
+      </s_rp_rep>
+    </ol>
+  </s_rp_container>
+</div>
+
+기본 댓글 치환자
+
+[##_comment_group_##] : 기본 댓글 치환자로, 댓글 개수, 댓글 리스트, 댓글 작성폼을 출력합니다.
+기본 댓글 치환자는 서버에서 하나의 div 태그로 렌더링 된 후, 댓글 데이터를 받아 프론트에서 최종적으로 다음과 같이 렌더링 됩니다. (기능이 변경됨에 따라 html도 변경될 수 있습니다.)
+
+<!-- 서버에서 렌더링된 직후 -->
+
+<div data-tistory-react-app="Comment"></div>
+
+<!-- 전체 치환 구조 -->
+
+<div data-tistory-react-app="Comment">
+   <div class="tt-comment-cont">
+      [댓글 개수 영역]
+      [댓글 리스트 영역]
+      [댓글 작성폼 영역]
+   </div>
+</div>
+
+<!-- [댓글 개수 영역] -->
+
+<div class="tt-box-total">
+  <span class="tt_txt_g">댓글</span>
+  <span class="tt_num_g">{count}</span>
+</div>
+
+<!-- [댓글 리스트 영역] -->
+
+<div class="tt-area-reply">
+  <ul class="tt-list-reply">
+    <!-- 핀고정 댓글 영역 시작 -->
+    <li class="tt-item-reply">
+      <p class="tt_cmt_info">
+        <span class="tt_img_area_reply tt_ico_fixed"></span>
+        <span class="tt_txt_g">{name}님이 고정했습니다.</span>
+      </p>
+      <div class="tt-wrap-cmt">
+        <div class="tt-box-thumb">
+          <a href="{homepage}">
+            <span class="tt-thumbnail" style="background-image: url("{profileImageUrl}");"></span>
+          </a>
+        </div>
+        <div class="tt-box-content">
+          <div class="tt-box-meta">
+            <a href="{homepage}" class="tt-link-user">{name}</a>
+            <div class="tt_cmt_profile">
+              <button type="button" class="tt_btn_profile">
+                <span class="tt_img_area_reply tt_ico_profile">프로필열기</span>
+              </button>
+            </div>
+            <span class="tt_img_area_reply tt_ico_fixed" style="margin-left: 4px;"></span>
+          </div>
+          <div class="tt-wrap-desc">
+            <p class="tt_desc">{content}</p>
+          </div>
+          <div class="tt-wrap-info">
+            <span class="tt_date">{datetime}</span>
+            <span class="tt-wrap-link-comment">
+                     <a href="#" class="tt-link-comment">
+                        <span class="tt_txt_g">답글</span>
+                        <span class="tt_num_g">{count}</span>
+                     </a>
+                  </span>
+          </div>
+          <div class="tt-box-modify">
+            <button type="button" class="tt_img_area_reply tt-button-modify">더보기</button>
+            <ul class="tt-list-modify">
+              <li><a href="#">고정해제</a></li>
+              <li><a href="#">수정</a></li>
+              <li><a href="#">삭제</a></li>
+              <li><a href="#">링크복사</a></li>
+            </ul>
+          </div>
+          <div class="tt_box_pwd" style="display: none;">
+            <form class="tt_form_pwd">
+              <fieldset>
+                <legend class="screen_out">비밀번호 입력</legend>
+                <input class="tt_inp_g" type="password" title="비밀번호" placeholder="비밀번호를 입력하세요." maxlength="12" value="">
+                <button type="submit" class="tt_btn_submit" disabled="">
+                  <span class="tt_img_area_reply tt_ico_check">입력하기</span>
+                </button>
+              </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </li>
+    <!-- 핀고정 댓글 영역 끝 -->
+    <!-- 댓글이 20개보다 많을 때 이전 댓글 버튼 영역 시작 -->
+    <li>
+      <button type="button" class="tt_btn_prev_more">이전 댓글 더보기</button>
+    </li>
+    <!-- 댓글이 20개보다 많을 때 이전 댓글 버튼 영역 끝 -->
+    <!-- 일반 댓글 영역 시작 -->
+    <li class="tt-item-reply rp_general">
+      ...
+    </li>
+    <!-- 일반 댓글 영역 끝 -->
+  </ul>
+</div>
+
+<!-- [댓글 작성폼 영역] -->
+
+<!-- 로그인 시 -->
+<form style="margin: 0px;">
+  <div class="tt-area-write">
+    <div class="tt-box-thumb">
+      <span class="tt-thumbnail" style="background-image: url("{profileImageUrl}");"></span>
+    </div>
+    <div class="tt_wrap_write">
+      <div class="tt-box-textarea">
+        <div class="tt-inner-g">
+          <span class="tt_txt_user">{name}</span>
+          <label for="comment" class="screen_out">댓글</label>
+          <div contenteditable="true" placeholder="내용을 입력하세요." class="tt-cmt"></div>
+        </div>
+      </div>
+      <div class="tt-box-write">
+        <label class="tt-xe-label">
+          <input type="checkbox" name="secret" id="secret">
+          <span class="tt_img_area_reply tt-xe-input-helper"></span>
+          <span class="tt-xe-label-text">비밀글</span>
+        </label>
+        <button type="submit" class="tt-btn_register">등록</button>
+      </div>
+    </div>
+  </div>
+</form>
+<!-- 비로그인 시 -->
+<form style="margin: 0px;">
+  <div class="tt-area-write">
+    <div class="tt-box-thumb">
+      <span class="tt-thumbnail" style="background-image: url("{profileImageUrl}");"></span>
+    </div>
+    <div class="tt_wrap_write">
+      <div class="tt-box-account">
+        <input type="text" title="이름" placeholder="이름" maxlength="32" value="">
+        <input type="password" title="비밀번호" maxlength="12" placeholder="비밀번호" value="">
+      </div>
+      <div class="tt-box-textarea">
+        <div class="tt-inner-g">
+          <div contenteditable="true" placeholder="내용을 입력하세요." class="tt-cmt"></div>
+        </div>
+      </div>
+      <div class="tt-box-write">
+        <label class="tt-xe-label">
+          <input type="checkbox" id="secret">
+          <span class="tt_img_area_reply tt-xe-input-helper"></span>
+          <span class="tt-xe-label-text">비밀글</span>
+        </label>
+        <button type="submit" class="tt-btn_register" disabled="">등록</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+기본 댓글 치환자만 작성하는 것으로 댓글 화면을 구성할 수 있습니다.
+별도의 css를 작성하지 않아도 기본 스타일이 적용되며, css를 추가하여 원하는 디자인을 사용할 수도 있습니다.
+로그인 상태나 권한에 따라 렌더링 되는 내용이 달라집니다.
+기능이 추가됨에 따라 html을 수정하지 않아도 됩니다.
+
+
+======================================================================
+## contents/guestbook
+======================================================================
+방명록
+방명록 그룹
+
+<s_guest> : 방명록 그룹치환자
+
+<s_guest>
+  <div class="guestbook">
+    <h3>방명록</h3>
+    <div class="guestWrite">입력 폼</div>
+    <div class="guestList">리스트</div>
+  </div>
+</s_guest>
+
+입력 폼
+
+<s_guest_input_form> : 방명록을 달기 위한 입력폼을 출력합니다
+[##_guest_textarea_body_##] : 글 내용 입력박스 이름
+[##_guest_onclick_submit_##] : 입력 완료 온클릭 이벤트
+<s_guest_member> : 로그인을 하지 않았거나 블로그 소유자가 아닌경우 보여지는 영역
+<s_guest_form> : 로그인을 하지 않았을경우 보여지는 영역
+[##_guest_input_name_##] : 이름입력 박스 이름
+[##_guest_name_##] : 이름
+[##_guest_input_password_##] : 비밀번호 입력 박스 이름
+[##_guest_password_##] : 비밀번호
+[##_guest_input_homepage_##] : 홈페이지 입력 박스 이름
+[##_guest_homepage_##] : 홈페이지
+
+<s_guest_input_form>
+  <div class="guestWrite">
+    <s_guest_member>
+      <s_guest_form>
+        <div>
+          <input type="text" name="[##_guest_input_name_##]" value="[##_guest_name_##]" />
+          <label for="name"> : 이름 </label>
+        </div>
+        <div>
+          <input type="password" maxlength="8" name="[##_guest_input_password_##]" value="[##_guest_password_##]" />
+          <label for="password"> : 패스워드 </label>
+        </div>
+        <div>
+          <input type="text" name="[##_guest_input_homepage_##]" value="[##_guest_homepage_##]" />
+          <label for="homepage"> : 홈페이지 </label>
+        </div>
+      </s_guest_form>
+    </s_guest_member>
+    <div>
+      <textarea name="[##_guest_textarea_body_##]" cols="50" rows="6"></textarea>
+    </div>
+    <div>
+      <input type="submit" value="안부 남기기" onclick="[##_guest_onclick_submit_##]"/>
+    </div>
+  </div>
+</s_guest_input_form>
+
+리스트
+
+<s_guest_container> : 방명록 리스트 그룹치환자
+<s_guest_rep> : 방명록 정보 그룹치환자
+<s_guest_reply_container> : '방명록'의 댓글 리스트를 출력할 영역입니다.
+<s_guest_reply_rep> : '방명록' 댓글 리스트의 반복열입니다
+
+내용 (rep 내부)
+
+[##_guest_rep_id_##] : 방명록의 고유 ID
+[##_guest_rep_class_##] : 방명록의 글의 목록에 반복되는 스타일 + admin 아이디 앞에 아이콘
+[##_guest_rep_name_##] : 글쓴사람 이름
+[##_guest_rep_date_##] : 글쓴 날짜
+[##_guest_rep_desc_##] : 글 내용
+[##_guest_rep_logo_##] : 작성자 프로필
+[##_guest_rep_onclick_delete_##] : 답글 삭제 온클릭 이벤트
+[##_guest_rep_onclick_reply_##] : 답글 수정 온클릭 이벤트
+
+<s_guest_container>
+  <div class="guestList">
+    <ol>
+      <s_guest_rep>
+        <li id='[##_guest_rep_id_##]'>
+          <div class="[##_guest_rep_class_##]">
+            <span class="name">[##_guest_rep_name_##]</span>
+            <span class="date"> [##_guest_rep_date_##]</span>
+            <span class="control">
+              <a href="#" onclick="[##_guest_rep_onclick_delete_##]">MODIFY/DELETE</a>
+              <a href="#" onclick="[##_guest_rep_onclick_reply_##]">REPLY</a>
+            </span>
+            <p>[##_guest_rep_desc_##]</p>
+          </div>
+          <s_guest_reply_container>
+            <ul>
+              <s_guest_reply_rep>
+              <li id='[##_guest_rep_id_##]'>
+                <div class="[##_guest_rep_class_##]">
+                  <span class="name">[##_guest_rep_name_##]</span>
+                  <span class="date"> [##_guest_rep_date_##]</span>
+                  <span class="control">
+                    <a href="#" onclick="[##_guest_rep_onclick_delete_##]">MODIFY/DELETE </a>
+                  </span>
+                  <p>[##_guest_rep_desc_##]</p>
+                </div>
+              </li>
+              </s_guest_reply_rep>
+            </ul>
+          </s_guest_reply_container>
+        </li>
+      </s_guest_rep>
+    </ol>
+  </div>
+</s_guest_container>
+
+기본 방명록 치환자
+
+[##_guestbook_group_##] : 기본 방명록 치환자로, 방명록 개수, 방명록 리스트, 방명록 작성폼을 출력합니다.
+기본 방명록 치환자는 서버에서 하나의 div 태그로 렌더링 된 후, 방명록 데이터를 받아 프론트에서 최종적으로 다음과 같이 렌더링 됩니다. (기능이 변경됨에 따라 html도 변경될 수 있습니다.)
+
+<!-- 서버에서 렌더링된 직후 -->
+
+<div data-tistory-react-app="Comment"></div>
+
+<!-- 전체 치환 구조 -->
+
+<div data-tistory-react-app="Comment">
+   <div class="tt-comment-cont">
+      [방명록 개수 영역]
+      [방명록 리스트 영역]
+      [방명록 작성폼 영역]
+   </div>
+</div>
+
+<!-- [방명록 개수 영역] -->
+
+<div class="tt-box-total">
+  <span class="tt_txt_g">댓글</span>
+  <span class="tt_num_g">{count}</span>
+</div>
+
+<!-- [방명록 리스트 영역] -->
+
+<div class="tt-area-reply">
+  <ul class="tt-list-reply">
+    <!-- 핀고정 방명록 영역 시작 -->
+    <li class="tt-item-reply">
+      <p class="tt_cmt_info">
+        <span class="tt_img_area_reply tt_ico_fixed"></span>
+        <span class="tt_txt_g">{name}님이 고정했습니다.</span>
+      </p>
+      <div class="tt-wrap-cmt">
+        <div class="tt-box-thumb">
+          <a href="{homepage}">
+            <span class="tt-thumbnail" style="background-image: url("{profileImageUrl}");"></span>
+          </a>
+        </div>
+        <div class="tt-box-content">
+          <div class="tt-box-meta">
+            <a href="{homepage}" class="tt-link-user">{name}</a>
+            <div class="tt_cmt_profile">
+              <button type="button" class="tt_btn_profile">
+                <span class="tt_img_area_reply tt_ico_profile">프로필열기</span>
+              </button>
+            </div>
+            <span class="tt_img_area_reply tt_ico_fixed" style="margin-left: 4px;"></span>
+          </div>
+          <div class="tt-wrap-desc">
+            <p class="tt_desc">{content}</p>
+          </div>
+          <div class="tt-wrap-info">
+            <span class="tt_date">{datetime}</span>
+            <span class="tt-wrap-link-comment">
+                     <a href="#" class="tt-link-comment">
+                        <span class="tt_txt_g">답글</span>
+                        <span class="tt_num_g">{count}</span>
+                     </a>
+                  </span>
+          </div>
+          <div class="tt-box-modify">
+            <button type="button" class="tt_img_area_reply tt-button-modify">더보기</button>
+            <ul class="tt-list-modify">
+              <li><a href="#">고정해제</a></li>
+              <li><a href="#">수정</a></li>
+              <li><a href="#">삭제</a></li>
+              <li><a href="#">링크복사</a></li>
+            </ul>
+          </div>
+          <div class="tt_box_pwd" style="display: none;">
+            <form class="tt_form_pwd">
+              <fieldset>
+                <legend class="screen_out">비밀번호 입력</legend>
+                <input class="tt_inp_g" type="password" title="비밀번호" placeholder="비밀번호를 입력하세요." maxlength="12" value="">
+                <button type="submit" class="tt_btn_submit" disabled="">
+                  <span class="tt_img_area_reply tt_ico_check">입력하기</span>
+                </button>
+              </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </li>
+    <!-- 핀고정 방명록 영역 끝 -->
+    <!-- 방명록이 20개보다 많을 때 이전 방명록 버튼 영역 시작 -->
+    <li>
+      <button type="button" class="tt_btn_prev_more">이전 댓글 더보기</button>
+    </li>
+    <!-- 방명록이 20개보다 많을 때 이전 방명록 버튼 영역 끝 -->
+    <!-- 일반 방명록 영역 시작 -->
+    <li class="tt-item-reply rp_general">
+      ...
+    </li>
+    <!-- 일반 방명록 영역 끝 -->
+  </ul>
+</div>
+
+<!-- [방명록 작성폼 영역] -->
+
+<!-- 로그인 시 -->
+<form style="margin: 0px;">
+  <div class="tt-area-write">
+    <div class="tt-box-thumb">
+      <span class="tt-thumbnail" style="background-image: url("{profileImageUrl}");"></span>
+    </div>
+    <div class="tt_wrap_write">
+      <div class="tt-box-textarea">
+        <div class="tt-inner-g">
+          <span class="tt_txt_user">{name}</span>
+          <label for="comment" class="screen_out">댓글</label>
+          <div contenteditable="true" placeholder="내용을 입력하세요." class="tt-cmt"></div>
+        </div>
+      </div>
+      <div class="tt-box-write">
+        <label class="tt-xe-label">
+          <input type="checkbox" name="secret" id="secret">
+          <span class="tt_img_area_reply tt-xe-input-helper"></span>
+          <span class="tt-xe-label-text">비밀글</span>
+        </label>
+        <button type="submit" class="tt-btn_register">등록</button>
+      </div>
+    </div>
+  </div>
+</form>
+<!-- 비로그인 시 -->
+<form style="margin: 0px;">
+  <div class="tt-area-write">
+    <div class="tt-box-thumb">
+      <span class="tt-thumbnail" style="background-image: url("{profileImageUrl}");"></span>
+    </div>
+    <div class="tt_wrap_write">
+      <div class="tt-box-account">
+        <input type="text" title="이름" placeholder="이름" maxlength="32" value="">
+        <input type="password" title="비밀번호" maxlength="12" placeholder="비밀번호" value="">
+      </div>
+      <div class="tt-box-textarea">
+        <div class="tt-inner-g">
+          <div contenteditable="true" placeholder="내용을 입력하세요." class="tt-cmt"></div>
+        </div>
+      </div>
+      <div class="tt-box-write">
+        <label class="tt-xe-label">
+          <input type="checkbox" id="secret">
+          <span class="tt_img_area_reply tt-xe-input-helper"></span>
+          <span class="tt-xe-label-text">비밀글</span>
+        </label>
+        <button type="submit" class="tt-btn_register" disabled="">등록</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+기본 방명록 치환자만 작성하는 것으로 방명록 화면을 구성할 수 있습니다.
+별도의 css를 작성하지 않아도 기본 스타일이 적용되며, css를 추가하여 원하는 디자인을 사용할 수도 있습니다.
+로그인 상태나 권한에 따라 렌더링 되는 내용이 달라집니다.
+기능이 추가됨에 따라 html을 수정하지 않아도 됩니다.
+
+
+======================================================================
+## sidebar/basic
+======================================================================
+사이드바 구조
+
+<s_sidebar>: 사이드바 그룹치환자
+<s_sidebar_element>: 사이드바 개별 엘리먼트 그룹치환자\
+첫번째 줄의 주석 <!-- TITLE -->은 사이드바의 타이틀로 사용됩니다.
+
+<div id="sidebar">
+  <s_sidebar>
+    <!-- 오른쪽 사이드바 -->
+    <s_sidebar_element>
+      <!-- 카테고리 -->
+      ...
+    </s_sidebar_element>
+    <s_sidebar_element>
+      <!--최근에 올라온 글 -->
+      ...
+    </s_sidebar_element>
+    <s_sidebar_element>
+      <!-- 카운터 -->
+      ...
+    </s_sidebar_element>
+  </s_sidebar>
+
+  <s_sidebar>
+    <!-- 배너 삽입 사이드바 -->
+    <s_sidebar_element>
+      <!-- 배너 모듈 - 태터툴즈 -->
+      ...
+    </s_sidebar_element>
+    <s_sidebar_element>
+      <!-- 배너모듈 - 올린 -->
+      ...
+    </s_sidebar_element>
+    <s_sidebar_element>
+      <!-- 배너모듈 - RSS Feed -->
+      ...
+    </s_sidebar_element>
+  </s_sidebar>
+</div>
+
+
+======================================================================
+## sidebar/category
+======================================================================
+카테고리
+
+[##_category_##]: 폴더 형식의 카테고리
+[##_category_list_##]: 리스트 형식의 카테고리
+
+<s_sidebar_element>
+  <!-- 카테고리 -->
+  <div class="category">
+    <h3>카테고리</h3>
+    [##_category_##]
+  </div>
+
+  <div class="category">
+    <h3>카테고리</h3>
+    [##_category_list_##]
+  </div>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/recent_post
+======================================================================
+최근 글
+
+<s_rctps_rep>: 최근에 올라온 글을 반복 출력합니다
+[##_rctps_rep_link_##]: 글 주소
+[##_rctps_rep_title_##]: 글 제목
+[##_rctps_rep_rp_cnt_##]: 글 댓글 갯수
+[##_rctps_rep_author_##]: 작성자 이름 (*팀블로그용 치환자)
+[##_rctps_rep_date_##]: 글 발행 날짜/시간 (yyyy.mm.dd HH:MM)
+[##_rctps_rep_simple_date_##]: 글 발행 날짜 (yyyy.mm.dd)
+<s_rctps_rep_thumbnail>: 대표 이미지가 있는 경우 치환
+[##_rctps_rep_thumbnail_##]: 대표 이미지
+
+[##_rctps_rep_category_##]: 카테고리 이름
+[##_rctps_rep_category_link_##]: 카테고리 리스트 url
+
+<s_sidebar_element>
+  <!-- 최근에 올라온 글 -->
+  <div class="recentPost">
+    <h3>최근에 올라온 글 </h3>
+    <ul>
+      <s_rctps_rep>
+        <li>
+          <a href="[##_rctps_rep_link_##]">[##_rctps_rep_title_##]</a>
+          <span class="cnt">[##_rctps_rep_rp_cnt_##]</span>
+          <s_rctps_rep_thumbnail>
+            <img src="[##_rctps_rep_thumbnail_##]"/>
+          </s_rctps_rep_thumbnail>
+          <a href="[##_rctps_rep_category_link_##]">[##_rctps_rep_category_##]</a>
+        </li>
+      </s_rctps_rep>
+    </ul>
+  </div>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/popular_post
+======================================================================
+인기글
+
+<s_rctps_popular_rep>: 인기글을 반복 출력합니다
+[##_rctps_rep_link_##]: 글 주소
+[##_rctps_rep_title_##]: 글 제목
+[##_rctps_rep_rp_cnt_##]: 글 댓글 갯수
+[##_rctps_rep_author_##]: 작성자 이름 (*팀블로그용 치환자)
+[##_rctps_rep_date_##]: 글 발행 날짜/시간 (yyyy.mm.dd HH:MM)
+[##_rctps_rep_simple_date_##]: 글 발행 날짜 (yyyy.mm.dd)
+<s_rctps_rep_thumbnail>: 대표 이미지가 있는 경우 치환
+[##_rctps_rep_thumbnail_##]: 대표 이미지
+
+[##_rctps_rep_category_##]: 카테고리 이름
+[##_rctps_rep_category_link_##]: 카테고리 리스트 url
+
+<s_sidebar_element>
+  <!-- 이 블로그 인기글 -->
+  <div class="popularPost">
+    <h3>이 블로그 인기글 </h3>
+    <ul>
+      <s_rctps_popular_rep>
+        <li>
+          <a href="[##_rctps_rep_link_##]">[##_rctps_rep_title_##]</a>
+          <span class="cnt">[##_rctps_rep_rp_cnt_##]</span>
+          <s_rctps_rep_thumbnail>
+            <img src="[##_rctps_rep_thumbnail_##]"/>
+          </s_rctps_rep_thumbnail>
+          <a href="[##_rctps_rep_category_link_##]">[##_rctps_rep_category_##]</a>
+        </li>
+      </s_rctps_popular_rep>
+    </ul>
+  </div>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/recent_comment
+======================================================================
+최근 댓글
+
+<s_rctrp_rep>: 댓글을 반복 출력합니다
+[##_rctrp_rep_link_##]: 댓글로 이동할 주소
+[##_rctrp_rep_desc_##]: 댓글의 본문 일부
+[##_rctrp_rep_name_##]: 댓글을 쓴 사람 이름
+[##_rctrp_rep_time_##]: 댓글을 쓴 시간 
+
+<s_sidebar_element>
+  <!-- 최근에 달린 댓글 -->
+  <div class="recentComment">
+    <h3>최근에 달린 댓글</h3>
+    <ul id="recentComments">
+      <s_rctrp_rep>
+        <li>
+          <a href="[##_rctrp_rep_link_##]">[##_rctrp_rep_desc_##].</a>
+          <span class="info_wrap">
+            <span class="name">[##_rctrp_rep_name_##]</span>
+            <span class="date">[##_rctrp_rep_time_##]</span>
+          </span>
+        </li>
+      </s_rctrp_rep>
+    </ul>
+  </div>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/recent_notice
+======================================================================
+최근 공지사항
+
+<s_rct_notice>: 공지사항 리스트를 출력할 영역입니다
+<s_rct_notice_rep>: 공지사항 리스트를 반복 출력합니다
+[##_notice_rep_link_##]: 공지사항의 고유 주소
+[##_notice_rep_title_##]: 공지사항의 글 제목 
+
+<s_sidebar_element>
+  <!-- 공지사항 -->
+  <s_rct_notice>
+    <div class="notice">
+      <ul>
+        <s_rct_notice_rep>
+          <li>
+            <a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a>
+          </li>
+        </s_rct_notice_rep>
+      </ul>
+    </div>
+  </s_rct_notice>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/search
+======================================================================
+검색
+
+<s_search>: 검색 입력폼을 출력할 영역입니다
+[##_search_name_##]: 검색어 입력 박스 이름
+[##_search_text_##]: 검색어
+[##_search_onclick_submit_##]: 검색 온클릭 이벤트 
+
+<s_sidebar_element>
+  <!-- 검색 -->
+  <div class="search">
+    <s_search>
+      <input type="text" name="[##_search_name_##]" value="[##_search_text_##]" onkeypress="if (event.keyCode == 13) { [##_search_onclick_submit_##] }"
+      />
+      <input value="검색" type="button" onclick="[##_search_onclick_submit_##]" class="submit" />
+    </s_search>
+  </div>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/random_tag
+======================================================================
+랜덤태그
+
+<s_random_tags>: 태그를 반복 출력합니다
+[##_tag_link_##]: 태그에 해당되는 주소
+[##_tag_class_##]: Tag Cloud 의 크기나 색깔을 설정 (총 5단계의 레벨을 가지고 있으며, cloud1 ~ cloud5 까지 큰 것에서 작은 순서를 나타냅니다. 이 기능을 가지고 style 을 조정하시여 원하시는 스타일의 Tag Cloud 를 만드실 수 있습니다)
+[##_tag_name_##]: 태그의 이름 
+
+<s_sidebar_element>
+  <!-- 태그 클라우드 -->
+  <div class="tagbox">
+    <h3>태그목록</h3>
+    <ul>
+      <s_random_tags>
+        <li>
+          <a href="[##_tag_link_##]" class="[##_tag_class_##]"> [##_tag_name_##]</a>
+        </li>
+      </s_random_tags>
+    </ul>
+  </div>
+</s_sidebar_element>
+
+
+======================================================================
+## sidebar/count
+======================================================================
+방문자 수
+
+[##_count_total_##]: 총 방문자수
+[##_count_today_##]: 오늘 방문자수
+[##_count_yesterday_##]: 어제 방문자수 
+
+<s_sidebar_element>
+  <!-- 방문자수 -->
+  <div class="counter">
+    <span class="total">Total : [##_count_total_##] </span>
+    <span class="today">Today : [##_count_today_##]</span>
+    <span class="yesterday">Yesterday : [##_count_yesterday_##]</span>
+  </div>
+</s_sidebar_element>

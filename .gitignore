@@ -1,0 +1,17 @@
+# 빌드 산출물 — 소스에서 재생성된다
+dist/
+
+# 로컬 프리뷰 — 매 실행마다 8개 HTML이 생성된다
+_preview/
+
+# 하네스 중간 산출물 — 사후 추적용이지만 저장소에는 넣지 않는다
+_workspace/
+_workspace_*/
+
+node_modules/
+
+# 라이브 스킨 백업 — 개인 블로그 자산이므로 저장소에 넣지 않는다
+backup/
+
+.DS_Store
+*.log

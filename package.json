@@ -1,0 +1,20 @@
+{
+  "name": "sanggi-jayg-tistory-skin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "sanggi-jayg.tistory.com 커스텀 티스토리 스킨",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "preview": "npm run build && python3 .claude/skills/skin-preview/scripts/render.py",
+    "lint": "python3 .claude/skills/skin-qa-check/scripts/lint.py",
+    "check": "npm run build && npm run lint && npm run preview"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.0"
+  }
+}
