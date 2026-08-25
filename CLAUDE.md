@@ -69,8 +69,11 @@ gh pr view <번호> --json state --jq .state     # MERGED 여야 한다. 이것�
 # 세션이 그 worktree 안에 있으면 ExitWorktree(keep)로 먼저 나온다 — 안에서는 지울 수 없다
 git worktree remove .claude/worktrees/<이름>
 git branch -D worktree-<이름>                  # 스쿼시 머지는 커밋을 그대로 남기지 않아 -d는 거부한다
-git push origin --delete worktree-<이름>       # 이 저장소는 머지해도 원격 브랜치를 지우지 않는다
+git fetch --prune                              # 원격 브랜치는 머지 때 GitHub이 지운다. 죽은 추적 참조만 턴다
 ```
+
+원격은 저장소 설정(`deleteBranchOnMerge`)이 처리한다. 그래도 남아 있으면 —
+`gh pr merge`를 안 쓰고 머지했거나 설정이 꺼졌다는 뜻이다 — `git push origin --delete worktree-<이름>`.
 
 **확인하지 않은 것은 지우지 않는다.** `MERGED`가 아니면 그대로 둔다. 닫히기만 한 PR(`CLOSED`)의 worktree에는 **아직 아무 데도 없는 작업**이 들어 있다.
 
@@ -102,6 +105,7 @@ git push origin --delete worktree-<이름>       # 이 저장소는 머지해도
 | 2026-08-25 | 기본 이미지 15장 도안 + 마스크 방식 채택 | src/assets/placeholders/, scripts/gen-placeholders.py, DESIGN.md §6.2, DECISIONS.md 결정 5·6 | 마스크로 쓰면 색이 토큰에서만 나와 라이트/다크가 한 파일로 갈린다 — 28장이 15장이 되고 팔레트가 바뀌어도 도안이 따라온다 |
 | 2026-08-25 | SEO 하네스 추가 — 에이전트 `seo-auditor`, 스킬 `seo-verify-live`, 린트 `SEO001~005` | .claude/agents, .claude/skills, DECISIONS.md(결정 28), skin-deploy, skin-qa-check | 레딧 SEO 워크플로 검토 결과, 5단계 중 **배포 후 프로덕션 실물 검증**이 우리에게 가장 잘 맞고 지금 없었다. 배포가 수동 복붙이라 소스와 프로덕션이 갈라지는 경로가 여럿인데 소스 린트가 하나도 못 잡는다. 동시에 실측으로 **모바일 우선 색인이 커스텀 스킨을 통째로 우회한다**는 것을 확인했다 |
 | 2026-08-25 | 스킨 첫 구현 — 훅 계약을 `docs/`로 이동, 린트 `SUB007`, 렌더러 8 → 10페이지 | src/ 전체, docs/hooks.md, skin-qa-check, skin-preview | `_workspace/`가 gitignore라 CSS 주석이 참조하는 계약 문서가 저장소에 없었다. 렌더러가 공지와 "목차 있는 글"을 한 번도 렌더하지 않아 그 안의 결함을 눈으로 찾아야 했다 |
+| 2026-08-25 | 정리 절차에서 원격 브랜치 삭제를 `fetch --prune`으로 | CLAUDE.md | 저장소에 `deleteBranchOnMerge`를 켜서 머지 때 GitHub이 원격을 지운다. 손으로 지우는 단계가 남아 있으면 이미 없는 것을 지우려다 실패한다. 설정이 꺼진 경우만 예외로 남겼다 |
 | 2026-08-25 | 머지 후 worktree 정리를 자동 절차로 | CLAUDE.md | 정리를 사용자 숙제로 남기면 죽은 worktree가 쌓이고, 목록이 길어지면 살아 있는 작업과 구분이 안 된다. 머지 확인(`MERGED`)을 조건으로 달아 닫히기만 한 PR의 작업은 지우지 않게 했다 |
 | 2026-08-25 | 라이브 검증 대상을 대상 블로그에서 찾도록 — `--post-path`·`--category`, baseline에 대상 고정 | seo-verify-live, skin-deploy | 테스트 블로그 첫 baseline이 `V014`로 저장되지 않았다. 검증기가 `data/posts.json`(본 블로그 실측)의 글·카테고리를 테스트 블로그에 붙여 404를 냈다. 실측이 늘어도 배포 전/후가 같은 글을 비교하도록 기준선에 대상을 박았다 |
 | 2026-08-25 | 🔴 첫 배포 사고 수습 — `s_article_rep` 래퍼 추가, 홈 목록을 `s_list` 한 벌로 통합, 린트 `SUB008`, 렌더러에 영역 중첩 규칙 | src/skin.html, layout.css, components.css, docs/hooks.md, DECISIONS.md(결정 29), DESIGN.md §3, skin-qa-check, skin-preview, seo-verify-live, skin-deploy | `<s_permalink_article_rep>`를 최상위에 두어 글 본문이 통째로 사라졌다. 에러도 빈 껍데기도 없었고 홈은 `s_list`가 대신 그려 줘 멀쩡해 보였다. 짝 검사로는 원리적으로 못 잡는다 — 짝은 맞고 위치만 틀리다. 프리뷰도 규칙을 몰라 통과 신호를 위조하고 있었다 |
