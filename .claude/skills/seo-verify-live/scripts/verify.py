@@ -276,7 +276,7 @@ def page_targets(base):
 
 # ─────────────────────────────── 검증 ───────────────────────────────
 
-def verify_page(name, url, doc, status, base_host, stats):
+def verify_page(name, url, doc, status, base_host, stats, final=None):
     """페이지 하나를 검증하고 baseline용 지표를 stats에 채운다."""
     where = "%s (%s)" % (name, url)
 
@@ -290,8 +290,15 @@ def verify_page(name, url, doc, status, base_host, stats):
         err("V001", "HTTP %d. 이 페이지 타입이 죽어 있다." % status, where)
         return
 
+    # 리다이렉트를 따라가 다른 페이지를 받았다면, 그 페이지를 이 페이지 타입으로
+    # 검증하면 안 된다. 방명록을 끄면 /guestbook → / 가 되고, 홈 마크업으로
+    # h1·canonical이 전부 통과해 "이 페이지 타입은 멀쩡하다"고 보고하게 된다.
+    if final and urllib.parse.urlparse(final).path.rstrip("/") != urllib.parse.urlparse(url).path.rstrip("/"):
+        warn("V001", "요청한 주소가 %s 로 넘어갔다. 이 페이지 타입이 꺼져 있거나 "
+             "다른 곳으로 리다이렉트된다 — 아래 지표는 넘어간 쪽의 것이다." % final, where)
+
     h1 = count_tag(doc, "h1")
-    elinks, forms = entry_links(doc, base_host, self_path=url)
+    elinks, forms = entry_links(doc, base_host, self_path=final or url)
     ld = jsonld_types(doc)
     stats[name] = {
         "status": status, "h1": h1, "entryLinks": len(elinks),
@@ -382,7 +389,10 @@ def verify_skin_applied(base, home_doc):
             # 루트상대·프로토콜상대·절대 URL을 전부 흡수한다.
             live_url = urllib.parse.urljoin(base + "/", h)
             break
-        if "style.css" in h and fallback is None:
+        # 티스토리가 스스로 붙이는 시트는 후보가 아니다. 실물 홈에서 첫 style.css는
+        # 항상 .../static/plugin/BusinessLicenseInfo/style.css 다.
+        if ("style.css" in h and fallback is None
+                and "tistory_admin" not in h and "daumcdn.net/tistory_admin" not in h):
             fallback = h
     if not live_url:
         if fallback:
@@ -399,7 +409,10 @@ def verify_skin_applied(base, home_doc):
         unverified("V009", "라이브 style.css를 받지 못했다 (HTTP %s)." % status, live_url)
         return
     local = open(dist, encoding="utf-8").read()
-    if live_css.strip() == local.strip():
+    # 스킨 편집기는 textarea라 제출 시 개행이 CRLF로 정규화될 수 있다.
+    # 그걸 차이로 세면 멀쩡한 배포가 "붙여넣기가 잘렸다"가 된다.
+    norm = lambda t: t.replace("\r\n", "\n").replace("\r", "\n").strip()
+    if norm(live_css) == norm(local):
         info("스킨 CSS가 dist/style.css와 일치한다 (%d bytes)." % len(local))
     else:
         err("V009", "라이브 style.css가 dist/style.css와 다르다 (라이브 %d bytes / 로컬 %d bytes). "
@@ -510,9 +523,12 @@ def compare_baseline(stats, base):
     if prev_base and prev_base.rstrip("/") != base.rstrip("/"):
         # DECISIONS.md #22 — 개발은 테스트 블로그에서 한다. 두 블로그의 지표를
         # 맞대면 무관한 차이가 전부 "회귀"로 나온다.
-        unverified("V012", "baseline은 %s 에서 찍혔는데 지금 검증 대상은 %s 다. "
-                   "다른 블로그끼리는 비교하지 않는다. --save-baseline으로 이 블로그의 "
-                   "기준선을 새로 만들어라." % (prev_base, base), BASELINE)
+        # 미검증으로 넘기면 회귀 검사를 한 번도 안 하고 "오류 0"으로 끝난다.
+        # --compare를 요청한 이상, 비교하지 못한 것은 요청 실패다.
+        err("V012", "baseline은 %s 에서 찍혔는데 지금 검증 대상은 %s 다. "
+            "다른 블로그끼리는 비교하지 않는다 — 회귀 검사를 하지 못했다. "
+            "--save-baseline으로 이 블로그의 기준선을 새로 만들어라."
+            % (prev_base, base), BASELINE)
         return
     old = saved.get("pages", {})
     for name in sorted(set(old) - set(stats)):
@@ -564,6 +580,13 @@ def save_baseline(base, stats, expected):
         err("V014", "받은 페이지가 하나도 없어 baseline을 저장하지 않았다. "
             "기존 baseline은 그대로 두었다.", BASELINE)
         return
+    if missing:
+        # 첫 실행이면 덮어쓸 기준선이 없어 아래 가드가 안 돈다. 그렇다고 경고로
+        # 넘기면, 배포 문서의 "exit 1은 정상" 안내와 겹쳐 잘린 게이트가 통과한다.
+        err("V014", "%s 를 받지 못해 baseline을 저장하지 않았다. 이대로 두면 이 "
+            "페이지들이 배포 후 회귀 감시에서 빠진다 — 원인을 고치고 다시 실행하라."
+            % ", ".join(missing), BASELINE)
+        return
 
     if os.path.exists(BASELINE):
         saved = load_json(BASELINE, "기존 baseline") or {}
@@ -590,12 +613,8 @@ def save_baseline(base, stats, expected):
     with open(BASELINE, "w", encoding="utf-8") as f:
         json.dump({"base": base, "pages": stats, "missing": missing},
                   f, ensure_ascii=False, indent=1)
-    if missing:
-        warn("V014", "baseline을 저장했지만 %s 는 받지 못해 빠져 있다. "
-             "이 페이지들은 회귀 감시 대상이 아니다." % ", ".join(missing), BASELINE)
-    else:
-        info("baseline을 %s 에 저장했다 (페이지 %d종)."
-             % (os.path.relpath(BASELINE, ROOT), len(stats)))
+    info("baseline을 %s 에 저장했다 (페이지 %d종)."
+         % (os.path.relpath(BASELINE, ROOT), len(stats)))
 
 
 # ─────────────────────────────── main ───────────────────────────────
@@ -624,8 +643,8 @@ def main():
 
     for name, url in targets:
         ATTEMPTED.add(name)
-        status, doc, _ = fetch(url)
-        verify_page(name, url, doc, status, base_host, stats)
+        status, doc, final = fetch(url)
+        verify_page(name, url, doc, status, base_host, stats, final=final)
         if name == "index":
             home_doc = doc
         if name == "page":
