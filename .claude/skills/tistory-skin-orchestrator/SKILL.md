@@ -13,8 +13,10 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 (2026-08-25 첫 실행에서 실제로 그랬다). **Phase 2 시작 전에 `ToolSearch`로 `TeamCreate`를 조회해 분기한다.**
 
 **설정을 보고 판단하지 마라.** `.claude/settings.json`에 `teammateMode: "auto"`와
-`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 **둘 다 켜져 있는데도** `TeamCreate`가 없었다
-(2026-08-26 하네스 점검). 설정은 의사표시일 뿐이고 도구 목록이 사실이다 — 반드시 조회로 확인한다.
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 **둘 다 켜져 있어도** `TeamCreate`가 없을 수 있다.
+팀은 팀원을 **터미널 페인으로 띄우는** 기능이라 붙일 터미널이 있어야 한다 — 백그라운드
+잡(`CLAUDE_JOB_DIR`이 잡히는 세션)에서는 플래그가 멀쩡해도 도구가 올라오지 않는다
+(2026-08-26 점검에서 확인). **설정이 아니라 도구 목록이 사실이다.**
 
 | Phase | `TeamCreate` 있음 | 없음 |
 |---|---|---|
@@ -122,13 +124,15 @@ TeamCreate(team_name: "tistory-skin", members: [
 | 14 | 중간 검증 2 (홈+목록) | skin-qa | 4, 6 |
 | 15 | 최종 검증 | skin-qa | — |
 
+**표의 `#`는 읽기용 번호지 `taskId`가 아니다.** 실제 id는 `TaskCreate`가 돌려주므로 받아서 쓴다.
+
 ```
 TaskCreate(subject: "훅 계약 확정",
            description: "docs/hooks.md에 클래스·data 속성 계약을 확정하고 팀에 공표한다",
-           activeForm: "훅 계약 확정 중")     → taskId 반환
-TaskUpdate(taskId: "1", owner: "skin-markup")
+           activeForm: "훅 계약 확정 중")     → taskId 반환 (이 값을 보관한다)
+TaskUpdate(taskId: <1번의 id>, owner: "skin-markup")
 …
-TaskUpdate(taskId: "3", addBlockedBy: ["1"])   ← 의존성은 만든 뒤에 건다
+TaskUpdate(taskId: <3번의 id>, addBlockedBy: [<1번의 id>])   ← 의존성은 만든 뒤에 건다
 ```
 
 > 팀원당 4~6개가 적정. 작업을 더 잘게 쪼개면 조율 오버헤드가 커진다.
