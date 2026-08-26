@@ -12,10 +12,19 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ══════════ 카테고리 트리 ══════════════════════════════════════
-   ul.tt_category > li > a.link_tit            "분류 전체보기" + span.c_cnt
-     ul.category_list > li > a.link_item       상위
-       ul.sub_category_list > li > a.link_sub_item  하위
-   렌더 결과의 앵커 안에는 앞뒤 공백이 들어 있다. 그대로 둔다. */
+   [##_category_list_##](리스트형)의 출력이다. 2026-08-25 실측으로 확정했다 —
+   이전에는 "출처 없음"으로 적혀 있었고, 그 사이 스킨은 **폴더형**을 내보내고 있었다.
+
+     ul.tt_category > li > a.link_tit            "분류 전체보기" + span.c_cnt
+       ul.category_list > li > a.link_item       상위 14
+         ul.sub_category_list > li > a.link_sub_item  하위 21
+
+   현재 보고 있는 가지의 li에 class="selected"가 붙는다 (/category/Python 실측).
+   앵커 안에는 앞뒤 공백이 들어 있다 — `<a> 인프라 <span>(42)</span> </a>`. 그대로 둔다.
+
+   ⚠ 폴더형([##_category_##])은 이 중 **아무것도** 내지 않는다. 중첩 table과
+   트리선 GIF를 내고, 링크는 onclick이며, div마다 인라인 color가 박힌다.
+   여기 있는 규칙이 한 줄도 매칭되지 않는다 (DECISIONS.md 결정 31, 린트 CAT001). */
 
 .tt_category,
 .tt_category ul {
@@ -29,14 +38,20 @@
   line-height: var(--lh-body-sm);
 }
 
+/* 레일이 240px이라 긴 이름은 반드시 줄바꿈된다 — `성능과 동시성`, `Django·Flask`.
+   그래서 align-items를 baseline이 아니라 flex-start로 둔다. baseline이면 제목이
+   두 줄이 될 때 글 수 배지가 **첫 줄이 아니라 마지막 줄**에 붙어 목록 오른쪽 끝이
+   들쭉날쭉해진다. min-width:0은 긴 영문 카테고리(Kotlin·Java)가 트랙을 미는 것을 막는다. */
 .tt_category a {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-2);
+  min-width: 0;
   padding: 6px 0;
   color: var(--ink-body);
   text-decoration: none;
+  overflow-wrap: break-word;
   transition: color var(--dur) var(--ease);
 }
 
@@ -71,6 +86,30 @@
   color: var(--ink-mute);
   font-size: var(--fs-caption);
   font-variant-numeric: tabular-nums;
+  /* 배지는 제목 첫 줄과 같은 선에 세운다. flex-start 정렬이라 그냥 두면
+     대문자 높이 차이만큼 위로 뜬다. */
+  line-height: var(--lh-body-sm);
+}
+
+/* ── 현재 보고 있는 카테고리 ────────────────────────────────────
+   폴더형은 index.xml의 activeColor·activeBgColor로 이걸 칠했다. 리스트형에는
+   그 설정이 닿지 않으므로 우리가 칠한다 — 대신 색이 토큰에서만 나온다.
+
+   왼쪽 2px 막대로 표시한다. 배경을 칠하지 않는 이유는 레일 폭이 240px이라
+   블록이 차지하는 면적이 크고, 사다리(§4)의 촘촘한 세로선을 끊기 때문이다.
+   li에 붙는 클래스라 자식 ul(하위 목록)까지 물들지 않도록 > a로 한정한다. */
+.tt_category li.selected > a {
+  color: var(--link);
+  font-weight: 600;
+}
+
+.tt_category li.selected > a .c_cnt { color: var(--link); }
+
+.tt_category .category_list > li.selected > a,
+.tt_category .sub_category_list > li.selected > a {
+  margin-left: calc(var(--sp-2) * -1);
+  padding-left: calc(var(--sp-2) - 2px);
+  border-left: 2px solid var(--link);
 }
 
 /* ══════════ 접기/펼치기 ═══════════════════════════════════════

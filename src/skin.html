@@ -335,10 +335,21 @@ gtag('config', 'G-PHQ5FKMZ37');
   <s_sidebar>
 
     <s_sidebar_element>
-    <!-- 카테고리 -->
+    <!-- 카테고리 ─────────────────────────────────────────────────
+         ⚠ 반드시 category_list(리스트형)다. category(폴더형)가 아니다.
+           둘은 이름만 비슷할 뿐 완전히 다른 것을 출력한다 (2026-08-25 양쪽 실측):
+
+             폴더형   중첩 table 19개 + 트리선 GIF 17장, 링크는 onclick,
+                      a href 0개, 인라인 style 18개(color·background-color)
+             리스트형 ul/li + a href 36개, 인라인 style 0개, 이미지 0장
+
+           폴더형은 조용히 실패하는 게 아니라 **다른 UI가 나온다** — 우리 CSS의
+           .tt_category 규칙이 하나도 매칭되지 않고 category.js도 물러난다.
+           2026-08-25 첫 배포에서 실제로 폴더형이 나갔다 (DECISIONS.md 결정 31).
+           린트 CAT001이 지킨다. -->
     <div class="side-mod side-category">
       <h2 class="side-title">카테고리</h2>
-      <div class="side-body">[##_category_##]</div>
+      <div class="side-body">[##_category_list_##]</div>
     </div>
     </s_sidebar_element>
 

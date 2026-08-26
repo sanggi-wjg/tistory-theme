@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+from urllib.parse import quote
 
 ROOT = os.getcwd()
 SRC = os.path.join(ROOT, "src")
@@ -128,8 +129,8 @@ def load_fixtures():
     return posts, cats
 
 
-def build_category_html(cats, posts):
-    """[##_category_##]가 출력하는 고정 마크업을 그대로 재현한다."""
+def category_tree(cats):
+    """상위 → 하위 트리로 접는다. 두 형식이 같은 데이터를 쓴다."""
     tree = {}
     for c, v in cats["categories"].items():
         if c.endswith("  (상위)"):
@@ -142,16 +143,35 @@ def build_category_html(cats, posts):
             tree[top]["n"] += v["total"]
     for top in tree:
         tree[top]["n"] = sum(tree[top]["subs"].values()) + tree[top]["n"]
-    out = ['<ul class="tt_category"><li class=""><a href="/category" class="link_tit"> 분류 전체보기 '
-           '<span class="c_cnt">(%d)</span> </a>' % len(posts), '<ul class="category_list">']
+    return tree
+
+
+def build_category_list_html(cats, posts, current=""):
+    """[##_category_list_##](리스트형)의 출력을 그대로 재현한다.
+
+    2026-08-25 sanggi-jayg.tistory.com 실측을 옮겼다 — 앵커 안쪽의 앞뒤 공백,
+    글 수 span, li class="" 까지 포함해서다. 현재 카테고리의 li에는 class="selected"가
+    붙는다(같은 날 /category/Python 실측). 이 이름들이 tistory.css와 category.js의
+    유일한 접점이므로, 여기서 한 글자라도 다르면 프리뷰가 통과 신호를 위조한다.
+    """
+    tree = category_tree(cats)
+
+    def li(cls):
+        return '<li class="selected">' if cls else '<li class="">'
+
+    out = ['<ul class="tt_category">%s<a href="/category" class="link_tit"> 분류 전체보기 '
+           '<span class="c_cnt">(%d)</span> </a>' % (li(False), len(posts)),
+           '<ul class="category_list">']
     for top, v in sorted(tree.items(), key=lambda kv: -kv[1]["n"]):
-        out.append('<li class=""><a href="/category/%s" class="link_item"> %s '
-                   '<span class="c_cnt">(%d)</span> </a>' % (html.escape(top), html.escape(top), v["n"]))
+        out.append('%s<a href="/category/%s" class="link_item"> %s '
+                   '<span class="c_cnt">(%d)</span> </a>' % (
+                       li(current == top), html.escape(top), html.escape(top), v["n"]))
         if v["subs"]:
             out.append('<ul class="sub_category_list">')
             for s, n in sorted(v["subs"].items(), key=lambda kv: -kv[1]):
-                out.append('<li class=""><a href="/category/%s/%s" class="link_sub_item"> %s '
+                out.append('%s<a href="/category/%s/%s" class="link_sub_item"> %s '
                            '<span class="c_cnt">(%d)</span> </a></li>' % (
+                               li(current == top + "/" + s),
                                html.escape(top), html.escape(s), html.escape(s), n))
             out.append("</ul>")
         out.append("</li>")
@@ -159,11 +179,71 @@ def build_category_html(cats, posts):
     return "\n".join(out)
 
 
-def globals_for(page, posts, cats, category_html, skin_vars):
+def build_category_folder_html(cats, posts):
+    """[##_category_##](폴더형)의 출력을 재현한다.
+
+    **이 스킨은 이것을 쓰지 않는다** (린트 CAT001). 그래도 재현해 두는 이유는,
+    누군가 치환자를 되돌렸을 때 프리뷰가 리스트형을 그려서 "잘 나온다"고
+    거짓말하는 일을 막기 위해서다. 2026-08-25 첫 배포가 정확히 그 사고였다 —
+    렌더러가 두 치환자를 같은 마크업에 매핑해 두어, 폴더형이 나간 것을
+    배포 후 실물을 보고서야 알았다.
+
+    2026-08-25 git-rich-quick.tistory.com 실측: 중첩 table, 트리선 GIF,
+    a href 0개(onclick), div마다 인라인 color·background-color.
+    """
+    tree = category_tree(cats)
+    gif = "https://tistory1.daumcdn.net/tistory_admin/blogs/image/tree/base/"
+    color, bg = "#4d4d4d", "#ffffff"
+    out = ['<table id="treeComponent" cellpadding="0" cellspacing="0" style="width: 100%;"><tr><td>']
+    out.append(
+        '<table id="category_0" cellpadding="0" cellspacing="0"><tr>'
+        '<td class="ib" style="font-size: 1px"><img src="%stab_top.gif" width="16" '
+        'onclick="expandTree()" alt="" style="display:block"></td>'
+        '<td valign="top" style="font-size:9pt; padding-left:3px">'
+        '<table id="imp0" cellpadding="0" cellspacing="0" style="background-color: %s;"><tr>'
+        '<td class="branch3" onclick="window.location.href=\'/category\'">'
+        '<div id="text_0" style="color: %s;">분류 전체보기<span class="c_cnt"> (%d)</span></div>'
+        '</td></tr></table></td></tr></table>' % (gif, bg, color, len(posts)))
+    for i, (top, v) in enumerate(sorted(tree.items(), key=lambda kv: -kv[1]["n"])):
+        cid = 1000000 + i
+        tab = "tab_closed.gif" if v["subs"] else "tab_isleaf.gif"
+        out.append(
+            '<table id="category_%d" cellpadding="0" cellspacing="0"><tr>'
+            '<td class="ib" style="width:39px; font-size: 1px;  background-image: url(\'%snavi_back_noactive.gif\')">'
+            '<a class="click" onclick="toggleFolder(\'%d\')"><img src="%s%s" width="39" alt=""></a></td><td>'
+            '<table cellpadding="0" cellspacing="0" style="background-color: %s;"><tr>'
+            '<td class="branch3" onclick="window.location.href=\'/category/%s\'">'
+            '<div id="text_%d" style="color: %s;">%s<span class="c_cnt"> (%d)</span></div>'
+            '</td></tr></table></td></tr></table>' % (
+                cid, gif, cid, gif, tab, bg, quote(top), cid, color, html.escape(top), v["n"]))
+        if v["subs"]:
+            out.append('<div id="category_%d_children" style="display:none;">' % cid)
+            for j, (s, n) in enumerate(sorted(v["subs"].items(), key=lambda kv: -kv[1])):
+                sid = cid * 10 + j
+                out.append(
+                    '<table class="category_%d" cellpadding="0" cellspacing="0"><tr>'
+                    '<td style="width:39px;font-size: 1px;"><img src="%snavi_back_active.gif" width="17" '
+                    'height="18" alt=""/><img src="%stab_treed.gif" width="22" alt=""/></td><td>'
+                    '<table onclick="window.location.href=\'/category/%s/%s\'" cellpadding="0" '
+                    'cellspacing="0" style="background-color: %s;"><tr>'
+                    '<td class="branch3"><div id="text_%d" style="color: %s;">%s'
+                    '<span class="c_cnt"> (%d)</span></div></td></tr></table></td></tr></table>' % (
+                        sid, gif, gif, quote(top), quote(s), bg, sid, color, html.escape(s), n))
+            out.append("</div>")
+    out.append("</td></tr></table>")
+    return "\n".join(out)
+
+
+def globals_for(page, posts, cats, skin_vars):
     # 홈의 list_conform은 "전체 글"이다 (2026-08-25 실측). 빈 문자열로 두면
     # 홈의 h1이 비어 보이고, V003이 실물과 어긋난다.
+    # 카테고리 페이지의 list_conform은 **상위/하위 전체 경로**다 — 2026-08-25 실측
+    # (git-rich-quick /category/경제/주식 → h1 "경제/주식"). 이 값이 사이드바 트리의
+    # li.selected를 고르는 기준이기도 하므로 data/categories.json에 실재하는 이름이어야 한다.
+    # 가장 긴 하위 이름을 고른 것은 의도적이다 — 240px 레일에서 줄바꿈이 나는지를
+    # 선택 상태와 함께 매 렌더마다 눈에 띄게 하려는 것이다.
     conform = {"index": "전체 글",
-               "category": "Kotlin & Java/Spring", "search": "OOMKilled",
+               "category": "Python/성능과 동시성", "search": "OOMKilled",
                "tag": "hikaricp", "archive": "2026", "empty": "존재하지않는검색어"}.get(page, "")
     g = {
         "title": "상쾌한기분", "desc": "오늘도 상쾌한기분", "blogger": "상쾌한기분",
@@ -173,7 +253,12 @@ def globals_for(page, posts, cats, category_html, skin_vars):
         "page_title": "상쾌한기분", "body_id": PAGE_TYPES[page],
         "blog_menu": '<ul class="blog-menu"><li><a href="/">홈</a></li>'
                      '<li><a href="/tag">태그</a></li><li><a href="/guestbook">방명록</a></li></ul>',
-        "category": category_html, "category_list": category_html,
+        # 두 치환자를 **다른 마크업**에 매핑한다. 같은 것에 매핑해 두었다가
+        # 2026-08-25 첫 배포에서 폴더형이 나간 것을 못 잡았다 (DECISIONS.md 결정 31).
+        # 카테고리 페이지에서는 보고 있는 가지에 li.selected가 붙는다.
+        "category": build_category_folder_html(cats, posts),
+        "category_list": build_category_list_html(
+            cats, posts, conform if page == "category" else ""),
         "count_total": "482,193", "count_today": "312", "count_yesterday": "487",
         "search_name": "search", "search_text": "", "search_onclick_submit": "return false;",
         "list_conform": conform, "list_count": "0" if page == "empty" else str(len(posts)),
@@ -468,7 +553,6 @@ def main():
         sys.exit(0)
 
     posts, cats = load_fixtures()
-    cat_html = build_category_html(cats, posts)
     skin_vars = {}
     xml = os.path.join(SRC, "index.xml")
     if os.path.exists(xml):
@@ -490,7 +574,7 @@ def main():
             sys.stderr.write("알 수 없는 페이지 타입: %s\n" % page)
             continue
         sys.stderr.write("── %s (%s)\n" % (page, PAGE_TYPES[page]))
-        ctx = globals_for(page, posts, cats, cat_html, skin_vars)
+        ctx = globals_for(page, posts, cats, skin_vars)
         out = render(skin, ctx, page, posts)
         # 로컬 경로로 치환 — 스킨은 ./images/, style.css를 상대 경로로 참조한다
         # 렌더 결과는 _preview/pages/ 아래에 둔다.

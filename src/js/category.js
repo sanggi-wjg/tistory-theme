@@ -1,13 +1,16 @@
 // 사이드바 카테고리 접기/펼치기 — hooks.md §5.6
 //
 // 왜 클래스 이름을 쓰지 않는가
-//   [##_category_##]는 티스토리가 통짜로 렌더한다. 우리는 안쪽 마크업을 만들지 않았고,
+//   [##_category_list_##]는 티스토리가 통짜로 렌더한다. 우리는 안쪽 마크업을 만들지 않았고,
 //   공식 레퍼런스(docs/tistory-skin-reference.txt:1715-1731)는 치환자 이름만 적었을 뿐
-//   출력 마크업을 적지 않았다. DESIGN.md §5.3이 적어 둔 이름들(.category_list ·
-//   .sub_category_list · .link_item)은 실블로그 관찰에서 온 것으로 보이지만 출처가 없다.
-//   이름이 하나라도 다르면 조용히 아무 일도 일어나지 않는다 — 이 도메인이 실패하는 방식 그대로다.
+//   출력 마크업을 적지 않았다. 이름(.category_list · .sub_category_list · .link_item)은
+//   2026-08-25 실측으로 확정했지만, 그렇다고 이름에 기능을 걸지는 않는다.
 //   그래서 **구조**로 고른다: "중첩 <ul>을 가진 <li>". 이름이 달라도 동작하고,
 //   구조가 예상과 다르면 아무것도 하지 않고 물러난다.
+//
+//   이 선택은 값을 이미 한 번 했다. 스킨이 폴더형([##_category_##])을 내보내던
+//   동안 이 파일은 ul을 못 찾아 조용히 물러났다 — 이름에 걸었더라도 결과는 같았겠지만,
+//   구조로 걸었기에 **잘못된 DOM에 토글을 억지로 심지 않았다** (DECISIONS.md 결정 31).
 //
 // 왜 앵커에 핸들러를 걸지 않는가
 //   상위 카테고리 링크도 실제로 이동하는 링크다(/category/IT). 클릭을 가로채면
@@ -89,10 +92,15 @@ function decodePath(p) {
 /**
  * 지금 보고 있는 페이지가 이 링크 아래인가.
  *
- * 티스토리가 "선택된 항목"에 붙이는 클래스를 우리는 모른다(레퍼런스에 없다).
- * 그래서 클래스 대신 URL 경로를 대조한다 — /category/IT/Web 을 보고 있으면
- * /category/IT 가지를 펼친다. 경계를 '/'로 끊어 /category/IT 가 /category/ITSM 에
- * 걸리지 않게 한다.
+ * 티스토리는 현재 가지의 li에 class="selected"를 붙인다(2026-08-25 실측). 그것을
+ * 먼저 보되, URL 대조를 함께 남긴다 — /category/IT/Web 을 보고 있으면 /category/IT
+ * 가지를 펼친다. 경계를 '/'로 끊어 /category/IT 가 /category/ITSM 에 걸리지 않게 한다.
+ *
+ * 둘을 다 두는 이유: selected는 카테고리 페이지에만 붙는다. **글 페이지에서는
+ * 안 붙는다** — 그런데 좌측 레일은 이제 글 페이지에도 있다(결정 30). 글을 읽는
+ * 동안 그 글이 속한 가지를 펼쳐 두려면 URL 대조가 필요하다... 고 하기엔 글 URL은
+ * /entry/... 라 카테고리 경로와 겹치지 않는다. 그래서 글 페이지에서는 둘 다 안 걸리고
+ * 트리는 접힌 채로 시작한다. 의도한 동작이다.
  */
 function onPath(here, path) {
   if (!path || path === '/') return false
@@ -104,8 +112,11 @@ export default function initCategory() {
   const box = document.querySelector('.side-category .side-body')
   if (!box) return
 
+  // ul이 없다 = 폴더형([##_category_##])이 나갔거나 구조가 다르다.
+  // 폴더형은 중첩 <table>과 트리선 GIF로만 이루어져 있어 여기서 물러나는 것이 맞다.
+  // 티스토리가 자체 toggleFolder()를 붙여 두므로 접기 기능 자체는 남는다.
   const rootUl = box.querySelector('ul')
-  if (!rootUl) return // 목록 형식([##_category_list_##])이거나 구조가 다르다 — 물러난다
+  if (!rootUl) return
 
   const list = pickList(rootUl)
   const items = childrenByTag(list, 'LI')
@@ -126,7 +137,10 @@ export default function initCategory() {
       // 현재 보고 있는 가지는 펼친 채로 시작한다.
       // 상위 링크가 안 맞더라도 하위 링크 중 하나가 맞으면 펼친다
       // (티스토리가 하위 카테고리에 계층 없는 URL을 줄 가능성 대비).
-      let open = onPath(here, decodePath(link.pathname))
+      // 티스토리가 직접 표시한 것이 가장 확실하다. 이 가지 자신이거나
+      // 하위 중 하나가 selected면 펼친다.
+      let open = li.classList.contains('selected') || !!sub.querySelector('.selected')
+      if (!open) open = onPath(here, decodePath(link.pathname))
       if (!open) {
         const subLinks = sub.getElementsByTagName('a')
         for (let i = 0; i < subLinks.length; i++) {

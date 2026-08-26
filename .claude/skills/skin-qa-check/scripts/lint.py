@@ -133,6 +133,26 @@ def lint_substitutions(skin, xml, wl):
                     "src/skin.html")
                 break
 
+    # CAT001 — 카테고리는 리스트형이어야 한다.
+    #
+    # [##_category_##](폴더형)과 [##_category_list_##](리스트형)은 이름만 비슷하고
+    # 완전히 다른 것을 출력한다. 2026-08-25 양쪽 실측:
+    #
+    #   폴더형   중첩 table 19 + 트리선 GIF 17장, 링크는 onclick(a href 0개),
+    #            div마다 인라인 style="color:#4d4d4d" · background-color:#ffffff 18개
+    #   리스트형 ul.tt_category/li + a href 36개, 인라인 style 0개, 이미지 0장
+    #
+    # 폴더형이 나가면 조용히 실패하는 게 아니라 **다른 UI가 나온다**. tistory.css의
+    # .tt_category 규칙이 하나도 매칭되지 않아 티스토리 기본 트리가 그대로 노출되고,
+    # category.js는 ul을 못 찾아 물러나고, 인라인 색이 다크모드를 이긴다.
+    # 2026-08-25 첫 배포에서 실제로 폴더형이 나갔다 (DECISIONS.md 결정 31).
+    if "category" in used_v:
+        err("CAT001", "[##_category_##](폴더형)이 쓰였다. 이 스킨은 리스트형 마크업"
+            "(ul.tt_category)에 CSS와 JS를 걸어 두었으므로 [##_category_list_##]를 써야 한다. "
+            "폴더형은 중첩 table과 트리선 GIF를 내보내고 링크가 onclick이라 "
+            "내부링크가 0개가 되며, 인라인 색이 다크모드를 이긴다 (DECISIONS.md 결정 31).",
+            "src/skin.html")
+
     info("치환자: 그룹 %d종 / 값 %d종 사용" % (len(used_g), len(used_v)))
 
 
@@ -195,8 +215,12 @@ def lint_boundaries(skin, css, js):
             sels.add(m.group(1))
         for s in sorted(sels):
             for cls in re.findall(r"\.([a-zA-Z][\w-]*)", s):
-                if cls in ("contents_style", "tt_category") or cls.startswith("tt-"):
-                    continue          # 티스토리가 렌더링하는 것
+                # 티스토리가 렌더링하는 것. selected는 카테고리 트리에서 현재 가지의
+                # li에 붙는다 (2026-08-25 실측 /category/Python).
+                if cls in ("contents_style", "tt_category", "category_list",
+                           "sub_category_list", "link_tit", "link_item",
+                           "link_sub_item", "c_cnt", "selected") or cls.startswith("tt-"):
+                    continue
                 if ('class="%s' % cls) not in skin and ("class='%s" % cls) not in skin \
                         and (" %s" % cls) not in skin:
                     warn("BND004", "JS가 '%s'를 찾지만 skin.html에서 클래스 '%s'를 찾을 수 없다. "
