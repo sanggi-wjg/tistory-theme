@@ -381,6 +381,53 @@ def lint_tistory_hardcoded(css):
         info("티스토리 하드코딩 색: %d종 전부 토큰으로 덮음" % len(d.get("rules", [])))
 
 
+def lint_tistory_comment_scope(css):
+    """댓글·방명록에 우리 규칙이 **실제로 이기는 특이도로** 있는지 본다.
+
+    TIS001/TIS002와 원리가 다르다. 저쪽 상대는 content.css라 크롤로 읽을 수 있고
+    상당수가 #tt-body-page ID 스코프다. 여기 상대는 **React가 런타임에 얹는
+    시트**다 — 소스 HTML에는 <div data-tistory-react-app="Comment"> 빈 껍데기뿐이라
+    크롤로는 존재조차 보이지 않고, 프리뷰에도 나오지 않는다.
+
+    그리고 상대 특이도가 (0,2,0)이다. 클래스 하나(0,1,0)로 쓰면 지고, 둘(0,2,0)로
+    써도 순서로 가서 진다 — 순서는 티스토리가 정한다. 조상 둘을 붙여 (0,3,0)을
+    만들어야 이긴다 (2026-08-26 라이브 실측).
+
+    실제로 이 검사가 없던 동안 댓글 블록이 **통째로** 지고 있었다. 다크에서
+    댓글 본문이 #222로 나와 1.16:1이었는데, 같은 블록의 .tt-box-total과 <input>은
+    이기고 있어서 화면에 "전부 무시되고 있다"는 신호가 없었다.
+
+    래퍼가 .comments(글)와 .guestbook(방명록) 둘인데 안쪽 tt-*는 완전히 같다.
+    한쪽만 쓰면 다른 쪽 페이지에서만 조용히 진다 — 그래서 짝을 함께 본다."""
+    known = os.path.join(ROOT, "data", "tistory-hardcoded-colors.json")
+    if not os.path.exists(known) or not css:
+        return
+    d = json.load(open(known, encoding="utf-8"))
+    rules = d.get("commentRules", [])
+    if not rules:
+        return
+    body = strip_comments(css)
+    missing, half = [], []
+    for r in rules:
+        marker = r["marker"]
+        has_c = ".comments " + marker in body
+        has_g = ".guestbook " + marker in body
+        if not has_c and not has_g:
+            missing.append(r["component"])
+        elif not (has_c and has_g):
+            half.append("%s(%s만)" % (r["component"], ".comments" if has_c else ".guestbook"))
+    if missing:
+        err("TIS003", "댓글 앱이 라이트 전용 값을 박아 둔 %d종에 (0,3,0) 덮어쓰기가 없다: %s. "
+            "클래스 하나로 쓰면 상대 (0,2,0)에 진다 — 다크에서 댓글이 배경에 묻힌다."
+            % (len(missing), ", ".join(missing[:8])), "src/styles/tistory.css")
+    if half:
+        err("TIS003", "%d종이 .comments / .guestbook 짝 없이 한쪽만 덮여 있다: %s. "
+            "안쪽 tt-* 마크업이 양쪽 완전히 같으므로 **다른 쪽 페이지에서만** 진다."
+            % (len(half), ", ".join(half[:8])), "src/styles/tistory.css")
+    if not missing and not half:
+        info("댓글·방명록 하드코딩 값: %d종 전부 .comments/.guestbook 짝으로 덮음" % len(rules))
+
+
 def lint_hljs_scope(css):
     """.hljs-* 팔레트가 .hljs 접두를 달고 있는지 본다.
 
@@ -586,6 +633,7 @@ def main():
     # 옛 규칙이 남아 있으면 검사가 통과해 버린다(실제로 개발 중에 겪었다).
     # INL001과 달리 이 둘은 빌드가 생성하는 규칙을 보지 않으므로 src면 충분하다.
     lint_tistory_hardcoded(src_css)
+    lint_tistory_comment_scope(src_css)
     lint_hljs_scope(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)

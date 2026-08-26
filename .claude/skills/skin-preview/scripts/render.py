@@ -360,8 +360,16 @@ def globals_for(page, posts, cats, skin_vars):
         #   진짜 상자는 s_rp / s_guest 핸들러가 ctx에 덮어써서 넣는다.
         "comment_group": WRAP_WARN % ("comment_group", "s_rp"),
         "guestbook_group": WRAP_WARN % ("guestbook_group", "s_guest"),
-        "tag_label_rep": " ".join('<a href="/tag/%s">%s</a>' % (t, t)
-                                  for t in ["k8s", "spring", "jvm", "hikaricp", "oom"]),
+        # ⚠ 구분자는 공백이 아니라 **", "** 다. 티스토리는 <a> 사이에 쉼표
+        #   텍스트 노드를 끼워 넣는다 (2026-08-26 라이브 실측):
+        #     <a …>Memory</a>, <a …>performance</a>, …
+        #   여기를 공백으로 두는 동안 프리뷰는 **통과 신호를 위조하고 있었다** —
+        #   flex 컨테이너에서 그 텍스트 노드가 익명 아이템이 되어 칸을 차지하는
+        #   현상이 재현되지 않았고, 본 블로그에서 태그마다 쉼표가 떠서야 드러났다.
+        #   태그 개수도 실제 글(8개)에 맞춰 두 줄 넘침이 보이게 한다.
+        "tag_label_rep": ", ".join('<a href="/tag/%s" rel="tag">%s</a>' % (t, t)
+                                   for t in ["k8s", "spring", "jvm", "hikaricp",
+                                             "oom", "profiler", "메모리", "__slots__"]),
     }
     for k, v in skin_vars.items():
         g["var_" + k] = v
