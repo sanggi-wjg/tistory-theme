@@ -133,6 +133,32 @@ def lint_substitutions(skin, xml, wl):
                     "src/skin.html")
                 break
 
+    # SUB009 — *_group 치환자는 자기 그룹 래퍼 안에 있어야 한다.
+    #
+    # 2026-08-26 본 블로그 배포에서 당했다. [##_comment_group_##]을 <s_rp> 없이
+    # 두었더니 티스토리가 **빈 문자열로 치환했다** — 잔존 치환자도, 빈 껍데기도,
+    # 에러도 없었다. .comments 안이 그냥 비어 있었고 <s_rp_count>는 "댓글 2"를
+    # 정상 출력하고 있어서 더 헷갈렸다.
+    #
+    # 같은 페이지의 방명록이 원인을 짚어 줬다 — [##_guestbook_group_##]은
+    # <s_guest> 안에 있었고 정상 렌더됐다. 둘은 공식 문서에서 완전히 대칭인데
+    # 우리 쪽만 한쪽 래퍼가 빠져 있었다.
+    #
+    # SUB005(짝 검사)도 SUB008(s_article_rep 중첩)도 이걸 못 잡는다 — 짝은 맞고,
+    # s_article_rep 안에 있는 것도 맞다. 빠진 것은 **자기 그룹 래퍼**다.
+    for val, wrap, what in (("comment_group", "s_rp", "댓글"),
+                            ("guestbook_group", "s_guest", "방명록")):
+        for m in re.finditer(r"\[##_%s_##\]" % val, skin, re.I):
+            before = skin[:m.start()]
+            opened = len(re.findall(r"<%s(?:\s[^>]*)?>" % wrap, before, re.I))
+            closed = len(re.findall(r"</%s>" % wrap, before, re.I))
+            if opened <= closed:
+                err("SUB009", "[##_%s_##]이 <%s> 바깥에 있다. 티스토리는 이걸 "
+                    "**빈 문자열로 치환한다** — 에러도 잔존 치환자도 없이 %s이 통째로 "
+                    "사라진다 (DECISIONS.md 결정 34)." % (val, wrap, what),
+                    "src/skin.html")
+                break
+
     # CAT001 — 카테고리는 리스트형이어야 한다.
     #
     # [##_category_##](폴더형)과 [##_category_list_##](리스트형)은 이름만 비슷하고

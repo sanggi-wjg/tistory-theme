@@ -23,6 +23,20 @@ ROOT = os.getcwd()
 SRC = os.path.join(ROOT, "src")
 OUT = os.path.join(ROOT, "_preview")
 
+# 그룹 래퍼 밖에 놓인 *_group 치환자에 그리는 경고 상자.
+# 티스토리는 이 경우 조용히 빈 문자열을 내놓는다 — 프리뷰까지 침묵하면 못 찾는다.
+#   대괄호를 &#91;/&#93;로 쓴다 — 리터럴로 두면 VALUE_RE가 이 경고문 안의
+#   치환자를 다시 치환해 자기 자신을 무한히 감싼다 (2026-08-26에 실제로 났다).
+WRAP_WARN = ('<div style="border:2px dashed #d60000;color:#d60000;padding:12px;'
+             'font:600 13px/1.5 monospace">&#91;##_%s_##&#93;이 &lt;%s&gt; 밖에 있다. '
+             '티스토리는 여기서 <b>빈 문자열</b>을 내놓는다 — 이 영역이 통째로 '
+             '사라진다 (린트 SUB009).</div>')
+
+# 래퍼 안에서 실제로 그려질 것. 서버가 내놓는 것은 빈 div 하나이고
+# 알맹이는 티스토리 React가 나중에 채운다 (레퍼런스 1240행).
+REACT_BOX = ('<div data-tistory-react-app="Comment">'
+             '<div class="tt-comment-cont">[%s: 티스토리 React가 렌더링]</div></div>')
+
 PAGE_TYPES = {
     "index":     "tt-body-index",
     "page":      "tt-body-page",
@@ -339,10 +353,13 @@ def globals_for(page, posts, cats, skin_vars):
         "no_more_prev": "", "no_more_next": "",
         "revenue_list_upper": '<div class="_ad">[광고 자리: 홈·목록 상단]</div>',
         "revenue_list_lower": '<div class="_ad">[광고 자리: 홈·목록 하단]</div>',
-        "comment_group": '<div data-tistory-react-app="Comment">'
-                         '<div class="tt-comment-cont">[댓글: 티스토리 React가 렌더링]</div></div>',
-        "guestbook_group": '<div data-tistory-react-app="Comment">'
-                           '<div class="tt-comment-cont">[방명록: 티스토리 React가 렌더링]</div></div>',
+        # ⚠ 래퍼 밖에서는 **경고를 그린다.** 티스토리는 조용히 빈 문자열로 치환하지만,
+        #   프리뷰가 그 침묵을 그대로 흉내 내면 눈으로도 못 찾는다. 2026-08-26에
+        #   [##_comment_group_##]이 <s_rp> 없이 나가 댓글이 통째로 사라졌는데,
+        #   그때 이 렌더러는 래퍼와 무관하게 상자를 그려 **통과 신호를 위조했다**.
+        #   진짜 상자는 s_rp / s_guest 핸들러가 ctx에 덮어써서 넣는다.
+        "comment_group": WRAP_WARN % ("comment_group", "s_rp"),
+        "guestbook_group": WRAP_WARN % ("guestbook_group", "s_guest"),
         "tag_label_rep": " ".join('<a href="/tag/%s">%s</a>' % (t, t)
                                   for t in ["k8s", "spring", "jvm", "hikaricp", "oom"]),
     }
@@ -477,6 +494,9 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             return R(inner, {**ctx, **item_scope(posts[1], "article_prev", page)})
         if name == "s_article_next":
             return R(inner, {**ctx, **item_scope(posts[2], "article_next", page)})
+        if name == "s_rp":
+            # 래퍼 안에서만 진짜 상자가 된다 — 밖에서는 base ctx의 경고가 그려진다.
+            return R(inner, {**ctx, "comment_group": REACT_BOX % "댓글"})
         return R(inner)
     if name == "s_article_related_rep":
         return repeat(inner, posts[3:8], "article_related_rep", ctx, page, posts)
@@ -528,6 +548,8 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     if name.startswith("s_guest"):
         if page != "guestbook":
             return ""
+        if name == "s_guest":
+            return R(inner, {**ctx, "guestbook_group": REACT_BOX % "방명록"})
         if name == "s_guest_rep":
             buf = []
             for i, p in enumerate(posts[:4]):
