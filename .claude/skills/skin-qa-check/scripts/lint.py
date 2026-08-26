@@ -721,6 +721,50 @@ def lint_hljs_scope(css):
             % (len(bare), ", ".join(sorted(bare)[:6])), "src/styles/components.css")
 
 
+# 유채색 자리에 허용되는 토큰 — 코드 전용 토큰뿐이다 (결정 44).
+# `--ink-body`·`--ink-mute` 둘은 **일부러 무채색으로 남긴 자리**라 예외다.
+CODE_NEUTRAL_OK = {"--ink-body", "--ink-mute"}
+
+
+def lint_hljs_tokens(css):
+    """구문 색이 **코드 전용 토큰**을 쓰는지 본다 (결정 44).
+
+    전에는 키워드가 `--link`, 문자열·숫자가 `--ink-body`, 함수명이 `--ink`였다.
+    그 결과 두 가지가 조용히 일어났다 — 문자열·숫자가 기본 코드색보다 흐렸고,
+    함수명은 기본색과 **완전히 같아** 구분이 0이었다.
+
+    더 비싼 것은 **결합**이다. 범용 토큰을 빌려 쓰면 누가 그것을 다른 이유로
+    조정할 때 코드블록이 같이 움직인다. 2026-08-26에 실제로 청구됐다 —
+    `--link`를 "링크니까 흰 배경 기준으로" 잡았다가 코드블록 배경 위에서
+    AA 미달이 드러났다(DESIGN.md §8.1).
+
+    ⚠ 이 검사는 **색이 예쁜지 모른다.** 어느 토큰을 쓰는지만 본다.
+      대비값은 결정 44의 표가 정본이고 손으로 잰 것이다.
+    """
+    if not css:
+        return
+    body = strip_comments(css)
+    bad = []
+    for rule in re.finditer(r"([^{}]+)\{([^{}]*)\}", body):
+        sels = rule.group(1)
+        if ".hljs-" not in sels:
+            continue
+        for m in re.finditer(r"color\s*:\s*var\(\s*(--[a-z0-9-]+)", rule.group(2)):
+            tok = m.group(1)
+            if tok.startswith("--code-") or tok in CODE_NEUTRAL_OK:
+                continue
+            bad.append((sels.strip().split(",")[0].strip()[:40], tok))
+    if bad:
+        err("HLJS002", "구문 색 %d곳이 코드 전용 토큰이 아닌 것을 쓴다: %s. "
+            "범용 토큰을 빌려 쓰면 누가 그것을 다른 이유로 조정할 때 코드블록이 "
+            "조용히 같이 움직인다 (결정 44). 무채색으로 남기는 자리는 "
+            "`--ink-body`·`--ink-mute`만 허용한다."
+            % (len(bad), ", ".join("%s → %s" % b for b in bad[:5])),
+            "src/styles/components.css")
+    else:
+        info("구문 색: 유채색 자리 전부 --code-* 토큰")
+
+
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
 
 def lint_robustness(js, skin):
@@ -908,6 +952,7 @@ def main():
     lint_tistory_comment_scope(src_css)
     lint_tistory_typography(src_css)
     lint_hljs_scope(src_css)
+    lint_hljs_tokens(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
 

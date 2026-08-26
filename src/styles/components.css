@@ -1430,9 +1430,19 @@
    ║   참인 구조다. 접두를 떼려면 린트 HLJS001을 먼저 보라.               ║
    ╚════════════════════════════════════════════════════════════════════╝ */
 
+/* ⚠ **유채색 자리에는 코드 전용 토큰만 쓴다** (결정 44).
+   `--link`·`--ink`·`--error`를 여기서 다시 쓰지 마라 — 그 연결을 끊는 것이
+   이 토큰들의 존재 이유다. 범용 토큰을 누가 다른 이유로 조정하면 코드블록이
+   조용히 같이 움직인다 (2026-08-26에 한 번 청구됐다, §8.1).
+
+   **무채색으로 두기로 한 자리는 잉크 사다리를 그대로 쓴다** —
+   `--ink-body`(속성·변수) · `--ink-mute`(메타·태그). 중립이 중립을 따라가는
+   것은 의도다. 셋 다 세 면에서 이미 검증된 값이고, 여기에 토큰을 더 만들면
+   "색을 정하지 않았다"는 사실이 오히려 흐려진다. */
+
 .hljs .hljs-comment,
 .hljs .hljs-quote {
-  color: var(--ink-mute);
+  color: var(--code-comment);
   font-style: italic;
 }
 
@@ -1441,34 +1451,46 @@
 .hljs .hljs-literal,
 .hljs .hljs-type,
 .hljs .hljs-built_in,
-.hljs .hljs-meta-keyword { color: var(--link); }
+.hljs .hljs-meta-keyword { color: var(--code-keyword); }
 
+/* 함수·클래스 이름. 전에는 `--ink`라 **기본 코드색과 완전히 같았다** —
+   span을 붙이고도 화면에 차이가 0이었다. */
 .hljs .hljs-title,
 .hljs .hljs-section,
 .hljs .hljs-name,
 .hljs .hljs-selector-id,
 .hljs .hljs-selector-class {
-  color: var(--ink);
+  color: var(--code-fn);
   font-weight: 600;
 }
 
+/* 문자열 계열. 전에는 `--ink-body`라 기본 코드색(`--ink`)보다 **흐렸다** —
+   가장 먼저 눈에 들어와야 할 축이 후퇴하고 있었다. */
 .hljs .hljs-string,
 .hljs .hljs-regexp,
+.hljs .hljs-addition { color: var(--code-string); }
+
+/* 숫자·상수 계열. 문자열과 갈라 준다 — 전에는 둘이 같은 색이었다. */
 .hljs .hljs-number,
 .hljs .hljs-symbol,
-.hljs .hljs-bullet,
+.hljs .hljs-bullet { color: var(--code-number); }
+
+/* 속성·변수는 **의도적으로 무채색**이다. 코드 한 줄에 유채색이 넷을 넘으면
+   강조가 강조를 잡아먹는다. 여기까지가 이 팔레트의 상한이다. */
 .hljs .hljs-attr,
 .hljs .hljs-attribute,
 .hljs .hljs-variable,
-.hljs .hljs-template-variable,
-.hljs .hljs-addition { color: var(--ink-body); }
+.hljs .hljs-template-variable { color: var(--ink-body); }
 
 .hljs .hljs-meta,
 .hljs .hljs-doctag,
 .hljs .hljs-tag,
 .hljs .hljs-punctuation { color: var(--ink-mute); }
 
-.hljs .hljs-deletion { color: var(--error); }
+/* ⚠ `diff`는 번들에 없다(`code.js:29`) — 이 규칙과 `.hljs-addition`은 **지금
+   도달하지 않는다.** 그래도 `--error`가 아니라 코드 토큰을 쓴다: 언젠가 diff를
+   넣었을 때 `--error`를 통해 코드블록이 다시 묶이는 것을 막기 위해서다. */
+.hljs .hljs-deletion { color: var(--code-deleted); }
 .hljs .hljs-emphasis { font-style: italic; }
 .hljs .hljs-strong { font-weight: 600; }
 
