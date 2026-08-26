@@ -274,7 +274,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ⚠ 라벨은 값이 있을 때만 그린다. 목록 치환자는 **빈 문자열을 낸다** —
+   2026-08-26 라이브 실측에서 홈 카드 13개 전부, 사이드바 최근 글 5개 전부가
+   비어 있었고 화면에는 `댓글`·`·`만 남았다 (결정 42).
+   `content: none`이 아니라 요소째 감추는 이유: .post-meta가 flex + gap이라
+   ::before만 꺼도 빈 칸의 gap이 날짜 뒤에 유령으로 남는다.
+   ⚠ `:empty`는 skin.html에서 치환자가 **여는 태그에 붙어 있을 때만** 산다.
+     제 줄로 내리면 공백 텍스트 노드가 남아 영영 거짓이 된다(layout.css:9).
+     린트 `BND008`이 그 형태를 잡는다 — 초록불인 채로 죽는 걸 막으려는 것이다. */
 .post-rp::before { content: "댓글 "; }
+.post-rp:empty { display: none; }
 
 /* ── 주목 글 (홈 첫 카드) ────────────────────────────────────── */
 @media (min-width: 641px) {
@@ -478,7 +487,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 홈·카테고리에서는 값이 나오지만(라이브 실측 `글 275`) 모든 목록 영역에서
+   그렇다는 보장이 없다. 비면 `글 `만 남으므로 같이 감춘다 (결정 42, 린트 BND008).
+   .list-head가 flex + gap이라 ::before만 꺼도 빈 칸이 남는다. */
 .list-count::before { content: "글 "; }
+.list-count:empty { display: none; }
 
 .list-desc {
   flex-basis: 100%;
@@ -1150,7 +1163,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 홈 카드와 같은 결함이다 (결정 42). 다만 여기는 `:empty`만으로 부족하다 —
+   티스토리가 이 자리를 빈 문자열이 아니라 **빈 자식 span**으로 바꾼다
+   (실측: `<span id="commentCountOnRecentEntries292"></span>`). 자식이 있으면
+   :empty가 거짓이라 `:has()`가 필요하다. `:has`는 살아 있는 선택자라
+   티스토리 스크립트가 나중에 숫자를 채우면 구분자가 스스로 돌아온다.
+   `:has` 미지원 브라우저에서는 지금 화면과 같다 — 나빠지지 않는다. */
 .side-rp::before { content: "· "; }
+.side-rp:empty,
+.side-rp:has(> span:empty) { display: none; }
 
 .sidecmt-item { font-size: var(--fs-body-sm); }
 

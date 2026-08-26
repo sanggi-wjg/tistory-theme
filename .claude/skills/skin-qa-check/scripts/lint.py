@@ -259,6 +259,81 @@ def lint_boundaries(skin, css, js):
                 "실제 래퍼는 'tt_article_useless_p_margin contents_style'이라 매칭되지 않는다." % label, path)
 
 
+# ────────── 3a-2. 치환자만 담은 요소의 장식 (BND008) ──────────
+
+# `<span class="x">[##_sub_##]</span>` — 치환자 하나가 알맹이의 전부인 요소.
+# 여는 태그와 닫는 태그가 같아야 하고, 치환자 앞뒤에 글자가 없어야 한다.
+ONLY_SUB_RE = re.compile(
+    r"<(?P<tag>[a-zA-Z][\w-]*)(?P<attrs>[^>]*)>(?P<inner>\s*\[##_[a-zA-Z0-9_]+_##\]\s*)</(?P=tag)>")
+
+
+def lint_empty_substitution_decor(skin, css):
+    """치환자 하나만 담은 요소에 ::before/::after 장식을 달았다면 :empty 가드가 있는가.
+
+    **이 저장소가 같은 실패를 두 번 했다.** 티스토리 치환자는 값이 없으면
+    에러가 아니라 **빈 문자열**을 낸다. 그런데 라벨·구분자를 CSS가 그리고 있으면
+    값만 사라지고 장식은 남는다 — 화면에는 `댓글`이나 `·`만 떠 있다.
+
+        결정 35  글 하단 태그에 `,`만 남았다
+        결정 42  홈 카드 13/13 · 사이드바 5/5에 `댓글`·`·`만 남았다
+
+    ⚠ 이 검사는 치환자가 실제로 값을 내는지 **모른다.** 알 방법도 없다 —
+      화이트리스트는 이름의 유효성만 보증하고, 어느 영역에서 무엇이 채워지는지는
+      티스토리만 안다. 그래서 "가드가 있는가"만 묻는다. 값이 항상 있는 자리라면
+      가드는 죽은 규칙이지 해롭지 않다.
+
+    ⚠ 라벨이 **마크업 안에** 있는 자리는 잡지 않는다 — `<a>댓글 [##_..._##]</a>`처럼
+      글자가 섞이면 애초에 이 검사의 대상이 아니다. 그런 자리는 티스토리의 조건
+      블록(`<s_rp_count>` 등)이 통째로 지운다.
+    """
+    if not skin or not css:
+        return
+    body = strip_comments(css)
+
+    # 장식이 **그 요소 자신**에 붙은 클래스만 모은다.
+    # `.entry-tags a::before`는 자손을 꾸미는 것이라 대상이 아니다 — 치환자가
+    # 비면 자손 <a>가 아예 생기지 않아 ::before도 같이 사라진다.
+    decor_classes = set()
+    for rule in re.finditer(r"([^{}]+)\{([^{}]*)\}", body):
+        if not re.search(r"content\s*:\s*[\"']", rule.group(2)):
+            continue
+        for sel in rule.group(1).split(","):
+            compound = re.search(r"([^\s>+~]+)::(?:before|after)\s*$", sel.strip())
+            if compound:
+                decor_classes.update(re.findall(r"\.([a-zA-Z][\w-]*)", compound.group(1)))
+
+    missing, dead = [], []
+    for m in ONLY_SUB_RE.finditer(skin):
+        cls_m = re.search(r"""class=["']([^"']+)["']""", m.group("attrs"))
+        if not cls_m:
+            continue
+        # 치환자 앞뒤에 공백이 있으면 값이 사라져도 공백 텍스트 노드가 남아
+        # :empty가 **절대 참이 되지 않는다** (layout.css:9에 적힌 함정).
+        padded = m.group("inner") != m.group("inner").strip()
+        for cls in cls_m.group(1).split():
+            if cls.startswith("[##_"):  # 클래스 자체가 치환자인 자리 (tagcloud-link 등)
+                continue
+            if cls not in decor_classes:
+                continue
+            if not re.search(r"\.%s(?::empty|:has\()" % re.escape(cls), body):
+                missing.append(cls)
+            elif padded and not re.search(r"\.%s:has\(" % re.escape(cls), body):
+                dead.append(cls)
+    if missing:
+        err("BND008", "치환자 하나만 담은 요소 %d종에 ::before/::after 장식이 있는데 "
+            ":empty 가드가 없다: %s. 치환자가 빈 문자열을 내면 값은 사라지고 "
+            "라벨·구분자만 화면에 남는다 — 결정 35·42가 같은 실패였다."
+            % (len(missing), ", ".join(sorted(set(missing)))), "src/styles/")
+    if dead:
+        err("BND008", "%d종은 :empty 가드가 있지만 skin.html에서 치환자 앞뒤에 공백이 있다: %s. "
+            "값이 사라져도 공백 텍스트 노드가 남아 :empty가 **절대 참이 되지 않는다** — "
+            "가드가 죽은 채로 초록불이 된다. 치환자를 여는 태그에 붙여 쓰거나 "
+            ":has() 가드를 쓴다 (layout.css:9의 함정)."
+            % (len(dead), ", ".join(sorted(set(dead)))), "src/skin.html")
+    if not missing and not dead:
+        info("치환자만 담은 요소의 ::before/::after 장식: 가드 전부 있고 살아 있음")
+
+
 # ────────── 3b. JS가 만드는 클래스 ↔ 문서 ↔ CSS (docs/hooks.md §5.6) ──────────
 
 HOOKS_MD = os.path.join(ROOT, "docs", "hooks.md")
@@ -822,6 +897,7 @@ def main():
     lint_substitutions(skin, xml, wl)
     lint_area_scope(skin)
     lint_boundaries(skin, css, js)
+    lint_empty_substitution_decor(skin, src_css or css)
     lint_js_dom_classes(src_css, js)
     lint_tokens(css)
     lint_inline_coverage(css)
