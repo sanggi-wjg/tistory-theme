@@ -238,11 +238,22 @@ def lint_boundaries(skin, css, js):
 HEX_RE = re.compile(r"#(?:[0-9a-fA-F]{3,8})\b")
 
 
+def strip_comments(css):
+    """/* … */ 를 걷어낸다.
+
+    주석 안의 hex는 색 지정이 아니라 **설명**이다. tistory.css는 티스토리가 박아 둔
+    리터럴(#333 · #909090 …)을 주석에 적어 두는데, 걷어내지 않으면 TOK001이
+    그것을 매번 경고한다. 상시 경고는 린트를 통째로 무시하게 만든다 —
+    같은 오탐으로 이미 한 번 데었다(CLAUDE.md 2026-08-25 TOK002 항목)."""
+    return re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+
+
 def lint_tokens(css):
     if not css:
         return
     # 토큰 정의부(:root 블록)와 인라인 스타일 보정 선택자는 제외한다
-    body = re.sub(r":root[^{]*\{[^}]*\}", "", css, flags=re.S)
+    body = strip_comments(css)
+    body = re.sub(r":root[^{]*\{[^}]*\}", "", body, flags=re.S)
     body = re.sub(r"\[style\*=\"[^\"]*\"\]", "", body)
     hexes = HEX_RE.findall(body)
     if hexes:
@@ -252,7 +263,7 @@ def lint_tokens(css):
 
     # 미디어쿼리/[data-theme] 안에서 처음 정의된 색 → stamp 없는 시스템 테마에서 깨진다
     for m in re.finditer(r"(@media[^{]*prefers-color-scheme[^{]*|:root\[data-theme[^{]*)\{(.*?)\n\}",
-                         css, re.S):
+                         strip_comments(css), re.S):
         block = m.group(2)
         # `[style*="color: #000000"]` 같은 속성 선택자 줄은 **매칭 대상**이지 선언이 아니다.
         # 걷어내지 않으면 인라인 보정 규칙이 통째로 오탐된다.
@@ -296,6 +307,71 @@ def lint_inline_coverage(css):
             % (len(missing), ", ".join(missing[:10])), "src/styles/")
     else:
         info("인라인색 보정: 실측 %d종 전부 커버됨" % len(d.get("needsFix", [])))
+
+
+# ────────────────── 5b. 티스토리가 박아 둔 라이트 전용 색 ──────────────────
+
+def lint_tistory_hardcoded(css):
+    """data/tistory-hardcoded-colors.json의 각 항목에 우리 덮어쓰기가 있는지 본다.
+
+    인라인색(INL001)과는 원리가 다르다. 저 색들은 글 본문의 style 속성에 있어
+    [style*=...]로 잡히지만, 여기 색들은 **티스토리 스타일시트**에서 온다 —
+    속성 선택자로는 원리적으로 닿지 않고, 상당수가 #tt-body-page ID 스코프라
+    클래스만으로는 특이도도 모자란다. 둘 다 놓치면 다크에서만 조용히 깨진다."""
+    known = os.path.join(ROOT, "data", "tistory-hardcoded-colors.json")
+    if not os.path.exists(known):
+        info("data/tistory-hardcoded-colors.json이 없어 티스토리 하드코딩 색 대응을 "
+             "검사하지 않았다.")
+        return
+    if not css:
+        return
+    body = strip_comments(css)
+    missing, unscoped = [], []
+    d = json.load(open(known, encoding="utf-8"))
+    for r in d.get("rules", []):
+        marker = r["marker"]
+        if marker not in body:
+            missing.append(r["component"])
+            continue
+        # 상대가 ID로 시작하면 우리도 ID를 붙인 짝이 있어야 한다.
+        # 없으면 규칙은 존재하는데 글 페이지에서만 지는, 가장 찾기 어려운 상태가 된다.
+        if r.get("idScoped") and ("#tt-body-page" not in body.split(marker)[0][-200:]
+                                  and "#tt-body-page .contents_style " + marker not in body):
+            unscoped.append(r["component"])
+    if missing:
+        err("TIS001", "티스토리가 라이트 전용 색을 박아 둔 컴포넌트 %d종에 덮어쓰기가 없다: %s. "
+            "다크에서 해당 요소가 배경에 묻힌다 (src/styles/tistory.css)."
+            % (len(missing), ", ".join(missing[:8])), "src/styles/tistory.css")
+    if unscoped:
+        err("TIS002", "%d종이 #tt-body-page 짝 없이 클래스로만 덮여 있다: %s. "
+            "상대 선택자가 ID로 시작하므로 **글 페이지에서만** 진다 — 목록 페이지에서 "
+            "멀쩡해 보여 놓치기 쉽다." % (len(unscoped), ", ".join(unscoped[:8])),
+            "src/styles/tistory.css")
+    if not missing and not unscoped:
+        info("티스토리 하드코딩 색: %d종 전부 토큰으로 덮음" % len(d.get("rules", [])))
+
+
+def lint_hljs_scope(css):
+    """.hljs-* 팔레트가 .hljs 접두를 달고 있는지 본다.
+
+    티스토리는 코드블록이 있는 글에 highlight.js의 atom-one-light를 CDN에서 주입하고,
+    그 <link>는 우리 style.css **뒤**에 온다. 거기 규칙도 클래스 하나(0,1,0)라
+    접두가 없으면 특이도가 같고, 같으면 뒤가 이긴다 — 우리 팔레트가 통째로 무효가 된다.
+    에러도 빈 화면도 없이 라이트 테마 색이 다크 배경에 얹힌다."""
+    if not css:
+        return
+    body = strip_comments(css)
+    bare = set()
+    for m in re.finditer(r"(^|[,{}\s])(\.hljs-[a-z_-]+)", body, re.M):
+        # 바로 앞에 `.hljs `가 붙어 있으면 통과
+        start = m.start(2)
+        if body[max(0, start - 6):start].endswith(".hljs "):
+            continue
+        bare.add(m.group(2))
+    if bare:
+        err("HLJS001", "`.hljs ` 접두가 없는 구문 색 선택자 %d개: %s. 티스토리가 나중에 주입하는 "
+            "atom-one-light와 특이도가 같아(0,1,0) 순서로 밀린다 — 팔레트가 화면에 닿지 않는다."
+            % (len(bare), ", ".join(sorted(bare)[:6])), "src/styles/components.css")
 
 
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
@@ -475,6 +551,8 @@ def main():
     lint_boundaries(skin, css, js)
     lint_tokens(css)
     lint_inline_coverage(css)
+    lint_tistory_hardcoded(css)
+    lint_hljs_scope(css)
     lint_robustness(js, skin)
     lint_seo(skin)
 

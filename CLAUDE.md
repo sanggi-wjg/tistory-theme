@@ -3,7 +3,7 @@
 `sanggi-jayg.tistory.com`의 커스텀 티스토리 스킨을 직접 제작하는 프로젝트.
 
 **상위 규범** — 판단이 필요하면 이 둘을 먼저 본다.
-- [DECISIONS.md](./DECISIONS.md) — 확정 결정 28건, 근거, 플랫폼 제약, 275편 실측, 미결 사항
+- [DECISIONS.md](./DECISIONS.md) — 확정 결정 33건, 근거, 플랫폼 제약, 275편 실측, 미결 사항
 - [DESIGN.md](./DESIGN.md) — 디자인 시스템 (토큰·타이포·컴포넌트·티스토리 고정 마크업 대응)
 
 [HANDOFF.md](./HANDOFF.md)는 특정 시점의 인수인계 스냅샷이다. **사용자가 명시적으로 요청할 때만 읽는다** — 시간이 지나면 위 두 문서와 어긋나므로, 자동으로 읽으면 낡은 상태를 현재로 오인하게 된다.
@@ -112,3 +112,6 @@ git fetch --prune                              # 원격 브랜치는 머지 때 
 | 2026-08-25 | 스킨 미리보기 이미지 4종 — `scripts/gen-preview.mjs` | src/preview/, scripts/gen-preview.mjs, scripts/build.mjs, skin-deploy, DECISIONS.md(§2·미결 7) | 관리 화면에 엑박이 떴다. preview*는 스킨 **루트** 파일이라 처음엔 zip 패키지를 만들었는데 **티스토리가 zip을 받지 않았다.** 실제로는 파일업로드 탭이 이 이름들만 루트로 보낸다 — 목적지가 파일명으로 갈린다. 공식 문서에 없는 동작이라 §2에 실측으로 남겼다. zip 패키징은 지웠다 |
 | 2026-08-25 | 🔴 카테고리를 리스트형 치환자로 — `[##_category_list_##]`, 린트 `CAT001`, 라이브 검사 `V016`, 선택 상태 `li.selected` | src/skin.html, tistory.css, js/category.js, skin-qa-check, skin-preview, seo-verify-live, skin-deploy, DECISIONS.md(결정 31·미결 14 해결), DESIGN.md §5.3, docs/hooks.md | 배포본이 **폴더형**을 내보내고 있었다. 중첩 table 19 + 트리선 GIF 17장에 링크는 `onclick`이라 **`<a href>`가 0개** — 사이드바 최대 모듈이 크롤러에도 키보드에도 닿지 않았다. 리스트형으로 바꾸니 내부링크 36개가 생기고 인라인 `style`이 18개 → 0개가 되어 **미결 14(다크 트리 색)가 원인째 사라졌다** — `!important`도 `index.xml` 수정도 없이. 프리뷰가 두 치환자를 같은 마크업에 매핑해 두어 또 통과 신호를 위조했다 |
 | 2026-08-25 | 사이드바를 좌측 레일로 — 홈·글에서도 표시, `--wrap` 1400 · `--sidebar-w` 240 | src/styles/tokens.css, layout.css, DESIGN.md §4, docs/hooks.md §1, DECISIONS.md(결정 30) | 카테고리가 목록 4종 오른쪽에만 있어 홈·글에서 볼 길이 없었고 페이지를 옮기면 자리가 바뀌었다. **레일 페이지의 `--page-w`를 전부 `--wrap`으로 통일한 것이 핵심** — 폭이 다르면 컨테이너 정렬이 달라져 레일이 옆으로 뛴다 |
+| 2026-08-26 | 🔴 티스토리 시트가 박은 라이트 전용 색 26종을 토큰으로 덮음 — 린트 `TIS001`·`TIS002`·`HLJS001`, `data/tistory-hardcoded-colors.json` | src/styles/tistory.css·components.css·content.css, skin-qa-check, DESIGN.md §5.2b, DECISIONS.md(결정 32) | 다크에서 오픈그래프 카드 제목이 **1.00:1**로 사라지고 있었다(62곳/39편). 원인은 우리 CSS가 아니라 **특이도** — `content.css` 규칙이 `#tt-body-page`로 시작해 `.contents_style …`을 이겼다. **인라인 보정도 JS 안전망도 원리적으로 못 잡는다**: 색이 `style` 속성이 아니라 시트에 있다. 라이트에서는 12.63:1이라 한쪽 테마에서만 조용히 깨져 있었다. 구문 색은 반대로 `atom-one-light`이 우리 **뒤**에 실려 팔레트가 통째로 무효였다 |
+| 2026-08-26 | 다크 팔레트 실화면 검증 — 캔버스 `#0a0a0a`, `--ink-body` `#b0b0b0`, `--font-smooth` 토큰 신설 | src/styles/tokens.css·base.css, DESIGN.md §2, DECISIONS.md(결정 33·미결 5 해결) | 파생값이던 다크 토큰을 배포본에서 처음 쟀다. **대비 수치는 라이트와 대칭인데 체감이 달랐다**(본문 8.13 ↔ 8.45) — 순검정 위 halation, light-on-dark의 얇아 보임, macOS `antialiased`의 획 가늘어짐이 겹친 것. 대비율은 하한을 지키는 도구이지 읽히는 느낌의 척도가 아니다 |
+| 2026-08-26 | 프리뷰가 티스토리 시트를 **실제 순서대로** 불러오도록 — 실패 시 경고 띠, 에디터 컴포넌트 픽스처 | .claude/skills/skin-preview/scripts/render.py | 렌더러가 우리 CSS만 그려서 위 두 결함이 프리뷰에서 멀쩡해 보였다 — **통과 신호 위조 세 번째**가 될 뻔했다. `content.css`는 우리 앞, `atom-one-light`은 우리 뒤에 실어야 특이도 싸움이 재현된다. 픽스처 조립도 `replace("</div>", …, 1)`에서 "열기+알맹이+닫기"로 바꿨다 — 알맹이에 `<div>`가 생기면 첫 `</div>`가 안쪽 것이 된다 |

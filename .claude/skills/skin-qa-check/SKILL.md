@@ -29,6 +29,8 @@ python3 .claude/skills/skin-qa-check/scripts/lint.py --json   # 자동화용
 | `BND001~005` | `data-cat` 경계면, 카테고리 커버리지, JS 셀렉터 ↔ 마크업, **`[class="contents_style"]` 정확일치** |
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |
+| `TIS001~002` | 티스토리 시트가 박은 라이트 전용 색에 덮어쓰기가 있는가(`001`), 상대가 `#tt-body-page` ID 스코프일 때 **ID 짝**이 있는가(`002`). 목록은 `data/tistory-hardcoded-colors.json` |
+| `HLJS001` | `.hljs-*` 구문 색 선택자에 `.hljs ` 접두가 있는가. 없으면 나중에 실리는 `atom-one-light`이 순서로 이겨 팔레트가 통째로 무효가 된다 |
 | `ROB001~002`, `A11Y001~002` | `localStorage` try/catch, `MutationObserver`, `lang`, viewport |
 | `SEO001~005` | 반복 블록 안의 `h1`, 내부링크 치환자 누락, `<title>` 템플릿, `img` alt, `BreadcrumbList` |
 
@@ -65,13 +67,20 @@ npm run build && python3 .claude/skills/skin-preview/scripts/render.py && open _
 
 각 상태에서 `page` 페이지의 본문 인라인 오염이 보정되는지 확인한다. 픽스처에 `#000000` `#333333` `#252525` `#eeffff` `#f8f8f8`가 모두 들어 있다.
 
+**인라인 오염과 별개로 티스토리 시트 색도 본다.** 본문 끝 에디터 컴포넌트 픽스처(오픈그래프 카드,
+인용 3종, 첨부, 표 `style12`, `.another_category`)가 다크에서 읽히는가. 이건 `[style*=…]` 보정이
+원리적으로 못 잡는 영역이라 **눈으로 봐야 한다** — 린트는 규칙의 존재만 확인한다.
+
+⚠ 프리뷰 하단에 **주황색 경고 띠**가 떠 있으면 티스토리 시트를 못 불러온 것이다. 그 상태에서는
+특이도 충돌이 재현되지 않으므로 이 항목을 "통과"로 적으면 안 된다.
+
 ### 반응형
 640 / 768 / 1024 / 1440px. **페이지 본문이 가로로 스크롤되면 실패다.** 코드블록·표는 자기 컨테이너 안에서만 스크롤해야 한다. 홈 카드 제목이 2줄에서 잘리는지도 본다(홈 노출 제목 중앙값 49자).
 
 ### 접근성
 - 라이트박스 `Esc` 닫기 + 포커스 복귀
 - 모든 인터랙티브 요소에 보이는 포커스 상태
-- 본문 대비 4.5:1 (라이트·다크 양쪽)
+- 본문 대비 4.5:1 (라이트·다크 양쪽). **AA 통과가 "읽힌다"는 뜻은 아니다** — 다크 팔레트는 수치가 대칭인 채로 흐렸던 전례가 있다(DECISIONS.md 결정 33)
 - 키보드만으로 목차·토글·복사 버튼 도달
 
 ## 리포트 규칙
@@ -100,4 +109,5 @@ npm run build && python3 .claude/skills/skin-preview/scripts/render.py && open _
 | 스킨 옵션 | `index.xml` `<name>` | `[##_var_*_##]` | 빈 값 |
 | 영역 치환자 | 놓인 위치 | 유효한 페이지 타입 | **화면 통째로 빔** |
 | 인라인색 | `data/inline-styles.json` | CSS 보정 규칙 | 다크에서 글자 실종 |
+| 티스토리 시트 색 | `data/tistory-hardcoded-colors.json` | `tistory.css` 덮어쓰기 + ID 짝 | **다크에서만** 요소가 배경에 묻힘 |
 | JS 생성 DOM | `script.js`의 클래스 | CSS 대응 규칙 | 스타일 없는 날것 |

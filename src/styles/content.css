@@ -102,7 +102,14 @@
   color: var(--ink-body);
 }
 
-.contents_style blockquote p { margin: var(--sp-3) 0; }
+/* color:inherit는 장식이 아니다. 티스토리 content.css의 `blockquote, blockquote p { color:#666 }`가
+   <p>를 **직접** 지정하는데, 직접 지정은 특이도와 무관하게 상속을 이긴다 —
+   위에서 blockquote를 --ink-body로 칠해도 문단은 #666으로 남았다(다크에서 3.66:1).
+   같은 <p>를 우리도 직접 잡아야 끊긴다. (0,1,2) > (0,0,2). */
+.contents_style blockquote p {
+  margin: var(--sp-3) 0;
+  color: inherit;
+}
 
 /* ── 인라인 코드 : 본문의 1급 시민 (DESIGN.md §5.1) ─────────────── */
 .contents_style code {

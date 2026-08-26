@@ -25,8 +25,10 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   margin: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* 테마별로 갈린다 — 다크에서는 auto로 되돌아가 서브픽셀 렌더링이 살아난다.
+     값은 tokens.css에만 있다 (--font-smooth 주석 참조). */
+  -webkit-font-smoothing: var(--font-smooth);
+  -moz-osx-font-smoothing: var(--font-smooth-moz);
   overflow-wrap: break-word;
   word-break: keep-all;   /* 한글은 어절 단위로 끊는다 */
 }
