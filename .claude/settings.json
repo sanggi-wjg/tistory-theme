@@ -24,7 +24,9 @@
       "Bash(head:*)",
       "Bash(tail:*)",
       "Bash(wc:*)",
-      "Bash(diff:*)"
+      "Bash(diff:*)",
+      "Bash(npm install *)",
+      "Bash(npm run *)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
@@ -33,6 +35,14 @@
       "Bash(git checkout -- .:*)",
       "Bash(git clean -f:*)",
       "Bash(docker system prune:*)"
+    ],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)"
     ]
   },
   "teammateMode": "auto",
