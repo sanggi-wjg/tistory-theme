@@ -1,122 +1,122 @@
 {
- "base": "https://git-rich-quick.tistory.com",
+ "base": "https://sanggi-jayg.tistory.com",
  "pages": {
   "index": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 6,
+   "entryLinks": 20,
    "linkForms": {
-    "entry": 6,
+    "entry": 20,
     "num": 0
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 54393,
-   "url": "https://git-rich-quick.tistory.com/"
+   "bytes": 62306,
+   "url": "https://sanggi-jayg.tistory.com/"
   },
   "page": {
    "status": 200,
    "h1": 2,
-   "entryLinks": 7,
+   "entryLinks": 4,
    "linkForms": {
-    "entry": 7,
+    "entry": 4,
     "num": 0
    },
    "jsonld": [
     "BlogPosting"
    ],
-   "bytes": 59495,
-   "url": "https://git-rich-quick.tistory.com/entry/%EA%B2%80%EC%9D%80-%EC%95%88%EA%B0%9C-%EC%86%8D%EC%9D%98-%EC%84%AC%EA%B4%91-%ED%86%A0%EB%A7%88%EC%8A%A4-%ED%81%AC%EB%A1%9C%ED%94%84%ED%8A%B8-%EC%83%81%EC%82%AC%EC%9D%98-%EA%B8%B0%EC%9D%B4%ED%95%9C-%EA%B7%80%ED%99%98"
+   "bytes": 68362,
+   "url": "https://sanggi-jayg.tistory.com/entry/%ED%83%80%EC%9D%B4%EB%B0%8D-%EC%96%B4%ED%83%9D-%EC%96%B4%EB%94%94%EA%B9%8C%EC%A7%80-%EB%A7%89%EC%95%84%EC%95%BC-%ED%95%A0%EA%B9%8C-%EB%B9%84%EA%B5%90%EB%B6%80%ED%84%B0-%ED%94%84%EB%A0%88%EC%9E%84%EC%9B%8C%ED%81%AC-CVE%EA%B9%8C%EC%A7%80"
   },
   "category": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 11,
+   "entryLinks": 19,
    "linkForms": {
-    "entry": 11,
+    "entry": 19,
     "num": 0
    },
    "jsonld": [
     "BreadcrumbList"
    ],
-   "bytes": 88450,
-   "url": "https://git-rich-quick.tistory.com/category/%EC%8B%9C%EC%82%AC"
+   "bytes": 60931,
+   "url": "https://sanggi-jayg.tistory.com/category/AI"
   },
   "archive": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 6,
+   "entryLinks": 1,
    "linkForms": {
-    "entry": 6,
+    "entry": 1,
     "num": 0
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 39619,
-   "url": "https://git-rich-quick.tistory.com/archive"
+   "bytes": 27240,
+   "url": "https://sanggi-jayg.tistory.com/archive"
   },
   "tag": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 6,
+   "entryLinks": 0,
    "linkForms": {
-    "entry": 6,
+    "entry": 0,
     "num": 0
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 44279,
-   "url": "https://git-rich-quick.tistory.com/tag"
+   "bytes": 194386,
+   "url": "https://sanggi-jayg.tistory.com/tag"
   },
   "search": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 6,
+   "entryLinks": 12,
    "linkForms": {
-    "entry": 6,
+    "entry": 12,
     "num": 0
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 39676,
-   "url": "https://git-rich-quick.tistory.com/search/%EB%A6%AC%ED%8C%A9%ED%86%A0%EB%A7%81"
+   "bytes": 40933,
+   "url": "https://sanggi-jayg.tistory.com/search/%EB%A6%AC%ED%8C%A9%ED%86%A0%EB%A7%81"
   },
   "empty": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 6,
+   "entryLinks": 0,
    "linkForms": {
-    "entry": 6,
+    "entry": 0,
     "num": 0
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 39794,
-   "url": "https://git-rich-quick.tistory.com/search/%EC%A1%B4%EC%9E%AC%ED%95%98%EC%A7%80%EC%95%8A%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4zzz"
+   "bytes": 25271,
+   "url": "https://sanggi-jayg.tistory.com/search/%EC%A1%B4%EC%9E%AC%ED%95%98%EC%A7%80%EC%95%8A%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4zzz"
   },
   "guestbook": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 6,
+   "entryLinks": 0,
    "linkForms": {
-    "entry": 6,
+    "entry": 0,
     "num": 0
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 38329,
-   "url": "https://git-rich-quick.tistory.com/guestbook"
+   "bytes": 24774,
+   "url": "https://sanggi-jayg.tistory.com/guestbook"
   }
  },
  "missing": [],
  "targets": {
-  "post": "/entry/%EA%B2%80%EC%9D%80-%EC%95%88%EA%B0%9C-%EC%86%8D%EC%9D%98-%EC%84%AC%EA%B4%91-%ED%86%A0%EB%A7%88%EC%8A%A4-%ED%81%AC%EB%A1%9C%ED%94%84%ED%8A%B8-%EC%83%81%EC%82%AC%EC%9D%98-%EA%B8%B0%EC%9D%B4%ED%95%9C-%EA%B7%80%ED%99%98",
-  "category": "시사"
+  "post": "/entry/%ED%83%80%EC%9D%B4%EB%B0%8D-%EC%96%B4%ED%83%9D-%EC%96%B4%EB%94%94%EA%B9%8C%EC%A7%80-%EB%A7%89%EC%95%84%EC%95%BC-%ED%95%A0%EA%B9%8C-%EB%B9%84%EA%B5%90%EB%B6%80%ED%84%B0-%ED%94%84%EB%A0%88%EC%9E%84%EC%9B%8C%ED%81%AC-CVE%EA%B9%8C%EC%A7%80",
+  "category": "AI"
  }
 }
