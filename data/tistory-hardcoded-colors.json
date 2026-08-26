@@ -3,7 +3,8 @@
   "sources": [
     "https://tistory1.daumcdn.net/tistory_admin/userblog/userblog-<hash>/static/style/content.css",
     "페이지 안 <style> 블록 (.another_category — CDN 시트가 아니라 HTML 본문에 온다)",
-    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/atom-one-light.min.css"
+    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/atom-one-light.min.css",
+    "댓글·방명록 React 앱이 런타임에 얹는 시트 (head 실측: 우리 style.css 뒤. 소스 HTML에는 빈 <div data-tistory-react-app=\"Comment\">뿐이라 크롤로는 못 본다)"
   ],
   "note": "티스토리가 에디터 컴포넌트에 박아 둔 라이트 전용 색. 우리가 손댈 수 없는 시트라 src/styles/tistory.css에서 토큰으로 덮는다. idScoped=true면 상대 선택자가 #tt-body-page로 시작하므로 우리 쪽도 ID를 붙여야 이긴다 — 클래스만으로는 특이도가 모자란다. 린트 TIS001이 이 목록과 CSS를 대조한다.",
   "measuredOn": {
@@ -238,6 +239,93 @@
       "component": "imageslideblock 이미지 컨테이너 배경 #000",
       "value": "#000",
       "reason": "이미지 뷰어의 의도된 검은 바탕. 다크에서도 정상이다."
+    }
+  ],
+  "commentNote": "댓글·방명록은 티스토리가 React로 **런타임에** 그린다. 그 CSS 규칙의 특이도는 (0,2,0)이고 우리 style.css 뒤에 온다 — 2026-08-26 라이브에서 우리 규칙을 head 맨 앞에 넣고 실측했다: (0,1,0) 진다 / (0,2,0) 진다(같으면 뒤가 이긴다) / (0,3,0) 이긴다. 그래서 marker 앞에 우리 래퍼 클래스를 붙여 조상 두 개를 만든다. 래퍼는 .comments(글)와 .guestbook(방명록) 둘이고 안쪽 tt-*는 완전히 같으므로 **항상 짝으로** 써야 한다. 린트 TIS003이 대조한다. darkContrast는 고치기 전 값이다 — 캔버스 #0a0a0a 기준. idScoped=true면 그 한 자리는 상대가 ID로 시작하므로 body id까지 붙여야 한다 — 글은 #tt-body-page .comments …, 방명록은 #tt-body-guestbook .guestbook … 이다.",
+  "commentRules": [
+    {
+      "component": "댓글 본문",
+      "marker": ".tt-box-content .tt_desc",
+      "value": "#222222",
+      "darkContrast": 1.16,
+      "kind": "text"
+    },
+    {
+      "component": "댓글 작성자",
+      "marker": ".tt-box-meta .tt-link-user",
+      "value": "#222222",
+      "darkContrast": 1.16,
+      "kind": "text"
+    },
+    {
+      "component": "댓글 입력 영역 글자",
+      "marker": ".tt-inner-g .tt-cmt",
+      "value": "#222222",
+      "darkContrast": 1.16,
+      "kind": "text"
+    },
+    {
+      "component": "댓글 작성 날짜",
+      "marker": ".tt-wrap-info .tt_date",
+      "value": "#888888",
+      "darkContrast": 4.62,
+      "kind": "text"
+    },
+    {
+      "component": "답글 링크",
+      "marker": ".tt-wrap-info .tt-link-comment",
+      "value": "#909090",
+      "darkContrast": 5.07,
+      "kind": "text"
+    },
+    {
+      "component": "댓글 입력 테두리",
+      "marker": ".tt-box-textarea .tt-inner-g",
+      "value": "#d8d8d8",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 테두리가 다크에 뜨는 것이 문제다 — 대비 수치로 표현되지 않는다"
+    },
+    {
+      "component": "대댓글 목록 구분선",
+      "marker": ".tt-area-reply .tt-list-reply-comment",
+      "value": "#f0f0f0",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 선이 다크에 뜨는 것이 문제다"
+    },
+    {
+      "component": "댓글 머리 구분선",
+      "marker": ".tt-comment-cont .tt-box-total",
+      "value": "#e9e9e9",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 선이 다크에 뜨는 것이 문제다"
+    },
+    {
+      "component": "댓글 목록 항목",
+      "marker": ".tt-list-reply > .tt-item-reply",
+      "value": "border-top: none",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "색이 아니라 우리 구분선이 안 그려지던 자리다"
+    },
+    {
+      "component": "등록 버튼",
+      "marker": ".tt-box-write .tt-btn_register",
+      "value": "#e5e5e5",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "우리 --ink 판이 아니라 티스토리 회색 판이 나온다"
+    },
+    {
+      "component": "댓글 입력 자리표시자",
+      "marker": ".tt-inner-g .tt-cmt::before",
+      "idScoped": true,
+      "value": "#b1b1b1",
+      "darkContrast": null,
+      "kind": "text",
+      "contrastNote": "라이트 흰 배경에서 2.03:1. 댓글 앱에서 유일하게 상대가 ID 스코프라 (0,3,1)로는 진다 — body id까지 붙여야 한다."
     }
   ]
 }

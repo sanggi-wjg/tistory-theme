@@ -608,21 +608,39 @@
 }
 
 /* ── 태그 ─────────────────────────────────────────────────────
-   안의 <a>는 [##_tag_label_rep_##]가 만든다. */
+   안의 <a>는 [##_tag_label_rep_##]가 만든다. 그런데 <a>만 만드는 게 아니라
+   **사이에 ", " 텍스트 노드를 끼워 넣는다** (2026-08-26 라이브 실측):
+
+     <div class="entry-tags"><a …>Memory</a>, <a …>performance</a>, …</div>
+
+   flex 컨테이너에서 이 텍스트 노드는 **익명 flex 아이템**이 되어 칸을 하나씩
+   차지한다. 태그 8개짜리 글이 두 줄로 밀려 있었다(높이 77px → 42.5px).
+
+   텍스트 노드는 선택자로 잡을 수 없다. 그래서 부모에서 글자 크기를 0으로
+   죽이고 <a>에서 되살린다. 쉼표는 0폭이 되어 사라진다.
+
+   ⚠ 이때 gap을 같이 쓰면 안 된다. flex gap은 **0폭 익명 아이템에도 붙어서**
+     태그 사이가 8px이 아니라 16px이 된다. 그래서 flex를 걷고 간격을 margin으로
+     준다 — inline-block이라 줄바꿈은 그대로 된다.
+   ⚠ font-size:0은 <a>가 아닌 자식에게도 상속된다. 지금 자식은 ::before("#")
+     뿐이고 그건 <a> 안이라 안전하지만, 여기에 <a> 밖 요소를 더하면 크기를
+     같이 되살려야 한다. */
 .entry-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
   margin-top: var(--sp-6);
+  /* 마지막 줄 아래로 새는 태그 margin-bottom을 상쇄한다 */
+  margin-bottom: calc(var(--sp-2) * -1);
+  font-size: 0;
 }
 
 .entry-tags a {
   display: inline-block;
+  margin: 0 var(--sp-2) var(--sp-2) 0;
   padding: var(--sp-1) var(--sp-3);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
   color: var(--ink-body);
   font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
   text-decoration: none;
   transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }

@@ -382,7 +382,43 @@
 .entry-body .another_category h4,
 .entry-body .another_category h4 a { color: var(--ink) !important; }
 
-/* ══════════ 댓글 · 방명록 ══════════════════════════════════════ */
+/* ══════════ 댓글 · 방명록 ══════════════════════════════════════
+   댓글과 방명록은 티스토리가 **런타임에 React로 그린다.** 소스 HTML에는
+   `<div data-tistory-react-app="Comment"></div>` 빈 껍데기뿐이라 마크업을
+   받아 볼 수 없고, 프리뷰에도 나오지 않는다. 아래 클래스는 전부
+   2026-08-26 라이브 DOM에서 직접 읽은 것이다.
+
+   .comments(글 페이지)와 .guestbook(방명록)은 **우리 skin.html의 클래스**이고,
+   그 안쪽 tt-* 는 양쪽이 완전히 같다(/guestbook 실측). 그래서 둘을 짝으로 쓴다.
+
+   ── 특이도 : 이 블록은 통째로 지고 있었다 ──────────────────────
+   티스토리 시트가 우리 style.css **뒤에** 온다(head 순서 실측 — 우리 0·1번,
+   티스토리 content.css 3번 · index.css 4번 · tistory.css 12번). 그리고 댓글
+   규칙의 특이도는 **(0,2,0)** 이다. 우리 쪽을 head 맨 앞(= 실제 우리 위치)에
+   넣고 어디서부터 이기는지 쟀다:
+
+     .tt_desc                              (0,1,0)   진다
+     .comments .tt_desc                    (0,2,0)   진다 — 같으면 뒤가 이긴다
+     .comments .tt-box-content .tt_desc    (0,3,0)   이긴다
+
+   이 블록은 원래 전부 (0,1,0)이었다. 다크에서 댓글 본문·작성자·입력 글자가
+   전부 #222로 나와 캔버스(#0a0a0a)에 **1.16:1**로 묻혔다 — 사용자가 "댓글이
+   검은색이라 안 보인다"고 가져온 그 화면이다.
+
+   ⚠ 발견이 늦은 이유를 남긴다. .tt-box-total의 글자색과 <input>은 우리 것이
+     **이기고 있었다** — 요소 선택자거나 상대에 짝이 없어 안 부딪혔기 때문이다.
+     한 블록 안에서 절반은 먹고 절반은 지는 상태라, 댓글 영역이 통째로
+     무시되고 있다는 신호가 화면에 나타나지 않았다.
+
+   ── 규칙 세 가지 ──────────────────────────────────────────────
+   1. 상대와 부딪히는 선언에는 **조상 두 개**를 달아 (0,3,0)으로 올린다.
+      조상은 실측한 DOM에서 가져온다. 짧게 줄이면 특이도가 떨어져 다시 진다
+      (이 파일 §에디터 컴포넌트 규칙 3과 같다 — 장황함이 곧 계약이다).
+   2. 값은 토큰만 쓴다. 테마 분기를 여기서 하지 않는다 — 토큰이 다크를
+      알아서 따라오고, 덤으로 라이트도 팔레트에 맞춰진다.
+   3. .comments / .guestbook 을 **항상 짝으로** 쓴다. 한쪽만 쓰면 다른 쪽
+      페이지에서만 조용히 진다.
+   린트 TIS003이 1번과 3번을 지킨다. */
 
 .comments {
   margin-top: var(--sp-7);
@@ -398,47 +434,110 @@
   color: var(--ink-body);
 }
 
-/* 앱 전체 — 색만 우리 것으로 끌어온다 */
+/* 앱 전체 색. 상대에 짝이 없어 (0,1,0)으로도 이긴다 — 여기서 올릴 이유가 없다. */
 .tt-comment-cont,
 .tt-area-reply,
 .tt-list-reply { color: var(--ink-body); }
 
-.tt-box-total {
+/* ── "댓글 N" 머리 ─────────────────────────────────────────────
+   글자색은 원래 이기고 있었지만 아래 구분선은 상대 #e9e9e9가 이겨
+   다크에 밝은 선이 떠 있었다. 짝을 맞춰 둘 다 여기서 준다. */
+.comments .tt-comment-cont .tt-box-total,
+.guestbook .tt-comment-cont .tt-box-total {
   color: var(--ink);
+  border-bottom-color: var(--hairline);
   font-weight: 600;
   font-size: var(--fs-body);
 }
 
-.tt-item-reply {
+/* ── 댓글 한 건 ────────────────────────────────────────────────
+   구분선을 첫 항목에는 주지 않는다. 바로 위 .tt-box-total이 이미
+   border-bottom을 갖고 있어 겹치면 줄이 두 개로 보인다. */
+.comments .tt-list-reply > .tt-item-reply,
+.guestbook .tt-list-reply > .tt-item-reply { padding: var(--sp-4) 0; }
+
+.comments .tt-list-reply > .tt-item-reply + .tt-item-reply,
+.guestbook .tt-list-reply > .tt-item-reply + .tt-item-reply {
   border-top: 1px solid var(--hairline);
-  padding: var(--sp-4) 0;
 }
 
-.tt-thumbnail,
-.tt-box-thumb img { border-radius: 50%; }
+/* 대댓글 목록. 상대가 border-top #f0f0f0을 준다 — 밝은 선이 다크에 뜬다.
+   위 규칙이 자식 결합자로 최상위만 잡으므로 이 선과 겹치지 않는다. */
+.comments .tt-area-reply .tt-list-reply-comment,
+.guestbook .tt-area-reply .tt-list-reply-comment { border-top-color: var(--hairline); }
 
-.tt-link-user {
+.comments .tt-box-thumb .tt-thumbnail,
+.guestbook .tt-box-thumb .tt-thumbnail,
+.comments .tt-box-thumb img,
+.guestbook .tt-box-thumb img { border-radius: 50%; }
+
+/* 작성자 이름 — 상대 #222 (다크 1.16:1) */
+.comments .tt-box-meta .tt-link-user,
+.guestbook .tt-box-meta .tt-link-user {
   color: var(--ink);
   font-weight: 600;
   text-decoration: none;
 }
 
-.tt_desc,
-.tt-cmt {
+/* 댓글 본문 — 상대 #222. "댓글이 안 보인다"의 정체가 이 한 줄이다. */
+.comments .tt-box-content .tt_desc,
+.guestbook .tt-box-content .tt_desc {
   color: var(--ink-body);
   line-height: var(--lh-body);
 }
 
-.tt_date {
+.comments .tt-wrap-info .tt_date,
+.guestbook .tt-wrap-info .tt_date {
   color: var(--ink-mute);
   font-size: var(--fs-caption);
   font-variant-numeric: tabular-nums;
 }
 
+/* "답글" — 상대 #909090. 두 테마 모두 우리 --ink-mute로 통일한다. */
+.comments .tt-wrap-info .tt-link-comment,
+.guestbook .tt-wrap-info .tt-link-comment { color: var(--ink-mute); }
+
+.comments .tt-wrap-info .tt-link-comment:hover,
+.guestbook .tt-wrap-info .tt-link-comment:hover { color: var(--link); }
+
+/* 위 규칙들이 (0,3,0)이라 이 (0,1,1)에 잡아먹히지 않는다. 순서와 무관하다. */
 .comments a,
 .guestbook a { color: var(--link); }
 
-/* 입력 · 버튼 — React가 클래스를 바꿔도 살아남도록 요소로 잡는다 */
+/* ── 입력 ──────────────────────────────────────────────────────
+   .tt-inner-g가 에디터 테두리, .tt-cmt가 실제 입력 영역이다.
+   상대는 테두리 #d8d8d8 · 글자 #222 — 다크에서 밝은 상자 안에 안 보이는
+   글자를 치게 된다. 쓰는 사람은 자기가 뭘 쳤는지 모른다. */
+.comments .tt-box-textarea .tt-inner-g,
+.guestbook .tt-box-textarea .tt-inner-g {
+  background: var(--surface);
+  border-color: var(--hairline);
+  border-radius: var(--radius-md);
+}
+
+.comments .tt-box-textarea .tt-inner-g:focus-within,
+.guestbook .tt-box-textarea .tt-inner-g:focus-within { border-color: var(--hairline-strong); }
+
+.comments .tt-inner-g .tt-cmt,
+.guestbook .tt-inner-g .tt-cmt {
+  color: var(--ink);
+  line-height: var(--lh-body);
+}
+
+/* 자리표시자("내용을 입력하세요."). 상대 #b1b1b1 — 라이트 흰 배경에서 2.03:1이다.
+
+   ⚠ 이 한 자리만 상대가 **ID 스코프**다. 댓글 앱의 나머지는 전부 (0,2,0)인데
+     여기만 (1,x,x)라, 위와 같은 (0,3,1)로 쓰면 조용히 죽는다 — 실제로 이 PR의
+     초안이 그랬고, 빌드한 CSS를 라이브에 주입해 보고서야 잡혔다.
+     2026-08-26 실측(글·방명록 양쪽): (0,3,1) 진다 / (1,3,1) 이긴다.
+   ⚠ body id가 페이지마다 다르므로 글(#tt-body-page)과 방명록(#tt-body-guestbook)을
+     각각 쓴다. 한쪽만 쓰면 다른 쪽에서만 진다.
+   린트 TIS003이 idScoped로 이 짝을 지킨다. */
+#tt-body-page .comments .tt-inner-g .tt-cmt::before,
+#tt-body-guestbook .guestbook .tt-inner-g .tt-cmt::before { color: var(--ink-mute); }
+
+/* 이름·비밀번호 입력. **요소로 잡는 건 의도다** — React가 클래스를 바꿔도
+   살아남고, 상대에 짝이 없어 (0,1,1)로도 이긴다(실측: 배경 #121212가 나온다). */
 .comments textarea,
 .comments input[type="text"],
 .comments input[type="password"],
@@ -457,7 +556,9 @@
 .guestbook textarea:focus,
 .guestbook input:focus { border-color: var(--hairline-strong); }
 
-.tt-btn_register {
+/* 등록 버튼 — 상대 배경 #e5e5e5가 이기고 있었다. */
+.comments .tt-box-write .tt-btn_register,
+.guestbook .tt-box-write .tt-btn_register {
   background: var(--ink);
   color: var(--canvas);
   border: 1px solid var(--ink);
@@ -467,7 +568,11 @@
   font-weight: 600;
 }
 
-.tt-btn_register:hover { background: var(--ink-body); border-color: var(--ink-body); }
+.comments .tt-box-write .tt-btn_register:hover,
+.guestbook .tt-box-write .tt-btn_register:hover {
+  background: var(--ink-body);
+  border-color: var(--ink-body);
+}
 
 /* ══════════ 블로그 메뉴 ════════════════════════════════════════
    [##_blog_menu_##]가 만든다. 항목에 붙는 클래스는 티스토리 설정에 따라
