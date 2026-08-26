@@ -9,8 +9,9 @@
     "watch": "node scripts/build.mjs --watch",
     "preview": "npm run build && python3 .claude/skills/skin-preview/scripts/render.py",
     "lint": "python3 .claude/skills/skin-qa-check/scripts/lint.py",
-    "check": "npm run build && npm run lint && npm run preview",
-    "preview:images": "npm run preview && node scripts/gen-preview.mjs"
+    "check": "npm run build && npm run lint && npm run test:hooks && npm run preview",
+    "preview:images": "npm run preview && node scripts/gen-preview.mjs",
+    "test:hooks": "python3 .claude/hooks/test-detect.py"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"

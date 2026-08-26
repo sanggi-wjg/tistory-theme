@@ -21,6 +21,9 @@ BLOCK = [
     ("heredoc 여는 줄", G + " --body-file - <<'BODY'\n본문\nBODY"),
     ("줄바꿈 뒤", "git push\n" + G + " --base main"),
     ("세미콜론 뒤", "npm run check; " + G),
+    # 환경변수 접두 — 첫 판이 놓쳤다. gh가 줄머리도 구분자 뒤도 아니게 된다
+    ("환경변수 접두", "GH_TOKEN=xxx " + G + " --base main"),
+    ("환경변수 둘 + 체인", "git push && GH_HOST=github.com GH_TOKEN=x " + G),
 ]
 
 PASS = [
