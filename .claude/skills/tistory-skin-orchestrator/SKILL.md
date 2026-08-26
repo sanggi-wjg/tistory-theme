@@ -12,6 +12,12 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 **`TeamCreate`가 있는 환경과 없는 환경이 둘 다 있다.** 있다고 전제하면 Phase 2·3이 통째로 실행 불가가 된다
 (2026-08-25 첫 실행에서 실제로 그랬다). **Phase 2 시작 전에 `ToolSearch`로 `TeamCreate`를 조회해 분기한다.**
 
+**설정을 보고 판단하지 마라.** `.claude/settings.json`에 `teammateMode: "auto"`와
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 **둘 다 켜져 있어도** `TeamCreate`가 없을 수 있다.
+팀은 팀원을 **터미널 페인으로 띄우는** 기능이라 붙일 터미널이 있어야 한다 — 백그라운드
+잡(`CLAUDE_JOB_DIR`이 잡히는 세션)에서는 플래그가 멀쩡해도 도구가 올라오지 않는다
+(2026-08-26 점검에서 확인). **설정이 아니라 도구 목록이 사실이다.**
+
 | Phase | `TeamCreate` 있음 | 없음 |
 |---|---|---|
 | Phase 1 (실측, 필요 시) | 서브 에이전트 | 서브 에이전트 |
@@ -96,26 +102,37 @@ TeamCreate(team_name: "tistory-skin", members: [
 ])
 ```
 
-**작업 등록** — `TaskCreate`로 의존성과 함께 등록한다.
+**작업 등록** — `TaskCreate`는 **한 번에 한 건**만 만든다. 배열도, `assignee`도, `depends_on`도 받지 않는다.
+담당과 의존성은 만든 뒤 `TaskUpdate`로 붙인다. (`TaskCreate` → `{subject, description, activeForm}`,
+반환된 `taskId`에 `TaskUpdate` → `{owner}` / `{addBlockedBy: [id…]}`.)
+
+| # | subject | owner | blockedBy |
+|---|---|---|---|
+| 1 | 훅 계약 확정 | skin-markup | — |
+| 2 | 토큰·리셋 CSS | skin-style | — |
+| 3 | 공통 뼈대(head·헤더·푸터·사이드바) | skin-markup | 1 |
+| 4 | 홈 그리드 마크업 | skin-markup | 1 |
+| 5 | 목록·글 마크업 | skin-markup | 1 |
+| 6 | 레이아웃 CSS | skin-style | 1 |
+| 7 | 본문·인라인오염 CSS | skin-style | — |
+| 8 | 티스토리 고정마크업 CSS | skin-style | — |
+| 9 | 다크모드 토글 JS | skin-behavior | — |
+| 10 | 목차·스크롤스파이 JS | skin-behavior | 5 |
+| 11 | 코드 하이라이팅 JS | skin-behavior | — |
+| 12 | 라이트박스·진행바·표·링크 JS | skin-behavior | — |
+| 13 | 중간 검증 1 (뼈대+토큰) | skin-qa | 3, 2 |
+| 14 | 중간 검증 2 (홈+목록) | skin-qa | 4, 6 |
+| 15 | 최종 검증 | skin-qa | — |
+
+**표의 `#`는 읽기용 번호지 `taskId`가 아니다.** 실제 id는 `TaskCreate`가 돌려주므로 받아서 쓴다.
 
 ```
-TaskCreate(tasks: [
-  { title: "훅 계약 확정",        assignee: "skin-markup" },
-  { title: "토큰·리셋 CSS",       assignee: "skin-style" },
-  { title: "공통 뼈대(head·헤더·푸터·사이드바)", assignee: "skin-markup", depends_on: ["훅 계약 확정"] },
-  { title: "홈 그리드 마크업",     assignee: "skin-markup", depends_on: ["훅 계약 확정"] },
-  { title: "목록·글 마크업",       assignee: "skin-markup", depends_on: ["훅 계약 확정"] },
-  { title: "레이아웃 CSS",        assignee: "skin-style",  depends_on: ["훅 계약 확정"] },
-  { title: "본문·인라인오염 CSS",  assignee: "skin-style" },
-  { title: "티스토리 고정마크업 CSS", assignee: "skin-style" },
-  { title: "다크모드 토글 JS",     assignee: "skin-behavior" },
-  { title: "목차·스크롤스파이 JS", assignee: "skin-behavior", depends_on: ["목록·글 마크업"] },
-  { title: "코드 하이라이팅 JS",   assignee: "skin-behavior" },
-  { title: "라이트박스·진행바·표·링크 JS", assignee: "skin-behavior" },
-  { title: "중간 검증 1 (뼈대+토큰)", assignee: "skin-qa", depends_on: ["공통 뼈대(head·헤더·푸터·사이드바)", "토큰·리셋 CSS"] },
-  { title: "중간 검증 2 (홈+목록)",  assignee: "skin-qa", depends_on: ["홈 그리드 마크업", "레이아웃 CSS"] },
-  { title: "최종 검증",            assignee: "skin-qa" }
-])
+TaskCreate(subject: "훅 계약 확정",
+           description: "docs/hooks.md에 클래스·data 속성 계약을 확정하고 팀에 공표한다",
+           activeForm: "훅 계약 확정 중")     → taskId 반환 (이 값을 보관한다)
+TaskUpdate(taskId: <1번의 id>, owner: "skin-markup")
+…
+TaskUpdate(taskId: <3번의 id>, addBlockedBy: [<1번의 id>])   ← 의존성은 만든 뒤에 건다
 ```
 
 > 팀원당 4~6개가 적정. 작업을 더 잘게 쪼개면 조율 오버헤드가 커진다.
@@ -257,9 +274,9 @@ skin-qa (일괄 검증)
 3. Phase 1 — `data/posts.json`이 최신이라 건너뜀
 4. Phase 2 — 팀 4명 + 작업 15개 등록
 5. Phase 3 — markup이 훅 계약 공표 → 셋이 병렬 작업, qa가 중간 검증 2회
-6. Phase 4 — 빌드 → 프리뷰 8페이지 → 린트 오류 2건 → Phase 3 복귀 → 재검증 통과
+6. Phase 4 — 빌드 → 프리뷰 10페이지 → 린트 오류 2건 → Phase 3 복귀 → 재검증 통과
 7. Phase 5 — 팀 정리, `_workspace/qa-report.md` 보고
-8. 예상 결과: `dist/skin.html` · `dist/style.css` · `dist/images/script.js` 생성, 프리뷰 8페이지 정상
+8. 예상 결과: `dist/skin.html` · `dist/style.css` · `dist/images/script.js` 생성, 프리뷰 10페이지 정상
 
 ### 에러 흐름
 1. Phase 3에서 `skin-behavior`가 응답 없음

@@ -97,7 +97,7 @@ model: opus
 
 - 입력: `src/` 전체 · `DESIGN.md` · `DECISIONS.md` · `data/substitutions.json` · `data/posts.json`
 - 출력: `_workspace/qa-report.md` — 항목별 **통과 / 실패 / 미검증** 3분류. "미검증"을 "통과"로 적지 않는다
-- 도구: `/skin-qa-check` 스킬의 `scripts/lint-substitutions.py`, `scripts/check-tokens.py`
+- 도구: `python3 .claude/skills/skin-qa-check/scripts/lint.py` (또는 `npm run lint`) — 린트는 **이 한 파일**이다. 치환자·영역·카테고리·경계면·토큰·인라인색·티스토리시트·SEO·접근성 규칙이 전부 여기 들어 있다. 규칙 목록은 `/skin-qa-check`에 있다. `INL001`은 빌드 산출물을 보므로 `npm run build` 다음에 돌린다
 
 ## 팀 통신 프로토콜
 
