@@ -259,6 +259,121 @@ def lint_boundaries(skin, css, js):
                 "실제 래퍼는 'tt_article_useless_p_margin contents_style'이라 매칭되지 않는다." % label, path)
 
 
+# ────────── 3b. JS가 만드는 클래스 ↔ 문서 ↔ CSS (docs/hooks.md §5.6) ──────────
+
+HOOKS_MD = os.path.join(ROOT, "docs", "hooks.md")
+
+# 예외 목록의 제목. 이 문자열이 hooks.md에서 사라지면 예외가 통째로 풀려
+# BND006이 시끄럽게 실패한다 — 검사가 조용히 꺼지는 것보다 그쪽이 낫다.
+NO_CSS_HEADING = "**CSS 규칙이 없는 것이 정상인 클래스**"
+
+
+def parse_js_dom_registry():
+    """docs/hooks.md §5.6 표에서 'JS가 새로 만드는 클래스' 목록을 읽는다.
+
+    표가 정본이다. 목록을 이 파일에 복사해 두면 문서와 갈라지고, 갈라진 뒤에는
+    **코드 쪽이 조용히 이긴다** — 문서에 클래스를 더해도 검사는 모른 척한다.
+
+    반환: (클래스 목록, CSS 예외 집합, 구조 오류 메시지 또는 None)
+    """
+    doc = read(HOOKS_MD)
+    if doc is None:
+        return [], set(), "docs/hooks.md가 없다"
+    m = re.search(r"^### 5\.6 [^\n]*\n(.*?)^### ", doc, re.S | re.M)
+    if not m:
+        return [], set(), "docs/hooks.md에서 §5.6 절을 찾지 못했다"
+    sec = m.group(1)
+
+    names = []
+    for line in sec.split("\n"):
+        if not line.startswith("|"):
+            continue
+        cells = line.split("|")
+        if len(cells) < 3:
+            continue
+        for tick in re.findall(r"`([^`]+)`", cells[1].strip()):
+            # `body.is-lightbox-open` → .is-lightbox-open,
+            # `.code-wrap.has-lines` → .code-wrap + .has-lines,
+            # `.hljs-*` → 접두 항목(뒤에서 따로 다룬다)
+            for cls in re.findall(r"\.[A-Za-z][\w-]*\*?", tick):
+                if cls not in names:
+                    names.append(cls)
+    if not names:
+        return [], set(), "§5.6 표에서 클래스를 하나도 읽지 못했다 (표 모양이 바뀌었나)"
+
+    # 예외는 **이유와 함께** 등재해야 인정한다. 이름만 적힌 줄은 예외가 아니다 —
+    # 이유 없는 예외는 "안 한 일"과 "정상"을 구분할 수 없게 만든다.
+    exempt, started = set(), False
+    if NO_CSS_HEADING in sec:
+        for line in sec.split(NO_CSS_HEADING, 1)[1].split("\n"):
+            s = line.strip()
+            if s.startswith("- "):
+                started = True
+                mm = re.match(r"- `(\.[A-Za-z][\w-]*)`\s*—\s*\S", s)
+                if mm:
+                    exempt.add(mm.group(1))
+            elif s and started:
+                break
+    return names, exempt, None
+
+
+def lint_js_dom_classes(src_css, js):
+    """§5.6이 등재한 'JS가 만드는 클래스'가 CSS와 JS 양쪽에 살아 있는가.
+
+    BND004는 **반대 방향만** 본다 — JS가 *찾는* 클래스가 skin.html에 있는가.
+    JS가 *만드는* 클래스는 마크업에 자리가 없어 그 검사에 애초에 안 걸리고,
+    JS에서 이름을 바꾸거나 새로 만들면서 CSS를 안 고쳐도 아무 에러도 안 난다.
+    스타일 없는 날것 DOM이 뜨고 끝이다 (TODO `js-class-css-drift`).
+
+    두 축을 같이 본다. CSS 축만 보면 **문서가 JS에서 떨어져 나간 순간 검사가
+    죽은 이름을 보고 통과한다** — 위조된 통과 신호(CLAUDE.md)의 네 번째 판이다.
+
+    CSS는 **src만** 본다. dist는 src의 사본이라, src에서 규칙을 지워도 낡은
+    dist에 남아 있으면 통과해 버린다 (TIS00x가 src만 보는 것과 같은 이유).
+    """
+    if not src_css:
+        return
+    names, exempt, structural = parse_js_dom_registry()
+    if structural:
+        err("BND006", "%s. §5.6 표가 이 검사의 정본이라 표를 못 읽으면 검사가 통째로 "
+            "꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
+        return
+
+    # 선택자만 남긴다. `content: "…"` 같은 선언 값에 이름이 스쳐도
+    # "규칙이 있다"로 세면 안 된다. @media 중첩은 `{` 앞 조각만 모으면 알아서 풀린다.
+    selectors = " ".join(re.findall(r"([^{}]*)\{", strip_comments(src_css)))
+
+    no_css, no_js = [], []
+    for cls in names:
+        if cls.endswith("*"):
+            # 접두 항목(`.hljs-*`)은 **라이브러리가 뱉는 묶음**이다. CSS는 그 묶음 중
+            # 하나라도 있으면 되고, 우리 src/js는 이 이름들을 문자열로 적지 않으므로
+            # JS 축에서는 뺀다.
+            if not re.search(re.escape(cls[:-1]) + r"[\w-]+", selectors):
+                no_css.append(cls)
+            continue
+        bare = re.escape(cls[1:])
+        if cls not in exempt and not re.search(r"\." + bare + r"(?![\w-])", selectors):
+            no_css.append(cls)
+        if js and not re.search(r"(?<![\w-])" + bare + r"(?![\w-])", js):
+            no_js.append(cls)
+
+    if no_css:
+        err("BND006", "hooks.md §5.6이 등재한 클래스 %d종에 CSS 규칙이 없다: %s. "
+            "JS가 만들어 붙여도 스타일 없는 날것 DOM이 뜨고 에러는 안 난다. "
+            "규칙이 없는 것이 정상이면 §5.6 「CSS 규칙이 없는 것이 정상인 클래스」 목록에 "
+            "이유와 함께 등재한다 — 이름만 적은 줄은 예외로 치지 않는다."
+            % (len(no_css), ", ".join(no_css)), "src/styles/")
+    if no_js:
+        warn("BND007", "hooks.md §5.6이 등재한 클래스 %d종이 src/js 어디에도 없다: %s. "
+             "JS에서 이름을 바꿨다면 문서와 CSS가 죽은 이름을 붙들고 있는 것이고, "
+             "그러면 BND006은 그 죽은 규칙을 보고 통과한다." % (len(no_js), ", ".join(no_js)),
+             "src/js/")
+    if not no_css and not no_js:
+        info("§5.6 JS 생성 클래스: %d종 전부 CSS 규칙과 JS 사용처가 있다 (CSS 예외 %d종)"
+             % (len(names), len(exempt)))
+
+
 # ───────────────────────── 4. 디자인 토큰 준수 ─────────────────────────
 
 HEX_RE = re.compile(r"#(?:[0-9a-fA-F]{3,8})\b")
@@ -694,6 +809,7 @@ def main():
     lint_substitutions(skin, xml, wl)
     lint_area_scope(skin)
     lint_boundaries(skin, css, js)
+    lint_js_dom_classes(src_css, js)
     lint_tokens(css)
     lint_inline_coverage(css)
     # 이 둘은 **src만** 본다. dist는 src의 사본이라, src를 망가뜨려도 낡은 dist에

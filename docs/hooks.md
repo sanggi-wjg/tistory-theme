@@ -393,6 +393,13 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `li.is-collapsed` / `li.is-expanded` | 접힘/펼침. **둘은 항상 배타적이고, `aria-expanded`와 같은 함수에서 함께 갱신된다** | `li.has-toggle`과 같은 `li` |
 | `.cat-tree` | 토글이 하나라도 생긴 목록(`ul`). 토글 없는 형제 항목의 글 수 정렬용 | 상위 카테고리들이 늘어선 `ul` |
 
+**CSS 규칙이 없는 것이 정상인 클래스** — 린트 `BND006`은 이 목록만 건너뛴다.
+이름 뒤에 `—`와 이유를 쓴다. **이름만 적은 줄은 예외로 치지 않는다** — 이유가 없으면
+"정상"과 "아직 안 한 일"을 구분할 수 없고, 구분 못 하는 예외는 상시 경고와 같다.
+
+- `.external-link` — 표시는 `.external-icon`이 맡는다. 이쪽은 JS가 같은 링크를 두 번
+  손대지 않으려고 붙이는 **표식**이라 스타일이 붙을 자리가 없다.
+
 **카테고리 접기 — CSS가 지켜야 할 세 가지** (`src/styles/tistory.css`, `src/js/category.js`)
 
 1. **기능 규칙은 `.side-category`로 스코프한다. `.tt_category`가 아니다.**
