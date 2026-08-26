@@ -25,11 +25,15 @@ python3 .claude/skills/skin-qa-check/scripts/lint.py --json   # 자동화용
 ### 린트 자신을 검사하는 것 — `npm run test:lint`
 
 ```bash
-python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py
+python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py   # BND006·BND007
+python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py      # BND008
 ```
 
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다
-(12개 케이스). 규칙을 썼다는 것과 그 규칙이 조건을 재현한다는 것은 다르다 —
+(12개 케이스). `BND008`은 같은 방식에 **오탐 케이스를 더한다**(9개 중 3개) — 첫 판이
+`.entry-tags a::before`를 잡았는데 거기 장식은 자손에 붙어 있어 대상이 아니었다.
+"떠야 한다"만 있는 테스트는 오탐을 못 잡는다.
+규칙을 썼다는 것과 그 규칙이 조건을 재현한다는 것은 다르다 —
 이 저장소는 그 차이로 세 번 데었다(CLAUDE.md). §5.6 표나 예외 목록의 모양을
 바꾸면 이 테스트부터 깨진다. **깨진 채로 두지 않는다.** 파서가 조용히
 빈 목록을 읽으면 린트는 초록불인데 아무것도 안 보는 상태가 된다.
@@ -41,6 +45,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py
 | `CAT001` | **폴더형 `[##_category_##]`을 썼는가 (오류).** 리스트형 `[##_category_list_##]`과 이름만 비슷하고 출력이 완전히 다르다 — 폴더형은 중첩 `table`과 트리선 GIF를 내보내고, 링크가 `onclick`이라 **내부링크가 0개**가 되며, `div`마다 박히는 인라인 색이 다크모드를 이긴다. `category.js`도 `ul`을 못 찾고 물러난다. **2026-08-25 첫 배포에서 실제로 폴더형이 나갔다** (DECISIONS.md 결정 31) |
 | `BND001~005` | `data-cat` 경계면, 카테고리 커버리지, JS 셀렉터 ↔ 마크업, **`[class="contents_style"]` 정확일치** |
 | `BND006~007` | **JS가 만드는 클래스**(`docs/hooks.md §5.6`이 정본)가 CSS에 규칙을 갖는가(`006`, 오류), 그 이름이 `src/js`에 살아 있는가(`007`, 경고). `BND004`는 JS가 *찾는* 클래스만 봐서 이쪽은 뚫려 있었다 — JS에서 이름을 바꾸고 CSS를 안 고치면 무스타일 날것 DOM이 뜨고 에러는 안 난다. `007`이 없으면 `006`은 **죽은 규칙을 보고 통과한다**. CSS 규칙이 없는 것이 정상인 클래스는 §5.6 「CSS 규칙이 없는 것이 정상인 클래스」에 이유와 함께 등재한다 |
+| `BND008` | **치환자 하나만 담은 요소**에 `::before`/`::after` 장식이 있는데 `:empty`(또는 `:has()`) 가드가 없는가 (오류). 치환자는 값이 없으면 에러가 아니라 **빈 문자열**을 낸다 — 값만 사라지고 라벨·구분자는 남는다. 결정 35(태그 `,`)와 결정 42(`댓글`·`·`)가 같은 실패였고, 셋째(`list-count`의 `글 `)는 이 린트가 찾았다. **가드가 죽은 경우도 본다** — `skin.html`에서 치환자를 제 줄로 내리면 공백 텍스트 노드가 남아 `:empty`가 영영 거짓이 된다(`layout.css:9`의 함정). 장식이 **자손**에 붙은 자리(`.entry-tags a::before`)는 대상이 아니다 |
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |
 | `TIS001~002` | 티스토리 시트가 박은 라이트 전용 색에 덮어쓰기가 있는가(`001`), 상대가 `#tt-body-page` ID 스코프일 때 **ID 짝**이 있는가(`002`). 목록은 `data/tistory-hardcoded-colors.json` |

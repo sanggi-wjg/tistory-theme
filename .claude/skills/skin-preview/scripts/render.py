@@ -376,6 +376,32 @@ def globals_for(page, posts, cats, skin_vars):
     return g
 
 
+def rp_cnt(p, prefix):
+    """댓글 수 치환자 — **영역마다 다른 것을 낸다.** 숫자를 넣어 두면 안 된다.
+
+    2026-08-26 라이브 실측(결정 42):
+
+        [##_article_rep_rp_cnt_##]   글 페이지    숫자가 나온다 ("댓글 0")
+        [##_list_rep_rp_cnt_##]      목록         **빈 문자열** (홈 카드 13/13)
+        [##_rctps_rep_rp_cnt_##]     최근·인기 글 **빈 자식 span** (5/5)
+
+    전에는 셋 다 `(_i * 7) % 13`으로 숫자를 채웠다. 그래서 프리뷰는 라벨이
+    값 없이 남는 조건을 **한 번도 그리지 않았고**, 결함은 라이브에서만 보였다.
+    여기서 라이브를 그대로 재현한다.
+
+    다만 전부 비우면 반대 방향(값이 있을 때 라벨이 정상적으로 나오는가)을
+    못 본다. 그래서 네 개 중 하나는 값을 채워 **두 상태가 한 화면에** 있게 한다.
+    """
+    filled = p["_i"] % 4 == 0
+    n = str((p["_i"] * 7) % 13)
+    if prefix == "list_rep":
+        return n if filled else ""
+    if prefix == "rctps_rep":
+        # 티스토리는 이 자리를 빈 문자열이 아니라 빈 span으로 바꾼다 — :empty가 거짓이 된다
+        return '<span id="commentCountOnRecentEntries%d">%s</span>' % (p["_i"], n if filled else "")
+    return n
+
+
 def item_scope(p, prefix, page=""):
     d = p["date"] or "2026.01.01"
     parts = (d.split(".") + ["01", "01"])[:3]
@@ -391,7 +417,7 @@ def item_scope(p, prefix, page=""):
         prefix + "_date_hour": "14", prefix + "_date_minute": "22", prefix + "_date_second": "05",
         prefix + "_summary": p["_summary"],
         prefix + "_desc": ARTICLE_BODY_TOC if page == "page_toc" else ARTICLE_BODY,
-        prefix + "_rp_cnt": str((p["_i"] * 7) % 13),
+        prefix + "_rp_cnt": rp_cnt(p, prefix),
         prefix + "_author": "상쾌한기분",
         prefix + "_thumbnail": "https://placehold.co/400x250/eeeeee/999999?text=thumb",
         prefix + "_thumbnail_url": "https://placehold.co/400x250/eeeeee/999999?text=thumb",
