@@ -306,15 +306,26 @@ def parse_js_dom_registry():
     exempt, started = set(), False
     if NO_CSS_HEADING in sec:
         for line in sec.split(NO_CSS_HEADING, 1)[1].split("\n"):
-            s = line.strip()
-            if s.startswith("- "):
+            if line.startswith("- "):
                 started = True
-                mm = re.match(r"- `(\.[A-Za-z][\w-]*)`\s*—\s*\S", s)
+                mm = re.match(r"- `(\.[A-Za-z][\w-]*)`\s*—\s*\S", line)
                 if mm:
                     exempt.add(mm.group(1))
-            elif s and started:
-                break
+            elif line[:1].isspace():
+                continue        # 줄바꿈으로 이어진 항목. 여기서 끊으면 다음 예외를 잃는다
+            elif line.strip() and started:
+                break           # 들여쓰기 없는 산문 — 목록이 끝났다
     return names, exempt, None
+
+
+def strip_js_comments(js):
+    """블록 주석과 **줄 전체가 주석인 줄**을 지운다.
+
+    줄 끝 주석(`… // 메모`)은 건드리지 않는다 — 문자열 안의 `https://`를
+    잘라 내면 같은 줄의 클래스 이름까지 사라져 BND007이 오탐한다.
+    상시 경고는 린트를 통째로 무시하게 만든다(`TOK002` 전례)."""
+    js = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
+    return "\n".join("" if re.match(r"\s*//", l) else l for l in js.split("\n"))
 
 
 def lint_js_dom_classes(src_css, js):
@@ -342,6 +353,8 @@ def lint_js_dom_classes(src_css, js):
     # 선택자만 남긴다. `content: "…"` 같은 선언 값에 이름이 스쳐도
     # "규칙이 있다"로 세면 안 된다. @media 중첩은 `{` 앞 조각만 모으면 알아서 풀린다.
     selectors = " ".join(re.findall(r"([^{}]*)\{", strip_comments(src_css)))
+    # JS도 같다 — 주석에 옛 이름이 남아 있는 것은 그 이름이 살아 있다는 뜻이 아니다.
+    js_code = strip_js_comments(js) if js else ""
 
     no_css, no_js = [], []
     for cls in names:
@@ -355,7 +368,7 @@ def lint_js_dom_classes(src_css, js):
         bare = re.escape(cls[1:])
         if cls not in exempt and not re.search(r"\." + bare + r"(?![\w-])", selectors):
             no_css.append(cls)
-        if js and not re.search(r"(?<![\w-])" + bare + r"(?![\w-])", js):
+        if js_code and not re.search(r"(?<![\w-])" + bare + r"(?![\w-])", js_code):
             no_js.append(cls)
 
     if no_css:

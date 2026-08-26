@@ -116,6 +116,23 @@ def m_exception_no_reason(root):
         r"- `\.external-link` —[^\n]*\n(?:  [^\n]*\n)*", "- `.external-link`\n", s, count=1))
 
 
+def m_second_exception(root):
+    """예외를 하나 더 등재한다. **첫 예외 줄이 줄바꿈으로 이어져 있다** —
+    이어지는 줄에서 목록이 끝났다고 판단하면 두 번째 예외가 조용히 무시된다."""
+    m_css_gone(root)
+    edit(root, DOC, lambda s: s.replace(
+        "  손대지 않으려고 붙이는 **표식**이라 스타일이 붙을 자리가 없다.\n",
+        "  손대지 않으려고 붙이는 **표식**이라 스타일이 붙을 자리가 없다.\n"
+        "- `.code-copy` — 시험용. 두 번째 예외가 읽히는지 보는 자리다.\n", 1))
+
+
+def m_js_comment_only(root):
+    """JS에서 이름을 바꾸고 **주석에 옛 이름을 남긴다.** 주석은 사용처가 아니다."""
+    m_js_renamed(root)
+    with open(os.path.join(root, JS_DIR, "heading-anchor.js"), "a", encoding="utf-8") as f:
+        f.write("\n// heading-anchor 는 예전 이름이다. 지금은 heading-anchor-v2.\n")
+
+
 def m_exception_heading_gone(root):
     """예외 목록 제목을 지운다. 예외가 풀려 **시끄럽게** 실패해야 한다."""
     edit(root, DOC, lambda s: s.replace("**CSS 규칙이 없는 것이 정상인 클래스**",
@@ -133,6 +150,8 @@ CASES = [
     ("§5.6 절이 사라짐",                   m_section_renamed,       "§5.6 절을",      False),
     ("예외에 이유가 없음",                 m_exception_no_reason,   ".external-link", False),
     ("예외 목록 제목이 사라짐",            m_exception_heading_gone, ".external-link", False),
+    ("예외 둘, 첫째가 줄바꿈",             m_second_exception,      False,            False),
+    ("JS 주석에만 옛 이름이 남음",         m_js_comment_only,       False,            ".heading-anchor"),
 ]
 
 
