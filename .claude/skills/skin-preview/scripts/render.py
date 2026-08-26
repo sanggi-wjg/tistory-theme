@@ -95,10 +95,12 @@ TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/
 
 # 네트워크가 없으면 위 두 시트가 조용히 빠지고 프리뷰는 다시 거짓말을 한다.
 # 눈에 띄는 띠를 띄워 "지금 보고 있는 것은 반쪽"이라고 알린다.
+# ⚠ `%` 포맷을 쓰지 않는다. 이 문자열은 CSS를 담고 있어 `width:100%` 같은 값이
+#    언제든 들어올 수 있고, 그러면 "%" 포맷이 ValueError로 터진다. 자리표시자로 바꾼다.
 TISTORY_CSS_GUARD = """
 <script>
 (function () {
-  var need = %d, ok = 0;
+  var need = __NEED__, ok = 0;
   function warn() {
     if (ok >= need) return;
     var b = document.createElement('div');
@@ -153,6 +155,7 @@ EDITOR_COMPONENTS = """
 <figure data-ke-type="opengraph"><a href="https://example.com"><div class="og-image" style="background-image:url(https://placehold.co/240x160/eeeeee/999999?text=og)"></div><div class="og-text"><p class="og-title">오픈그래프 링크 카드 제목 — 실측 62곳 / 39편</p><p class="og-desc">이 카드의 제목과 링크가 #000이라 다크에서 1.00:1이 된다.</p><p class="og-host">example.com</p></div></a></figure>
 <blockquote data-ke-style="style1">스타일1 인용 — ID 스코프라 클래스만으로는 못 이긴다.<cite>출처: 실측 7곳</cite></blockquote>
 <blockquote data-ke-style="box">박스 인용 — 배경 #fcfcfc가 박혀 다크에서 흰 카드가 된다.</blockquote>
+<blockquote data-ke-style="style2"><p>인용 안의 문단이다. 티스토리 `blockquote p { color:#666 }`가 <strong>직접 지정</strong>이라 상속을 이긴다 — blockquote만 칠하면 이 줄은 안 바뀐다. 실측 57곳 / 25편으로 인용 중 가장 흔한 형태다.</p></blockquote>
 <figure class="fileblock"><a href="#"><span class="filename">첨부파일.zip</span><span class="size">1.2MB</span></a></figure>
 <table data-ke-style="style12"><tbody><tr><td>머리 행</td><td>값</td></tr><tr><td>첫 열</td><td>홀수 행</td></tr><tr><td>첫 열</td><td>짝수 행</td></tr></tbody></table>
 <style>
@@ -648,7 +651,7 @@ def main():
         # 티스토리 시트를 **실제 순서대로** 끼운다 — content.css는 우리 앞, hljs는 우리 뒤.
         # 감시 스크립트가 링크보다 먼저 와야 onload 콜백이 정의되어 있다.
         stack = "\n".join((
-            TISTORY_CSS_GUARD % 2,
+            TISTORY_CSS_GUARD.replace("__NEED__", "2"),
             '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_CONTENT_CSS,
             '<link rel="stylesheet" href="../../dist/style.css">',
             '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_HLJS_CSS,

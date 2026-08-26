@@ -335,8 +335,12 @@ def lint_tistory_hardcoded(css):
             continue
         # 상대가 ID로 시작하면 우리도 ID를 붙인 짝이 있어야 한다.
         # 없으면 규칙은 존재하는데 글 페이지에서만 지는, 가장 찾기 어려운 상태가 된다.
-        if r.get("idScoped") and ("#tt-body-page" not in body.split(marker)[0][-200:]
-                                  and "#tt-body-page .contents_style " + marker not in body):
+        #
+        # 짝을 **문자 그대로** 찾는다. "마커 앞 200자에 #tt-body-page가 있나" 같은
+        # 근접 검사를 쓰면, 옆 규칙의 ID가 우연히 걸려 짝이 없는데도 통과한다.
+        # 형식을 하나로 못박는 대가로 검사가 확실해진다 — tistory.css의 규칙 2번
+        # ("선택자를 그대로 베끼고 앞에만 붙인다")이 곧 이 형식이다.
+        if r.get("idScoped") and "#tt-body-page .contents_style " + marker not in body:
             unscoped.append(r["component"])
     if missing:
         err("TIS001", "티스토리가 라이트 전용 색을 박아 둔 컴포넌트 %d종에 덮어쓰기가 없다: %s. "
@@ -524,15 +528,16 @@ def main():
     # 인라인 스타일 보정 규칙은 빌드가 data/inline-styles.json에서 생성해
     # dist에만 존재하므로, src만 보면 INL001이 오탐한다.
     css_dir = os.path.join(SRC, "styles")
-    css = ""
+    src_css = ""
     if os.path.isdir(css_dir):
         for f in sorted(os.listdir(css_dir)):
             if f.endswith(".css"):
-                css += "\n" + read(os.path.join(css_dir, f))
+                src_css += "\n" + read(os.path.join(css_dir, f))
+    css = src_css
     built = read(os.path.join(ROOT, "dist", "style.css"))
     if built:
         css += "\n" + built
-    elif css:
+    elif src_css:
         info("dist/style.css가 없어 생성된 인라인 보정 규칙을 검사하지 못했다. "
              "npm run build 후 다시 실행하라.")
 
@@ -551,8 +556,11 @@ def main():
     lint_boundaries(skin, css, js)
     lint_tokens(css)
     lint_inline_coverage(css)
-    lint_tistory_hardcoded(css)
-    lint_hljs_scope(css)
+    # 이 둘은 **src만** 본다. dist는 src의 사본이라, src를 망가뜨려도 낡은 dist에
+    # 옛 규칙이 남아 있으면 검사가 통과해 버린다(실제로 개발 중에 겪었다).
+    # INL001과 달리 이 둘은 빌드가 생성하는 규칙을 보지 않으므로 src면 충분하다.
+    lint_tistory_hardcoded(src_css)
+    lint_hljs_scope(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
 
