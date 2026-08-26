@@ -29,9 +29,9 @@
       "Bash(tail:*)",
       "Bash(wc:*)",
       "Bash(diff:*)",
-      "Bash(npm install *)",
-      "Bash(npm run *)",
-      "Bash(python3 *)"
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(python3:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
