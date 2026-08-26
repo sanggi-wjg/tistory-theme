@@ -57,3 +57,37 @@ export function uniqueId(base) {
   while (document.getElementById(id)) id = base + '-' + n++
   return id
 }
+
+/**
+ * 글 본문 루트. 부분일치다 — 실제 래퍼는 tt_article_useless_p_margin contents_style.
+ *
+ * 목차와 소제목 앵커가 **같은 곳**을 봐야 한다. 한쪽만 .entry-body로 물러나면
+ * 두 기능이 다른 소제목 목록을 세게 되는데, 그건 화면에 아무 신호도 내지 않는다.
+ */
+export function entryRoot() {
+  return document.querySelector('.entry-body .contents_style') || document.querySelector('.entry-body')
+}
+
+/**
+ * 본문 소제목을 순서대로 돌려주고, id가 없으면 만들어 붙인다.
+ *
+ * 목차(toc.js)와 소제목 앵커(heading-anchor.js)가 **같은 목록·같은 번호**를 봐야 한다.
+ * 둘이 따로 세면 목차 링크와 앵커 주소가 어긋나는데 — 예를 들어 한쪽만 빈 소제목을
+ * 세면 그 뒤가 전부 한 칸씩 밀린다 — 클릭해 보기 전에는 드러나지 않는다.
+ *
+ * 번호를 쓰는 이유는 한글 슬러그의 URL 인코딩 문제다 (hooks.md §5.1).
+ * 이미 id가 있으면 건드리지 않으므로 두 번 불러도 결과가 같다.
+ */
+export function headingsWithIds(root) {
+  const headings = Array.prototype.slice
+    .call(root.querySelectorAll('h2, h3'))
+    .filter(function (h) {
+      return h.textContent.trim().length > 0
+    })
+
+  headings.forEach(function (h, i) {
+    if (!h.id) h.id = uniqueId('toc-h-' + (i + 1))
+  })
+
+  return headings
+}

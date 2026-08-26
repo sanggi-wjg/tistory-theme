@@ -386,6 +386,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |
 | `.external-link` | 외부링크임을 표시하는 **상태 클래스**. JS가 `<a>`에 붙이고 `target="_blank" rel="noopener noreferrer"`를 함께 건다. **표시는 `.external-icon`이 담당하므로 이 클래스에 CSS 규칙이 없는 것이 정상이다** (중복 처리를 막는 표식 겸용) | `.contents_style a` |
 | `.external-icon` | 외부링크 아이콘 SVG. 실제 스타일은 여기에 | `.external-link` 끝 |
+| `.heading-anchor` | 소제목 퍼머링크. **글자 없는 `<a>`** — 보이는 `#`은 CSS `::before`가 그린다(소제목 `textContent`가 목차 라벨이자 색인 제목이라 오염시키면 안 된다). `aria-label`에 소제목 이름 + `" 링크"`. 계약은 §5.8 | 본문 `h2`·`h3` 안쪽 끝 |
 | `.cat-toggle` | 카테고리 하위목록 접기/펼치기 **버튼**. `<button type="button">`, `aria-expanded` + `aria-controls`, 안에 `.a11y-hidden` 이름("Python 하위 카테고리") + `.cat-toggle-icon` | 하위목록을 가진 `li` 안, 링크 뒤·하위 `ul` 앞 |
 | `.cat-toggle-icon` | 셰브런 SVG (`.icon`도 함께 붙는다). 펼침 상태에서 90° 회전 | `.cat-toggle` 안 |
 | `li.has-toggle` | 토글이 실제로 붙은 `li`. 링크·버튼·하위목록을 한 줄에 세우는 flex 훅 | 사이드바 카테고리 `li` |
@@ -426,6 +427,30 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 순서 | **다른 본문 모듈보다 먼저 돈다.** code·tables·lightbox·inline-fix가 `contentRoots()`(= `.contents_style`)로 대상을 찾기 때문이다 |
 | 왜 필요한가 | `[##_notice_rep_desc_##]`가 `.contents_style` 래퍼를 달고 오는지 **확인할 방법이 없다.** 안 달고 오면 `content.css`(전부 그 스코프)와 빌드가 만든 인라인색 보정이 통째로 비껴간다 — 에러 없이 무스타일 본문 + 다크에서 묻힌 옛 글 색 |
 | 확인 방법 | 프리뷰 `index.html` · `page.html` · `page_toc.html`에 공지 2건이 렌더된다. 렌더러는 일부러 **래퍼 없이** 낸다(최악의 경우) |
+
+### 5.8 소제목 앵커 — `.heading-anchor`
+
+```html
+<h2 id="toc-h-1">커넥션 유효성 검사<a class="heading-anchor" href="#toc-h-1" aria-label="… 링크"></a></h2>
+```
+
+| 계약 | 내용 |
+|---|---|
+| JS가 만드는 것 | 본문 `h2`/`h3` **끝에** 빈 `<a class="heading-anchor">`. `href`는 그 소제목의 `#id` |
+| 렌더 조건 | **없다.** 소제목이 하나라도 있으면 붙는다 — 목차의 3개 조건과 무관하다 |
+| id | `util.headingsWithIds()`가 만든다. **목차와 같은 함수다** (`toc-h-1`, `toc-h-2`…) |
+| `#` 글자 | **CSS `::before`가 그린다.** 텍스트 노드로 넣지 않는다 |
+| 이름 | `aria-label`에 소제목 텍스트 + `" 링크"`. 링크 목록으로 훑으면 `#`은 전부 같은 이름이 된다 |
+| CSS 기본값 | `opacity: 0` → 소제목 `:hover` · 앵커 `:focus-visible` · `@media (hover: none)`에서 1 |
+| 특이도 | `.contents_style .heading-anchor`(0,2,0)가 `.contents_style a`(0,1,1)를 이겨야 밑줄·`--link`가 벗겨진다 |
+
+**왜 `#`을 텍스트 노드로 넣지 않는가.** 소제목의 `textContent`는 두 곳에서 다시 쓰인다 —
+목차 링크의 라벨(`toc.js`)과 검색결과에 실리는 제목이다. 텍스트로 넣으면 목차에 `개요#`이
+뜨고 색인에도 그대로 들어간다. `::before`로 그리면 복사·선택에도 딸려오지 않는다.
+
+**왜 목차와 id 만드는 자리를 합쳤는가.** 둘이 따로 세면 — 한쪽만 빈 소제목을 거르면 —
+그 뒤 번호가 전부 한 칸씩 밀린다. 목차는 그대로 뜨고 앵커도 그대로 보이므로
+**눌러 보기 전에는 아무 신호가 없다.** `util.headingsWithIds()` 하나만 부른다.
 
 ## 6. 사이드바 — `aside.sidebar`
 
@@ -487,6 +512,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.code-wrap.has-lines` | 코드 래퍼 | code.js |
 | `body.is-lightbox-open` | `<body>` | lightbox.js |
 | `.external-link` | 본문 외부링크 `<a>` | links.js |
+| `.heading-anchor` | 본문 `h2`/`h3` **안쪽 끝** | heading-anchor.js (**상태가 아니라 새 요소다.** 조건 없이 항상 붙는다) |
 | `li.has-toggle` · `li.is-collapsed` / `li.is-expanded` | 사이드바 카테고리 `li` | category.js |
 | `.cat-tree` | 상위 카테고리가 늘어선 `ul` | category.js |
 

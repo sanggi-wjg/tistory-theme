@@ -95,9 +95,21 @@
    폴더형은 index.xml의 activeColor·activeBgColor로 이걸 칠했다. 리스트형에는
    그 설정이 닿지 않으므로 우리가 칠한다 — 대신 색이 토큰에서만 나온다.
 
-   왼쪽 2px 막대로 표시한다. 배경을 칠하지 않는 이유는 레일 폭이 240px이라
-   블록이 차지하는 면적이 크고, 사다리(§4)의 촘촘한 세로선을 끊기 때문이다.
-   li에 붙는 클래스라 자식 ul(하위 목록)까지 물들지 않도록 > a로 한정한다. */
+   **알약 배경으로 표시한다** (TODO T3-b · 결정 37). 이전에는 왼쪽 2px 막대였고,
+   "레일이 240px이라 배경 블록의 면적이 크고 사다리(§4)의 촘촘한 세로선을 끊는다"가
+   그 근거였다. 재보니 둘 다 성립하지 않는다 —
+     · 알약은 li가 아니라 a에만 걸리므로 세로 막대와 세로 폭이 같다(6px+6px).
+     · 하위 목록의 세로선은 ul의 padding-left(--sp-3 = 12px) 자리에 있는데
+       알약이 왼쪽으로 나가는 거리는 --sp-2(8px)다. 5px이 남아 선을 끊지 않는다
+       (프리뷰 실측: 세로선 x=539.5, 알약 왼쪽 x=544.5).
+
+   좌우 여백을 같은 크기의 음수 마진으로 상쇄해 **글자가 한 픽셀도 움직이지 않게**
+   한다. 알약은 레일 밖으로 8px씩 흘러나가는데, .layout의 --pad-x가 20~24px이라
+   어느 폭에서도 잘리지 않는다.
+
+   li에 붙는 클래스라 자식 ul(하위 목록)까지 물들지 않도록 > a로 한정한다.
+   "분류 전체보기"(.link_tit)는 아래 두 목록 어디에도 없어 알약이 붙지 않는다 —
+   그 줄은 border-bottom 구분선을 갖고 있어 알약과 겹친다. 색·굵기만 바뀐다. */
 .tt_category li.selected > a {
   color: var(--link);
   font-weight: 600;
@@ -107,9 +119,10 @@
 
 .tt_category .category_list > li.selected > a,
 .tt_category .sub_category_list > li.selected > a {
-  margin-left: calc(var(--sp-2) * -1);
-  padding-left: calc(var(--sp-2) - 2px);
-  border-left: 2px solid var(--link);
+  margin: 0 calc(var(--sp-2) * -1);
+  padding: 6px var(--sp-2);
+  background: var(--canvas-soft-2);
+  border-radius: var(--radius-md);
 }
 
 /* ══════════ 접기/펼치기 ═══════════════════════════════════════

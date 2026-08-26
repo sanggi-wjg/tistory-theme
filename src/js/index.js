@@ -10,6 +10,7 @@ import initTables from './tables.js'
 import initLinks from './links.js'
 import initLightbox from './lightbox.js'
 import initToc from './toc.js'
+import initHeadingAnchor from './heading-anchor.js'
 import initCategory from './category.js'
 import initProgress from './progress.js'
 import initInlineFix from './inline-fix.js'
@@ -33,6 +34,9 @@ function boot() {
   safe('links', initLinks)
   safe('lightbox', initLightbox)
   safe('toc', initToc)
+  // 목차 뒤에 둔다. 둘은 서로를 필요로 하지 않지만(소제목 3개 미만이면 목차만 없다),
+  // 목차가 실패해도 앵커는 남아야 하므로 순서가 아니라 safe()가 그것을 보장한다.
+  safe('heading-anchor', initHeadingAnchor)
   // 사이드바 높이를 바꾸므로 문서 높이를 재는 진행바보다 먼저 돈다
   safe('category', initCategory)
   // 진행바는 본문 DOM이 다 만들어진 뒤에 높이를 재야 한다
