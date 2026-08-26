@@ -81,5 +81,6 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
 | 2026-08-26 | PR 리뷰 게이트 추가 — 스킬 + PreToolUse 훅 | `skills/pr-review-gate`, `hooks/pr-review-gate.py`, `agents/skin-qa.md`, 오케스트레이터 Phase 5 | PR 전 리뷰가 사이클에 없었다. 린트는 규칙의 존재만 봐서 "검사가 이 변경을 볼 수 있는가"를 묻는 자리가 없었다 |
+| 2026-08-26 | 린트 `BND006`·`BND007` 추가, `npm run check`에 `test:lint` 단계 추가 | `skills/skin-qa-check/scripts/lint.py`, `…/test-js-dom-classes.py`, `docs/hooks.md §5.6`, `package.json` | JS가 **만드는** 클래스를 보는 검사가 없었다(`BND004`는 찾는 쪽만 본다). 새 린트가 실제로 켜지는지는 린트 자신이 증명할 수 없어 테스트를 같이 넣었다 (결정 40) |
 
 변경 이력은 `git log`, 결정의 근거는 `DECISIONS.md`에 있다.
