@@ -206,7 +206,35 @@
       `.filename`으로 줄이면 (1,2,1) → (1,2,0)이 되어 진다. 장황함이 곧 계약이다.
 
    ⚠ 아래 짝(우리 선택자 ↔ 상대 선택자)이 어긋나면 조용히 실패한다.
-      린트 TIS001이 티스토리 content.css의 색 규칙과 여기를 대조한다. */
+      린트 TIS001이 티스토리 content.css의 색 규칙과 여기를 대조한다.
+      색이 아닌 속성은 TIS004가 본다 — 바로 아래 소제목이 그 첫 항목이다. */
+
+/* ── 소제목 굵기 : 색이 아닌 첫 패배 ─────────────────────────────
+   content.css가 굵기까지 건드리는 줄이 하나 있다.
+
+     #tt-body-page h2[data-ke-size],
+     #tt-body-page h3[data-ke-size],
+     #tt-body-page h4[data-ke-size] { font-weight: normal }   (1,1,1)
+     .contents_style h2                                       (0,1,1)  진다
+
+   **속성 선택자가 특이도의 클래스 칸에 들어간다** — 이 규칙이 다른 것들과
+   다른 점은 그것뿐이고, 지는 방식은 결정 32·35와 똑같다.
+
+   증상이 "다크에서 안 보인다"가 아니라 **글마다 굵기가 다르다**여서 늦게 찾았다.
+   상대가 `[data-ke-size]` 있는 소제목만 잡기 때문이다. 표본 14편 50개 소제목 중
+   30개(60%)가 이 속성을 갖고 있었고 — 속성은 글 단위로 붙는다(에디터 버전) —
+   그 60%만 400, 나머지 40%는 600으로 나오고 있었다 (2026-08-26 라이브 실측:
+   /entry/JVM-Garbage-Collection 12개 전부 400, /entry/Redis-Command 15개 전부 600).
+   **한쪽만 지는 상태가 "이 규칙이 무시되고 있다"는 신호를 지웠다.**
+
+   (1,2,1) > (1,1,1). 규칙 2·3대로 상대 선택자를 그대로 베끼고 앞에만 붙인다 —
+   `[data-ke-size]`를 떼면 (1,1,1)이 되어 순서 싸움으로 내려가고, 순서는
+   티스토리가 정한다. DESIGN.md §3의 소제목 굵기는 600이다. */
+#tt-body-page .contents_style h2[data-ke-size],
+#tt-body-page .contents_style h3[data-ke-size],
+#tt-body-page .contents_style h4[data-ke-size] {
+  font-weight: 600;
+}
 
 /* 카드형 링크는 본문 인라인 링크가 아니다. content.css의 `.contents_style a`가
    파란색 + 밑줄을 주는데, 카드 전체를 감싼 <a>에 그게 걸리면 카드 안쪽 글자

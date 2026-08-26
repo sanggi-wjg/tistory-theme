@@ -440,6 +440,61 @@ def lint_tistory_comment_scope(css):
         info("댓글·방명록 하드코딩 값: %d종 전부 .comments/.guestbook 짝으로 덮음" % len(rules))
 
 
+def lint_tistory_typography(css):
+    """티스토리 content.css가 **색이 아닌 속성**을 덮는 자리를 본다.
+
+    TIS001/TIS002와 상대는 같은 시트인데 왜 축을 따로 냈나 — 드러나는 방식이
+    다르기 때문이다. 색은 다크에서 "안 보인다"로 나타나 사용자가 신고한다.
+    굵기·크기는 **두 테마 모두 멀쩡해 보인다.** 우리가 쓴 값이 그냥 반영되지
+    않을 뿐이라, 보고 있어도 "원래 저런가 보다"가 된다.
+
+    실제로 그렇게 놓쳤다. content.css의
+
+        #tt-body-page h2[data-ke-size] { font-weight: normal }   (1,1,1)
+
+    이 우리 `.contents_style h2`(0,1,1)를 이겨 소제목이 400으로 나오고 있었다.
+    게다가 상대가 [data-ke-size] **있는 것만** 잡아서 60%만 지고 40%는 이겼다 —
+    글마다 굵기가 달랐고, 그 불일치가 오히려 "에디터 차이인가" 하고 넘어가게 했다.
+    (결정 35의 '부분적으로 동작하는 것이 더 찾기 어렵다'와 같은 모양이다.)
+
+    ⚠ 속성 선택자는 특이도의 **클래스 칸**에 들어간다. marker에서 [data-ke-size]를
+       떼면 (1,2,1)이 (1,1,1)로 내려가 상대와 같아지고, 같으면 순서가 정하는데
+       순서는 티스토리가 정한다. 그래서 marker를 **문자 그대로** 대조한다
+       (TIS002와 같은 이유 — 근접 검사는 옆 규칙이 우연히 걸려 통과시킨다)."""
+    known = os.path.join(ROOT, "data", "tistory-hardcoded-colors.json")
+    if not os.path.exists(known) or not css:
+        return
+    d = json.load(open(known, encoding="utf-8"))
+    rules = d.get("typographyRules", [])
+    if not rules:
+        return
+    body = strip_comments(css)
+    missing, weak = [], []
+    for r in rules:
+        marker = r["marker"]
+        if "#tt-body-page .contents_style " + marker in body:
+            continue
+        # 짝은 없는데 속성 선택자만 뗀 모양이 있으면 "썼는데 진다"는 상태다.
+        # 그냥 없는 것보다 나쁘다 — 고쳤다고 기록될 수 있다.
+        stripped = marker.split("[")[0]
+        if stripped != marker and "#tt-body-page .contents_style " + stripped in body:
+            weak.append("%s(%s)" % (r["component"], stripped))
+        else:
+            missing.append(r["component"])
+    if missing:
+        err("TIS004", "티스토리가 색이 아닌 속성을 덮는 %d종에 짝이 없다: %s. "
+            "상대가 (1,1,1)이라 `.contents_style` 하나로는 진다 — 두 테마 모두 "
+            "멀쩡해 보이는 채로 우리 값이 반영되지 않는다."
+            % (len(missing), ", ".join(missing[:8])), "src/styles/tistory.css")
+    if weak:
+        err("TIS004", "%d종이 속성 선택자를 뗀 채로 덮여 있다: %s. "
+            "특이도가 상대와 같아져(1,1,1) 순서 싸움이 되고, 순서는 티스토리가 정한다. "
+            "marker를 그대로 베껴야 한다." % (len(weak), ", ".join(weak[:8])),
+            "src/styles/tistory.css")
+    if not missing and not weak:
+        info("티스토리 비색상 덮어쓰기: %d종 전부 (1,2,1) 짝으로 덮음" % len(rules))
+
+
 def lint_hljs_scope(css):
     """.hljs-* 팔레트가 .hljs 접두를 달고 있는지 본다.
 
@@ -646,6 +701,7 @@ def main():
     # INL001과 달리 이 둘은 빌드가 생성하는 규칙을 보지 않으므로 src면 충분하다.
     lint_tistory_hardcoded(src_css)
     lint_tistory_comment_scope(src_css)
+    lint_tistory_typography(src_css)
     lint_hljs_scope(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
