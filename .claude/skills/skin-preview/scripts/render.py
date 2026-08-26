@@ -154,6 +154,14 @@ Total: reserved=2841MB, committed=1974MB
     hikari:
       max-lifetime: 240000
       keepalive-time: 120000</code></pre>
+<p data-ke-size="size16">아래 셋은 <strong>마크다운 펜스</strong>로 쓴 코드블록이다. 티스토리는 이것을 위와 전혀 다른 형태로 저장한다 — <code>&lt;pre&gt;</code>는 무속성이고 언어가 <code>&lt;code&gt;</code>의 클래스로 간다 (결정 43).</p>
+<pre><code class="language-python">def summarize(rows):
+    total = sum(r["bytes"] for r in rows)
+    return {"count": len(rows), "total": total}</code></pre>
+<pre><code class="language-typescript">export function toMB(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(1) + "MB"
+}</code></pre>
+<pre><code class="language-info">이건 언어가 아니라 콜아웃 표식 후보다. 라벨이 붙으면 안 된다.</code></pre>
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
 """

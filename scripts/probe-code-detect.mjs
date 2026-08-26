@@ -5,7 +5,7 @@
 //
 // 사본이 아니라 src/js/code.js의 detect를 그대로 부른다 — 규칙이 갈라지지 않는다.
 
-import { detect } from '../src/js/code.js'
+import { detect, authorLanguage } from '../src/js/code.js'
 
 /* ── 칠해야 하는 것 (진짜 코드) ── */
 const POSITIVE = {
@@ -183,6 +183,59 @@ section('칠해야 하는 것', POSITIVE, 'highlight')
 section('칠하면 안 되는 것', NEGATIVE, 'skip')
 section('알려진 한계 — 긴 영문 로그·산문 (실패로 세지 않음)', KNOWN_GAP, null)
 
-const total = Object.keys(POSITIVE).length + Object.keys(NEGATIVE).length
+/* ── 글쓴이가 쓴 언어 (결정 43) ──────────────────────────────────────
+ *
+ * `authorLanguage()`는 **어떤 클래스를 믿는가**를 정하는 함수다. 여기가 틀리면
+ * 에디터가 박은 `reasonml`·`angelscript` 같은 쓰레기를 다시 믿게 되고,
+ * 화면에는 그럴듯한 라벨이 붙어 **틀린 줄도 모른다.** 그래서 표본으로 고정한다.
+ *
+ * 형식: [클래스 문자열, 기대 lang, 기대 label] — 'NONE'은 null 반환을 뜻한다.
+ */
+const AUTHOR_CASES = [
+  // 글쓴이가 쓴 것 — 번들에 있다
+  ['language-python', 'python', 'Python'],
+  ['language-Kotlin', 'kotlin', 'Kotlin'], // 대소문자 무시
+  ['language-yml', 'yaml', 'YAML'], // 별칭
+  ['language-py', 'python', 'Python'],
+  ['hljs language-sql', 'sql', 'SQL'], // 다른 클래스와 섞여 있어도
+  // 언어인 줄은 알지만 번들에 없다 — 칠하지 않고 라벨만
+  ['language-typescript', null, 'TypeScript'],
+  ['language-dockerfile', null, 'Dockerfile'],
+  ['language-c++', null, 'C++'],
+  // 라벨을 일부러 비우는 것 — "평문"은 정보가 없다
+  ['language-text', null, null],
+  // 언어가 아닌 이름 — 아무것도 하지 않고 자동 감지로 넘어간다.
+  // ⚠ info·warning은 콜아웃 표식 후보다. 여기서 "Info" 라벨이 붙으면 안 된다.
+  ['language-info', 'NONE', 'NONE'],
+  ['language-warning', 'NONE', 'NONE'],
+  ['language-nosuchlang', 'NONE', 'NONE'],
+  // 에디터가 붙이는 형태 — **절대 걸리면 안 된다** (language- 접두가 없다)
+  ['reasonml', 'NONE', 'NONE'],
+  ['angelscript', 'NONE', 'NONE'],
+  ['isbl', 'NONE', 'NONE'],
+  ['', 'NONE', 'NONE'],
+]
+
+console.log('\n── 글쓴이가 쓴 언어 (authorLanguage) ──')
+for (const [cls, wantLang, wantLabel] of AUTHOR_CASES) {
+  const r = authorLanguage(cls)
+  const gotLang = r === null ? 'NONE' : r.lang
+  const gotLabel = r === null ? 'NONE' : r.label
+  const ok = gotLang === wantLang && gotLabel === wantLabel
+  if (!ok) bad++
+  console.log(
+    [
+      cls || '(빈 클래스)',
+      String(gotLang),
+      String(gotLabel),
+      ok ? 'ok' : '✗ 기대 ' + wantLang + ' / ' + wantLabel,
+    ]
+      .map((c, i) => c.padEnd([24, 10, 14, 30][i]))
+      .join('')
+  )
+}
+
+const total =
+  Object.keys(POSITIVE).length + Object.keys(NEGATIVE).length + AUTHOR_CASES.length
 console.log('\n어긋난 표본 ' + bad + '개 / ' + total)
 process.exit(bad ? 1 : 0)
