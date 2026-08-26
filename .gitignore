@@ -23,3 +23,6 @@ backup/
 
 # Claude Code worktree — 전략에서는 뺐지만, 생기면 소스가 아니다
 .claude/worktrees/
+
+# PR 리뷰 게이트 마커 — 리뷰가 통과한 커밋 SHA. 로컬 상태이지 소스가 아니다
+.claude/.pr-review-ok

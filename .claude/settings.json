@@ -51,5 +51,19 @@
   "teammateMode": "auto",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-review-gate.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   }
 }
