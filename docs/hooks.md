@@ -376,11 +376,11 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 클래스 | 무엇 | 어디에 |
 |---|---|---|
 | `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너 | `.contents_style pre`를 감싼다 |
-| `.code-lang` | 자동 감지된 언어 라벨 (우상단). **신뢰도 미달이면 만들지 않는다** | `.code-wrap` 안 |
+| `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
 | `.code-wrap.has-lines` | 줄번호를 켠 상태 | 일정 줄 수 이상 |
 | `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안, `pre` 앞 |
-| `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs` + `.language-<감지결과>`가 붙고, 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
+| `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
 | `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 | `<body>` 끝에 1개 |
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |

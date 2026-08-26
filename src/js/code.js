@@ -1,9 +1,12 @@
 // 코드블록 — 자동 감지 하이라이팅 + 복사 버튼 + 언어 라벨 + 조건부 줄번호
 // DESIGN.md §6.3 · hooks.md §5.6
 //
-// ── 왜 data-ke-language를 믿지 않는가 ──
-// 전수 728개 중 라벨이 있는 것은 285개(39%)뿐이고, `javascript`로 표시된 44개는
-// 실제로 전부 셸·설정·SQL·한국어 메모다. 그래서 라벨을 버리고 highlightAuto를 쓴다.
+// ── 라벨을 믿는 기준: 누가 썼는가 (결정 18 · 43) ──
+// **에디터가 붙인 것은 안 믿는다.** `data-ke-language` 285개(39%) 중 `javascript`
+// 44개가 전부 오답이었고(셸·설정·SQL·한국어 메모), `<pre>`의 클래스는 더 나쁘다 —
+// 2026-08-26 실측에서 홈 12편 41블록의 최빈값이 `reasonml` 6개였다.
+// **글쓴이가 마크다운 펜스로 쓴 `<code class="language-X">`만 믿는다.**
+// 둘 중 어느 것도 없으면 highlightAuto로 넘어간다.
 //
 // ── 왜 신뢰도 임계를 두는가 ──
 // 코드블록의 33%(239개)에 한국어가 섞여 있다. 한국어 메모 블록이 엉뚱한 언어로
@@ -39,6 +42,62 @@ const SUBSET = Object.keys(LANGS)
 const LABEL = {
   python: 'Python', bash: 'Bash', shell: 'Shell', sql: 'SQL', java: 'Java',
   kotlin: 'Kotlin', go: 'Go', json: 'JSON', yaml: 'YAML', xml: 'XML',
+}
+
+/* ── 글쓴이가 직접 쓴 언어 (결정 43) ──────────────────────────────────
+ *
+ * 마크다운 펜스 ```python 은 `<pre><code class="language-python">`으로 저장된다.
+ * 이건 **글쓴이가 친 글자**라서 믿을 수 있다. 반면 `<pre>`의 클래스와
+ * `data-ke-language`는 에디터의 자동 감지 결과라 믿지 않는다 —
+ * 실측(2026-08-26, 홈 12편 41블록)에서 `<pre class>`의 최빈값이 `reasonml` 6개였다.
+ * 이 블로그에 ReasonML은 없다. 그래서 **`<code>`의 클래스만 본다.**
+ *
+ * ⚠ 이 신호는 **편집 왕복 한 번에 사라진다**(측정됨: language-python → pre.isbl,
+ *   kotlin·javascript → 둘 다 pre.angelscript). 사라지면 아래 자동 감지로
+ *   조용히 되돌아간다 — 화면에 신호가 없다. 되돌아간 상태가 지금과 같아서
+ *   **나빠지지는 않는다**는 근거로 이 설계를 골랐다(TODO `codeblock-readability` ③, 선택지 A).
+ */
+const AUTHOR_CLASS = /^language-([a-zA-Z0-9#+._-]+)$/
+
+/** 번들에 없지만 **언어인 줄 아는** 이름. 하이라이팅은 못 해도 라벨은 맞게 단다.
+ *  여기에 없는 이름은 라벨도 달지 않는다 — `info`·`warning` 같은 콜아웃 표식이나
+ *  오타에 "Info" 라벨이 붙는 것을 막는다. */
+const KNOWN_ONLY_LABEL = {
+  javascript: 'JavaScript', js: 'JavaScript', typescript: 'TypeScript', ts: 'TypeScript',
+  html: 'HTML', css: 'CSS', scss: 'SCSS', dockerfile: 'Dockerfile',
+  c: 'C', cpp: 'C++', 'c++': 'C++', csharp: 'C#', 'c#': 'C#',
+  rust: 'Rust', ruby: 'Ruby', php: 'PHP', swift: 'Swift', scala: 'Scala',
+  graphql: 'GraphQL', toml: 'TOML', ini: 'INI', markdown: 'Markdown', md: 'Markdown',
+  diff: 'Diff', text: null, plaintext: null, // 라벨을 일부러 비운다 — "평문"은 정보가 없다
+}
+
+/** 같은 언어의 다른 이름. 우리 번들 키로 옮긴다. */
+const ALIAS = {
+  py: 'python', sh: 'bash', zsh: 'bash', console: 'shell', shellsession: 'shell',
+  yml: 'yaml', golang: 'go', kt: 'kotlin', postgres: 'sql', postgresql: 'sql', mysql: 'sql',
+}
+
+/**
+ * `<code>`의 클래스에서 글쓴이가 쓴 언어를 읽는다.
+ * 반환: { lang: 번들에 있는 키 or null, label: 표시할 이름 or null } 또는 null.
+ *
+ * (`scripts/probe-code-detect.mjs`가 이 함수를 그대로 불러 검증한다 — 사본이 아니다.)
+ */
+export function authorLanguage(classNames) {
+  const names = (classNames || '').split(/\s+/)
+  for (let i = 0; i < names.length; i++) {
+    const m = AUTHOR_CLASS.exec(names[i])
+    if (!m) continue
+    const raw = m[1].toLowerCase()
+    const key = ALIAS[raw] || raw
+    if (LABEL[key]) return { lang: key, label: LABEL[key] }
+    if (Object.prototype.hasOwnProperty.call(KNOWN_ONLY_LABEL, key)) {
+      return { lang: null, label: KNOWN_ONLY_LABEL[key] }
+    }
+    // 언어인지 모르는 이름 — 라벨도 달지 않는다. 자동 감지로 넘어간다.
+    return null
+  }
+  return null
 }
 
 const MIN_CHARS = 12 // 이보다 짧으면 감지가 우연에 가깝다
@@ -201,15 +260,42 @@ function enhance(pre) {
   parent.insertBefore(wrap, pre)
   wrap.appendChild(pre)
 
-  // 2) 자동 감지. 신뢰도 미달이면 원문 그대로 둔다.
-  const res = detect(src)
-  if (res) {
-    codeEl.innerHTML = res.value // highlightAuto 출력은 이스케이프되어 있다
-    codeEl.classList.add('hljs')
-    codeEl.classList.add('language-' + res.language)
+  // 2) 언어를 정한다. 글쓴이가 쓴 것이 있으면 그것을 쓰고, 없으면 자동 감지.
+  //    ⚠ `<pre>`의 클래스는 **보지 않는다** — 에디터 자동 감지 결과다 (결정 43).
+  const author = authorLanguage(codeEl.className)
+  let label = null
+
+  if (author && author.lang) {
+    // 글쓴이가 지정했고 번들에도 있다 — 신뢰도 임계·한글 가드를 건너뛴다.
+    // 그 가드들은 "우리가 추측할 때" 틀리지 않으려는 장치이지,
+    // 글쓴이가 직접 쓴 것을 되묻는 장치가 아니다.
+    try {
+      const out = hljs.highlight(src, { language: author.lang, ignoreIllegals: true })
+      codeEl.innerHTML = out.value
+      codeEl.classList.add('hljs')
+      label = author.label
+    } catch (e) {
+      // 등록되지 않은 언어 등 — 칠하지 않고 라벨만 남긴다
+      label = author.label
+    }
+  } else if (author) {
+    // 언어인 줄은 알지만 번들에 없다. **자동 감지로 넘어가지 않는다** —
+    // 글쓴이가 `typescript`라고 썼는데 우리가 `java`로 칠하는 쪽이 더 나쁘다.
+    label = author.label
+  } else {
+    const res = detect(src)
+    if (res) {
+      codeEl.innerHTML = res.value // highlightAuto 출력은 이스케이프되어 있다
+      codeEl.classList.add('hljs')
+      codeEl.classList.add('language-' + res.language)
+      label = LABEL[res.language]
+    }
+  }
+
+  if (label) {
     const lang = document.createElement('span')
     lang.className = 'code-lang'
-    lang.textContent = LABEL[res.language]
+    lang.textContent = label
     wrap.appendChild(lang)
   }
 
