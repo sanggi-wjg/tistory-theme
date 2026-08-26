@@ -33,9 +33,9 @@ UA_MOBILE = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit
 # 배포 전/후 두 실행이 서로 다른 파일을 보게 된다.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-# baseline은 data/에 둔다. _workspace/는 .gitignore 대상이고 worktree마다 독립이라
+# baseline은 data/에 둔다. _workspace/는 .gitignore 대상이라
 # "배포 전 저장 → 배포 후 비교" 사이에 세션이 바뀌면 기준선이 조용히 사라진다.
-# data/*.json은 CLAUDE.md가 git으로 공유된다고 명시한 자리다.
+# data/*.json은 git으로 공유되는 자리다.
 BASELINE = os.path.join(ROOT, "data", "seo-baseline.json")
 
 ERRORS, WARNINGS, INFO, UNVERIFIED = [], [], [], []
@@ -561,11 +561,11 @@ def verify_skin_applied(base, home_doc):
     live_url, fallback = skin_css_of(home_doc, base)
     dist = os.path.join(ROOT, "dist", "style.css")
     if not os.path.exists(dist):
-        # 절대경로로 알린다. dist/는 .gitignore라 worktree마다 따로 빌드해야 하는데,
+        # 절대경로로 알린다. dist/는 .gitignore라 체크아웃 밖으로 나가지 않는데,
         # 상대경로만 찍으면 "빌드를 안 했다"와 "빌드한 곳이 아닌 체크아웃에서 돌렸다"가
         # 똑같이 보인다. 후자가 실제로 일어난다(2026-08-25).
         unverified("V009", "dist/style.css가 없어 스킨 반영 여부를 대조하지 못했다. "
-                   "이 체크아웃에서 npm run build 를 먼저 돌려라 — 다른 worktree에서 "
+                   "이 체크아웃에서 npm run build 를 먼저 돌려라 — 다른 체크아웃에서 "
                    "빌드했다면 그 dist/는 여기서 보이지 않는다.", dist)
         return live_url
     if not live_url:

@@ -1,6 +1,6 @@
 # 사용법
 
-Node 20+ · Python 3. worktree마다 `npm install`이 따로 필요하다(esbuild는 플랫폼 바이너리).
+Node 20+ · Python 3. 처음 한 번 `npm install`.
 
 ## 명령
 

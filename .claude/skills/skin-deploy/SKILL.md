@@ -18,7 +18,7 @@ python3 .claude/skills/skin-preview/scripts/render.py   # 10개 페이지 육안
 python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로그> --save-baseline
 ```
 
-**네 명령을 같은 체크아웃에서 돌린다.** `dist/`는 `.gitignore`라 worktree마다 따로 빌드된다. 한 worktree에서 빌드하고 다른 곳에서 검증하면 `V009`가 "`dist/style.css`가 없다"로 미검증이 되어, **배포한 CSS가 방금 빌드한 것인지 확인하지 못한 채** 넘어간다. baseline도 마찬가지다 — `data/seo-baseline.json`은 git으로 공유되므로 커밋하지 않으면 배포 후 `--compare`가 다른 체크아웃에서 보이지 않는다.
+**네 명령을 같은 체크아웃에서 돌린다.** `dist/`는 `.gitignore`라 체크아웃 밖으로 나가지 않는다. 빌드한 곳이 아닌 데서 검증하면 `V009`가 "`dist/style.css`가 없다"로 미검증이 되어, **배포한 CSS가 방금 빌드한 것인지 확인하지 못한 채** 넘어간다. baseline도 마찬가지다 — `data/seo-baseline.json`은 git으로 공유되므로 커밋하지 않으면 배포 후 `--compare`가 다른 체크아웃에서 보이지 않는다.
 
 **린트 오류가 남아 있으면 배포하지 않는다.** 이 도메인의 오류는 조용히 실패하므로, 배포 후에는 발견이 늦다.
 
