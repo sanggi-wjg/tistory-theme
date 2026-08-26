@@ -327,5 +327,32 @@
       "kind": "text",
       "contrastNote": "라이트 흰 배경에서 2.03:1. 댓글 앱에서 유일하게 상대가 ID 스코프라 (0,3,1)로는 진다 — body id까지 붙여야 한다."
     }
+  ],
+  "typographyNote": "색이 아닌 속성을 티스토리 content.css가 덮어쓰는 자리. TIS001/TIS002가 보는 rules와 상대는 같은 시트지만 축이 다르다 — 저쪽은 '다크에서 안 보인다'로 드러나고 이쪽은 두 테마 모두 멀쩡해 보인 채 **우리 설계가 그냥 반영되지 않는다.** 2026-08-26에 소제목 굵기가 그렇게 발견됐다. marker는 티스토리 선택자를 그대로 베낀 것이고, 우리 쪽 짝은 '#tt-body-page .contents_style ' + marker 형태여야 한다. 속성 선택자는 특이도의 클래스 칸에 들어가므로 marker에서 [data-ke-size] 같은 부분을 빼면 (1,1,1)로 내려가 순서 싸움이 되고 진다. 린트 TIS004가 대조한다.",
+  "typographyRules": [
+    {
+      "component": "소제목 h2 굵기",
+      "marker": "h2[data-ke-size]",
+      "property": "font-weight",
+      "value": "normal",
+      "ours": "600",
+      "note": "표본 14편 50개 소제목 중 30개(60%)가 data-ke-size를 갖는다. 속성은 글 단위로 붙어서 글마다 굵기가 갈렸다."
+    },
+    {
+      "component": "소제목 h3 굵기",
+      "marker": "h3[data-ke-size]",
+      "property": "font-weight",
+      "value": "normal",
+      "ours": "600",
+      "note": ""
+    },
+    {
+      "component": "소제목 h4 굵기",
+      "marker": "h4[data-ke-size]",
+      "property": "font-weight",
+      "value": "normal",
+      "ours": "600",
+      "note": ""
+    }
   ]
 }

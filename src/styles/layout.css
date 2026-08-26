@@ -65,7 +65,12 @@
    그러면 좌측 레일의 x좌표가 페이지마다 달라진다 — 홈에서 글로 넘어갈 때
    카테고리가 옆으로 뛴다. 카테고리를 한자리에 두는 것이 이 배치의 목적이므로
    폭을 맞추는 쪽이 우선이다. 본문이 800px보다 넓어지는 일은 없다.
-   .entry-main·.entry-head가 --content-w로 잠그고 남는 자리는 비워 둔다. */
+   .entry-main·.entry-head가 --content-w로 잠그고 남는 자리는 비워 둔다.
+
+   같은 이유로 **거터도 페이지마다 같아야 한다.** 레일 x가 같아도 본문 x가
+   페이지마다 다르면 홈→글에서 글이 옆으로 뛴다. 아래 1400px 블록의 유동 거터를
+   레일 6종에 **전부** 건다 — 홈·목록에는 목차가 없어 거터가 하나뿐이지만,
+   그 하나를 글 페이지의 왼쪽 거터와 같은 식으로 계산한다. */
 @media (max-width: 1024px) {
   #tt-body-page { --page-w: calc(var(--content-w) + var(--pad-x) * 2); }
 }
@@ -171,18 +176,54 @@
 }
 
 /* ══ 1400px~ : 글 페이지 3단 — 레일 + 본문 + 목차 ═══════════════
-   240 + 32 + 800 + 32 + 240 + 여백 48 = 1392. --wrap 1400 안에 들어간다.
-   여기서만 .layout 간격을 --sp-6(32)로 줄인다. --sp-7(48)이면 1424가 되어
-   1440 모니터가 아슬아슬해진다.
-
    1399px 이하에서는 목차가 본문 위 접이식으로 올라가고 레일은 그대로 남는다.
-   카테고리를 모든 데스크톱 폭에서 보이게 하는 것이 이 배치의 목적이다. */
+   카테고리를 모든 데스크톱 폭에서 보이게 하는 것이 이 배치의 목적이다.
+
+   ── 유동 거터 (2026-08-26) ───────────────────────────────────
+   Vercel docs를 실측해 보니 거터가 폭에 따라 39→95→299px로 자랐다. 우리는
+   32px 고정이었다 — 남는 폭이 전부 바깥 여백으로 가고 거터는 그대로였기 때문이다.
+   래퍼(--wrap)는 유지하되 거터가 --gutter-min~max 사이에서 자라게 한다.
+
+   **왜 100vw가 아니라 100%인가.** @media와 100vw는 스크롤바를 **포함한** 폭이고
+   실제 컨테이너는 그만큼 좁다(윈도우/크롬 15px). vw로 계산하면 트랙 합이 컨테이너를
+   넘어 본문이 800에서 눌린다 — 이 파일의 옛 주석이 "1392니까 1400에 들어간다"고
+   적어 둔 채 라이브에서는 **793px**이던 것이 정확히 그 버그였다.
+   column-gap의 %는 **그리드 컨테이너 자기 content-box** 기준이라 스크롤바가
+   이미 빠져 있다. 그래서 어느 OS·어느 스크롤바에서도 본문이 정확히 800이 된다.
+
+   ── 층마다 분모가 다른 이유 ──────────────────────────────────
+   .layout(W)은 거터를 둘 품고, .entry-layout(Wc)은 하나만 품는다. 둘이 같은
+   값이 되도록 각자 자기 컨테이너로 푼다. g를 하나 정하고 나면
+
+     W  = 레일 + g + 본문 + g + 목차      →  g = (W - 1280) / 2
+     Wc = 본문 + g + 목차,  W = 2Wc-800   →  g = Wc - 1040
+
+   1280·1040은 리터럴이 아니라 --track-sum-*로 토큰에서 파생시킨다.
+   --content-w를 바꾸면 둘 다 따라온다.
+
+   ⚠ column-gap만 덮는다. gap을 통째로 쓰면 1399px 이하에서 목차가 본문 위로
+      올라갈 때 쓰는 row-gap까지 같이 바뀐다. */
 @media (min-width: 1400px) {
-  #tt-body-page .layout { gap: var(--sp-6); }
+  #tt-body-index    .layout,
+  #tt-body-page     .layout,
+  #tt-body-category .layout,
+  #tt-body-search   .layout,
+  #tt-body-tag      .layout,
+  #tt-body-archive  .layout {
+    column-gap: clamp(
+      var(--gutter-min),
+      calc((100% - var(--track-sum-layout)) / 2),
+      var(--gutter-max)
+    );
+  }
 
   .entry-layout {
     grid-template-columns: minmax(0, 1fr) var(--toc-w);
-    gap: var(--sp-6);
+    column-gap: clamp(
+      var(--gutter-min),
+      calc(100% - var(--track-sum-entry)),
+      var(--gutter-max)
+    );
     align-items: start;
   }
 
