@@ -34,10 +34,21 @@
      다크(#8f8f8f)는 캔버스를 한 단 올린 뒤에도 세 면 전부 통과라 그대로 둔다 —
      --canvas 6.12 / --canvas-soft 5.79 / --canvas-soft-2 5.38. */
   --ink-mute:        #707070;
-  --link:            #0070f3;
+  /* --ink-mute와 똑같은 함정을 --link도 밟고 있었다 (2026-08-26 프로덕션 실측).
+     #0070f3은 흰 캔버스에서 4.55:1로 **겨우** 통과해 통과로 기록됐지만,
+     --link는 코드블록 안(--canvas-soft)에서도 쓰인다 — .hljs-keyword ·
+     .hljs-literal · .hljs-built_in · .hljs-type. 거기서 4.36:1로 미달이었다.
+     세 면 전부를 기준으로 잡는다:
+        #0064da → --canvas 5.48 / --canvas-soft 5.25 / --canvas-soft-2 5.02
+     다크(#3291ff)는 세 면 전부 통과라 그대로 둔다 — 6.25 / 5.91 / 5.49. */
+  --link:            #0064da;
   --link-deep:       #0761d1;
   --link-bg-soft:    #d3e5ff;
-  --error:           #ee0000;
+  /* --error도 같다. 유일한 사용처가 .hljs-deletion이라 **항상** --canvas-soft
+     위에 놓이는데, #ee0000은 거기서 4.34:1이었다 (흰 캔버스에서도 4.53으로 겨우).
+        #d60000 → --canvas 5.44 / --canvas-soft 5.21 / --canvas-soft-2 4.99
+     다크(#ff6166)는 6.74 / 6.38 / 5.93으로 통과라 그대로 둔다. */
+  --error:           #d60000;
   --warning:         #f5a623;
   --accent-cyan:     #29bc9b;
   --selection-bg:    #171717;
