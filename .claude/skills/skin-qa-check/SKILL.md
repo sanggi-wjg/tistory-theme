@@ -49,6 +49,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py      # BND008
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |
 | `TIS001~002` | 티스토리 시트가 박은 라이트 전용 색에 덮어쓰기가 있는가(`001`), 상대가 `#tt-body-page` ID 스코프일 때 **ID 짝**이 있는가(`002`). 목록은 `data/tistory-hardcoded-colors.json` |
+| `HLJS002` | 구문 색이 **코드 전용 토큰**(`--code-*`)을 쓰는가 (오류). 범용 토큰을 빌려 쓰면 누가 그것을 다른 이유로 조정할 때 코드블록이 조용히 같이 움직인다 — `--link`를 "링크니까 흰 배경 기준으로" 잡았다가 코드블록 위에서 AA 미달이 드러난 전례가 있다(§8.1). **무채색으로 남기기로 한 자리**(`--ink-body` 속성·변수, `--ink-mute` 메타·태그)만 예외다. 결정 44 |
 | `HLJS001` | `.hljs-*` 구문 색 선택자에 `.hljs ` 접두가 있는가. 없으면 나중에 실리는 `atom-one-light`이 순서로 이겨 팔레트가 통째로 무효가 된다 |
 | `ROB001~002`, `A11Y001~002` | `localStorage` try/catch, `MutationObserver`, `lang`, viewport |
 | `SEO001~005` | 반복 블록 안의 `h1`, 내부링크 치환자 누락, `<title>` 템플릿, `img` alt, `BreadcrumbList` |

@@ -81,6 +81,7 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
 | 2026-08-26 | PR 리뷰 게이트 추가 — 스킬 + PreToolUse 훅 | `skills/pr-review-gate`, `hooks/pr-review-gate.py`, `agents/skin-qa.md`, 오케스트레이터 Phase 5 | PR 전 리뷰가 사이클에 없었다. 린트는 규칙의 존재만 봐서 "검사가 이 변경을 볼 수 있는가"를 묻는 자리가 없었다 |
+| 2026-08-26 | 린트 `HLJS002` 추가 | `skills/skin-qa-check/scripts/lint.py`, `skills/skin-qa-check/SKILL.md` | 결정 44가 "구문 색은 코드 전용 토큰만 쓴다"를 규칙으로 세웠는데 주석 말고는 지키는 것이 없었다. `--link`를 다시 쓰면 조용히 통과한다 |
 | 2026-08-26 | `probe-code-detect.mjs`를 `npm run check`에 넣고(`test:code`) `authorLanguage()` 표본 17개 추가, 프리뷰 본문에 펜스형 코드블록 3종 추가 | `scripts/probe-code-detect.mjs`, `skills/skin-preview/scripts/render.py`, `package.json` | 「어느 라벨을 믿는가」가 규칙이 됐는데(결정 43) 그 규칙을 보는 검사가 없었다. 프로브는 수동 실행이라 회귀를 못 잡았다 |
 | 2026-08-26 | 린트 `BND008` 추가, 프리뷰가 **빈 치환자 조건**을 그리도록 수정, `npm run check`에 `test:decor` 추가 | `skills/skin-qa-check/scripts/lint.py`, `…/test-empty-decor.py`, `skills/skin-preview/scripts/render.py`, `package.json` | 값이 비었는데 CSS 장식만 남는 실패가 **두 번째**였다(태그 `,` → 댓글 라벨). 프리뷰가 세 영역 모두 숫자로 채워 그 조건을 한 번도 재현하지 않았다 (결정 42) |
 | 2026-08-26 | 린트 `BND006`·`BND007` 추가, `npm run check`에 `test:lint` 단계 추가 | `skills/skin-qa-check/scripts/lint.py`, `…/test-js-dom-classes.py`, `docs/hooks.md §5.6`, `package.json` | JS가 **만드는** 클래스를 보는 검사가 없었다(`BND004`는 찾는 쪽만 본다). 새 린트가 실제로 켜지는지는 린트 자신이 증명할 수 없어 테스트를 같이 넣었다 (결정 40) |
