@@ -26,6 +26,7 @@ python3 .claude/skills/skin-qa-check/scripts/lint.py --json   # 자동화용
 |---|---|
 | `SUB001~007` | 존재하지 않는 치환자, `index.xml`에 없는 변수, 여닫이 불일치, **`<s_t3>` 누락**, **주석 안의 그룹 태그**(치환 엔진은 주석을 가리지 않는다 — `SUB007`) |
 | `AREA001~004` | 홈/목록 접두사 혼용(`article_rep` ↔ `list_rep`), `body_id` 누락 |
+| `CAT001` | **폴더형 `[##_category_##]`을 썼는가 (오류).** 리스트형 `[##_category_list_##]`과 이름만 비슷하고 출력이 완전히 다르다 — 폴더형은 중첩 `table`과 트리선 GIF를 내보내고, 링크가 `onclick`이라 **내부링크가 0개**가 되며, `div`마다 박히는 인라인 색이 다크모드를 이긴다. `category.js`도 `ul`을 못 찾고 물러난다. **2026-08-25 첫 배포에서 실제로 폴더형이 나갔다** (DECISIONS.md 결정 31) |
 | `BND001~005` | `data-cat` 경계면, 카테고리 커버리지, JS 셀렉터 ↔ 마크업, **`[class="contents_style"]` 정확일치** |
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |

@@ -211,7 +211,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | `.list-banner` | `<s_list_image>` 안. **`#tt-body-category`에서만 보이게 CSS가 감춘다** (결정 7 — 검색·태그에선 블로그 대표이미지가 나와 무의미) |
 | `.list-head` `.list-title` `.list-count` `.list-desc` | `[##_list_conform_##]` · `[##_list_count_##]` · `[##_list_description_##]` |
 | `.post-list` | 카드 목록 컨테이너. 두 번째 클래스는 `[##_list_style_##]` — 지금은 빈 문자열 (index.xml에 `<liststyle>` 없음) |
-| `.list-empty` | `<s_list_empty>` 안. `#tt-body-search`의 0건 화면 |
+| `.list-empty` | `<s_list_empty>` 안. `#tt-body-search`의 0건 화면. 안쪽에 `.list-empty-title`(안내 문구) · `.list-empty-desc`(홈 링크를 품은 보조 문구) |
 
 **카테고리 목록에서 기본이미지 반복 억제** (DESIGN §6.2):
 ```css
@@ -442,7 +442,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 |---|---|---|
 | `.side-category` | `[##_category_list_##]` 한 줄 — **폴더형 `[##_category_##]`이 아니다**(결정 31, 린트 `CAT001`) | **티스토리 고정 마크업.** `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.link_sub_item` `.c_cnt`, 현재 가지에 `li.selected` (DESIGN §5.3) |
 | `.side-notice` | 최근 공지 | `.side-list` `.side-item` `.side-link` |
-| `.side-recent` | 최근 글 | `.side-list` `.side-item` `.side-link` `.side-thumb` `.side-thumb-img` `.side-text` `.side-meta` `.side-rp` |
+| `.side-recent` | 최근 글 | `.side-list` `.side-item` `.side-link` `.side-thumb` `.side-thumb-img` `.side-text` `.side-meta` `time.side-date` `.side-rp` |
 | `.side-popular` | 인기글 | 위와 동일 |
 | `.side-comments` | 최근 댓글 | `.sidecmt-list` `.sidecmt-item` `.sidecmt-link` `.sidecmt-name` `.sidecmt-date` |
 | `.side-tags` | 태그 클라우드 | `.tagcloud-list` `.tagcloud-item` `.tagcloud-link` + 티스토리가 주는 `cloud1`~`cloud5` |
@@ -462,7 +462,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 보호글 | `section.protected` `.protected-title` `.protected-desc` `.protected-form` `.protected-label` `.protected-input` `.protected-submit` |
 | 방명록 | `section.guestbook` `.guestbook-title` — 본체는 `[##_guestbook_group_##]`, 안은 `tt-*` |
 | 광고 | `.ad` `.ad-upper` `.ad-lower` — 비어 있을 때 여백이 생기지 않게 (자식이 없으면 높이 0) |
-| 푸터 | `footer.site-footer` `.footer-inner` `.footer-brand` `.footer-links` `.footer-copy` |
+| 푸터 | `footer.site-footer` `.footer-inner` `.footer-brand`(안이 `a.footer-title` · `p.footer-desc`) `.footer-links` `.footer-copy` |
 | 헤더 | `header.site-header` `.header-inner` `.site-brand` `.brand-title` `.brand-desc` `.site-nav` `.header-util` |
 | 유틸 | `.a11y-hidden` (스크린리더 전용 텍스트) · `.skip-link` · `.icon` (모든 인라인 SVG) |
 
