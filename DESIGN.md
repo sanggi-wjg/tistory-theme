@@ -23,14 +23,14 @@ colors:
     selection-bg: "#171717"
     selection-fg: "#f2f2f2"
   dark:
-    canvas: "#000000"
-    canvas-soft: "#0a0a0a"
-    canvas-soft-2: "#111111"
-    surface: "#0a0a0a"
+    canvas: "#0a0a0a"
+    canvas-soft: "#121212"
+    canvas-soft-2: "#1a1a1a"
+    surface: "#121212"
     hairline: "#2e2e2e"
     hairline-strong: "#454545"
     ink: "#ededed"
-    ink-body: "#a1a1a1"
+    ink-body: "#b0b0b0"
     ink-mute: "#8f8f8f"
     link: "#3291ff"
     link-deep: "#52a8ff"
@@ -137,13 +137,30 @@ radius:
 **다크 토큰**
 
 ```
---canvas: #000000        --ink: #ededed        --link: #3291ff
---canvas-soft: #0a0a0a   --ink-body: #a1a1a1   --link-deep: #52a8ff
---canvas-soft-2: #111111 --ink-mute: #8f8f8f   --link-bg-soft: #10233f
---surface: #0a0a0a       --hairline: #2e2e2e   --error: #ff6166
+--canvas: #0a0a0a        --ink: #ededed        --link: #3291ff
+--canvas-soft: #121212   --ink-body: #b0b0b0   --link-deep: #52a8ff
+--canvas-soft-2: #1a1a1a --ink-mute: #8f8f8f   --link-bg-soft: #10233f
+--surface: #121212       --hairline: #2e2e2e   --error: #ff6166
                          --hairline-strong: #454545  --warning: #f7b955
 --selection-bg: #ededed  --selection-fg: #171717     --accent-cyan: #50e3c2
 ```
+
+**2026-08-26 실화면 검증으로 조정했다** (미결 5 해결, DECISIONS.md 결정 33).
+파생값이던 다크 팔레트를 배포본에서 처음 재 봤다. 대비 수치는 원래도 라이트와
+대칭이었지만(본문 8.13 ↔ 8.45) **읽히는 느낌이 달랐다.** 세 가지를 바꿨다.
+
+| 항목 | 전 | 후 | 이유 |
+|---|---|---|---|
+| 캔버스 사다리 | `#000000` / `#0a0a0a` / `#111111` | `#0a0a0a` / `#121212` / `#1a1a1a` | 순검정 위에서는 밝은 글자가 번져 획이 뭉갠다. 한 단만 올려 near-black 인상은 남겼다 |
+| `--ink-body` | `#a1a1a1` | `#b0b0b0` | 같은 대비율이라도 light-on-dark는 더 얇고 흐리게 보인다. 8.13 → 9.13 |
+| `--font-smooth` | (없음, 전역 `antialiased`) | 토큰으로 분기 | 아래 참조 |
+
+새 팔레트는 전경 8종 × 배경 3면 전부 AA를 넘는다. 최저값은
+`--ink-mute` on `--canvas-soft-2` = **5.38**, `--link` on `--canvas-soft-2` = **5.49**.
+
+**위계는 유지했다.** 제목(`--ink`)과 본문(`--ink-body`)의 명도차는 라이트가 2.12,
+다크가 1.85다. 본문을 더 밝히면(#bdbdbd → 1.60) 소제목·`<strong>`이 본문에 묻히기
+시작한다 — 그래서 한 단에서 멈췄다.
 
 ### 사용 규칙
 
@@ -151,13 +168,36 @@ radius:
 - **면으로 구분하지 말고 선으로 구분한다.** 카드·사이드바·코드블록은 `--hairline` 1px 테두리로 분리한다. 배경 채우기는 `--canvas-soft`까지만.
 - **그림자를 쓰지 않는다.** 깊이는 그레이 사다리와 hairline으로 만든다.
 - `--hairline-strong`는 입력 포커스와 강조 구분선에만.
-- 다크에서 순검정 `#000000`을 캔버스로 쓰되, 카드·코드블록은 `--canvas-soft`로 한 단 올려 층위를 만든다.
+- 다크 캔버스는 `#0a0a0a`다 — **순검정이 아니다.** 카드·코드블록은 `--canvas-soft`로 한 단 올려 층위를 만든다.
+  순검정을 버린 이유는 대비가 아니라 번짐이다. 수치로는 `#000000`이 가장 높지만, 밝은 글자가
+  순검정 위에서 halation을 일으켜 획 경계가 흐려진다. 되돌리려면 §8.1의 실측을 먼저 볼 것.
 
 ### 다크 모드 동작
 
 - 기본값은 **시스템 설정을 따른다**. 사용자가 토글하면 `localStorage`에 기억하고 `:root[data-theme]`로 고정한다.
 - 세 가지 상태를 모두 다뤄야 한다: `data-theme="dark"` / `data-theme="light"` / **stamp 없음(시스템 따름)**.
 - `body`에 토큰 배경을 명시적으로 지정한다.
+
+### 테마에 따라 달라지는 "색이 아닌 값"
+
+색이 아니어도 테마마다 달라져야 하는 값이 있다. **그것도 토큰으로 만든다** — 컴포넌트
+CSS에 `@media`나 `[data-theme]` 분기가 새는 것을 막는 것이 목적이다.
+
+| 토큰 | 라이트 | 다크 | 쓰는 곳 |
+|---|---|---|---|
+| `--icon-sun-display` | `none` | `block` | 테마 토글 아이콘 — "누르면 갈 곳"을 보여준다 |
+| `--icon-moon-display` | `block` | `none` | 위와 짝 |
+| `--font-smooth` | `antialiased` | `auto` | `body`의 `-webkit-font-smoothing` |
+| `--font-smooth-moz` | `grayscale` | `auto` | `body`의 `-moz-osx-font-smoothing` |
+
+**`--font-smooth`가 왜 테마별인가.** macOS에서 `antialiased`는 서브픽셀 렌더링을 끄고
+**획을 얇게** 만든다. 어두운 글자를 밝은 배경에 얹는 라이트에서는 깔끔해 보이지만,
+다크에서는 이미 번져 보이는 밝은 글자를 더 가늘게 만들어 "전체적으로 흐리다"는
+체감에 크게 기여한다. 다크에서만 브라우저 기본으로 되돌린다.
+
+두 벤더 속성이 값 어휘를 공유하지 않아(`antialiased`/`auto` vs `grayscale`/`auto`)
+토큰도 두 개다. 하나로 합치려다 `-moz-osx-font-smoothing: antialiased`처럼
+**무효값**을 내면 조용히 무시된다.
 
 ---
 
@@ -368,6 +408,43 @@ radius:
 **색 목록이 바뀌면** `/blog-census --bodies`로 `data/inline-styles.json`을 갱신하고 다시 빌드한다. CSS를 손댈 필요가 없다.
 **JS 안전망**: 위 목록에 없는 색(앞으로 쓸 새 글)을 위해, 본문 인라인 색의 상대 휘도를 계산해 현재 모드에서 대비가 부족하면 제거한다. CSS가 먼저 적용되므로 깜박임은 없다.
 
+### 5.2b 티스토리 스타일시트가 박아 둔 라이트 전용 색
+
+**5.2와 다른 문제다.** 5.2는 글 본문의 `style` 속성이라 `[style*=…]`로 잡힌다. 여기 색들은
+티스토리가 **자기 스타일시트에서** 에디터 컴포넌트에 칠하는 것이라, 속성 선택자로는
+원리적으로 닿지 않고 인라인 보정도 JS 안전망도 건드리지 못한다.
+
+```
+static/style/content.css        오픈그래프·인용·첨부·장소·검색카드·표 스타일
+페이지 안 <style>                .another_category ("카테고리의 다른 글") — 전부 !important
+cdnjs .../atom-one-light.min.css  코드 구문 색 — 우리 style.css **뒤**에 온다
+```
+
+**핵심은 순서가 아니라 특이도다.** content.css는 우리보다 앞에 오지만 상당수 규칙이
+`#tt-body-page`로 시작한다 — ID 하나가 클래스 전부를 이긴다.
+
+```css
+#tt-body-page blockquote[data-ke-style='style1'] { color:#333 }        /* (1,1,1) 티스토리 */
+.contents_style blockquote { color: var(--ink-body) }                  /* (0,1,1) 우리 — 진다 */
+#tt-body-page .contents_style blockquote[data-ke-style="style1"] { … } /* (1,3,1) 우리 — 이긴다 */
+```
+
+**대응 원칙 세 가지** (`src/styles/tistory.css`):
+
+1. **테마 분기를 하지 않는다.** 리터럴을 토큰으로 바꾸기만 하면 다크는 토큰이 따라온다.
+   §8.1에서 두 번 데인 "여섯 상태" 실수를 아예 만들지 않는다. 덤으로 라이트도 고쳐진다 —
+   `style12` 표 머리는 **라이트에서도** 2.78:1이었다.
+2. **상대 선택자를 그대로 베끼고 앞에만 붙인다.** `.contents_style`로 (0,1,0)을 더하고,
+   상대가 ID로 시작하면 `#tt-body-page`까지 붙인다. 같으면 순서 싸움이 되고 순서는 티스토리가 정한다.
+3. **선택자를 줄이지 않는다.** `figure.fileblock .filename`을 `.filename`으로 줄이면 진다.
+
+**코드 구문 색은 반대 경우다.** atom-one-light은 우리보다 **뒤**에 오고 특이도가 같아서(0,1,0)
+순서로 이긴다. 그래서 `components.css`의 팔레트는 전부 `.hljs ` 접두를 달아 (0,2,0)으로 올린다.
+접두를 떼면 팔레트 전체가 화면에 닿지 않고, 라이트 테마 색이 다크 배경에 얹힌다.
+
+**목록은 `data/tistory-hardcoded-colors.json`이 정본이고, 린트 `TIS001`/`TIS002`/`HLJS001`이 지킨다.**
+티스토리가 시트를 바꾸면 목록도 갱신해야 한다 — 자동 감지 수단은 없다.
+
 ### 5.3 카테고리 트리
 
 **`[##_category_list_##]`(리스트형)가 통째로 렌더링한다.** `[##_category_##]`(폴더형)가 아니다 — 둘은 완전히 다른 것을 출력하고, 폴더형을 쓰면 아래 클래스가 **하나도 나오지 않는다**(`DECISIONS.md` 결정 31, 린트 `CAT001`). 마크업은 바꿀 수 없다.
@@ -561,7 +638,8 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 ## 8. 알려진 빈틈
 
-- **다크 팔레트는 파생값이다.** 원본 Vercel 분석은 단일 모드다. 실제 화면에서 대비를 검증한 뒤 조정한다.
+- **다크 코드 팔레트는 여전히 임시다.** 아래 "구문 하이라이팅 색 규정이 없다" 항목 참조. 다만 `.hljs ` 접두가 없으면 그 임시 팔레트조차 화면에 닿지 않는다는 것은 2026-08-26에 잡았다(§8.1).
+- **티스토리 하드코딩 색 목록은 수동 갱신이다.** `data/tistory-hardcoded-colors.json`은 2026-08-26 기준으로 받아 적은 것이고, 티스토리가 `content.css`를 바꾸거나 새 에디터 컴포넌트를 내면 **자동으로 알 방법이 없다.** 린트는 목록 대비 우리 CSS만 검사한다 — 목록 자체가 낡으면 조용히 통과한다. 새 컴포넌트를 쓴 글을 쓰거나 다크에서 이상한 것이 보이면 시트를 다시 받아 대조할 것.
 - **기본 이미지 도안은 들어왔다** — `src/assets/placeholders/` 15장(상위 14 + 기본값 1), `scripts/gen-placeholders.py`가 정본이다. 마스크 방식이라 라이트/다크가 한 파일로 갈린다. **다만 `src/styles/`가 없어 빌드 산출물로는 아직 확인하지 못했다** — `placeholderVars()`는 CSS 빌드 안에서만 돈다. 스킨 첫 사이클에서 `style.css`에 `--ph-*`가 실제로 박히는지, 린트 `BND003`이 실제로 도는지 확인한다.
 - **`preview.gif` / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`** 스킨 미리보기 이미지가 필요하다.
 - **인라인 색 열거 목록은 2026-08-24 기준 275편 전수 조사 결과다.** 새 글이 쌓이면 다시 세야 하며, 그때까지는 JS 안전망이 막는다.
@@ -573,6 +651,10 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 | 날짜 | 항목 | 무엇을 했나 |
 |---|---|---|
+| 2026-08-26 | 🔴 티스토리 스타일시트의 라이트 전용 색이 다크에서 **1.00~3.66:1**로 사라졌다 | 원인은 우리 CSS가 아니라 **특이도**다. `content.css`의 상당수 규칙이 `#tt-body-page`로 시작해 `.contents_style …`(0,1,1)을 이겼다. 인라인 보정도 JS 안전망도 원리적으로 못 잡는다 — 색이 `style` 속성이 아니라 **시트**에 있기 때문이다. 실측 피해: 오픈그래프 카드 제목 **1.00:1**(62곳/39편), 인용 `style1` 1.66(7곳), 인용 `style3`·`box`는 다크에 **흰 카드**(24곳), `blockquote p` 3.66(전체 57곳), `style12` 표 1.90~2.27(9곳). `tistory.css`에 §5.2b 원칙대로 토큰 덮어쓰기를 넣고 린트 `TIS001`(누락)·`TIS002`(ID 짝 누락)를 추가했다 |
+| 2026-08-26 | 🔴 구문 색 팔레트가 **통째로 무효**였다 | 티스토리가 코드블록 있는 글에 `atom-one-light`을 CDN에서 주입하는데, 그 `<link>`가 우리 `style.css` **뒤**에 온다. 양쪽 다 `.hljs-keyword`(0,1,0)라 특이도가 같고, 같으면 뒤가 이긴다. 라이트 테마 색이 다크 배경에 얹혀 keyword 3.06 · number 3.85 · literal 4.48로 AA 미달이었다. 팔레트 전체에 `.hljs ` 접두를 달아 (0,2,0)으로 올리고 린트 `HLJS001`을 추가했다. `.contents_style`이 아니라 `.hljs`로 잡은 이유는 `code.js`가 직접 그 클래스를 붙이기 때문이다 — 누가 칠했든 항상 참인 구조다 |
+| 2026-08-26 | 다크 팔레트 파생값 검증 (미결 5) | 배포본에서 처음 실측했다. 수치는 라이트와 대칭이었지만 체감이 달라 세 가지를 조정했다 — 캔버스 사다리 한 단 위(`#0a0a0a`/`#121212`/`#1a1a1a`), `--ink-body` `#a1a1a1` → `#b0b0b0`, `--font-smooth` 토큰 신설(다크에서 `antialiased` 해제). 전경 8종 × 배경 3면 전부 AA 통과, 최저 5.38. §2 참조 |
+| 2026-08-26 | 프리뷰가 티스토리 시트를 안 불러 **세 번째 위조 통과** 직전이었다 | 렌더러가 우리 CSS만 그려서, 위 두 결함이 프리뷰에서는 멀쩡해 보였다. 이제 `content.css`(우리 앞)와 `atom-one-light`(우리 뒤)을 **실제 순서대로** 끼우고, 못 불러오면 화면 하단에 경고 띠를 띄운다. 본문 픽스처에도 오픈그래프·인용 3종·첨부·`style12` 표·`another_category`를 넣었다. 픽스처 조립을 `replace("</div>", …, 1)`에서 "열기+알맹이+닫기"로 바꿨다 — 알맹이에 `<div>`가 생기는 순간 첫 `</div>`가 안쪽 것이 되어 조용히 엉뚱한 자리에 붙는다 |
 | 2026-08-25 | 🔴 인라인 보정 CSS가 **stamp 없음 + 시스템 다크**를 안 덮었다 | `scripts/build.mjs`가 다크를 `[data-theme="dark"]`와 `@media (prefers-color-scheme: dark) { :not([data-theme="light"]) }` 두 벌로 낸다. 라이트도 같은 이유로 대칭이 필요해 `[data-theme="light"]` + `@media (prefers-color-scheme: light) { :not([data-theme="dark"]) }`로 나눴다 — 그전에는 라이트 보정이 시스템 다크에서도 발화해 다크에서 멀쩡히 읽히던 밝은 글자를 끌어내렸다. 선택자 56 → **112개**. 함께 고친 것: 린트 `TOK002`가 `[style*="color: #000000"]` **선택자 줄**을 선언으로 오인하던 오탐, `TOK001` 상시 경고(생성 주석의 hex) |
 | 2026-08-25 | `--ink-mute` 라이트 AA 미달 | `#888888` → **`#707070`**. 흰 캔버스만 보고 `#767676`(4.54:1)으로 내렸다가, `--ink-mute`가 **코드블록 안(`--canvas-soft`)에서도 쓰인다**는 것을 놓친 것을 잡았다 — `.hljs-comment` · `.code-lang` · `.code-lines`가 거기서 4.35:1이었다. 캡션이 놓이는 **세 면 전부**를 기준으로 다시 잡았다: `--canvas` 4.95 / `--canvas-soft` 4.74 / `--canvas-soft-2` 4.54. 다크 `#8f8f8f`는 6.49:1로 통과라 그대로 뒀다. **`--ink-mute`를 크롬 라벨에만 쓴다는 §2 사용 규칙은 그대로 유효하다** — 읽어야 하는 텍스트는 계속 `--ink-body`를 쓴다 |
 | 2026-08-25 | 목차 없는 글에서 본문이 288px 왼쪽으로 치우쳤다 | 소제목 3개 미만인 글(**실측 32%, 약 88편**)에서 목차 트랙 240px + 간격 48px이 그대로 남았다. `--page-w` 한 곳만 갈아끼워 본문과 광고 자리가 함께 움직이게 했다. **신호는 `body.no-toc`(목차를 못 만들 때만 JS가 붙인다)이고 `.toc.is-ready`가 아니다** — `.is-ready`를 조건으로 쓰면 첫 페인트에서 모든 글이 1단이었다가 목차가 있는 68%가 144px 밀린다(실측). JS가 꺼진 경로는 `@media (scripting: none)`이 받는다 |

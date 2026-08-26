@@ -1,0 +1,243 @@
+{
+  "crawledAt": "2026-08-26",
+  "sources": [
+    "https://tistory1.daumcdn.net/tistory_admin/userblog/userblog-<hash>/static/style/content.css",
+    "페이지 안 <style> 블록 (.another_category — CDN 시트가 아니라 HTML 본문에 온다)",
+    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/atom-one-light.min.css"
+  ],
+  "note": "티스토리가 에디터 컴포넌트에 박아 둔 라이트 전용 색. 우리가 손댈 수 없는 시트라 src/styles/tistory.css에서 토큰으로 덮는다. idScoped=true면 상대 선택자가 #tt-body-page로 시작하므로 우리 쪽도 ID를 붙여야 이긴다 — 클래스만으로는 특이도가 모자란다. 린트 TIS001이 이 목록과 CSS를 대조한다.",
+  "measuredOn": {
+    "canvas": "#000000",
+    "comment": "darkContrast는 **고치기 전** 상태다 — 당시 캔버스가 순검정(#000000), --ink-body가 #a1a1a1이었다(결정 33 이전). '얼마나 나빴나'를 남긴 값이지 현재 값이 아니다. kind=\"text\"면 그 색이 캔버스 위에 얹혔을 때 값, kind=\"background\"면 그 판 위에 우리 글자가 얹혔을 때 값이다 — 둘을 섞어 계산하면 무의미한 수가 나온다. 지금은 전부 토큰으로 덮여 있다. 새 팔레트 기준 수치는 DESIGN.md §2 참조."
+  },
+  "rules": [
+    {
+      "component": "인용 style1",
+      "marker": "blockquote[data-ke-style=\"style1\"]",
+      "idScoped": true,
+      "value": "#333",
+      "darkContrast": 1.66,
+      "kind": "text"
+    },
+    {
+      "component": "인용 box",
+      "marker": "blockquote[data-ke-style=\"box\"]",
+      "idScoped": true,
+      "value": "#fcfcfc",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 판이 다크에 뜨는 것이 문제다 — 대비 수치로 표현되지 않는다"
+    },
+    {
+      "component": "인용 style3",
+      "marker": "blockquote[data-ke-style=\"style3\"]",
+      "idScoped": true,
+      "value": "#fcfcfc",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 판이 다크에 뜨는 것이 문제다 — 대비 수치로 표현되지 않는다"
+    },
+    {
+      "component": "오픈그래프 링크",
+      "marker": "figure[data-ke-type=\"opengraph\"] a",
+      "idScoped": true,
+      "value": "#000",
+      "darkContrast": 1.0,
+      "kind": "text"
+    },
+    {
+      "component": "오픈그래프 제목",
+      "marker": "figure[data-ke-type=\"opengraph\"] div.og-text p.og-title",
+      "idScoped": true,
+      "value": "#000000",
+      "darkContrast": 1.0,
+      "kind": "text"
+    },
+    {
+      "component": "오픈그래프 설명",
+      "marker": "figure[data-ke-type=\"opengraph\"] div.og-text p.og-desc",
+      "idScoped": true,
+      "value": "#909090",
+      "darkContrast": 6.58,
+      "kind": "text"
+    },
+    {
+      "component": "오픈그래프 호스트",
+      "marker": "figure[data-ke-type=\"opengraph\"] div.og-text p.og-host",
+      "idScoped": true,
+      "value": "#909090",
+      "darkContrast": 6.58,
+      "kind": "text"
+    },
+    {
+      "component": "오픈그래프 썸네일선",
+      "marker": "figure[data-ke-type=\"opengraph\"] div.og-image",
+      "idScoped": false,
+      "value": "#d9d9d9",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 판이 다크에 뜨는 것이 문제다 — 대비 수치로 표현되지 않는다"
+    },
+    {
+      "component": "첨부 파일명",
+      "marker": "figure.fileblock .filename",
+      "idScoped": true,
+      "value": "#333333",
+      "darkContrast": 1.66,
+      "kind": "text"
+    },
+    {
+      "component": "첨부 검열 안내",
+      "marker": "figure.fileblock .censorship-guide",
+      "idScoped": true,
+      "value": "#333333",
+      "darkContrast": 1.66,
+      "kind": "text"
+    },
+    {
+      "component": "첨부 용량",
+      "marker": "figure.fileblock .size",
+      "idScoped": true,
+      "value": "#777",
+      "darkContrast": 4.69,
+      "kind": "text"
+    },
+    {
+      "component": "장소 카드",
+      "marker": "figure[data-ke-type=\"location\"] a",
+      "idScoped": true,
+      "value": "#fff",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 판이 다크에 뜨는 것이 문제다 — 대비 수치로 표현되지 않는다"
+    },
+    {
+      "component": "장소 이름",
+      "marker": "figure[data-ke-type=\"location\"] .location-name",
+      "idScoped": true,
+      "value": "#0f172a",
+      "darkContrast": 1.18,
+      "kind": "text"
+    },
+    {
+      "component": "장소 주소",
+      "marker": "figure[data-ke-type=\"location\"] .location-address",
+      "idScoped": true,
+      "value": "#64748b",
+      "darkContrast": 4.41,
+      "kind": "text"
+    },
+    {
+      "component": "검색카드 테두리",
+      "marker": "figure[data-ke-type=\"contentSearch\"]",
+      "idScoped": false,
+      "value": "rgba(0,0,0,.1)",
+      "darkContrast": null,
+      "kind": "background",
+      "contrastNote": "밝은 판이 다크에 뜨는 것이 문제다 — 대비 수치로 표현되지 않는다"
+    },
+    {
+      "component": "검색카드 제목",
+      "marker": "figure[data-ke-type=\"contentSearch\"] .cs-title",
+      "idScoped": false,
+      "value": "#000",
+      "darkContrast": 1.0,
+      "kind": "text"
+    },
+    {
+      "component": "검색카드 설명",
+      "marker": "figure[data-ke-type=\"contentSearch\"] .cs-desc",
+      "idScoped": false,
+      "value": "#909090",
+      "darkContrast": 6.58,
+      "kind": "text"
+    },
+    {
+      "component": "검색카드 항목값",
+      "marker": "figure[data-ke-type=\"contentSearch\"] .cs-info > dd",
+      "idScoped": false,
+      "value": "#555",
+      "darkContrast": 2.82,
+      "kind": "text"
+    },
+    {
+      "component": "동영상 캡션",
+      "marker": "figure[data-ke-type=\"video\"] figcaption",
+      "idScoped": false,
+      "value": "#666",
+      "darkContrast": 3.66,
+      "kind": "text"
+    },
+    {
+      "component": "슬라이드 캡션",
+      "marker": "figure.imageslideblock figcaption",
+      "idScoped": false,
+      "value": "#666",
+      "darkContrast": 3.66,
+      "kind": "text"
+    },
+    {
+      "component": "더보기 토글",
+      "marker": "div[data-ke-type=\"moreLess\"] .btn-toggle-moreless",
+      "idScoped": true,
+      "value": "#909090",
+      "darkContrast": 6.58,
+      "kind": "text"
+    },
+    {
+      "component": "더보기 버튼",
+      "marker": ".btn_more",
+      "idScoped": false,
+      "value": "#888",
+      "darkContrast": 5.92,
+      "kind": "text"
+    },
+    {
+      "component": "표 줄무늬 style12",
+      "marker": "table[data-ke-style=\"style12\"] tr:nth-child(odd) td",
+      "idScoped": false,
+      "value": "#f0f0f0",
+      "darkContrast": 2.27,
+      "kind": "background",
+      "contrastNote": "--ink-body #a1a1a1 on #f0f0f0"
+    },
+    {
+      "component": "표 첫 열 style12",
+      "marker": "table[data-ke-style=\"style12\"] tr td:first-child",
+      "idScoped": false,
+      "value": "#dcdddd",
+      "darkContrast": 1.9,
+      "kind": "background",
+      "contrastNote": "--ink-body #a1a1a1 on #dcdddd"
+    },
+    {
+      "component": "표 머리 style12",
+      "marker": "table[data-ke-style=\"style12\"] tr:first-child td",
+      "idScoped": false,
+      "value": "#9b9b9b",
+      "darkContrast": 2.78,
+      "kind": "background",
+      "contrastNote": "티스토리가 함께 지정한 #fff on #9b9b9b — 라이트에서도 같은 값"
+    },
+    {
+      "component": "관련글 상자",
+      "marker": ".another_category",
+      "idScoped": false,
+      "value": "#909090 !important",
+      "darkContrast": 6.58,
+      "kind": "text"
+    }
+  ],
+  "notOverridden": [
+    {
+      "component": "표 머리 style13·14·15",
+      "value": "#fff on #6ed3d8 / #008300 / #2780d4",
+      "reason": "실측 0개. 브랜드 강조색이라 우리가 갈아엎을 근거가 없다. 다만 #fff on #6ed3d8 = 1.75:1로 두 테마 모두 AA 미달이다 (DESIGN.md §8)."
+    },
+    {
+      "component": "imageslideblock 이미지 컨테이너 배경 #000",
+      "value": "#000",
+      "reason": "이미지 뷰어의 의도된 검은 바탕. 다크에서도 정상이다."
+    }
+  ]
+}

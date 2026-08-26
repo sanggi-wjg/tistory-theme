@@ -31,7 +31,8 @@
      .code-lines. 거기서는 4.35:1로 여전히 미달이었다.
      **캡션이 놓이는 세 면 전부를 기준으로 잡는다:**
         #707070 → --canvas 4.95 / --canvas-soft 4.74 / --canvas-soft-2 4.54
-     다크(#8f8f8f)는 6.49:1이라 그대로 둔다. */
+     다크(#8f8f8f)는 캔버스를 한 단 올린 뒤에도 세 면 전부 통과라 그대로 둔다 —
+     --canvas 6.12 / --canvas-soft 5.79 / --canvas-soft-2 5.38. */
   --ink-mute:        #707070;
   --link:            #0070f3;
   --link-deep:       #0761d1;
@@ -46,6 +47,14 @@
      토글 버튼은 "누르면 갈 곳"을 보여준다 — 라이트에서 달, 다크에서 해. */
   --icon-sun-display:  none;
   --icon-moon-display: block;
+
+  /* 글자 렌더링. macOS에서 antialiased는 서브픽셀 렌더링을 끄고 **획을 얇게** 만든다.
+     라이트(어두운 글자 / 밝은 배경)에서는 깔끔해 보이지만, 다크에서는 이미 번져
+     보이는 밝은 글자를 더 가늘게 만들어 "전체적으로 흐리다"는 체감의 큰 몫을 차지한다.
+     그래서 다크에서만 브라우저 기본(auto)으로 되돌린다.
+     두 벤더 속성이 값 어휘를 공유하지 않아 토큰도 두 개다. */
+  --font-smooth:     antialiased;
+  --font-smooth-moz: grayscale;
 
   /* ── 폰트 (DESIGN.md §3) ─────────────────────────────────────── */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system,
@@ -132,14 +141,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --canvas:          #000000;
-    --canvas-soft:     #0a0a0a;
-    --canvas-soft-2:   #111111;
-    --surface:         #0a0a0a;
+    --canvas:          #0a0a0a;
+    --canvas-soft:     #121212;
+    --canvas-soft-2:   #1a1a1a;
+    --surface:         #121212;
     --hairline:        #2e2e2e;
     --hairline-strong: #454545;
     --ink:             #ededed;
-    --ink-body:        #a1a1a1;
+    --ink-body:        #b0b0b0;
     --ink-mute:        #8f8f8f;
     --link:            #3291ff;
     --link-deep:       #52a8ff;
@@ -151,21 +160,23 @@
     --selection-fg:    #171717;
     --icon-sun-display:  block;
     --icon-moon-display: none;
-    --veil: rgba(0, 0, 0, 0.88);   /* = --canvas #000000 88% (폴백) */
+    --font-smooth:     auto;
+    --font-smooth-moz: auto;
+    --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */
   }
 }
 
 /* ── 다크 : 사용자가 명시 ──────────────────────────────────────── */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --canvas:          #000000;
-  --canvas-soft:     #0a0a0a;
-  --canvas-soft-2:   #111111;
-  --surface:         #0a0a0a;
+  --canvas:          #0a0a0a;
+  --canvas-soft:     #121212;
+  --canvas-soft-2:   #1a1a1a;
+  --surface:         #121212;
   --hairline:        #2e2e2e;
   --hairline-strong: #454545;
   --ink:             #ededed;
-  --ink-body:        #a1a1a1;
+  --ink-body:        #b0b0b0;
   --ink-mute:        #8f8f8f;
   --link:            #3291ff;
   --link-deep:       #52a8ff;
@@ -177,7 +188,9 @@
   --selection-fg:    #171717;
   --icon-sun-display:  block;
   --icon-moon-display: none;
-  --veil: rgba(0, 0, 0, 0.88);   /* = --canvas #000000 88% (폴백) */
+  --font-smooth:     auto;
+  --font-smooth-moz: auto;
+  --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */
 }
 
 /* ── 가림막을 토큰에서 파생시키는 건 지원 브라우저에서만 ──────────

@@ -78,7 +78,49 @@ def scan_orphan_areas(skin):
 
 # 실제 글에서 관찰된 오염 패턴을 그대로 담은 본문 픽스처.
 # 인라인 color/background-color/font-family 보정 규칙이 동작하는지 여기서 확인한다.
-ARTICLE_BODY = """<div class="tt_article_useless_p_margin contents_style">
+# ── 티스토리가 실제 페이지에 끼워 넣는 스타일시트 ──────────────────────
+#
+# 이걸 빼면 프리뷰는 **우리 CSS만** 그린다. 그러면 다크에서 인용문이 사라지는 종류의
+# 결함이 프리뷰에서 멀쩡해 보인다 — 원인이 우리 CSS가 아니라 티스토리 CSS와의
+# 특이도 싸움이기 때문이다. 프리뷰가 통과 신호를 위조한 사고를 이미 두 번 겪었다
+# (CLAUDE.md 2026-08-25 두 항목). 세 번째를 만들지 않으려면 상대를 불러와야 한다.
+#
+# **순서가 곧 검사다.** 실제 <head>에서 content.css는 우리보다 앞, atom-one-light는
+# 우리보다 뒤에 온다. 뒤에 오는 쪽은 특이도가 같으면 이긴다 — 그 조건을 재현해야
+# `.hljs` 접두가 정말 필요한지 눈으로 확인된다. 여기 순서를 바꾸지 말 것.
+TISTORY_CONTENT_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
+                       "userblog-d748cfd5e0a0f73a4f05afc297a1e4fc6364eea5/static/style/content.css")
+TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/"
+                    "styles/atom-one-light.min.css")
+
+# 네트워크가 없으면 위 두 시트가 조용히 빠지고 프리뷰는 다시 거짓말을 한다.
+# 눈에 띄는 띠를 띄워 "지금 보고 있는 것은 반쪽"이라고 알린다.
+# ⚠ `%` 포맷을 쓰지 않는다. 이 문자열은 CSS를 담고 있어 `width:100%` 같은 값이
+#    언제든 들어올 수 있고, 그러면 "%" 포맷이 ValueError로 터진다. 자리표시자로 바꾼다.
+TISTORY_CSS_GUARD = """
+<script>
+(function () {
+  var need = __NEED__, ok = 0;
+  function warn() {
+    if (ok >= need) return;
+    var b = document.createElement('div');
+    b.textContent = '⚠ 티스토리 스타일시트를 불러오지 못했다 (' + ok + '/' + need + '). ' +
+      '지금 화면은 우리 CSS만 그린 결과라, 티스토리와의 특이도 충돌은 재현되지 않는다.';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;padding:10px 14px;' +
+      'background:#f5a623;color:#171717;font:13px/1.5 system-ui;text-align:center';
+    document.body.appendChild(b);
+  }
+  window.__tistoryCssLoaded = function () { ok++; };
+  window.addEventListener('load', function () { setTimeout(warn, 300); });
+}());
+</script>"""
+
+
+# 본문 픽스처는 "열기 + 알맹이 + 닫기"로 나눠 조립한다.
+# 예전에는 ARTICLE_BODY.replace("</div>", …, 1)로 목차용 변형을 만들었는데,
+# 알맹이에 <div>가 하나라도 생기는 순간 **첫 </div>가 안쪽 것**이 되어 조용히
+# 엉뚱한 자리에 붙는다. 오픈그래프 카드가 div를 쓰면서 실제로 그렇게 됐다.
+ARTICLE_BODY_INNER = """
 <p data-ke-size="size16"><span style="font-family: AppleSDGothicNeo-Regular, 'Malgun Gothic', sans-serif;">힙 덤프는 깨끗한데 컨테이너 RSS만 계속 올라갔다. 논힙 영역을 하나씩 벗겨내다 커넥션 풀 설정에 도달했다.</span></p>
 <blockquote data-ke-style="style3">HikariCP의 <code>maxLifetime</code>은 반드시 DB의 <code>wait_timeout</code>보다 짧아야 한다.</blockquote>
 <h2 data-ke-size="size26"><span style="color: #000000;">Socket 버퍼는 어디에 쌓이는가</span></h2>
@@ -100,18 +142,45 @@ Total: reserved=2841MB, committed=1974MB
       keepalive-time: 120000</code></pre>
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
-</div>"""
+"""
 
+# ── 티스토리 에디터 컴포넌트 ─────────────────────────────────────────
+# 티스토리 content.css가 **라이트 전용 색을 박아 둔** 요소들이다. 하나라도 빼면
+# 그 컴포넌트의 다크 결함이 프리뷰에서 보이지 않는다. 실측 개수와 원본 색은
+# data/tistory-hardcoded-colors.json에 있고, 린트 TIS001이 그 목록을 지킨다.
+#
+# .another_category의 규칙은 CDN 시트가 아니라 **페이지 안 <style>**로 오고 전부
+# !important다. 그것까지 재현해야 우리 덮어쓰기가 정말 이기는지 보인다.
+EDITOR_COMPONENTS = """
+<figure data-ke-type="opengraph"><a href="https://example.com"><div class="og-image" style="background-image:url(https://placehold.co/240x160/eeeeee/999999?text=og)"></div><div class="og-text"><p class="og-title">오픈그래프 링크 카드 제목 — 실측 62곳 / 39편</p><p class="og-desc">이 카드의 제목과 링크가 #000이라 다크에서 1.00:1이 된다.</p><p class="og-host">example.com</p></div></a></figure>
+<blockquote data-ke-style="style1">스타일1 인용 — ID 스코프라 클래스만으로는 못 이긴다.<cite>출처: 실측 7곳</cite></blockquote>
+<blockquote data-ke-style="box">박스 인용 — 배경 #fcfcfc가 박혀 다크에서 흰 카드가 된다.</blockquote>
+<blockquote data-ke-style="style2"><p>인용 안의 문단이다. 티스토리 `blockquote p { color:#666 }`가 <strong>직접 지정</strong>이라 상속을 이긴다 — blockquote만 칠하면 이 줄은 안 바뀐다. 실측 57곳 / 25편으로 인용 중 가장 흔한 형태다.</p></blockquote>
+<figure class="fileblock"><a href="#"><span class="filename">첨부파일.zip</span><span class="size">1.2MB</span></a></figure>
+<table data-ke-style="style12"><tbody><tr><td>머리 행</td><td>값</td></tr><tr><td>첫 열</td><td>홀수 행</td></tr><tr><td>첫 열</td><td>짝수 행</td></tr></tbody></table>
+<style>
+.another_category_color_gray * { color:#909090 !important; }
+.another_category_color_gray h4,
+.another_category_color_gray h4 a { color:#737373 !important; }
+.another_category_color_gray,
+.another_category_color_gray h4 { border-color:#E5E5E5 !important; }
+</style>
+<div class="another_category another_category_color_gray"><h4><a href="#">'네트워크' 카테고리의 다른 글</a></h4><table><tbody><tr><th><a href="#">티스토리가 본문 끝에 붙이는 상자다</a></th><td>2026.04.30</td></tr></tbody></table></div>
+"""
 
 # 소제목 3개 이상(h2 3 + h3 1). 목차·스크롤스파이·데스크톱 2단 경로를 여기서 본다.
-ARTICLE_BODY_TOC = ARTICLE_BODY.replace("</div>", """
+TOC_EXTRA = """
 <h2 data-ke-size="size26">커넥션 유효성 검사</h2>
 <p data-ke-size="size16">세 번째 소제목이다. 이 글은 목차가 생긴다.</p>
 <h3 data-ke-size="size23">test-query를 쓰지 않는 이유</h3>
 <p data-ke-size="size16">JDBC4 드라이버는 <code>isValid()</code>를 쓴다.</p>
 <table><thead><tr><th>항목</th><th>값</th><th>비고</th><th>기본</th></tr></thead>
 <tbody><tr><td>maxLifetime</td><td>240000</td><td>DB wait_timeout보다 짧게</td><td>1800000</td></tr></tbody></table>
-</div>""", 1)
+"""
+
+_OPEN = '<div class="tt_article_useless_p_margin contents_style">'
+ARTICLE_BODY = _OPEN + ARTICLE_BODY_INNER + EDITOR_COMPONENTS + "</div>"
+ARTICLE_BODY_TOC = _OPEN + ARTICLE_BODY_INNER + TOC_EXTRA + EDITOR_COMPONENTS + "</div>"
 
 
 def load_fixtures():
@@ -579,7 +648,22 @@ def main():
         # 로컬 경로로 치환 — 스킨은 ./images/, style.css를 상대 경로로 참조한다
         # 렌더 결과는 _preview/pages/ 아래에 둔다.
         # _preview/index.html은 목차 페이지이므로, page 타입 'index'와 파일명이 충돌한다.
-        out = out.replace('href="./style.css"', 'href="../../dist/style.css"')
+        # 티스토리 시트를 **실제 순서대로** 끼운다 — content.css는 우리 앞, hljs는 우리 뒤.
+        # 감시 스크립트가 링크보다 먼저 와야 onload 콜백이 정의되어 있다.
+        stack = "\n".join((
+            TISTORY_CSS_GUARD.replace("__NEED__", "2"),
+            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_CONTENT_CSS,
+            '<link rel="stylesheet" href="../../dist/style.css">',
+            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_HLJS_CSS,
+        ))
+        before = out
+        out = out.replace('<link rel="stylesheet" href="./style.css">', stack, 1)
+        if out == before:
+            # 스킨의 링크 표기가 바뀌면 위 치환이 조용히 빗나간다. 그때는 프리뷰가
+            # 다시 우리 CSS만 그리게 되므로, 조용히 넘어가지 않고 알린다.
+            sys.stderr.write("  ⚠ style.css 링크를 찾지 못해 티스토리 시트를 끼우지 못했다 "
+                             "— 프리뷰가 특이도 충돌을 재현하지 않는다\n")
+            out = out.replace('href="./style.css"', 'href="../../dist/style.css"')
         out = out.replace('src="./images/', 'src="../../dist/images/')
         out = out.replace('url(./images/', 'url(../../dist/images/')
         os.makedirs(os.path.join(OUT, "pages"), exist_ok=True)

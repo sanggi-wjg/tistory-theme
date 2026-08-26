@@ -1377,49 +1377,70 @@
    ║                                                                    ║
    ║ code.js는 신뢰도 미달이면 아예 칠하지 않는다. 그때는 이 규칙이       ║
    ║ 하나도 매칭되지 않고 원문이 --ink 그대로 남는다.                     ║
+   ║                                                                    ║
+   ║ ⚠ 모든 선택자에 `.hljs ` 접두가 붙어 있다. 장식이 아니라 **필수**다. ║
+   ║   티스토리는 코드블록이 있는 글에 highlight.js의 `atom-one-light`을  ║
+   ║   CDN에서 주입하는데, 그 `<link>`가 우리 style.css **뒤**에 온다.    ║
+   ║   거기 규칙도 `.hljs-keyword`처럼 클래스 하나(0,1,0)라 특이도가       ║
+   ║   같고, 같으면 뒤가 이긴다 — 접두가 없으면 이 팔레트는 한 줄도       ║
+   ║   화면에 닿지 않는다. 라이트 테마 색이 다크 배경에 얹혀              ║
+   ║   keyword 3.06 · number 3.85 · literal 4.48로 전부 AA 미달이 된다.  ║
+   ║   `.hljs `를 붙이면 (0,2,0)이 되어 순서와 무관하게 이긴다.           ║
+   ║   `.contents_style`이 아니라 `.hljs`로 잡는 이유는 code.js가 직접    ║
+   ║   `codeEl.classList.add('hljs')`를 하기 때문이다 — 누가 칠했든 항상  ║
+   ║   참인 구조다. 접두를 떼려면 린트 HLJS001을 먼저 보라.               ║
    ╚════════════════════════════════════════════════════════════════════╝ */
 
-.hljs-comment,
-.hljs-quote {
+.hljs .hljs-comment,
+.hljs .hljs-quote {
   color: var(--ink-mute);
   font-style: italic;
 }
 
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal,
-.hljs-type,
-.hljs-built_in,
-.hljs-meta-keyword { color: var(--link); }
+.hljs .hljs-keyword,
+.hljs .hljs-selector-tag,
+.hljs .hljs-literal,
+.hljs .hljs-type,
+.hljs .hljs-built_in,
+.hljs .hljs-meta-keyword { color: var(--link); }
 
-.hljs-title,
-.hljs-section,
-.hljs-name,
-.hljs-selector-id,
-.hljs-selector-class {
+.hljs .hljs-title,
+.hljs .hljs-section,
+.hljs .hljs-name,
+.hljs .hljs-selector-id,
+.hljs .hljs-selector-class {
   color: var(--ink);
   font-weight: 600;
 }
 
-.hljs-string,
-.hljs-regexp,
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet,
-.hljs-attr,
-.hljs-attribute,
-.hljs-variable,
-.hljs-template-variable,
-.hljs-addition { color: var(--ink-body); }
+.hljs .hljs-string,
+.hljs .hljs-regexp,
+.hljs .hljs-number,
+.hljs .hljs-symbol,
+.hljs .hljs-bullet,
+.hljs .hljs-attr,
+.hljs .hljs-attribute,
+.hljs .hljs-variable,
+.hljs .hljs-template-variable,
+.hljs .hljs-addition { color: var(--ink-body); }
 
-.hljs-meta,
-.hljs-doctag,
-.hljs-tag,
-.hljs-punctuation { color: var(--ink-mute); }
+.hljs .hljs-meta,
+.hljs .hljs-doctag,
+.hljs .hljs-tag,
+.hljs .hljs-punctuation { color: var(--ink-mute); }
 
-.hljs-deletion { color: var(--error); }
-.hljs-emphasis { font-style: italic; }
-.hljs-strong { font-weight: 600; }
+.hljs .hljs-deletion { color: var(--error); }
+.hljs .hljs-emphasis { font-style: italic; }
+.hljs .hljs-strong { font-weight: 600; }
+
+/* atom-one-light은 `.hljs` 자체에도 색과 배경을 준다 (color:#383a42 · background:#fafafa).
+   배경은 content.css의 `.contents_style pre code`(0,1,2)가 이미 이기지만, 그건
+   본문 안에 있을 때만이다. 코드블록은 본문 밖에 놓일 일이 없어야 정상이나,
+   여기서 한 번 더 못박아 둔다 — 라이트 배경 판이 다크에 뜨는 것보다는 낫다. */
+.contents_style .hljs {
+  color: inherit;
+  background: none;
+}
 
 /* ╚══ 코드 하이라이팅 팔레트 끝 ═════════════════════════════════════════ */
 

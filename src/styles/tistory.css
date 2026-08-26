@@ -180,6 +180,208 @@
   padding-right: 28px;
 }
 
+/* ══════════ 에디터 컴포넌트 (data-ke-*) ════════════════════════
+   티스토리가 CDN에서 내려주는 `static/style/content.css`는 에디터 컴포넌트에
+   **라이트 전용 색을 리터럴로 박아 둔다.** 우리 style.css보다 먼저 오지만
+   문제는 순서가 아니라 특이도다 — 상당수가 `#tt-body-page`로 시작한다.
+
+     #tt-body-page blockquote[data-ke-style='style1'] { color:#333 }   (1,1,1)
+     .contents_style blockquote                       { color:var(--ink-body) }  (0,1,1)
+
+   ID 하나가 클래스 전부를 이긴다. 그래서 다크에서 인용문이 1.66:1로 사라졌다
+   (2026-08-26 실측, DECISIONS.md 결정 32). 라이트에서는 12.63:1로 멀쩡해서
+   **한쪽 테마에서만** 조용히 깨져 있었다.
+
+   ── 이 블록의 규칙 세 가지 ──────────────────────────────────
+   1. **테마 분기를 하지 않는다.** 리터럴을 토큰으로 바꾸기만 하면 다크는
+      토큰이 알아서 따라온다. `@media`·`[data-theme]` 여섯 상태를 다시 재는
+      실수(DESIGN.md §8.1에서 두 번 했다)를 아예 만들지 않는 방법이다.
+      덤으로 라이트도 팔레트에 맞춰진다 — style12 표 머리처럼 **라이트에서도
+      AA 미달(2.78:1)이던 것**이 같이 고쳐진다.
+   2. **티스토리 선택자를 그대로 베끼고 앞에만 붙인다.** `.contents_style`을
+      앞에 붙여 (0,1,0)을 더하고, 상대가 ID로 시작하면 `#tt-body-page`까지
+      붙여 (1,0,0)을 더한다. 상대보다 **반드시 크게** 만든다 — 같으면
+      순서 싸움이 되고, 순서는 티스토리가 정한다.
+   3. **선택자를 줄이지 않는다.** `figure.fileblock .filename`을
+      `.filename`으로 줄이면 (1,2,1) → (1,2,0)이 되어 진다. 장황함이 곧 계약이다.
+
+   ⚠ 아래 짝(우리 선택자 ↔ 상대 선택자)이 어긋나면 조용히 실패한다.
+      린트 TIS001이 티스토리 content.css의 색 규칙과 여기를 대조한다. */
+
+/* 카드형 링크는 본문 인라인 링크가 아니다. content.css의 `.contents_style a`가
+   파란색 + 밑줄을 주는데, 카드 전체를 감싼 <a>에 그게 걸리면 카드 안쪽 글자
+   전부에 밑줄이 그어진다. 프리뷰에 컴포넌트를 넣고서야 보였다. */
+.contents_style figure[data-ke-type="opengraph"] a,
+.contents_style figure[data-ke-type="location"] a,
+.contents_style figure[data-ke-type="contentSearch"] a,
+.contents_style figure.fileblock a { text-decoration: none; }
+
+/* ── 인용 ────────────────────────────────────────────────────
+   style1은 ID 스코프에서만 색이 온다. box와 style3은 같은 규칙에 묶여 있어
+   **둘 다 흰 카드**가 된다 — style3이 실측 24곳으로 style1(7곳)보다 많다. */
+.contents_style blockquote[data-ke-style="style1"],
+#tt-body-page .contents_style blockquote[data-ke-style="style1"] {
+  color: var(--ink-body);
+}
+
+.contents_style blockquote[data-ke-style="box"],
+.contents_style blockquote[data-ke-style="style3"],
+#tt-body-page .contents_style blockquote[data-ke-style="box"],
+#tt-body-page .contents_style blockquote[data-ke-style="style3"] {
+  background: var(--canvas-soft);
+  border-color: var(--hairline);
+  color: var(--ink-body);
+}
+
+/* ── 오픈그래프 링크 카드 : 실측 62곳 / 39편 ──────────────────
+   `a`와 `.og-title`이 #000이라 다크에서 **1.00:1**, 카드 제목이 통째로 사라진다.
+   가장 많이 쓰이는 컴포넌트이자 가장 심하게 깨진 곳이다. */
+.contents_style figure[data-ke-type="opengraph"] a,
+#tt-body-page .contents_style figure[data-ke-type="opengraph"] a {
+  border-color: var(--hairline);
+  color: var(--ink-body);
+}
+
+.contents_style figure[data-ke-type="opengraph"] div.og-image,
+#tt-body-page .contents_style figure[data-ke-type="opengraph"] div.og-image {
+  border-right-color: var(--hairline);
+}
+
+.contents_style figure[data-ke-type="opengraph"] div.og-text p.og-title,
+#tt-body-page .contents_style figure[data-ke-type="opengraph"] div.og-text p.og-title {
+  color: var(--ink);
+}
+
+.contents_style figure[data-ke-type="opengraph"] div.og-text p.og-desc,
+.contents_style figure[data-ke-type="opengraph"] div.og-text p.og-host,
+#tt-body-page .contents_style figure[data-ke-type="opengraph"] div.og-text p.og-desc,
+#tt-body-page .contents_style figure[data-ke-type="opengraph"] div.og-text p.og-host {
+  color: var(--ink-mute);
+}
+
+/* ── 첨부 파일 ─────────────────────────────────────────────── */
+.contents_style figure.fileblock,
+#tt-body-page .contents_style figure.fileblock {
+  border-color: var(--hairline);
+}
+
+.contents_style figure.fileblock .filename,
+.contents_style figure.fileblock .censorship-guide,
+#tt-body-page .contents_style figure.fileblock .filename,
+#tt-body-page .contents_style figure.fileblock .censorship-guide {
+  color: var(--ink);
+}
+
+.contents_style figure.fileblock .size,
+#tt-body-page .contents_style figure.fileblock .size {
+  color: var(--ink-mute);
+}
+
+/* ── 장소 ────────────────────────────────────────────────────
+   `a`에 background-color:#fff가 박혀 있어 다크에 흰 카드가 뜬다. */
+.contents_style figure[data-ke-type="location"] a,
+#tt-body-page .contents_style figure[data-ke-type="location"] a {
+  background-color: var(--canvas-soft);
+  border-color: var(--hairline);
+}
+
+.contents_style figure[data-ke-type="location"] .location-name,
+#tt-body-page .contents_style figure[data-ke-type="location"] .location-name {
+  color: var(--ink);
+}
+
+.contents_style figure[data-ke-type="location"] .location-address,
+#tt-body-page .contents_style figure[data-ke-type="location"] .location-address {
+  color: var(--ink-mute);
+}
+
+/* ── 콘텐츠 검색 카드 ─────────────────────────────────────────
+   테두리가 rgba(0,0,0,.1)이라 다크에서 아예 안 보이고, .cs-title은 #000이다.
+   배경은 티스토리가 정의하지 않은 변수(var(--10-ffffff))를 참조해 투명이 된다. */
+.contents_style figure[data-ke-type="contentSearch"] {
+  background-color: var(--canvas-soft);
+  border-color: var(--hairline);
+}
+
+.contents_style figure[data-ke-type="contentSearch"] div.cs-image {
+  border-right-color: var(--hairline);
+}
+
+.contents_style figure[data-ke-type="contentSearch"] .cs-title { color: var(--ink); }
+
+.contents_style figure[data-ke-type="contentSearch"] .cs-desc,
+.contents_style figure[data-ke-type="contentSearch"] .cs-info > dt { color: var(--ink-mute); }
+
+.contents_style figure[data-ke-type="contentSearch"] .cs-info > dd { color: var(--ink-body); }
+
+/* ── 캡션 · 더보기 버튼 ───────────────────────────────────────── */
+.contents_style figure[data-ke-type="video"],
+.contents_style figure[data-ke-type="video"] figcaption,
+.contents_style figure.imageslideblock figcaption { color: var(--ink-mute); }
+
+.contents_style div[data-ke-type="moreLess"] .btn-toggle-moreless,
+#tt-body-page .contents_style div[data-ke-type="moreLess"] .btn-toggle-moreless {
+  color: var(--ink-mute);
+}
+
+.contents_style .btn_more,
+.contents_style .btn_less { color: var(--ink-mute); }
+
+/* ── 표 스타일 (data-ke-style) : 실측 11개 / 6편, style12가 9개 ──
+   줄무늬와 첫 열 배경이 밝은 회색 리터럴이라, 다크에서 우리 본문색을 얹으면
+   1.90~2.27:1이 된다. 배경만 사다리로 옮기면 글자색은 건드릴 필요가 없다.
+
+   style13·14·15의 머리 행(청록·초록·파랑 + 흰 글자)은 그대로 둔다 —
+   실측 0개이고, 브랜드 강조색을 우리가 갈아엎을 근거가 없다. 다만 그 조합은
+   #fff on #6ed3d8 = 1.75:1로 **두 테마 모두** AA 미달이다(DESIGN.md §8 기록). */
+.contents_style table[data-ke-style="style4"] tr:nth-child(2n) td,
+.contents_style table[data-ke-style="style5"] tr:nth-child(2n) td,
+.contents_style table[data-ke-style="style6"] tr:nth-child(2n) td,
+.contents_style table[data-ke-style="style7"] tr:nth-child(2n) td,
+.contents_style table[data-ke-style="style12"] tr:nth-child(odd) td,
+.contents_style table[data-ke-style="style13"] tr:nth-child(odd) td,
+.contents_style table[data-ke-style="style14"] tr:nth-child(odd) td,
+.contents_style table[data-ke-style="style15"] tr:nth-child(odd) td {
+  background-color: var(--canvas-soft);
+}
+
+.contents_style table[data-ke-style="style12"] tr td:first-child,
+.contents_style table[data-ke-style="style13"] tr td:first-child,
+.contents_style table[data-ke-style="style14"] tr td:first-child,
+.contents_style table[data-ke-style="style15"] tr td:first-child {
+  background-color: var(--canvas-soft-2);
+}
+
+/* style12의 회색 머리 행. --hairline-strong을 쓰면 "짙은 회색 띠"라는 원래 의도가
+   남으면서 라이트 6.94 · 다크 8.19로 둘 다 통과한다. (원래는 흰 글자 2.78:1) */
+.contents_style table[data-ke-style="style12"] tr:first-child td {
+  background-color: var(--hairline-strong);
+  border-color: var(--hairline-strong);
+  color: var(--ink);
+}
+
+/* ── "카테고리의 다른 글" 상자 ─────────────────────────────────
+   티스토리가 본문 끝에 붙이고, 규칙은 **페이지 안 <style>**로 들어온다
+   (CDN 시트가 아니라 HTML 본문이라 시트를 받아 대조할 수 없다).
+   전부 `!important`다 — `.another_category_color_gray * { color:#909090 !important }`.
+
+   ⚠ 이 블록이 `!important`를 쓰는 **두 번째이자 마지막 예외**다.
+      원칙(components.css:6)은 "인라인 스타일 보정 전용"이지만, 상대가
+      !important라 특이도만으로는 이길 수 없다. 대신 특이도도 함께 올려
+      (0,2,0) > (0,1,0)으로 확실히 이긴다. 새 예외를 늘리지 말 것.
+
+   내용이 우리 `.related`("…의 다른 글")와 겹친다. 지우지 않고 색만 맞춘다 —
+   중복을 없애려면 CSS가 아니라 티스토리 관리 설정에서 꺼야 한다. */
+.entry-body .another_category,
+.entry-body .another_category h4 { border-color: var(--hairline) !important; }
+
+.entry-body .another_category * { color: var(--ink-mute) !important; }
+
+.entry-body .another_category th a { color: var(--ink-body) !important; }
+
+.entry-body .another_category h4,
+.entry-body .another_category h4 a { color: var(--ink) !important; }
+
 /* ══════════ 댓글 · 방명록 ══════════════════════════════════════ */
 
 .comments {

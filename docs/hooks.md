@@ -380,7 +380,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
 | `.code-wrap.has-lines` | 줄번호를 켠 상태 | 일정 줄 수 이상 |
 | `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안, `pre` 앞 |
-| `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs` + `.language-<감지결과>`가 붙고, 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다 | `.contents_style pre > code` |
+| `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs` + `.language-<감지결과>`가 붙고, 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
 | `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 | `<body>` 끝에 1개 |
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |
@@ -513,6 +513,11 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
    마크업에서 desc를 빼야 한다.
 2. **홈에서 `s_list`가 함께 렌더되는지.** `showListOnCategory`의 문서 설명이 "커버 미사용 홈"을 언급한다.
    함께 렌더되면 홈에 카드 그리드와 목록이 둘 다 나온다. 확인 필요.
-3. **`index.xml`의 `<tree>` 색이 다크모드에서 어떻게 나오는지.** 라이트 기준값을 넣었다.
-   티스토리가 이 값을 인라인 스타일로 박으면 다크에서 `!important` 오버라이드가 필요하다.
+3. ~~**`index.xml`의 `<tree>` 색이 다크모드에서 어떻게 나오는지.**~~ **해결 (2026-08-25)** —
+   `[##_category_list_##]`(리스트형)로 바꾸면서 `<tree>` 설정이 닿지 않는 형식이 되어 인라인 `style`이
+   0개가 됐다. `!important`도 `index.xml` 수정도 필요 없다 (DECISIONS.md 결정 31, 미결 14).
+
+   **대신 다른 경로로 같은 종류의 문제가 있었다** — 본문 에디터 컴포넌트다. 티스토리가 인라인이 아니라
+   **자기 스타일시트**에서 라이트 전용 색을 칠하고, 상당수가 `#tt-body-page` ID 스코프라 클래스로는
+   못 이긴다. `tistory.css`에서 덮는다 (DESIGN.md §5.2b, 결정 32).
 4. **헤더의 `s_search`.** 공식 문서 예시는 사이드바 안이다. 헤더에서도 동작하는지 실블로그 확인.
