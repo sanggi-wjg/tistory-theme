@@ -35,10 +35,9 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 
 ## Phase 0: 컨텍스트 확인
 
-0. **`EnterWorktree`로 작업 공간을 먼저 잡고 `npm install`을 돌린다** (`CLAUDE.md` 작업 방식).
-   조건을 따지지 않는다 — 팀이 `src/`를 만들기 시작하면 파일이 대량으로 바뀌므로, 같은
-   디렉터리를 쓰는 다른 세션이 있으면 서로 밟는다. worktree 이름은 작업 범위로 짓는다
-   (`home-grid`, `toc-scrollspy`). 이미 worktree 안이면 그대로 이어간다.
+0. **브랜치를 먼저 딴다** (`CLAUDE.md` 작업 방식) — `git switch main && git pull` 로 기점을
+   맞춘 뒤 `git switch -c <작업 범위>` (`home-grid`, `toc-scrollspy`). `main`에서 작업하지
+   않는다. 이미 작업 브랜치 위면 그대로 이어간다.
 1. `_workspace/` 존재 여부 확인
 2. 실행 모드 결정:
    - **미존재** → 초기 실행. Phase 1로
