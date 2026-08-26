@@ -410,15 +410,27 @@ def lint_tistory_comment_scope(css):
     missing, half = [], []
     for r in rules:
         marker = r["marker"]
-        has_c = ".comments " + marker in body
-        has_g = ".guestbook " + marker in body
+        # idScoped=true면 상대가 ID로 시작한다 — 조상 둘(0,3,x)로는 못 이긴다.
+        # 우리도 body id를 붙인 짝이 있어야 하고, body id는 페이지마다 다르다.
+        # 짝을 **문자 그대로** 찾는다(TIS002와 같은 이유 — 근접 검사는 옆 규칙의
+        # ID가 우연히 걸려 통과시킨다).
+        if r.get("idScoped"):
+            pair_c = "#tt-body-page .comments " + marker
+            pair_g = "#tt-body-guestbook .guestbook " + marker
+        else:
+            pair_c = ".comments " + marker
+            pair_g = ".guestbook " + marker
+        has_c = pair_c in body
+        has_g = pair_g in body
         if not has_c and not has_g:
-            missing.append(r["component"])
+            missing.append(r["component"] + ("(ID 스코프)" if r.get("idScoped") else ""))
         elif not (has_c and has_g):
-            half.append("%s(%s만)" % (r["component"], ".comments" if has_c else ".guestbook"))
+            half.append("%s(%s만)" % (r["component"], "글" if has_c else "방명록"))
     if missing:
         err("TIS003", "댓글 앱이 라이트 전용 값을 박아 둔 %d종에 (0,3,0) 덮어쓰기가 없다: %s. "
-            "클래스 하나로 쓰면 상대 (0,2,0)에 진다 — 다크에서 댓글이 배경에 묻힌다."
+            "클래스 하나로 쓰면 상대 (0,2,0)에 진다 — 다크에서 댓글이 배경에 묻힌다. "
+            "(ID 스코프)로 표시된 항목은 상대가 ID로 시작하므로 #tt-body-page / "
+            "#tt-body-guestbook 까지 붙여야 한다."
             % (len(missing), ", ".join(missing[:8])), "src/styles/tistory.css")
     if half:
         err("TIS003", "%d종이 .comments / .guestbook 짝 없이 한쪽만 덮여 있다: %s. "

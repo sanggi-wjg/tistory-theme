@@ -241,7 +241,7 @@
       "reason": "이미지 뷰어의 의도된 검은 바탕. 다크에서도 정상이다."
     }
   ],
-  "commentNote": "댓글·방명록은 티스토리가 React로 **런타임에** 그린다. 그 CSS 규칙의 특이도는 (0,2,0)이고 우리 style.css 뒤에 온다 — 2026-08-26 라이브에서 우리 규칙을 head 맨 앞에 넣고 실측했다: (0,1,0) 진다 / (0,2,0) 진다(같으면 뒤가 이긴다) / (0,3,0) 이긴다. 그래서 marker 앞에 우리 래퍼 클래스를 붙여 조상 두 개를 만든다. 래퍼는 .comments(글)와 .guestbook(방명록) 둘이고 안쪽 tt-*는 완전히 같으므로 **항상 짝으로** 써야 한다. 린트 TIS003이 대조한다. darkContrast는 고치기 전 값이다 — 캔버스 #0a0a0a 기준.",
+  "commentNote": "댓글·방명록은 티스토리가 React로 **런타임에** 그린다. 그 CSS 규칙의 특이도는 (0,2,0)이고 우리 style.css 뒤에 온다 — 2026-08-26 라이브에서 우리 규칙을 head 맨 앞에 넣고 실측했다: (0,1,0) 진다 / (0,2,0) 진다(같으면 뒤가 이긴다) / (0,3,0) 이긴다. 그래서 marker 앞에 우리 래퍼 클래스를 붙여 조상 두 개를 만든다. 래퍼는 .comments(글)와 .guestbook(방명록) 둘이고 안쪽 tt-*는 완전히 같으므로 **항상 짝으로** 써야 한다. 린트 TIS003이 대조한다. darkContrast는 고치기 전 값이다 — 캔버스 #0a0a0a 기준. idScoped=true면 그 한 자리는 상대가 ID로 시작하므로 body id까지 붙여야 한다 — 글은 #tt-body-page .comments …, 방명록은 #tt-body-guestbook .guestbook … 이다.",
   "commentRules": [
     {
       "component": "댓글 본문",
@@ -317,6 +317,15 @@
       "darkContrast": null,
       "kind": "background",
       "contrastNote": "우리 --ink 판이 아니라 티스토리 회색 판이 나온다"
+    },
+    {
+      "component": "댓글 입력 자리표시자",
+      "marker": ".tt-inner-g .tt-cmt::before",
+      "idScoped": true,
+      "value": "#b1b1b1",
+      "darkContrast": null,
+      "kind": "text",
+      "contrastNote": "라이트 흰 배경에서 2.03:1. 댓글 앱에서 유일하게 상대가 ID 스코프라 (0,3,1)로는 진다 — body id까지 붙여야 한다."
     }
   ]
 }
