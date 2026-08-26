@@ -4,7 +4,7 @@
 // 소제목이 3개 미만이면 .is-ready를 붙이지 않는다 → CSS가 .toc를 display:none으로 둔 채로 남긴다.
 // (실측: 소제목 3개 이상인 글 68%, 최대 25개)
 
-import { onMediaChange, rafThrottle, reducedMotion, uniqueId } from './util.js'
+import { entryRoot, headingsWithIds, onMediaChange, rafThrottle, reducedMotion } from './util.js'
 
 const MIN_HEADINGS = 3 // 이 미만이면 목차를 만들지 않는다
 const SPY_OFFSET = 120 // 화면 위쪽 이 높이를 지나면 "현재 위치"로 본다
@@ -29,24 +29,17 @@ export default function initToc() {
   const list = document.getElementById('toc-list')
   if (!toc || !list) return // 글 페이지가 아니다 — 레이아웃도 건드리지 않는다
 
-  // 부분일치. 실제 래퍼는 tt_article_useless_p_margin contents_style
-  const root = document.querySelector('.entry-body .contents_style') || document.querySelector('.entry-body')
+  const root = entryRoot()
   if (!root) return markNoToc() // 본문을 못 찾았다 = 목차도 못 만든다
 
-  const headings = Array.prototype.slice
-    .call(root.querySelectorAll('h2, h3'))
-    .filter(function (h) {
-      return h.textContent.trim().length > 0
-    })
+  // 목록과 id는 util이 만든다. heading-anchor.js가 같은 것을 쓴다 — hooks.md §5.8
+  const headings = headingsWithIds(root)
   if (headings.length < MIN_HEADINGS) return markNoToc()
 
   const frag = document.createDocumentFragment()
   const links = []
 
-  headings.forEach(function (h, i) {
-    // 한글 슬러그는 URL 인코딩 문제가 있다. 번호를 쓴다 — hooks.md §5.1
-    if (!h.id) h.id = uniqueId('toc-h-' + (i + 1))
-
+  headings.forEach(function (h) {
     const li = document.createElement('li')
     li.className = 'toc-item toc-' + h.tagName.toLowerCase() // toc-h2 / toc-h3
 
