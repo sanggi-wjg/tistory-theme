@@ -6,111 +6,111 @@
    "h1": 1,
    "entryLinks": 20,
    "linkForms": {
-    "entry": 20,
-    "num": 0
+    "entry": 16,
+    "num": 4
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 62306,
+   "bytes": 63349,
    "url": "https://sanggi-jayg.tistory.com/"
   },
   "page": {
    "status": 200,
-   "h1": 2,
-   "entryLinks": 4,
+   "h1": 1,
+   "entryLinks": 14,
    "linkForms": {
-    "entry": 4,
-    "num": 0
+    "entry": 10,
+    "num": 4
    },
    "jsonld": [
     "BlogPosting"
    ],
-   "bytes": 68362,
+   "bytes": 81179,
    "url": "https://sanggi-jayg.tistory.com/entry/%ED%83%80%EC%9D%B4%EB%B0%8D-%EC%96%B4%ED%83%9D-%EC%96%B4%EB%94%94%EA%B9%8C%EC%A7%80-%EB%A7%89%EC%95%84%EC%95%BC-%ED%95%A0%EA%B9%8C-%EB%B9%84%EA%B5%90%EB%B6%80%ED%84%B0-%ED%94%84%EB%A0%88%EC%9E%84%EC%9B%8C%ED%81%AC-CVE%EA%B9%8C%EC%A7%80"
   },
   "category": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 19,
+   "entryLinks": 24,
    "linkForms": {
-    "entry": 19,
-    "num": 0
+    "entry": 20,
+    "num": 4
    },
    "jsonld": [
     "BreadcrumbList"
    ],
-   "bytes": 60931,
+   "bytes": 62272,
    "url": "https://sanggi-jayg.tistory.com/category/AI"
   },
   "archive": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 1,
+   "entryLinks": 13,
    "linkForms": {
-    "entry": 1,
-    "num": 0
+    "entry": 9,
+    "num": 4
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 27240,
+   "bytes": 43419,
    "url": "https://sanggi-jayg.tistory.com/archive"
   },
   "tag": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 0,
+   "entryLinks": 13,
    "linkForms": {
-    "entry": 0,
-    "num": 0
+    "entry": 9,
+    "num": 4
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 194386,
+   "bytes": 100854,
    "url": "https://sanggi-jayg.tistory.com/tag"
   },
   "search": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 12,
+   "entryLinks": 25,
    "linkForms": {
-    "entry": 12,
-    "num": 0
+    "entry": 21,
+    "num": 4
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 40933,
+   "bytes": 55157,
    "url": "https://sanggi-jayg.tistory.com/search/%EB%A6%AC%ED%8C%A9%ED%86%A0%EB%A7%81"
   },
   "empty": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 0,
+   "entryLinks": 13,
    "linkForms": {
-    "entry": 0,
-    "num": 0
+    "entry": 9,
+    "num": 4
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 25271,
+   "bytes": 41799,
    "url": "https://sanggi-jayg.tistory.com/search/%EC%A1%B4%EC%9E%AC%ED%95%98%EC%A7%80%EC%95%8A%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4zzz"
   },
   "guestbook": {
    "status": 200,
    "h1": 1,
-   "entryLinks": 0,
+   "entryLinks": 13,
    "linkForms": {
-    "entry": 0,
-    "num": 0
+    "entry": 9,
+    "num": 4
    },
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 24774,
+   "bytes": 41296,
    "url": "https://sanggi-jayg.tistory.com/guestbook"
   }
  },
