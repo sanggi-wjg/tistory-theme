@@ -515,6 +515,48 @@ def lint_tokens(css):
              "src/styles/")
 
 
+def lint_token_usage(css, has_built):
+    """토큰의 **정의 ↔ 참조**를 맞춰 본다.
+
+    두 방향 모두 이 도메인의 조용한 실패다.
+
+    ① 참조는 있는데 정의가 없다 — `var(--cavas)` 오타는 에러가 아니라
+       **선언 전체가 무효**가 되어 그 속성이 상속값이나 초기값으로 떨어진다.
+       화면에는 "왜 여기만 색이 다르지" 정도로만 나타난다. 오류로 낸다.
+
+    ② 정의는 있는데 참조가 없다 — 해롭지는 않다. 정보로만 낸다. 그런데 이쪽이
+       이 검사를 만든 이유다. 2026-08-26 결정 44가 `--error`의 사용처를 옮기고
+       "**살아 있는 사용처가 없다**"고 세 문서에 적었는데 **틀렸다** —
+       `scripts/build.mjs`의 ACCENT 맵이 본문 인라인색 `#ee2323`을 그 토큰으로
+       보내고 있었다. `src/styles`를 grep하면 주석밖에 안 나온다: 사용처가
+       **생성기의 문자열 안**에 있고 결과는 `dist/style.css`에만 있다.
+
+    ⚠ **그래서 src만 보면 안 된다.** 빌드 산출물까지 합친 CSS를 받는다.
+       dist가 없으면 ①의 판정 근거(생성된 `--ph-*` 정의)가 통째로 빠지므로
+       아예 돌지 않는다 — 근거 없이 오류를 내는 것보다 안 도는 편이 낫다.
+    """
+    if not css or not has_built:
+        return
+    body = strip_comments(css)
+    defined = set(re.findall(r"(--[a-z0-9-]+)\s*:", body))
+    used = set(re.findall(r"var\(\s*(--[a-z0-9-]+)", body))
+
+    undefined = sorted(used - defined)
+    if undefined:
+        err("TOK006", "정의되지 않은 토큰을 %d종 참조한다: %s. CSS는 에러를 내지 않는다 — "
+            "선언 전체가 무효가 되어 그 속성이 상속값으로 떨어진다."
+            % (len(undefined), ", ".join(undefined[:8])), "src/styles/")
+
+    unused = sorted(defined - used)
+    if unused:
+        info("참조가 없는 토큰 %d종: %s. 해롭지는 않다. 다만 «비어 있다»고 "
+             "문서에 적기 전에 이 목록을 본다 — 생성기(scripts/build.mjs)가 "
+             "문자열로 쓰는 사용처는 src grep에 안 잡힌다 (결정 44 정정)."
+             % (len(unused), ", ".join(unused)))
+    else:
+        info("토큰: 정의 %d종 전부 참조됨, 미정의 참조 0" % len(defined))
+
+
 # ───────────────────── 5. 인라인 스타일 보정 커버리지 ─────────────────────
 
 def lint_inline_coverage(css):
@@ -944,6 +986,9 @@ def main():
     lint_empty_substitution_decor(skin, src_css or css)
     lint_js_dom_classes(src_css, js)
     lint_tokens(css)
+    # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
+    # var(--error)·var(--link) 참조가 dist에만 있다.
+    lint_token_usage(css, built is not None)
     lint_inline_coverage(css)
     # 이 둘은 **src만** 본다. dist는 src의 사본이라, src를 망가뜨려도 낡은 dist에
     # 옛 규칙이 남아 있으면 검사가 통과해 버린다(실제로 개발 중에 겪었다).
