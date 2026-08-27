@@ -9,10 +9,11 @@
     "watch": "node scripts/build.mjs --watch",
     "preview": "npm run build && python3 .claude/skills/skin-preview/scripts/render.py",
     "lint": "python3 .claude/skills/skin-qa-check/scripts/lint.py",
-    "check": "npm run build && npm run lint && npm run test:lint && npm run test:decor && npm run test:code && npm run test:hooks && npm run preview",
+    "check": "npm run build && npm run lint && npm run test:lint && npm run test:codes && npm run test:decor && npm run test:code && npm run test:hooks && npm run preview",
     "preview:images": "npm run preview && node scripts/gen-preview.mjs",
     "test:hooks": "python3 .claude/hooks/test-detect.py",
     "test:lint": "python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py",
+    "test:codes": "python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py",
     "test:decor": "python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py",
     "test:code": "node scripts/probe-code-detect.mjs"
   },
