@@ -749,8 +749,8 @@ def compare_baseline(stats, base):
         return
     prev_base = saved.get("base")
     if prev_base and prev_base.rstrip("/") != base.rstrip("/"):
-        # DECISIONS.md #22 — 개발은 테스트 블로그에서 한다. 두 블로그의 지표를
-        # 맞대면 무관한 차이가 전부 "회귀"로 나온다.
+        # DECISIONS.md 결정 22 — 두 블로그의 지표를 섞지 않는다. 맞대면 무관한
+        # 차이가 전부 "회귀"로 나온다.
         # 미검증으로 넘기면 회귀 검사를 한 번도 안 하고 "오류 0"으로 끝난다.
         # --compare를 요청한 이상, 비교하지 못한 것은 요청 실패다.
         err("V012", "baseline은 %s 에서 찍혔는데 지금 검증 대상은 %s 다. "
@@ -829,8 +829,8 @@ def save_baseline(base, stats, expected, allow_missing=False):
         saved = load_json(BASELINE, "기존 baseline") or {}
         prev_base = saved.get("base")
         if prev_base and prev_base.rstrip("/") != base.rstrip("/"):
-            # DECISIONS.md #22 — 개발은 테스트 블로그에서 한다. 그 실행이 본 블로그
-            # 기준선을 덮으면, 배포 후 --compare가 base 불일치로 미검증 처리되어
+            # DECISIONS.md 결정 22 — 두 블로그의 지표를 섞지 않는다. 다른 블로그 실행이
+            # 본 블로그 기준선을 덮으면, 배포 후 --compare가 base 불일치로 미검증 처리되어
             # 오류 없이 통과한다. 회귀 게이트가 조용히 사라지는 경로다.
             err("V014", "기존 baseline은 %s 것인데 지금은 %s 를 찍으려 한다. 덮어쓰면 "
                 "그 블로그의 기준선을 잃는다. 저장하지 않았다 — 의도한 것이면 %s 를 지워라."
