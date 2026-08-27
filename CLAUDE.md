@@ -101,6 +101,7 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
+| 2026-08-27 | `release.yml` 추가 — `v*` 태그 푸시 시 `npm run check` → `dist/` zip → 릴리즈(노트 = 태그 주석 + 직전 태그 이후 PR 제목). 태그 형식·`main` 조상 검사 | `.github/workflows/release.yml`, `skills/skin-deploy/SKILL.md`, `USAGE.md`, `README.md`, 결정 47 | 무엇이 언제 라이브에 갔는지가 `DECISIONS.md` 문장으로만 남았고, `dist/`·`backup/`이 저장소 밖이라 롤백 복사본이 없었다. 보호 규칙은 태그를 보지 않아 "main 위에만"을 워크플로우가 직접 검사한다 |
 | 2026-08-27 | GitHub Actions `check` 워크플로우 추가 + `main` 보호 규칙(required status check `check`, 관리자 포함) | `.github/workflows/check.yml`, 저장소 설정 | `npm run check`가 로컬 습관으로만 강제됐다 — 4번을 건너뛴 커밋이 PR로 올라와도 아무것도 안 켜졌다. 러너에는 리뷰 마커·`dist/`가 없어 **로컬 상태 덕에 통과하는 부류**(다섯째 위조 신호)를 구조적으로 거른다. 리뷰 게이트의 대체는 아니다 |
 | 2026-08-27 | `test-detect.py`가 **임시 git 저장소**에서 돈다 — 마커 없음·같음·다름 3상태 (14 → 16케이스) | `.claude/hooks/test-detect.py` | 실제 저장소를 `cwd`로 넘겨 진짜 마커를 읽었다. **리뷰 직후엔 마커가 HEAD와 같아 차단 케이스 7개가 전부 통과했다** — `npm run check`의 결과가 게이트 상태에 따라 달라졌다. 마커가 HEAD와 같을 때 열리는 쪽은 한 번도 시험된 적이 없었다 |
 | 2026-08-27 | 린트 `TOK007` + `test:images`(5케이스) 추가, 빌드가 기본 이미지 30장의 쌍·용량·폴백 모티프를 검사 | `skills/skin-qa-check/scripts/lint.py`, `…/test-image-refs.py`, `scripts/build.mjs`, `package.json` | 결정 46으로 기본 이미지가 `images/` 업로드 파일이 되면서 "변수는 있는데 파일이 없다"가 새 침묵이 됐다. `TOK006`은 정의↔참조만 본다 |

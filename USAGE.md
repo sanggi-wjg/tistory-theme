@@ -105,6 +105,17 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 
 카테고리 트리는 더 이상 여기 없다 — 리스트형 치환자로 바꾸면서 인라인 색이 사라졌다(결정 31).
 
+### 릴리즈 — 검증이 끝나면
+
+버전은 날짜, 정본은 git 태그 하나다(결정 47). 릴리즈는 "이 커밋이 지금 라이브다"는 표식이라 **배포 후 확인이 끝난 뒤**에 찍는다.
+
+```bash
+git tag -a v2026.08.27 -m "배포 2026-08-27 — 무엇을 올렸나 / 라이브에서 확인한 것"
+git push origin v2026.08.27        # release 워크플로우가 npm run check → dist zip → 릴리즈 노트까지 만든다
+```
+
+`skin-<태그>.zip`은 그 커밋의 `dist/` 전체 — 롤백용이다. 자세한 것은 `/skin-deploy`.
+
 ## 실측 갱신
 
 설계 결정이 실측에 걸려 있다. 글이 늘면 다시 센다.

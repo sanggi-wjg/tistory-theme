@@ -185,9 +185,31 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 - [ ] 파일업로드 탭이 이번 배포의 파일 수를 받았는가 — 35개(`images/` 31 + 미리보기 4)까지는 2026-08-27에 확인했다. 그보다 늘었는데 거부되면 `scripts/build.mjs`의 `PLACEHOLDER_BASE`를 jsDelivr로 바꾸는 후속 PR
 - [ ] **기본 이미지** — 대표이미지 없는 글의 카드에 그림이 뜨는가. 검색 결과나 태그 목록에서 본다(홈은 2장 남짓, 카테고리 목록은 결정 7이 숨긴다). 라이트·다크 둘 다. 점격자만 보이면 `images/`에 그 버전의 파일이 없는 것이다 — `curl -I <스킨루트>/images/ph-infra-light.v<N>.webp`
 
+## 릴리즈 — 검증이 끝나면 찍는다
+
+릴리즈는 **"이 커밋이 지금 라이브다"**는 표식이다(`DECISIONS.md` 결정 47). 배포 후 확인이 끝난 뒤에만 찍는다 —
+검증 실패 상태에서 찍으면 표식이 거짓이 된다. 버전은 날짜, 정본은 git 태그 하나다. `index.xml`·`package.json`의
+버전은 건드리지 않는다(`index.xml`은 바뀌면 설정이 초기화된다).
+
+```bash
+git switch main && git pull
+git diff --stat <직전 릴리즈 태그> HEAD -- src scripts data package.json   # 라이브에 올린 빌드가 이 HEAD인지. 소스 차이가 있으면 그 커밋에 찍는다
+git tag -a v2026.08.27 -m "배포 2026-08-27 — 무엇을 올렸나(결정 번호) / 라이브 확인: verify.py --compare 결과, 눈으로 본 것"
+git push origin v2026.08.27
+gh run watch                       # release 워크플로우 — npm run check → dist zip → 릴리즈
+gh release view v2026.08.27
+```
+
+- **주석 태그(`-a`)여야 한다.** 메시지가 릴리즈 노트 앞머리가 되고, 그 뒤에 직전 태그 이후 PR 제목이 자동으로 붙는다.
+  가벼운 태그면 워크플로우가 경고를 내고 자동 노트만 남는다
+- 같은 날 다시 배포했으면 `v2026.08.27.2`
+- 워크플로우가 거부하는 것: 형식이 `vYYYY.MM.DD(.N)`이 아닌 태그, `main`에 없는 커밋, `npm run check` 실패
+- 잘못 찍었으면 `gh release delete v2026.08.27 --yes && git push --delete origin v2026.08.27 && git tag -d v2026.08.27`
+
 ## 되돌리기
 
 문제가 생기면 **스킨 보관함에서 이전 스킨을 다시 적용**한다. 그것이 가장 빠르다. `backup/`의 HTML·CSS를 붙여넣는 것은 차선책이다(업로드 파일은 복구되지 않는다).
+GitHub Releases의 `skin-<태그>.zip`은 그 릴리즈 시점의 `dist/` 전체(업로드 파일 포함)라 `backup/`이 없어도 붙여넣기 + 파일업로드로 되돌릴 수 있다. zip 자체를 티스토리에 올리는 것은 여전히 안 된다.
 
 ## 이 프로젝트의 배포 특수사항
 
