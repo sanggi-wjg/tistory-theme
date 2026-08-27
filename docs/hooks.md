@@ -392,7 +392,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 클래스 | 무엇 | 어디에 |
 |---|---|---|
 | `.toc-item` · `.toc-h2` · `.toc-h3` · `.toc-link` | 목차 항목. `<li class="toc-item toc-h2">` 안에 `<a class="toc-link">`. 계약 본문은 §5.1 | `#toc-list` 안 |
-| `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너 | `.contents_style pre`를 감싼다 |
+| `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너. **첫 페인트 뒤 유휴 시간에** 블록 단위로 붙는다(결정 51) — 동기가 아니다. 20,000자 넘는 블록은 **자동 감지가 꺼져** 래퍼·복사 버튼만 받는다(글쓴이 `language-*`가 있으면 그대로 칠한다) | `.contents_style pre`를 감싼다 |
 | `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
 | `.code-wrap.has-lines` | 줄번호를 켠 상태 | 일정 줄 수 이상 |

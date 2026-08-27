@@ -29,6 +29,10 @@ async function readIf(p) {
 // 이 값만 jsDelivr 같은 외부 CDN으로 바꾼다 — CSS 선택자·변수명은 그대로다.
 const PLACEHOLDER_BASE = './images/'
 const PH_MAX_BYTES = 100 * 1024
+// 산출물 용량 예산(결정 51). 넘으면 빌드가 실패한다 — 방문자가 매번 받는 렌더 차단 자원이다.
+// 2026-08-27 실측: style.css 159KB 중 77KB(50%)가 주석이었다. 주석을 벗긴 뒤 78KB, script.js 67KB.
+const CSS_MAX_BYTES = 96 * 1024
+const JS_MAX_BYTES = 80 * 1024
 // 폴백 SVG의 선 색. url() 안의 SVG는 페이지 토큰을 못 받으므로 색을 박는다 — 라이트 #fafafa·다크 #121212
 // 양쪽에서 읽히는 중간 회색 하나로 두 테마를 한 벌로 간다. 아래 1층 점격자는 토큰을 따르므로 테마감은 거기서 난다.
 const PH_SVG_INK = '#8a8a8a'
@@ -203,6 +207,50 @@ async function inlineFixCss() {
   return out
 }
 
+/**
+ * CSS 주석을 벗긴다 — minify가 아니다(결정 51).
+ * 공백·선택자·선언은 한 글자도 건드리지 않는다. `[style*="color: #000000"]` 같은 인라인 보정
+ * 선택자의 공백이 매칭 조건이라 minifier를 쓰지 않는 것인데, 주석 제거는 그 조건과 무관하다.
+ * 문자열과 url(…) 안은 건너뛴다 — data: SVG에 `/*`가 올 수 있다.
+ */
+function stripCssComments(css) {
+  let out = ''
+  let i = 0
+  while (i < css.length) {
+    const c = css[i]
+    if (c === '/' && css[i + 1] === '*') {
+      const end = css.indexOf('*/', i + 2)
+      i = end < 0 ? css.length : end + 2
+      continue
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1
+      while (j < css.length && css[j] !== c) { if (css[j] === '\\') j++; j++ }
+      out += css.slice(i, j + 1)
+      i = j + 1
+      continue
+    }
+    if (c === 'u' && css.startsWith('url(', i)) {
+      let j = i + 4, depth = 1, q = null
+      while (j < css.length && depth) {
+        const d = css[j]
+        if (q) { if (d === '\\') j++; else if (d === q) q = null }
+        else if (d === '"' || d === "'") q = d
+        else if (d === '(') depth++
+        else if (d === ')') depth--
+        j++
+      }
+      out += css.slice(i, j)
+      i = j
+      continue
+    }
+    out += c
+    i++
+  }
+  // 주석이 빠진 자리의 빈 줄과 줄 끝 공백을 접는다
+  return out.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim() + '\n'
+}
+
 async function buildCss() {
   const dir = path.join(SRC, 'styles')
   if (!existsSync(dir)) {
@@ -215,14 +263,17 @@ async function buildCss() {
   const unknown = present.filter(n => !CSS_ORDER.includes(n))
   if (unknown.length) console.warn(`  [주의] 순서 정의에 없는 CSS: ${unknown.join(', ')} — 맨 뒤에 붙인다`)
 
-  const parts = [await placeholderVars()]
+  // 주석은 여기서 벗긴다(결정 51). 파일 경계 마커 한 줄씩만 남겨 라이브 CSS를 읽을 때 어느
+  // 조각인지 알 수 있게 한다. 근거·사고 서술은 src/styles/*.css 안에 그대로 있다.
+  const parts = [stripCssComments(await placeholderVars())]
   for (const n of ordered) {
-    parts.push(`/* ── ${n}.css ── */\n` + await readFile(path.join(dir, `${n}.css`), 'utf8'))
+    parts.push(`/* ── ${n}.css ── */\n` + stripCssComments(await readFile(path.join(dir, `${n}.css`), 'utf8')))
   }
-  parts.push(await inlineFixCss())
+  parts.push(stripCssComments(await inlineFixCss()))
 
   // minify하지 않는다. [style*="color:#000000"] 같은 인라인 보정 선택자의 공백 처리가
   // minifier마다 달라 매칭이 조용히 깨질 수 있다. style.css 크기보다 정확성이 중요하다.
+  // (주석 제거는 minify가 아니다 — 공백·선택자를 건드리지 않는다.)
   return parts.filter(Boolean).join('\n\n')
 }
 
@@ -268,6 +319,14 @@ async function run() {
   const js = await buildJs()
   if (js) await writeFile(path.join(DIST, 'images', 'script.js'), js)
 
+  // 용량 예산(결정 51). 조용히 커지는 것을 막는다 — 넘으면 무엇을 뺄지 정하고 예산을 고친다.
+  const cssBytes = css ? Buffer.byteLength(css) : 0
+  const jsBytes = js ? Buffer.byteLength(js) : 0
+  const over = []
+  if (cssBytes > CSS_MAX_BYTES) over.push(`style.css ${(cssBytes / 1024).toFixed(1)}KB > ${CSS_MAX_BYTES / 1024}KB`)
+  if (jsBytes > JS_MAX_BYTES) over.push(`images/script.js ${(jsBytes / 1024).toFixed(1)}KB > ${JS_MAX_BYTES / 1024}KB`)
+  if (over.length) throw new Error('용량 예산 초과: ' + over.join(', ') + '\n     예산은 scripts/build.mjs의 CSS_MAX_BYTES·JS_MAX_BYTES (결정 51)')
+
   // 스킨 미리보기 이미지가 있으면 스킨 **루트**로 복사한다.
   // 티스토리는 여기서 찾는다 — images/ 아래가 아니다.
   const prev = path.join(SRC, 'preview')
@@ -275,7 +334,7 @@ async function run() {
 
   const uploads = existsSync(path.join(DIST, 'images'))
     ? (await readdir(path.join(DIST, 'images'))).length : 0
-  console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? '✓' : '—'}` +
+  console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? (cssBytes / 1024).toFixed(1) + 'KB' : '—'}  script.js ${js ? (jsBytes / 1024).toFixed(1) + 'KB' : '—'}` +
               `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
               `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}`)
   // script.js 1 + 기본 이미지 30. 더 생기면 배포가 그만큼 손이 더 가고, 덜 생기면 어느 카테고리가 빈 카드다.
