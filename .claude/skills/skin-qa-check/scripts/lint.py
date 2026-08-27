@@ -185,7 +185,18 @@ def lint_substitutions(skin, xml, wl):
 # ─────────────────────── 2. 영역 치환자 페이지 정합성 ───────────────────────
 
 def lint_area_scope(skin):
-    """홈 목록과 일반 목록의 접두사가 섞이면 조용히 빈 화면이 된다."""
+    """홈 목록과 일반 목록의 접두사가 섞이면 조용히 빈 화면이 된다.
+
+    ⚠ **주석을 먼저 벗긴다.** 여기 검사들은 전부 "이 이름이 skin.html에 있는가"로
+      묻는데, 주석 안의 글자도 그냥 걸린다. 2026-08-27에 실제로 당했다 —
+      `AREA003`(아래에서 폐기)이 뜨지 않고 있던 유일한 이유가 `skin.html`의
+      **주석 문장 한 줄**에 그 이름이 적혀 있어서였다. 그 문장을 고치는 순간
+      경고가 살아난다. 검사가 무엇을 근거로 조용한지가 우연이면 그건 통과가
+      아니라 침묵이다.
+      (`lint_substitutions`는 자기 지역 변수에서만 벗겨서 여기까지 오지 않았다.)
+    """
+    skin = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+
     def inner_of(tag):
         m = re.search(r"<%s(?:\s[^>]*)?>(.*?)</%s>" % (tag, tag), skin, re.S | re.I)
         return m.group(1) if m else ""
@@ -200,13 +211,25 @@ def lint_area_scope(skin):
         err("AREA002", "<s_list_rep> 안에서 [##_article_rep_*_##]를 쓰고 있다. "
             "목록에서는 [##_list_rep_*_##]를 써야 한다.", "src/skin.html")
 
-    if "s_list_rep" in skin and "s_index_article_rep" not in skin:
-        warn("AREA003", "<s_list_rep>는 있는데 <s_index_article_rep>가 없다. 홈 목록이 비게 된다.",
-             "src/skin.html")
+    # AREA003은 폐기했다 (2026-08-27). 「<s_list_rep>는 있는데 <s_index_article_rep>가
+    # 없다」를 경고했는데, **결정 29가 그 전제를 뒤집었다** — <s_list>는 홈에서도
+    # 렌더되고(2026-08-25 실측) 그래서 홈 목록을 s_index_article_rep로 따로 그릴
+    # 이유가 없어졌다. 즉 이 경고는 지금 규범과 정반대를 요구한다.
+    # 번호는 재사용하지 않는다. SKILL.md에 폐기 사실을 적어 둔다.
 
     if "[##_body_id_##]" not in skin:
         warn("AREA004", "[##_body_id_##]가 없다. body_id로 페이지별 CSS 분기를 할 수 없다.",
              "src/skin.html")
+
+    # AREA005 — AREA003이 지키려던 것(«목록이 통째로 빈다»)은 여전히 실재하는
+    # 위험이다. 다만 지금 그 위험을 만드는 것은 s_index_article_rep의 부재가 아니라
+    # **<s_list> 자체의 부재**다. 결정 29 이후 홈·카테고리·검색·태그·보관함
+    # 다섯 페이지가 전부 이 한 영역에 걸려 있다 — 빠지면 다섯 장이 같이 빈다.
+    # 짝 검사(SUB005)는 «있는 것»의 짝만 보므로 통째로 없는 것은 못 잡는다.
+    if not re.search(r"<s_list(?:\s[^>]*)?>", skin, re.I):
+        err("AREA005", "<s_list> 영역이 없다. 결정 29 이후 홈·카테고리·검색·태그·보관함이 "
+            "전부 이 한 영역으로 그려지므로, 빠지면 다섯 페이지가 동시에 빈다 — "
+            "에러도 미치환 치환자도 없이 목록만 사라진다.", "src/skin.html")
 
 
 # ────────────────── 3. 경계면: 마크업 ↔ CSS ↔ JS ──────────────────
