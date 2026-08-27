@@ -15,6 +15,8 @@ Node 20+ · Python 3. 처음 한 번 `npm install`.
 
 `dist/`·`_preview/`는 git에 들어가지 않는다. 소스에서 언제든 다시 만든다.
 
+PR을 열면 GitHub Actions(`.github/workflows/check.yml`)가 `npm run check`를 깨끗한 러너에서 다시 돌리고, `main`은 그 잡이 통과해야 머지된다.
+
 ## 작업 흐름
 
 ```bash
