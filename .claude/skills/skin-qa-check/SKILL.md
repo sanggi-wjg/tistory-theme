@@ -30,6 +30,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py      # BND008
 python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py       # TOK007
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
+python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·BND004·test:codes (변형 8종)
 ```
 
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다

@@ -61,7 +61,10 @@ class _TagBalance(HTMLParser):
             self.stack.append((tag, self.getpos()[0]))
 
     def handle_startendtag(self, tag, attrs):
-        pass  # <br/> 꼴 — 스택에 넣지 않는다
+        # `<br/>`는 무해하지만 `<div/>`·`<s_x/>`는 브라우저가 **여는 태그**로 읽는다 —
+        # 자기 닫힘 표기가 있어도 그 뒤 형제를 삼키는 정확히 그 침묵이다.
+        if tag not in VOID_TAGS:
+            self.handle_starttag(tag, attrs)
 
     def handle_endtag(self, tag):
         if tag in VOID_TAGS:
@@ -331,11 +334,10 @@ def lint_boundaries(skin, css, js):
         for m in re.finditer(r"""class=["']([^"']+)["']""", re.sub(r"<!--.*?-->", "", skin, flags=re.S)):
             markup_classes.update(m.group(1).split())
         # JS가 만드는 DOM(§5.6·§8 등재)은 마크업에 없는 것이 정상이다 — BND006·007이 본다.
-        try:
-            registry, _, _ = parse_js_dom_registry()
-        except Exception:
-            registry = []
-        js_made = set(c[1:] for c in registry if not c.endswith("*"))
+        # 등재 표를 못 읽으면(구조 오류) BND006이 오류로 내므로 여기서는 제외 목록만 비운다 —
+        # 그러면 등재 클래스마다 BND004가 뜨는데, 그 원인은 BND006 한 줄이 말한다.
+        registry, _, structural = parse_js_dom_registry()
+        js_made = set() if structural else set(c[1:] for c in registry if not c.endswith("*"))
         for s in sorted(sels):
             for cls in re.findall(r"\.([a-zA-Z][\w-]*)", s):
                 # 티스토리가 렌더링하는 것. selected는 카테고리 트리에서 현재 가지의

@@ -763,7 +763,9 @@ def verify_tistory_sheets(base, home_doc, post_doc):
         if h and "/static/style/content.css" in h:
             live = urllib.parse.urljoin(base + "/", h)
             break
-    if not live:
+    if not home_doc:
+        unverified("V017", "홈을 받지 못해 티스토리 시트를 대조하지 못했다.", base + "/")
+    elif not live:
         unverified("V017", "라이브 홈 head에서 티스토리 content.css 링크를 찾지 못했다. "
                    "티스토리가 시트 경로를 바꿨다면 render.py 상수도 같이 봐야 한다.", base + "/")
     elif live == want:
@@ -771,7 +773,11 @@ def verify_tistory_sheets(base, home_doc, post_doc):
     else:
         s1, b1, _ = fetch(live)
         s2, b2, _ = fetch(want)
-        if s1 == 200 and s2 == 200 and b1 == b2:
+        if s1 is None or s2 is None:
+            # 네트워크 실패를 «내용이 다르다»로 읽으면 render.py를 고치라는 거짓 지시가 된다.
+            unverified("V017", "티스토리 content.css를 받지 못해(라이브 HTTP %s / render.py HTTP %s) "
+                       "내용을 대조하지 못했다. URL은 다르다 — 라이브: %s" % (s1, s2, live), RENDER_PY)
+        elif s1 == 200 and s2 == 200 and b1 == b2:
             info("V017 — 티스토리 content.css 해시가 바뀌었지만 내용은 같다(%d bytes). render.py "
                  "TISTORY_CONTENT_CSS를 %s 로 갱신해 두라." % (len(b1.encode("utf-8")), live))
         else:

@@ -45,7 +45,7 @@ jobs:
 
       - run: npm ci
 
-      # 빌드 → 린트 → 테스트 7종 → 프리뷰 렌더. package.json의 check 스크립트가 정본이다.
+      # 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰 렌더. package.json의 check 스크립트가 정본이다.
       - run: npm run check
 
       # 프리뷰 HTML을 남겨 PR에서 렌더 결과를 받아볼 수 있게 한다 (실패해도 남긴다).

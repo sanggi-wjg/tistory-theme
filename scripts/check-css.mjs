@@ -35,7 +35,36 @@ function braceBalance(src) {
     const c = src[i]
     if (c === '\n') { line++; i++; continue }
     if (c === '/' && src[i + 1] === '*') { const end = src.indexOf('*/', i + 2); if (end < 0) { problems.push(`${line}행: 닫히지 않은 주석`); break } line += (src.slice(i, end).match(/\n/g) || []).length; i = end + 2; continue }
-    if (c === '"' || c === "'") { let j = i + 1; while (j < src.length && src[j] !== c) { if (src[j] === '\\') j++; if (src[j] === '\n') break; j++ } if (src[j] !== c) problems.push(`${line}행: 닫히지 않은 문자열`); i = j + 1; continue }
+    if (c === '"' || c === "'") {
+      // 문자열. `\` 다음 글자는 무엇이든(개행 포함 — CSS는 줄 잇기를 허용한다) 건너뛴다.
+      let j = i + 1, closed = false
+      while (j < src.length) {
+        const d = src[j]
+        if (d === '\\') { if (src[j + 1] === '\n') line++; j += 2; continue }
+        if (d === c) { closed = true; break }
+        if (d === '\n') break
+        j++
+      }
+      if (!closed) problems.push(`${line}행: 닫히지 않은 문자열`)
+      i = closed ? j + 1 : j   // 실패하면 개행 자리에서 멈춰 위 분기가 line++을 처리하게 한다
+      continue
+    }
+    if (c === 'u' && src.startsWith('url(', i)) {
+      // url(…) 안은 따옴표 없이도 `{`·`}`가 올 수 있다(data: SVG). css-tree가 받아들이는 것을
+      // 여기서 오류로 내면 안 된다 — 닫는 `)`까지 통째로 건너뛴다(안의 따옴표는 위 분기가 맡지 않는다).
+      let j = i + 4, depth = 1, q = null
+      while (j < src.length && depth) {
+        const d = src[j]
+        if (q) { if (d === '\\') j++; else if (d === q) q = null }
+        else if (d === '"' || d === "'") q = d
+        else if (d === '(') depth++
+        else if (d === ')') depth--
+        if (src[j] === '\n') line++
+        j++
+      }
+      i = j
+      continue
+    }
     if (c === '{') open.push(line)
     else if (c === '}') { if (!open.length) problems.push(`${line}행: 여는 괄호 없는 \`}\``); else open.pop() }
     i++
