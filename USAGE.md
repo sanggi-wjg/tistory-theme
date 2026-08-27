@@ -12,6 +12,7 @@ Node 20+ · Python 3. 처음 한 번 `npm install`.
 | `npm run preview` | 빌드 후 `_preview/`에 11개 페이지 렌더 |
 | `npm run check` | 빌드 → 린트 → 프리뷰. **커밋 전에 통과해야 한다** |
 | `npm run preview:images` | 관리 화면용 미리보기 이미지 4종 재생성 (macOS + Chrome 필요) |
+| `npm run icons` | 파비콘·블로그 아이콘 재생성 → `src/assets/brand/` (결정 49) |
 
 `dist/`·`_preview/`는 git에 들어가지 않는다. 소스에서 언제든 다시 만든다.
 
@@ -87,6 +88,17 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py \
 6. 저장 → 미리보기로 확인 → 적용
 
 zip 업로드는 받지 않는다. 스킨 보관함의 "직접 업로드" 경로는 동작하지 않았다.
+
+### 파비콘·아이콘 — 스킨과 무관, 관리 화면에 올린다
+
+`src/assets/brand/`의 두 파일을 **관리 → 블로그 → 블로그 설정**에 올린다. 스킨 편집기가 아니다 — `skin.html`은 `<link rel="icon">`을 내보내지 않고 티스토리가 주입한다(결정 49).
+
+| 파일 | 자리 | 무엇 |
+|---|---|---|
+| `favicon.ico` | 파비콘 | 브라우저 탭·즐겨찾기. 16·32·48 엔트리 |
+| `icon-48.png` | 아이콘 | 댓글·방명록에서 닉네임 옆에 붙는 블로그 아이콘(≤48px) |
+
+`apple-touch-icon.png`는 예비다 — 관리 화면에 자리가 없다.
 
 ### 배포 후
 

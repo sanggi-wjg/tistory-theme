@@ -19,7 +19,8 @@
     "test:markup": "python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py",
     "test:decor": "python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py",
     "test:code": "node scripts/probe-code-detect.mjs",
-    "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py"
+    "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
