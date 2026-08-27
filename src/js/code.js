@@ -105,8 +105,9 @@ const MIN_CHARS = 12 // 이보다 짧으면 감지가 우연에 가깝다
 const MAX_HANGUL = 0.25 // 한글 비중이 이 이상이면 코드가 아니라 메모로 본다
 const LINES_FOR_NUMBERS = 8 // 줄번호를 켜는 최소 줄 수
 const MAX_LINES_FOR_NUMBERS = 400 // 이보다 길면 거터를 만들지 않는다 (DOM 낭비)
-// 이보다 긴 블록(로그 덤프 — 실측 최대 1,777자짜리 줄이 있다)은 감지·하이라이트를 건너뛴다.
-// highlightAuto는 후보 10개 문법을 전부 돌리므로 비용이 길이 × 10이다. 복사 버튼·줄번호 규칙은 그대로(결정 51).
+// 이보다 긴 블록(로그 덤프 — 실측 최대 1,777자짜리 줄이 있다)은 **자동 감지**를 건너뛴다.
+// highlightAuto는 후보 10개 문법을 전부 돌리므로 비용이 길이 × 10이다. 글쓴이가 언어를 쓴
+// 블록은 문법 하나라 상한과 무관하게 칠한다(결정 43·51). 복사 버튼·줄번호 규칙은 그대로.
 const MAX_CHARS = 20000
 
 let registered = false
@@ -266,13 +267,10 @@ function enhance(pre) {
 
   // 2) 언어를 정한다. 글쓴이가 쓴 것이 있으면 그것을 쓰고, 없으면 자동 감지.
   //    ⚠ `<pre>`의 클래스는 **보지 않는다** — 에디터 자동 감지 결과다 (결정 43).
-  const tooLong = src.length > MAX_CHARS
-  const author = tooLong ? null : authorLanguage(codeEl.className)
+  const author = authorLanguage(codeEl.className)
   let label = null
 
-  if (tooLong) {
-    // 감지도 하이라이트도 라벨도 없다. 원문 그대로 — 아래 복사 버튼과 줄번호 규칙만 붙는다.
-  } else if (author && author.lang) {
+  if (author && author.lang) {
     // 글쓴이가 지정했고 번들에도 있다 — 신뢰도 임계·한글 가드를 건너뛴다.
     // 그 가드들은 "우리가 추측할 때" 틀리지 않으려는 장치이지,
     // 글쓴이가 직접 쓴 것을 되묻는 장치가 아니다.
@@ -289,6 +287,8 @@ function enhance(pre) {
     // 언어인 줄은 알지만 번들에 없다. **자동 감지로 넘어가지 않는다** —
     // 글쓴이가 `typescript`라고 썼는데 우리가 `java`로 칠하는 쪽이 더 나쁘다.
     label = author.label
+  } else if (src.length > MAX_CHARS) {
+    // 로그 덤프에 10개 문법을 돌리지 않는다. 감지도 라벨도 없이 원문 그대로 — 복사 버튼·줄번호만.
   } else {
     const res = detect(src)
     if (res) {
@@ -332,14 +332,17 @@ function schedule(work) {
   const ric = typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback : null
   function step(deadline) {
     const t0 = Date.now()
-    let more = true
-    while (more) {
-      const budgetLeft = deadline && typeof deadline.timeRemaining === 'function'
+    function budgetLeft() {
+      return deadline && typeof deadline.timeRemaining === 'function'
         ? deadline.timeRemaining() > 4
         : Date.now() - t0 < 12
-      if (!budgetLeft) break
-      more = work()
     }
+    // 한 번 깨어나면 **최소 한 블록**은 처리한다. timeout으로 깨어난 콜백은 timeRemaining()이
+    // 0이라, 예산부터 보면 아무것도 못 하고 영영 재예약된다 — 바쁜 페이지에서 정확히 그렇다.
+    let more
+    do {
+      more = work()
+    } while (more && budgetLeft())
     if (more) next()
   }
   function next() {
