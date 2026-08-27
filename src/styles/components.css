@@ -1382,8 +1382,9 @@
 .code-copy.is-copied { color: var(--link); border-color: var(--link); }
 
 /* 호버가 없는 기기(터치)에서는 버튼이 나타날 계기가 없다 — <pre>는 포커스가 안 되므로
-   :focus-within도 못 켠다. 항상 보이게 두고, 같은 자리를 쓰는 라벨은 접는다.
-   .heading-anchor(content.css)와 같은 처리다(결정 48). */
+   :focus-within도 못 켠다. 항상 보이게 둔다. 언어 라벨은 버튼과 같은 자리(우상단)를
+   쓰므로 터치에서는 **항상 감춘다** — 터치 사용자는 라벨을 못 본다는 뜻이고, 결정 48이
+   그 대가를 받아들였다. (.heading-anchor의 hover:none 분기는 반대로 '항상 보임'이다.) */
 @media (hover: none) {
   .code-lang { opacity: 0; }
   .code-copy { opacity: 1; }

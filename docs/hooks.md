@@ -303,7 +303,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | JS가 만드는 것 | `.toc-list` 안에 `<li class="toc-item toc-h2">` 또는 `toc-h3` → `<a class="toc-link" href="#…">` |
 | 렌더 조건 | 본문 `h2`/`h3`가 **3개 이상**일 때만. 조건 충족 시 `#toc`에 **`.is-ready`**를 붙인다 |
 | CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 |
-| **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다 |
+| **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다. 임계·선택자가 같은지는 린트 `BND010`이 대조한다 |
 | 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) |
 | 모바일 접이식 | 1399px 이하에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1399px 이하에서만 — 3단 경계 1400과 같다, 결정 48) |
 | id 앵커 | 본문 소제목에 id가 없으면 JS가 만든다. 형식 `toc-h-1`, `toc-h-2`… (한글 슬러그를 피한다 — URL 인코딩 문제) |
@@ -602,7 +602,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 1400px~ (3단, 목차가 옆 칸) | **속성 없음** | `"-1"` | CSS가 `pointer-events:none`으로 라벨화한다. 목록은 항상 펼쳐져 있으므로 "축소됨"은 거짓말이고, 아무 일도 못 하는 탭 정거장도 만들지 않는다 |
 
 `matchMedia('(max-width: 1399px)')`를 구독하므로 창 크기를 바꾸면 따라온다.
-**CSS의 `1399px` 경계를 옮기면 `toc.js`의 `COLLAPSIBLE_MQ`도 같이 옮겨야 한다.** 이 경계는 레일 경계(1025)가 아니라
+**CSS의 `1399px` 경계를 옮기면 `toc.js`의 `COLLAPSIBLE_MQ`도 같이 옮겨야 한다** — 린트 `BND010`이 넷(toc.js · components.css max/min · layout.css 3단)을 대조한다. 이 경계는 레일 경계(1025)가 아니라
 `layout.css`의 3단 경계(1400)다 — 둘을 섞어 썼던 것이 1280px에서 목차가 본문 위에 펼쳐진 채 고정된 원인이었다(결정 48).
 
 ---
