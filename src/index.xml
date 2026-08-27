@@ -43,11 +43,7 @@
     <lengthOfRecentEntry>45</lengthOfRecentEntry>
     <lengthOfRecentComment>40</lengthOfRecentComment>
 
-    <!-- ⚠ 이 블록은 **죽은 값이다.** <tree> 설정은 폴더형 [##_category_##]에만 닿는데
-         우리는 리스트형 [##_category_list_##]을 쓴다(결정 31). 지우려면 index.xml을
-         다시 올려야 하고 그러면 스킨 설정이 초기화되므로(결정 1) 그대로 둔다.
-         activeColor 0070f3은 --link의 **옛 값**이다(지금은 #0064da). 팔레트를
-         대조할 때 이 줄은 세지 않는다 — 화면에 닿지 않는다. -->
+    <!-- 카테고리 트리는 티스토리가 통짜로 렌더링한다. 색은 라이트 팔레트 기준값 -->
     <tree>
       <color>4d4d4d</color>
       <bgColor>ffffff</bgColor>
