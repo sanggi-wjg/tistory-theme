@@ -731,6 +731,69 @@ def verify_platform_assets(base):
                  % (len(locs), sum(1 for l in locs if "/m/" in l)))
 
 
+RENDER_PY = os.path.join(ROOT, ".claude", "skills", "skin-preview", "scripts", "render.py")
+
+
+def preview_sheet_url(name):
+    """render.py의 TISTORY_*_CSS 상수 — 괄호로 이어붙인 문자열 리터럴을 합친다."""
+    src = open(RENDER_PY, encoding="utf-8").read() if os.path.exists(RENDER_PY) else ""
+    m = re.search(name + r"\s*=\s*\((.*?)\)", src, re.S)
+    return "".join(re.findall(r'"([^"]+)"', m.group(1))) if m else None
+
+
+def verify_tistory_sheets(base, home_doc, post_doc):
+    """V017 — 프리뷰가 싣는 티스토리 시트가 라이브와 같은가.
+
+    프리뷰는 티스토리 content.css를 **우리 앞에** 실어 특이도 싸움을 재현한다(결정 32·35).
+    그런데 그 URL이 render.py에 해시째 박혀 있어, 티스토리가 시트를 배포하면 프리뷰는
+    낡은 상대와 싸우면서 통과 신호를 낸다 — 아무 검사도 모르는 채로. 여기서 라이브 홈이
+    링크한 URL과 대조하고, URL이 다르면 바이트까지 대조한다.
+
+    atom-one-light(결정 32의 두 번째 전제)은 2026-08-27 실측에서 글 페이지 소스 HTML에
+    **없었다.** 있든 없든 info로 남긴다 — 프리뷰가 그 시트를 우리 뒤에 싣는 것은 더 엄격한
+    조건이라 해롭지 않지만, 전제가 흔들린 것은 적어 둬야 다음 사람이 안다.
+    """
+    want = preview_sheet_url("TISTORY_CONTENT_CSS")
+    if not want:
+        unverified("V017", "render.py에서 TISTORY_CONTENT_CSS를 읽지 못했다 — 상수 모양이 바뀌었나.", RENDER_PY)
+        return
+    live = None
+    for tag in re.findall(r"<link\b[^>]*>", head_of(home_doc or ""), re.I):
+        h = href_of(tag)
+        if h and "/static/style/content.css" in h:
+            live = urllib.parse.urljoin(base + "/", h)
+            break
+    if not home_doc:
+        unverified("V017", "홈을 받지 못해 티스토리 시트를 대조하지 못했다.", base + "/")
+    elif not live:
+        unverified("V017", "라이브 홈 head에서 티스토리 content.css 링크를 찾지 못했다. "
+                   "티스토리가 시트 경로를 바꿨다면 render.py 상수도 같이 봐야 한다.", base + "/")
+    elif live == want:
+        info("V017 — 프리뷰가 싣는 티스토리 content.css가 라이브와 같은 URL이다.")
+    else:
+        s1, b1, _ = fetch(live)
+        s2, b2, _ = fetch(want)
+        if s1 is None or s2 is None:
+            # 네트워크 실패를 «내용이 다르다»로 읽으면 render.py를 고치라는 거짓 지시가 된다.
+            unverified("V017", "티스토리 content.css를 받지 못해(라이브 HTTP %s / render.py HTTP %s) "
+                       "내용을 대조하지 못했다. URL은 다르다 — 라이브: %s" % (s1, s2, live), RENDER_PY)
+        elif s1 == 200 and s2 == 200 and b1 == b2:
+            info("V017 — 티스토리 content.css 해시가 바뀌었지만 내용은 같다(%d bytes). render.py "
+                 "TISTORY_CONTENT_CSS를 %s 로 갱신해 두라." % (len(b1.encode("utf-8")), live))
+        else:
+            warn("V017", "프리뷰가 싣는 티스토리 content.css가 라이브와 다르다 — render.py: %s (HTTP %s) / "
+                 "라이브: %s (HTTP %s). 프리뷰의 특이도 싸움이 낡은 상대와 벌어진다. 상수를 갱신하고 "
+                 "data/tistory-hardcoded-colors.json을 새 시트와 다시 대조하라(TIS001~004)."
+                 % (want, s2, live, s1), RENDER_PY)
+    if post_doc:
+        if re.search(r"highlight\.js/[\d.]+/styles/atom-one-light", post_doc):
+            info("V017 — 글 페이지 소스 HTML에 티스토리의 atom-one-light 링크가 있다(결정 32의 전제 유효).")
+        else:
+            info("V017 — 글 페이지 소스 HTML에 atom-one-light 링크가 **없다**(2026-08-27 실측과 같다). "
+                 "결정 32·HLJS001의 전제(티스토리가 우리 뒤에 싣는다)는 런타임 주입이거나 사라진 것일 수 "
+                 "있다. 프리뷰가 그 시트를 우리 뒤에 싣는 것은 더 엄격한 조건이라 해롭지 않다.")
+
+
 # ────────────────────────────── baseline ──────────────────────────────
 
 def compare_baseline(stats, base):
@@ -895,7 +958,7 @@ def main():
     # V013 페이징 검사도 여기서 정해진 카테고리를 그대로 쓴다.
     resolve_targets(base, base_host, cli_post=args.post_path, cli_cat=args.category)
     targets = page_targets(base, base_host)
-    stats, home_doc, post_url = {}, "", ""
+    stats, home_doc, post_url, post_doc = {}, "", "", ""
 
     for name, url in targets:
         ATTEMPTED.add(name)
@@ -905,6 +968,7 @@ def main():
             home_doc = doc
         if name == "page":
             post_url = url
+            post_doc = doc
         time.sleep(0.4)   # 크롤링이 아니라 검증이다. 8회면 예의를 지키기에 충분하다
 
     if home_doc:
@@ -917,6 +981,7 @@ def main():
     verify_category_tree(base, home_doc)
     verify_paging_canonical(base)
     verify_platform_assets(base)
+    verify_tistory_sheets(base, home_doc, post_doc)
 
     if args.compare:
         compare_baseline(stats, base)
