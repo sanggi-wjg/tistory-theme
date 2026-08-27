@@ -44,10 +44,21 @@ open _preview/index.html
 - 래퍼 `<div class="tt_article_useless_p_margin contents_style">`
 - 인라인 `color: #000000` `#333333` `#252525` — 다크에서 죽는 색
 - 인라인 `color: #eeffff` — **라이트에서 죽는 색**
+- 인라인 `color: #006dd7` `#ee2323` — **강조색.** 빌드 생성기가 죽이지 않고
+  `--link`·`--error`로 **옮기는** 쪽이다. 나머지 색은 전부 `--ink-body`로 눌리므로
+  이 둘이 없으면 생성기의 **두 갈래 중 한 갈래가 한 번도 안 그려진다.**
+  2026-08-27에 채웠다 — 그 구멍 때문에 결정 44가 `--error`를 "쓰는 데가 없다"고
+  잘못 적었다(그 토큰의 유일한 사용처가 바로 이 경로다)
 - 인라인 `background-color: #f8f8f8` — 다크에서 흰 상자
 - 인라인 `font-family: AppleSDGothicNeo`
 - `data-ke-language="javascript"`인데 내용은 셸 — **라벨을 믿으면 안 되는 사례**
 - 언어 미지정 코드블록
+- **마크다운 펜스 3종** — `<code class="language-python">`(칠하고 라벨) ·
+  `language-typescript`(번들에 없어 **라벨만**) · `language-info`(언어가 아니라
+  콜아웃 표식 후보라 **라벨도 안 붙는다**). 결정 43의 세 갈래를 화면에서 가른다
+- **12줄짜리 코드블록** — `code.js`의 `LINES_FOR_NUMBERS`(8)를 넘겨 줄번호 거터를
+  켠다. 2026-08-27까지 픽스처 최대가 5줄이라 `.code-wrap.has-lines`와
+  `.code-lines`의 CSS `counter` 번호가 **로컬에서 한 번도 그려진 적이 없었다**
 - `<figure class="imageblock">` · 4열 `<table>` · `<blockquote data-ke-style>` · 인라인 `<code>` · 외부링크
 - **티스토리 에디터 컴포넌트 6종** (`EDITOR_COMPONENTS`) — 오픈그래프 링크 카드, 인용 `style1`+`cite`,
   인용 `box`, 첨부 파일 블록, 표 `style12`, `.another_category`. 전부 티스토리가 **라이트 전용 색을

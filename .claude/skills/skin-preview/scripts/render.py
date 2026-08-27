@@ -151,9 +151,16 @@ Total: reserved=2841MB, committed=1974MB
 <tr><td>RSS 증가</td><td>+40MB/h</td><td>0</td><td>-</td></tr></tbody></table>
 <pre data-ke-type="codeblock"><code>spring:
   datasource:
+    url: jdbc:mysql://db.internal:3306/app?useSSL=true
+    username: app
     hikari:
       max-lifetime: 240000
-      keepalive-time: 120000</code></pre>
+      keepalive-time: 120000
+      connection-timeout: 3000
+      minimum-idle: 10
+      maximum-pool-size: 30
+      pool-name: app-pool
+      leak-detection-threshold: 60000</code></pre>
 <p data-ke-size="size16">아래 셋은 <strong>마크다운 펜스</strong>로 쓴 코드블록이다. 티스토리는 이것을 위와 전혀 다른 형태로 저장한다 — <code>&lt;pre&gt;</code>는 무속성이고 언어가 <code>&lt;code&gt;</code>의 클래스로 간다 (결정 43).</p>
 <pre><code class="language-python">def summarize(rows):
     total = sum(r["bytes"] for r in rows)
@@ -164,6 +171,7 @@ Total: reserved=2841MB, committed=1974MB
 <pre><code class="language-info">이건 언어가 아니라 콜아웃 표식 후보다. 라벨이 붙으면 안 된다.</code></pre>
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
+<p data-ke-size="size16">아래 두 색은 <strong>강조색</strong>이라 빌드 생성기가 죽이지 않고 <strong>토큰으로 옮긴다</strong> — 나머지 색은 전부 <code>--ink-body</code>로 눌린다. 이 두 갈래 중 강조 쪽이 프리뷰에 없어서, 결정 44가 <code>--error</code>를 "쓰는 데가 없다"고 잘못 적었다: <span style="color: #006dd7;">파랑 강조 #006dd7는 다크에서 --link로 간다 (실측 12곳).</span> <span style="color: #ee2323;">빨강 강조 #ee2323는 다크에서 --error로 간다 (실측 10곳) — <strong>--error의 유일한 사용처다.</strong></span></p>
 """
 
 # ── 티스토리 에디터 컴포넌트 ─────────────────────────────────────────
