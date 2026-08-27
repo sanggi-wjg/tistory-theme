@@ -12,7 +12,7 @@ description: "티스토리 스킨을 수동으로 배포하기 위한 절차와 
 ```bash
 npm run build
 python3 .claude/skills/skin-qa-check/scripts/lint.py    # 오류 0이어야 한다 (SEO001~002 포함)
-python3 .claude/skills/skin-preview/scripts/render.py   # 10개 페이지 육안 확인
+python3 .claude/skills/skin-preview/scripts/render.py   # 11개 페이지 육안 확인
 
 # 배포 전 라이브 상태를 기준선으로 남긴다. 배포 후 회귀 비교의 근거가 된다.
 python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로그> --save-baseline

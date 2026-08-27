@@ -93,7 +93,8 @@ npm run build && python3 .claude/skills/skin-preview/scripts/render.py && open _
 ```
 
 ### 페이지 커버리지
-10개 페이지가 **빈 화면 없이** 나오는가. 특히 `empty`(검색 결과 0건)와 `guestbook`은 빠뜨리기 쉽다.
+11개 페이지가 **빈 화면 없이** 나오는가. 특히 `empty`(검색 결과 0건)·`guestbook`·`protected`는 빠뜨리기 쉽다.
+`protected`(보호글)는 2026-08-27에야 렌더러가 그리기 시작했다 — 그전까지 `.protected-*` 여덟 종이 화면에 나온 적이 없었다.
 `page_toc`(목차 생기는 글)과 `tag_cloud`(태그 클라우드)는 `page`·`tag`와 **body_id가 같지만 렌더되는 영역이 다르다** — 둘 다 봐야 한다.
 
 ### 다크모드 — 세 상태를 모두 본다

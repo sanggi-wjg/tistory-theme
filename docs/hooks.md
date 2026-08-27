@@ -53,7 +53,7 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 | 목록 | `section.list` | `s_list` | **`tt-body-index`** `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` |
 | 태그 클라우드 | `section.tagcloud` | `s_tag` | `tt-body-tag` (`/tag`) |
 | 글 | `article.entry` | `s_article_rep` > `s_permalink_article_rep` ⚠️ | `tt-body-page` |
-| 보호글 | `section.protected` | `s_article_protected` | 보호글 |
+| 보호글 | `section.protected` | `s_article_protected` | `tt-body-page` — **전용 body_id가 없다.** 일반 글과 CSS로 구분되지 않는다 |
 | 방명록 | `section.guestbook` | `s_guest` | `tt-body-guestbook` |
 | 페이징 | `nav.paging` | `s_paging` | 홈·목록 |
 | 사이드바 | `aside.sidebar` | `s_sidebar` | **모든 페이지** ⚠️ |
@@ -77,7 +77,12 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 
 **① `.sidebar`** — `s_sidebar`가 페이지를 가리지 않아 **모든 페이지 DOM에 남는다.**
 빈 채로 여백만 차지하지 않도록 body_id로 잠근다. 켜는 곳은 홈·글·목록 4종이고,
-자리는 **왼쪽**이다(결정 30). 방명록·보호글은 1단이라 끈다.
+자리는 **왼쪽**이다(결정 30). 방명록은 1단이라 끈다.
+
+⚠ **보호글은 끄지 못한다.** 공식 body_id는 6종뿐이고 보호글도 글 URL이라
+`tt-body-page`로 나온다 — 일반 글과 CSS로 구분할 수단이 없다. 레일이 서는 것이
+정상이며, `.protected`는 `margin: 0`으로 본문과 같은 x에 세운다. `margin: 0 auto`면
+보호글만 144px 오른쪽으로 뛴다(2026-08-27 실측).
 
 **② `.post-list`** — `s_list`는 홈에서도 렌더된다(2026-08-25 실측). 지우는 게이트가
 아니라 **모양을 가르는 게이트**가 필요하다. 홈은 카드 그리드, 목록 4종은 세로 행이다.

@@ -1,6 +1,6 @@
 ---
 name: skin-preview
-description: "티스토리 스킨을 로컬 브라우저에서 확인하는 mock 렌더러. src/skin.html의 치환자를 data/posts.json의 실제 275편 데이터로 치환해 홈·글(목차 유/무 2종)·카테고리·검색·태그(목록/클라우드 2종)·보관함·방명록·검색결과0건 10개 페이지를 생성한다. 스킨을 수정한 뒤 '어떻게 보이는지 보자', '프리뷰', '미리보기', '렌더링해봐', '화면 확인', '브라우저로 열어봐' 요청 시 반드시 이 스킬을 사용할 것. 티스토리 API를 쓰지 않으므로 이것이 유일한 확인 수단이다."
+description: "티스토리 스킨을 로컬 브라우저에서 확인하는 mock 렌더러. src/skin.html의 치환자를 data/posts.json의 실제 275편 데이터로 치환해 홈·글(목차 유/무 2종)·카테고리·검색·태그(목록/클라우드 2종)·보관함·방명록·검색결과0건·보호글 11개 페이지를 생성한다. 스킨을 수정한 뒤 '어떻게 보이는지 보자', '프리뷰', '미리보기', '렌더링해봐', '화면 확인', '브라우저로 열어봐' 요청 시 반드시 이 스킬을 사용할 것. 티스토리 API를 쓰지 않으므로 이것이 유일한 확인 수단이다."
 ---
 
 # 로컬 프리뷰 — 치환자 mock 렌더러
@@ -13,7 +13,7 @@ description: "티스토리 스킨을 로컬 브라우저에서 확인하는 mock
 # 빌드 먼저 (style.css, images/script.js가 있어야 제대로 보인다)
 npm run build
 
-# 10개 페이지 전부
+# 11개 페이지 전부
 python3 .claude/skills/skin-preview/scripts/render.py
 
 # 일부만
@@ -36,6 +36,9 @@ open _preview/index.html
 | `archive` | `tt-body-archive` | 보관함 |
 | `guestbook` | `tt-body-guestbook` | 방명록 |
 | `empty` | `tt-body-search` | **검색 결과 0건.** `<s_list_empty>` 확인용 |
+| `page_toc` | `tt-body-page` | 소제목 3개 이상이라 **목차가 생기는 글.** `page`와 body_id가 같지만 `body.no-toc` 유무로 레이아웃이 갈린다 — 실측 68%가 이쪽이다 |
+| `tag_cloud` | `tt-body-tag` | `/tag` **클라우드.** `tag`(=`/tag/이름` 목록)와 body_id가 같고 렌더되는 영역이 다르다 |
+| `protected` | `tt-body-page` | **보호글.** 비밀번호 폼만 나온다. **전용 body_id가 없어** 일반 글과 CSS로 구분되지 않는다 — 레일이 그대로 서므로 `.protected`가 본문과 같은 x에 서는지 본다 |
 
 ## 본문 픽스처가 재현하는 것
 
@@ -121,7 +124,7 @@ atom-one-light.min.css        ← 우리보다 뒤
 - **값 치환자** → `globals_for()`(페이지 전역) 또는 `item_scope()`(반복 항목)에 키 추가. 키는 `[##_` 와 `_##]`를 뗀 이름이다
 - **그룹 치환자** → `handle_group()`에 분기 추가. 반복이면 `repeat(inner, 항목들, "접두사", ctx, page, posts)`
 
-렌더러를 고친 뒤에는 **10개 페이지를 모두 다시 생성**해 경고가 늘지 않았는지 확인한다.
+렌더러를 고친 뒤에는 **11개 페이지를 모두 다시 생성**해 경고가 늘지 않았는지 확인한다.
 
 ## 주의
 
