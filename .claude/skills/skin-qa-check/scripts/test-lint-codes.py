@@ -23,7 +23,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LINT = os.path.join(HERE, "lint.py")
 SKILL = os.path.abspath(os.path.join(HERE, "..", "SKILL.md"))
 
-PREFIX = r"(?:SUB|AREA|BND|TOK|INL|TIS|HLJS|ROB|A11Y|SEO|CAT)"
+PREFIX = r"(?:SUB|AREA|BND|TOK|INL|TIS|HLJS|ROB|A11Y|SEO|CAT|SYN)"
+
+# 표에는 있는데 lint.py가 err/warn으로 내지 않는 코드는 **여기 이유가 적힌 것만** 정상이다.
+# 2026-08-27까지는 그런 코드를 출력만 하고 통과시켰다 — lint.py에서 TIS003 호출을 지워도
+# 이 테스트는 초록불이었다. 그건 이 테스트가 막으려던 것의 정반대다.
+DOC_ONLY_OK = {
+    "AREA003": "폐기 (결정 29). 번호를 재사용하지 않으므로 표에 «왜 비어 있는지»가 남는다",
+    "SEO005": "info()로만 낸다 — 글 페이지 BreadcrumbList는 선택이다 (결정 28)",
+    "SYN001": "lint.py가 아니라 scripts/check-css.mjs(node, css-tree)가 낸다 — npm run test:css",
+}
 
 
 def codes_in_lint(src):
@@ -80,10 +89,14 @@ def main():
 
     print("린트가 err/warn으로 내는 코드 %d종 · SKILL.md가 적은 코드 %d종"
           % (len(emitted), len(documented)))
-    if doc_only:
-        # 두 가지가 섞인다 — 폐기한 코드(AREA003)와 info로만 내는 코드(SEO005).
-        # 둘 다 표에 남아 있는 것이 정상이라 실패로 세지 않는다.
-        print("  표에만 있음(폐기 또는 info 전용): %s" % ", ".join(doc_only))
+    for c in doc_only:
+        if c in DOC_ONLY_OK:
+            print("  표에만 있음 — %s: %s" % (c, DOC_ONLY_OK[c]))
+    unexplained = [c for c in doc_only if c not in DOC_ONLY_OK]
+    if unexplained:
+        print("\n❌ SKILL.md 표에는 있는데 lint.py가 내지 않는 코드 %d종: %s" % (len(unexplained), ", ".join(unexplained)))
+        print("   lint.py에서 호출이 사라졌거나(검사가 조용히 꺼졌다), 폐기·외부 검사라면 DOC_ONLY_OK에 이유를 적어라.")
+        sys.exit(1)
 
     if missing:
         print("\n❌ SKILL.md 규칙 표에 없는 코드 %d종: %s" % (len(missing), ", ".join(missing)))
