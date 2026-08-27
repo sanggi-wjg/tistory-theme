@@ -691,6 +691,59 @@ def lint_token_usage(css, has_built):
         info("토큰: 정의 %d종 전부 참조됨, 미정의 참조 0" % len(defined))
 
 
+def lint_image_refs(built, dist_dir):
+    """`dist/style.css`가 가리키는 `images/` 파일이 **실재하는지** 본다.
+
+    기본 이미지가 SVG `data:` 인라인에서 업로드 WebP 30장으로 바뀌면서
+    (결정 5·6 개정) 새 침묵이 하나 생겼다 — **변수는 정의돼 있는데 파일이 없다.**
+    업로드 누락, 파일명 버전 불일치(`.v1` → `.v2`), 빌드의 복사 실패, 셋이 전부
+    같은 얼굴이다. CSS는 `url()`이 404여도 에러를 내지 않는다 —
+    `background-image`가 그냥 안 그려지고 카드에 점격자만 남는다.
+    파일이 테마별로 나뉘어 있어 **라이트는 멀쩡한데 다크만 비는** 것도 가능하다.
+
+    `TOK006`은 이것을 원리적으로 못 본다 — 변수의 **정의 ↔ 참조**만 보므로
+    `--ph-db: url("./images/없는파일.webp")`는 정의도 참조도 멀쩡하다.
+
+    ⚠ **빌드 산출물만 본다.** 경로가 `dist/` 기준 상대경로라 src에는 판정할
+       근거가 아예 없다. dist가 없으면 안 돈다 — 근거 없이 오류를 내는 것보다
+       안 도는 편이 낫다(`TOK006`과 같은 이유).
+    """
+    if not built:
+        return
+    body = strip_comments(built)
+
+    # url() 안의 따옴표는 세 가지가 다 유효하다: url(x) url('x') url("x").
+    # data:는 대상이 아니다. 절대 URL은 **경로에 images/<파일>이 있으면** 본다 —
+    # 빌드의 PLACEHOLDER_BASE를 CDN으로 바꿔도(미결 1의 탈출구) 파일은 dist/images/에 그대로
+    # 남고 CDN은 그것을 비추는 것이라, 접두사가 무엇이든 이 검사가 조용히 꺼져서는 안 된다.
+    refs = {}
+    for m in re.finditer(r"""url\(\s*(['"]?)([^'")]+?)\1\s*\)""", body):
+        target = m.group(2).strip()
+        if target.startswith("data:"):
+            continue
+        rel = re.search(r"(?:^|/)images/([^/?#]+)$", target.split("?")[0].split("#")[0])
+        if not rel:
+            continue
+        name = rel.group(1)
+        refs[name] = refs.get(name, 0) + 1
+
+    if not refs:
+        # 검사가 꺼진 것과 통과한 것은 다른 일이다 (결정 40).
+        info("dist/style.css에 images/ 참조가 없다 — TOK007은 판정하지 않았다. "
+             "기본 이미지가 아직 인라인이거나 빌드가 옛 구조다.")
+        return
+
+    missing = sorted(n for n in refs if not os.path.isfile(os.path.join(dist_dir, "images", n)))
+    if missing:
+        err("TOK007", "dist/style.css가 가리키는 images/ 파일 %d종이 dist/images/에 없다: %s. "
+            "CSS는 에러를 내지 않는다 — 카드에 점격자만 남는다. 업로드 누락이거나 "
+            "파일명 버전 불일치(package.json placeholderVersion)이거나 빌드가 복사에 실패했다."
+            % (len(missing), ", ".join(missing[:8])), "dist/images/")
+    else:
+        info("기본 이미지: dist/style.css의 images/ 참조 %d종(%d회) 전부 dist/images/에 있다."
+             % (len(refs), sum(refs.values())))
+
+
 # ───────────────────── 5. 인라인 스타일 보정 커버리지 ─────────────────────
 
 def lint_inline_coverage(css):
@@ -1124,6 +1177,8 @@ def main():
     # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
     # var(--error)·var(--link) 참조가 dist에만 있다.
     lint_token_usage(css, built is not None)
+    # 같은 이유로 dist가 있을 때만 돈다 — images/ 경로는 dist 기준 상대경로다.
+    lint_image_refs(built, os.path.join(ROOT, "dist"))
     lint_inline_coverage(css)
     # 이 둘은 **src만** 본다. dist는 src의 사본이라, src를 망가뜨려도 낡은 dist에
     # 옛 규칙이 남아 있으면 검사가 통과해 버린다(실제로 개발 중에 겪었다).

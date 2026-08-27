@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="1600" height="1000">
+<!-- infra · dark — 결 3 개념 일러스트, 스킨 토큰. docs/placeholder-image-brief.md의 참조 이미지이자 AI 이미지가 오기 전의 실제 기본 이미지 -->
+<style>
+.g{fill:#2e2e2e}
+.o{fill:none;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.o3{fill:none;stroke:#ededed;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.p{fill:#0a0a0a;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.s{fill:#454545;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.b{fill:#3291ff;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.bl{fill:#3291ff}
+.d{fill:#8f8f8f}
+.plus{fill:none;stroke:#ededed;stroke-width:3;stroke-linecap:round}
+.chk{fill:none;stroke:#3291ff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+<rect width="320" height="200" fill="#121212"/>
+<circle class="g" cx="160" cy="100" r="74"/>
+<rect class="p" x="108" y="50" width="104" height="26" rx="5"/>
+<rect class="p" x="108" y="87" width="104" height="26" rx="5"/>
+<rect class="p" x="108" y="124" width="104" height="26" rx="5"/>
+<circle class="d" cx="126" cy="63" r="4"/><circle class="bl" cx="126" cy="100" r="5"/><circle class="d" cx="126" cy="137" r="4"/>
+<path class="o3" d="M148 63h44M148 100h44M148 137h44"/>
+<path class="o" d="M212 100h14a14 14 0 0 1 0 28h-16"/>
+<path class="plus" d="M252 50v12M246 56h12"/><circle class="d" cx="72" cy="152" r="4"/><circle class="bl" cx="248" cy="154" r="3"/>
+</svg>

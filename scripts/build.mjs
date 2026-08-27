@@ -1,13 +1,15 @@
 // 티스토리 스킨 빌드.
 //
-// 산출물은 붙여넣는 파일 3개 + 업로드하는 파일 5개여야 한다. 배포를 사람이 손으로 하기 때문이다.
-// images/에 파일이 2개 이상 생기면 설계가 잘못된 것이다 — 기본이미지 SVG는 data: URI로 CSS에 인라인한다.
-// 미리보기 4종은 images/에 세지 않는다. 파일업로드 탭이 그 이름들만 스킨 루트로 보낸다(2026-08-25 실측).
+// 산출물은 붙여넣는 파일 3개 + 업로드하는 파일 35개다. 배포를 사람이 손으로 하기 때문에 이 수를 늘리지 않는다.
+//   images/  = script.js 1 + 기본 이미지 WebP 30 (상위 14 + 기본값 1, light·dark — 결정 5·6 개정)
+//   루트     = 미리보기 4종. 파일업로드 탭이 그 이름들만 스킨 루트로 보낸다(2026-08-25 실측)
+// 기본 이미지는 이미지가 바뀐 배포에서만 다시 올린다. 파일명에 버전이 박혀 있어(package.json placeholderVersion)
+// CDN 캐시를 비켜 간다 — 같은 이름으로 다시 올리면 한동안 옛 그림이 보인다.
 //
 //   node scripts/build.mjs
 //   node scripts/build.mjs --watch
 
-import { readFile, writeFile, mkdir, readdir, rm, cp } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, readdir, rm, cp, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
@@ -23,19 +25,75 @@ async function readIf(p) {
   return existsSync(p) ? readFile(p, 'utf8') : null
 }
 
-/** 카테고리 기본이미지 SVG를 data: URI CSS 변수로 만든다. */
+// 기본 이미지 URL의 앞부분. 스킨 편집기의 파일 개수 상한(DECISIONS.md 미결 1)에 막히면
+// 이 값만 jsDelivr 같은 외부 CDN으로 바꾼다 — CSS 선택자·변수명은 그대로다.
+const PLACEHOLDER_BASE = './images/'
+const PH_MAX_BYTES = 100 * 1024
+// 폴백 SVG의 선 색. url() 안의 SVG는 페이지 토큰을 못 받으므로 색을 박는다 — 라이트 #fafafa·다크 #121212
+// 양쪽에서 읽히는 중간 회색 하나로 두 테마를 한 벌로 간다. 아래 1층 점격자는 토큰을 따르므로 테마감은 거기서 난다.
+const PH_SVG_INK = '#8a8a8a'
+let phCount = 0   // placeholderVars가 실제로 복사한 장수. run()의 images/ 개수 검사가 쓴다
+
+/** 카테고리 기본 이미지 WebP를 dist/images/로 복사하고 --ph-<slug> 변수를 만든다.
+ *  같은 slug의 모티프 SVG(src/assets/motifs/)는 --ph-<slug>-svg 로 data: 인라인한다 — WebP가 404·네트워크 실패면
+ *  CSS 다중 배경의 아래 레이어로 드러나는 **폴백**이다(DESIGN.md §6.2). 모티프가 없는 slug는 빌드 오류다:
+ *  `background-image: var(--ph-x), var(--ph-x-svg)`에서 한쪽 변수가 없으면 선언 전체가 무효가 되어 **둘 다** 사라진다.
+ *
+ *  tokens.css와 같은 3블록 패턴이다 — :root에서 라이트를 정의하고, 시스템 다크와 명시 다크에서
+ *  재정의한다(DESIGN.md §7 "미디어쿼리 안에서 색을 처음 정의하지 않는다").
+ *  light·dark 한 쌍이 빠지면 그 카테고리는 한쪽 테마에서 점격자만 남는데 에러가 없다 — 그래서 빌드를 멈춘다. */
 async function placeholderVars() {
   const dir = path.join(SRC, 'assets', 'placeholders')
-  if (!existsSync(dir)) return ''
-  const files = (await readdir(dir)).filter(f => f.endsWith('.svg')).sort()
-  if (!files.length) return ''
-  const lines = []
-  for (const f of files) {
-    const svg = await readFile(path.join(dir, f), 'utf8')
-    const b64 = Buffer.from(svg, 'utf8').toString('base64')
-    lines.push(`  --ph-${path.basename(f, '.svg')}: url("data:image/svg+xml;base64,${b64}");`)
+  if (!existsSync(dir)) throw new Error('src/assets/placeholders/ 없음. 먼저 `npm run placeholders -- --stub`')
+  const bySlug = {}
+  for (const f of (await readdir(dir)).sort()) {
+    const m = /^([a-z0-9]+)-(light|dark)\.webp$/.exec(f)
+    if (!m) { console.warn(`  [주의] 이름 규칙 밖의 기본 이미지 파일: ${f} — 무시`); continue }
+    ;(bySlug[m[1]] ??= {})[m[2]] = f
   }
-  return `:root {\n${lines.join('\n')}\n}\n`
+  const version = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).placeholderVersion ?? 1
+
+  const problems = []
+  if (!bySlug.default) problems.push('default 슬러그가 없다 — 14종 밖의 카테고리가 빈 카드로 떨어진다')
+  for (const [slug, t] of Object.entries(bySlug)) {
+    for (const theme of ['light', 'dark']) {
+      if (!t[theme]) { problems.push(`${slug}-${theme}.webp 없음`); continue }
+      const { size } = await stat(path.join(dir, t[theme]))
+      if (size > PH_MAX_BYTES) problems.push(`${t[theme]} ${(size / 1024).toFixed(0)}KB > ${PH_MAX_BYTES / 1024}KB`)
+    }
+  }
+  // 실패는 던진다. 단발 빌드는 아래에서 exit 1로 바꾸고, --watch는 로그만 남기고 다음 변경을 기다린다 —
+  // 여기서 exit하면 `npm run placeholders`가 30장을 차례로 다시 쓰는 중간에 감시자가 죽는다.
+  const motifDir = path.join(SRC, 'assets', 'motifs')
+  for (const slug of Object.keys(bySlug)) {
+    if (!existsSync(path.join(motifDir, `${slug}.svg`))) problems.push(`폴백 모티프 src/assets/motifs/${slug}.svg 없음 — python3 scripts/gen-placeholders.py`)
+  }
+  if (problems.length) {
+    throw new Error('기본 이미지: ' + problems.join('\n     기본 이미지: ') + '\n     npm run placeholders 로 다시 만든다.')
+  }
+
+  const light = [], dark = [], svg = []
+  phCount = 0
+  for (const slug of Object.keys(bySlug).sort()) {
+    // 폴백 — 모티프는 마스크용이라 #000 고정. 선 색을 박고 62%로 눌러 옛 도안과 같은 농도로 만든다
+    const motif = (await readFile(path.join(motifDir, `${slug}.svg`), 'utf8'))
+      .replaceAll('#000', PH_SVG_INK)
+      .replace(/(<svg[^>]*>)/, '$1<g opacity=".62">').replace(/<\/svg>\s*$/, '</g></svg>')
+    svg.push(`  --ph-${slug}-svg: url("data:image/svg+xml;base64,${Buffer.from(motif, 'utf8').toString('base64')}");`)
+    for (const theme of ['light', 'dark']) {
+      const out = `ph-${slug}-${theme}.v${version}.webp`
+      await cp(path.join(dir, bySlug[slug][theme]), path.join(DIST, 'images', out))
+      phCount++
+      ;(theme === 'light' ? light : dark).push(`  --ph-${slug}: url("${PLACEHOLDER_BASE}${out}");`)
+    }
+  }
+  return [
+    '/* ── 기본 이미지 (src/assets/placeholders/ — DESIGN.md §6.2, 결정 5·6) ──',
+    '   라이트를 :root에서 정의하고 다크 두 상태에서 재정의한다. tokens.css의 3블록과 같은 패턴. */',
+    `:root {\n${light.join('\n')}\n  /* 폴백 — WebP가 안 오면 다중 배경의 아래 레이어로 드러난다. 테마 공통 */\n${svg.join('\n')}\n}`,
+    `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"]) {\n${dark.map(l => '  ' + l).join('\n')}\n  }\n}`,
+    `:root[data-theme="dark"] {\n${dark.join('\n')}\n}`,
+  ].join('\n') + '\n'
 }
 
 /** 상대 휘도. 0.5 미만이면 어두운 색으로 본다. */
@@ -220,14 +278,22 @@ async function run() {
   console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? '✓' : '—'}` +
               `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
               `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}`)
-  if (uploads > 1) {
-    console.warn('  ⚠️ images/에 파일이 2개 이상이다. 배포가 수동이므로 1개로 줄여야 한다 —\n' +
-                 '     SVG는 data: URI로 CSS에 인라인하고, 폰트는 CDN에서 받는다.')
+  // script.js 1 + 기본 이미지 30. 더 생기면 배포가 그만큼 손이 더 가고, 덜 생기면 어느 카테고리가 빈 카드다.
+  // 기대치는 placeholderVars가 **실제로 복사한** 장수다 — 디렉터리의 .webp를 세면 이름 규칙 밖 파일까지 세어 메시지가 뒤집힌다.
+  const expected = 1 + phCount
+  if (uploads !== expected) {
+    console.warn(`  ⚠️ images/가 ${uploads}개다. script.js 1 + 기본 이미지 ${expected - 1} = ${expected}개여야 한다 —\n` +
+                 '     기본 이미지 말고는 images/에 두지 않는다. 폰트는 CDN, 도안은 WebP 30장뿐이다.')
   }
   console.log('  다음: npm run lint  ·  npm run preview')
 }
 
-await run()
+try {
+  await run()
+} catch (e) {
+  console.error(`\n  ❌ ${e.message}\n`)
+  process.exit(1)
+}
 
 if (WATCH) {
   const { watch } = await import('node:fs')
@@ -235,6 +301,6 @@ if (WATCH) {
   let t
   watch(SRC, { recursive: true }, () => {
     clearTimeout(t)
-    t = setTimeout(() => run().catch(e => console.error(e.message)), 120)
+    t = setTimeout(() => run().catch(e => console.error(`\n  ❌ ${e.message}\n  (감시는 계속된다)`)), 120)
   })
 }

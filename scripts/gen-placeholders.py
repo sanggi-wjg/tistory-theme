@@ -1,17 +1,21 @@
-"""상위 카테고리 기본 이미지 SVG를 만든다.
+"""상위 카테고리 기본 이미지의 **모티프** SVG를 만든다.
 
-마스크로 쓰이므로 **알파만 의미가 있다.** 색은 #000 고정이고, 최종 색은
-`--ink-mute` 토큰이 정한다(DESIGN.md §6.2). 모티프 안의 강약은 opacity로 준다.
+2026-08-27까지는 이 SVG가 곧 기본 이미지였다(CSS 마스크, 결정 5·6 구판). 지금 기본 이미지는
+`src/assets/placeholders/<slug>-{light,dark}.webp` 래스터 30장이고(결정 46), 이 SVG는 두 곳에 쓰인다.
+  1. **폴백** — 빌드가 `--ph-<slug>-svg`로 data: 인라인하고 CSS 다중 배경의 아래 겹에 깐다.
+     WebP가 404·네트워크 실패면 이것이 드러난다(DESIGN.md §6.2). 그래서 영구 자산이다.
+  2. 임시 래스터의 원료 — `scripts/prep-placeholders.mjs --stub`가 테마 색으로 감싸 래스터화한다.
+새 slug를 더하면 여기에도 모티프를 그린다 — 없으면 빌드가 멈춘다.
 
-파일명이 곧 CSS 변수명이다 — `arch.svg` → `--ph-arch`.
-scripts/build.mjs가 디렉터리를 훑어 base64 data: URI로 바꾸며 **이름을 검사하지 않는다.**
-DESIGN.md §6.2의 선택자와 여기 KEY가 어긋나면 카드가 조용히 --ph-default로 떨어진다.
+색은 #000 고정이다. 임시 래스터를 만들 때 prep 스크립트가 토큰 색으로 바꿔 넣는다.
+KEY가 곧 slug다 — `arch` → `arch-light.webp` → `--ph-arch`. DESIGN.md §6.2의 선택자와
+어긋나면 카드가 조용히 --ph-default로 떨어진다.
 
     python3 scripts/gen-placeholders.py
 """
 import os
 
-OUT = os.path.join("src", "assets", "placeholders")
+OUT = os.path.join("src", "assets", "motifs")
 
 HEAD = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" '
         'fill="none" stroke-linecap="round" stroke-linejoin="round">')
@@ -137,7 +141,7 @@ def main():
             f.write(svg)
         total += len(svg)
         print(f"  {name + '.svg':<16} {len(svg):>5}B")
-    print(f"\n{len(MOTIF)}장 · raw {total}B · base64 약 {total * 4 // 3 // 1024}KB")
+    print(f"\n{len(MOTIF)}장 · raw {total}B → 다음: node scripts/prep-placeholders.mjs --stub")
 
 
 if __name__ == "__main__":

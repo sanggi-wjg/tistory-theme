@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="1600" height="1000">
+<!-- python · dark — 결 3 개념 일러스트, 스킨 토큰. docs/placeholder-image-brief.md의 참조 이미지이자 AI 이미지가 오기 전의 실제 기본 이미지 -->
+<style>
+.g{fill:#2e2e2e}
+.o{fill:none;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.o3{fill:none;stroke:#ededed;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.p{fill:#0a0a0a;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.s{fill:#454545;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.b{fill:#3291ff;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.bl{fill:#3291ff}
+.d{fill:#8f8f8f}
+.plus{fill:none;stroke:#ededed;stroke-width:3;stroke-linecap:round}
+.chk{fill:none;stroke:#3291ff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+<rect width="320" height="200" fill="#121212"/>
+<circle class="g" cx="160" cy="100" r="74"/>
+<path class="o" d="M104 70v86"/>
+<rect class="p" x="98" y="48" width="118" height="16" rx="8"/>
+<rect class="p" x="118" y="74" width="98" height="16" rx="8"/>
+<rect class="s" x="138" y="100" width="78" height="16" rx="8"/>
+<rect class="b" x="138" y="126" width="54" height="16" rx="8"/>
+<rect class="p" x="118" y="152" width="80" height="16" rx="8"/>
+<path class="plus" d="M250 48v12M244 54h12"/><circle class="d" cx="70" cy="150" r="4"/><circle class="bl" cx="254" cy="148" r="3"/>
+</svg>

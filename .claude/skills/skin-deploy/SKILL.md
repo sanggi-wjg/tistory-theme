@@ -46,6 +46,7 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 |---|---|---|---|
 | 1 | `dist/images/script.js` | 스킨 편집 → **파일업로드** | 기존 동명 파일이 있으면 먼저 삭제 |
 | 1-b | `dist/preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg` | 스킨 편집 → **파일업로드** | 바뀌었을 때만. 이름 덕에 스킨 **루트**로 간다 |
+| 1-c | `dist/images/ph-<slug>-<theme>.v<N>.webp` **30장** | 스킨 편집 → **파일업로드** | **기본 이미지가 바뀐 배포에서만** (결정 5·6 개정). 반드시 **style.css보다 먼저** — 반대면 그 사이 카드가 옛 도안(폴백)으로 뜬다. **폴백 때문에 빠진 장이 화면에서 티 나지 않는다** — 올린 뒤 `curl -I`로 30장이 200인지 반드시 본다. 버전(N)이 올랐으면 새 이름으로 올리고 옛 버전 30장은 지운다. **처음 올릴 때 개수·용량 거부가 나는지 기록한다**(미결 1) |
 | 2 | `dist/style.css` | 스킨 편집 → **CSS** 탭 | 전체 선택 후 덮어쓰기 |
 | 3 | `dist/skin.html` | 스킨 편집 → **HTML** 탭 | 전체 선택 후 덮어쓰기 |
 | 4 | `dist/index.xml` | 스킨 편집 → **index.xml** | ⚠️ **스킨의 모든 설정이 초기화된다** |
@@ -181,7 +182,8 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 - [ ] **읽기 진행바** — 댓글이 React로 늦게 렌더된 뒤에도 100%가 문서 끝과 맞는가
 - [ ] **코드 복사 버튼** — 실제 클릭으로 클립보드에 들어가는가 (로컬에선 사용자 활성화를 얻지 못해 확인 불가)
 - [ ] 모바일 실기기 — 모바일웹이 OFF이므로 스마트폰 UA도 같은 스킨을 받아야 한다
-- [ ] 스킨 편집기의 **파일 개수·용량 제한** 실측 → `DECISIONS.md`에 기록
+- [ ] 스킨 편집기의 **파일 개수·용량 제한** 실측 → `DECISIONS.md`에 기록. 기본 이미지 30장을 올리는 배포가 첫 실측이다 — 거부되면 `scripts/build.mjs`의 `PLACEHOLDER_BASE`를 jsDelivr로 바꾸는 후속 PR
+- [ ] **기본 이미지** — 대표이미지 없는 글의 카드에 그림이 뜨는가. 검색 결과나 태그 목록에서 본다(홈은 2장 남짓, 카테고리 목록은 결정 7이 숨긴다). 라이트·다크 둘 다. 점격자만 보이면 `images/`에 그 버전의 파일이 없는 것이다 — `curl -I <스킨루트>/images/ph-infra-light.v<N>.webp`
 
 ## 되돌리기
 
@@ -194,7 +196,7 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 | **이전해야 할 것** | GA4 `G-PHQ5FKMZ37`, 네이버 사이트 인증 `100d6799251e62ceaf64af174e2d502e98f5f804` — 둘 다 현재 스킨 HTML 안에 있다 |
 | **이전 불필요** | 애드센스·애드핏·OG·트위터카드·`canonical`·`meta description`·구글 서치콘솔 — 티스토리가 처리한다. JSON-LD도 넣어 주지만 **글 페이지에는 `BlogPosting`만** 있고 빵부스러기가 없다 (`DECISIONS.md` 결정 28) |
 | **모바일웹 OFF** | 스킨 적용과 **별개 설정**이다. 본 블로그는 이미 OFF다(2026-08-26 확인, `DECISIONS.md` 결정 2). 다시 켜지면 스마트폰에서 스킨이 사라진다(`V010`) |
-| **미확인** | 스킨 편집기의 **파일 개수·용량 제한**(`DECISIONS.md` 미결 1). 파일이 늘어 상한에 닿으면 실측하고 거기에 기록한다 |
+| **미확인** | 스킨 편집기의 **파일 개수·용량 제한**(`DECISIONS.md` 미결 1). 결정 6 개정으로 `images/`가 31개가 됐다 — 30장을 올리는 배포에서 실측하고 거기에 기록한다 |
 
 ## 대상 블로그
 
@@ -203,6 +205,6 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 기준선을 섞지 않는다 — `verify.py`의 `V014`가 다른 블로그의 baseline 덮어쓰기를 거부한다.
 
 다른 블로그에 올릴 일이 생기면 **카테고리 이름이 본 블로그와 같아야 한다.** 기본 이미지 규칙이 이름
-문자열에 걸려 있다(`[data-cat="Kotlin·Java"]` 등 — `DESIGN.md` §6.2). 이름이 다르면 도안이 전부
+문자열에 걸려 있다(`[data-cat="Kotlin·Java"]` 등 — `DESIGN.md` §6.2). 이름이 다르면 기본 이미지가 전부
 기본값으로 떨어지는데 **에러는 나지 않는다.** `data/categories.json`을 그 블로그 기준으로 갱신하고
 린트 `BND003`으로 빠진 것을 확인한다.
