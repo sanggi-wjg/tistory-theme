@@ -51,7 +51,7 @@ model: opus
 
 - 입력: `DESIGN.md`(규범) · `docs/hooks.md`(markup의 훅 계약) · `data/posts.json`(카테고리 목록)
 - 출력: `src/styles/*.css` (토큰·레이아웃·본문·고정마크업·컴포넌트로 분할, 빌드가 `style.css` 한 장으로 합침)
-- 기본이미지: SVG를 `data:` URI로 인라인한다. 배포가 수동이라 업로드 파일 수를 늘리면 안 된다
+- 기본이미지: WebP 30장(상위 14 + 기본값 1 × light·dark)을 `images/`에 올리고 CSS `background-image`로 깐다(결정 46, `DESIGN.md` §6.2). 파일명에 `package.json`의 `placeholderVersion`이 들어간다. `data:` 인라인은 SVG 모티프 **폴백**(`--ph-*-svg`)에만 쓴다 — "업로드 파일 1개" 제약은 결정 46이 풀었다
 
 ## 팀 통신 프로토콜
 

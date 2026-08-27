@@ -95,6 +95,12 @@
 .search-input::placeholder { color: var(--ink-mute); }
 .search-input:focus { outline: none; }
 
+/* 터치 기기: 16px 미만 입력에 포커스하면 iOS Safari가 페이지를 확대한다.
+   시각 크기(body-sm)는 호버가 있는 데스크톱에서만 유지한다(결정 48). */
+@media (hover: none) {
+  .search-input { font-size: var(--fs-body); }
+}
+
 .search-btn,
 .theme-toggle {
   display: inline-flex;
@@ -905,13 +911,18 @@
   font-size: var(--fs-caption);
 }
 
-/* 1024px 미만 : 접이식. JS가 .is-open을 토글한다. */
-@media (max-width: 1024px) {
+/* 1399px 이하 : 접이식. JS가 .is-open을 토글한다.
+   목차가 옆 칸(3단)에 서는 1400px(layout.css)부터만 펼친다 — 그 아래에서 펼쳐 두면
+   목차가 본문 **위**에 1칸으로 서서 첫 화면을 밀어낸다. 예전에는 이 경계가 1024였고
+   1025~1399px(1280 노트북)에서 382px짜리 목차가 본문 위에 고정된 채 누를 수도 없었다
+   (라이브 실측 2026-08-27, 결정 48). */
+@media (max-width: 1399px) {
   .toc:not(.is-open) .toc-list { display: none; }
 }
 
-/* 1025px 이상 : 항상 펼친 상태. 토글 버튼은 제목 라벨로만 남긴다. */
-@media (min-width: 1025px) {
+/* 1400px 이상 : 항상 펼친 상태(3단, 옆 칸). 토글 버튼은 제목 라벨로만 남긴다.
+   toc.js의 COLLAPSIBLE_MQ와 같은 경계여야 한다 — 어긋나면 ARIA가 화면과 다른 말을 한다. */
+@media (min-width: 1400px) {
   .toc.is-ready {
     max-height: calc(100vh - var(--sp-8));
     overflow-y: auto;
@@ -1179,9 +1190,11 @@
    (실측: `<span id="commentCountOnRecentEntries292"></span>`). 자식이 있으면
    :empty가 거짓이라 `:has()`가 필요하다. `:has`는 살아 있는 선택자라
    티스토리 스크립트가 나중에 숫자를 채우면 구분자가 스스로 돌아온다.
-   `:has` 미지원 브라우저에서는 지금 화면과 같다 — 나빠지지 않는다. */
+   `:has` 미지원 브라우저에서는 `:empty` 규칙만 남는다 — 나빠지지 않는다.
+   ⚠ 두 규칙을 한 선택자 목록으로 묶지 않는다. 목록은 하나가 무효면 **통째로** 버려져
+   `:empty` 쪽까지 같이 죽는다 — 결정 42가 막은 화면이 미지원 브라우저에서 되살아난다. */
 .side-rp::before { content: "· "; }
-.side-rp:empty,
+.side-rp:empty { display: none; }
 .side-rp:has(> span:empty) { display: none; }
 
 .sidecmt-item { font-size: var(--fs-body-sm); }
@@ -1367,6 +1380,15 @@
 
 .code-copy:hover { color: var(--ink); }
 .code-copy.is-copied { color: var(--link); border-color: var(--link); }
+
+/* 호버가 없는 기기(터치)에서는 버튼이 나타날 계기가 없다 — <pre>는 포커스가 안 되므로
+   :focus-within도 못 켠다. 항상 보이게 둔다. 언어 라벨은 버튼과 같은 자리(우상단)를
+   쓰므로 터치에서는 **항상 감춘다** — 터치 사용자는 라벨을 못 본다는 뜻이고, 결정 48이
+   그 대가를 받아들였다. (.heading-anchor의 hover:none 분기는 반대로 '항상 보임'이다.) */
+@media (hover: none) {
+  .code-lang { opacity: 0; }
+  .code-copy { opacity: 1; }
+}
 
 /* ── 줄번호 거터 ─────────────────────────────────────────────
    code.js는 <span class="code-lines">에 빈 <span>을 줄 수만큼 놓기만 한다.

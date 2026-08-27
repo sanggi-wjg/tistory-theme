@@ -212,6 +212,11 @@ gtag('config', 'G-PHQ5FKMZ37');
       <div class="entry-main">
         <!-- 티스토리가 tt_article_useless_p_margin contents_style 래퍼째 넣는다 -->
         <div class="entry-body">[##_article_rep_desc_##]</div>
+        <!-- 목차 유무를 첫 페인트 전에 판정한다 — hooks.md §5.1, DECISIONS.md 결정 48.
+             script.js(body 끝)가 붙이면 32%의 글이 페인트 뒤 한 번 움직이고, 스크립트가 안 오면
+             빈 목차 트랙이 남는다. 조건은 toc.js·util.headingsWithIds와 같아야 한다:
+             h2·h3, 빈 소제목 제외, 3개 미만이면 body.no-toc. toc.js의 markNoToc()는 폴백이다. -->
+        <script>(function(){try{var h=document.querySelectorAll('.entry-body h2, .entry-body h3'),n=0;for(var i=0;i<h.length;i++){if(h[i].textContent.replace(/\s+/g,''))n++}if(n<3)document.body.classList.add('no-toc')}catch(e){}})()</script>
 
         <s_tag_label>
         <div class="entry-tags">[##_tag_label_rep_##]</div>

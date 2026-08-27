@@ -601,6 +601,97 @@ def lint_markup_css(skin, src_css):
 HEX_RE = re.compile(r"#(?:[0-9a-fA-F]{3,8})\b")
 
 
+def media_blocks(css):
+    """`@media` 블록 목록 [(질의, 본문)] — 중괄호를 세어 자른다. 중첩 블록도 각각 잡힌다."""
+    out = []
+    for m in re.finditer(r"@media\s*([^{]+)\{", css):
+        depth, i = 1, m.end()
+        while i < len(css) and depth:
+            if css[i] == "{":
+                depth += 1
+            elif css[i] == "}":
+                depth -= 1
+            i += 1
+        out.append((m.group(1).strip(), css[m.end():i - 1]))
+    return out
+
+
+def lint_const_pairs(skin):
+    """두 곳에 적혀야 하는 상수가 같은가 — BND010 (결정 48).
+
+    ① `skin.html`의 `no-toc` 인라인은 `toc.js`·`util.headingsWithIds`의 조건을
+       **손으로 복사**한 것이다(첫 페인트 전에 돌아야 해서 번들에 못 넣는다).
+       임계(`MIN_HEADINGS`)나 선택자가 한쪽만 바뀌면 목차는 없는데 2칸이거나 그
+       반대가 된다 — 결정 48이 없앤 바로 그 시프트가 린트 초록불로 돌아온다.
+    ② 목차 접이식 경계는 넷이 같아야 한다 — `toc.js` `COLLAPSIBLE_MQ` max-width,
+       `components.css`의 `.toc:not(.is-open)` 블록 max-width, `.toc.is-ready` 블록
+       min-width(= max + 1), `layout.css` 3단 블록 min-width. 어긋나면 CSS는 접는데
+       JS는 `aria-expanded`를 지운다(QA F2). 1024/1400으로 갈려 있던 것이 이 규칙의 출생이다.
+
+    어느 한쪽을 **못 찾으면 통과가 아니라 오류**다 — 검사가 꺼진 것과 통과는 다르다(결정 40).
+    """
+    toc = read(os.path.join(SRC, "js", "toc.js")) or ""
+    util = read(os.path.join(SRC, "js", "util.js")) or ""
+    comp = strip_comments(read(os.path.join(SRC, "styles", "components.css")) or "")
+    layout = strip_comments(read(os.path.join(SRC, "styles", "layout.css")) or "")
+    body = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+    problems = []
+
+    def need(m, what):
+        if not m:
+            problems.append("%s를 찾지 못했다 — 검사가 꺼진 것이지 통과가 아니다" % what)
+        return m
+
+    # ① no-toc 임계·선택자
+    js_min = need(re.search(r"const MIN_HEADINGS = (\d+)", toc), "toc.js의 `MIN_HEADINGS`")
+    # 인라인 안에 `i<h.length` 같은 `<`가 있으므로 `[^<]*`로 건너뛰면 못 찾는다 —
+    # <script> 블록을 먼저 자르고 그 안에서 찾는다.
+    inline = None
+    for sm in re.finditer(r"<script>(.*?)</script>", body, re.S):
+        if "'no-toc'" in sm.group(1):
+            inline = re.search(
+                r"querySelectorAll\('([^']+)'\).*?n<(\d+)\)document\.body\.classList\.add\('no-toc'\)",
+                sm.group(1), re.S)
+            break
+    inline = need(inline, "skin.html의 no-toc 인라인 스크립트")
+    need(re.search(r"querySelectorAll\('h2, h3'\)", util), "util.js `headingsWithIds`의 `'h2, h3'`")
+    if js_min and inline:
+        if int(js_min.group(1)) != int(inline.group(2)):
+            problems.append("no-toc 임계가 다르다: toc.js MIN_HEADINGS=%s ↔ skin.html 인라인 n<%s"
+                            % (js_min.group(1), inline.group(2)))
+        if inline.group(1) != ".entry-body h2, .entry-body h3":
+            problems.append("no-toc 인라인의 선택자가 `.entry-body h2, .entry-body h3`가 아니다: `%s` "
+                            "(util.headingsWithIds는 entryRoot 안의 h2, h3를 센다)" % inline.group(1))
+
+    # ② 접이식 경계
+    js_mq = need(re.search(r"COLLAPSIBLE_MQ = '\(max-width: (\d+)px\)'", toc), "toc.js의 `COLLAPSIBLE_MQ`")
+
+    def widths(blocks, marker, kind):
+        found = []
+        for q, b in blocks:
+            if marker in b:
+                m = re.search(kind + r"-width:\s*(\d+)px", q)
+                if m:
+                    found.append(int(m.group(1)))
+        return found
+    css_max = widths(media_blocks(comp), ".toc:not(.is-open)", "max")
+    css_min = widths(media_blocks(comp), ".toc.is-ready", "min")
+    lay_min = widths(media_blocks(layout), ".no-toc .entry-layout", "min")
+    need(css_max, "components.css의 `.toc:not(.is-open)` max-width 블록")
+    need(css_min, "components.css의 `.toc.is-ready` min-width 블록")
+    need(lay_min, "layout.css의 `.no-toc .entry-layout` 3단 min-width 블록")
+    if js_mq and css_max and css_min and lay_min:
+        want = int(js_mq.group(1))
+        if set(css_max) != {want} or set(css_min) != {want + 1} or set(lay_min) != {want + 1}:
+            problems.append("목차 접이식 경계가 어긋난다: toc.js %d ↔ components.css max %s / min %s "
+                            "↔ layout.css 3단 min %s (max = toc.js, min = max + 1이어야 한다)"
+                            % (want, css_max, css_min, lay_min))
+
+    for p in problems:
+        err("BND010", p + ". 두 곳에 적히는 상수는 같이 옮긴다 — 어긋나도 화면에 신호가 없다(결정 48).",
+            "src/skin.html · src/js/toc.js · src/styles/")
+
+
 def strip_comments(css):
     """/* … */ 를 걷어낸다.
 
@@ -1173,6 +1264,7 @@ def main():
     lint_empty_substitution_decor(skin, src_css or css)
     lint_js_dom_classes(src_css, js)
     lint_markup_css(skin, src_css)
+    lint_const_pairs(skin)
     lint_tokens(css)
     # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
     # var(--error)·var(--link) 참조가 dist에만 있다.
