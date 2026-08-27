@@ -524,6 +524,50 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 클래스를 기대하지 말고 `.site-nav ul` `.site-nav li` `.site-nav a`로 잡는다.
 현재 메뉴에 붙은 항목 클래스는 티스토리 설정에 따라 달라진다.
 
+### CSS 규칙이 없는 것이 정상인 마크업 클래스
+
+린트 `BND009`는 `skin.html`이 내보내는 클래스에 CSS 규칙이 있는지 본다.
+**마크업에서 이름을 바꾸고 CSS를 안 고치면 아무 에러도 안 난다** — 선택자가
+매칭되지 않을 뿐이고 화면에는 스타일 없는 날것이 뜬다. `BND004`는 JS가 *찾는*
+이름만, `BND006`은 JS가 *만드는* 이름만 봐서 **마크업이라는 가장 큰 표면
+(142종)이 어느 쪽에도 안 걸려 있었다.**
+
+아래는 규칙이 없는 것이 **정상**인 이름이다. §5.6의 예외 목록과 같은 형식이고
+같은 규칙이 걸린다 — **이름 뒤에 `—`와 이유를 쓴다. 이름만 적은 줄은 예외로
+치지 않는다.** 이유가 없으면 "정상"과 "아직 안 한 일"을 구분할 수 없다.
+
+**부모·형제가 맡는다**
+
+- `.entry` — 글 영역 루트. 폭·배치는 `.entry-layout`·`.entry-main`·`.entry-head`가 나눠 갖는다.
+- `.list` — 목록 영역 루트. 안쪽 `.list-head`·`.post-list`가 전부 정한다.
+- `.tagcloud` — 태그 클라우드 영역 루트. `.tagcloud-title`·`.tagcloud-list`가 맡는다.
+- `.side-item` · `.related-item` · `.tagcloud-item` — `<li>`. 항목 간격은 각 목록
+  컨테이너(`.side-list`·`.related-list`·`.tagcloud-list`)의 `gap`이, 내용은
+  `.side-link`·`.related-link`·`.tagcloud-link`가 맡는다.
+- `.entry-date` · `.post-date` · `.side-date` — 색·크기·정렬을 `.entry-meta`·
+  `.post-meta`·`.side-meta`가 한 번에 정한다. 날짜만 다르게 할 이유가 아직 없다.
+- `.paging-prev` · `.paging-next` · `.paging-num` — `.paging a`가 셋을 같은 알약으로
+  그린다. "더 갈 곳 없음" 상태는 티스토리가 붙이는 `.no_more_prev`/`.no_more_next`가 가른다.
+- `.side-body` — 안이 `[##_category_list_##]`의 **티스토리 고정 마크업**이라
+  `tistory.css`가 `.tt_category` 쪽 이름으로 잡는다.
+- `.toc-title` — `.toc-toggle`이 flex 배치와 글자를 정한다. 라벨 자체에 줄 것이 없다.
+- `.notice-body` — `notice.js`가 여기에 `.contents_style`을 붙이고(§5.7),
+  그때부터 `content.css`가 통째로 맡는다.
+
+**기본 층이라 보정할 것이 없다** (변형 쪽만 규칙을 갖는다)
+
+- `.postnav-prev` — `.postnav-item`의 기본 배치가 곧 이전 글 모양(썸네일 왼쪽)이다.
+  좌우를 뒤집는 `.postnav-next`만 규칙을 갖는다. 여기에 규칙을 만들면 기본값을
+  다시 적는 죽은 규칙이 된다.
+
+**자리·모듈을 가르는 이름. 공통 클래스가 일을 한다**
+
+- `.side-notice` · `.side-comments` · `.side-tags` · `.side-count` — 모듈 구분용.
+  치장은 `.side-mod`가 공통으로 한다. 개별 치장이 필요해지면 붙일 자리다
+  (`.side-category`·`.side-recent`·`.side-popular`는 이미 자기 규칙이 있다).
+- `.ad-upper` · `.ad-lower` — 상·하단 자리 구분용. 여백은 `.ad:not(:empty)`가
+  둘을 같이 다룬다. 위아래를 다르게 할 일이 생기면 붙일 자리다.
+
 ---
 
 ## 8. 상태 클래스 한눈에

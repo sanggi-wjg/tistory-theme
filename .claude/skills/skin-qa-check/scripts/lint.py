@@ -510,6 +510,92 @@ def lint_js_dom_classes(src_css, js):
              % (len(names), len(exempt)))
 
 
+# ────────── 3c. 마크업이 내보내는 클래스 ↔ CSS (BND009) ──────────
+
+MARKUP_EXEMPT_TITLE = "CSS 규칙이 없는 것이 정상인 마크업 클래스"
+# **줄 전체**로 맞춘다. 부분문자열로 찾으면 산문에 제목을 인용하기만 해도
+# 검사가 «목록을 찾았다»고 착각한다 — 이 검사의 자기 테스트가 그것부터 짚었다.
+MARKUP_EXEMPT_HEADING = re.compile(r"^#{2,4}\s*" + re.escape(MARKUP_EXEMPT_TITLE) + r"\s*$", re.M)
+
+
+def parse_markup_exemptions():
+    """docs/hooks.md §7의 예외 목록을 읽는다. 형식은 §5.6과 같다.
+
+    반환: (예외 집합, 구조 오류 메시지 또는 None)
+    """
+    doc = read(HOOKS_MD)
+    if doc is None:
+        return set(), "docs/hooks.md가 없다"
+    m = MARKUP_EXEMPT_HEADING.search(doc)
+    if not m:
+        return set(), "docs/hooks.md에서 「%s」 절을 찾지 못했다" % MARKUP_EXEMPT_TITLE
+    sec = doc[m.end():]
+    sec = re.split(r"^#{2,3} ", sec, maxsplit=1, flags=re.M)[0]
+
+    exempt = set()
+    for line in sec.split("\n"):
+        if not line.startswith("- "):
+            continue
+        # 한 줄에 이름을 여럿 적을 수 있다 (`.a` · `.b` — 이유).
+        head, sep, reason = line[2:].partition("—")
+        if not sep or not reason.strip():
+            continue          # 이유 없는 줄은 예외가 아니다 (결정 40)
+        exempt |= set(re.findall(r"`(\.[A-Za-z][\w-]*)`", head))
+    if not exempt:
+        return set(), "예외 목록에서 클래스를 하나도 읽지 못했다 (목록 모양이 바뀌었나)"
+    return exempt, None
+
+
+def lint_markup_css(skin, src_css):
+    """skin.html이 내보내는 클래스에 CSS 규칙이 있는가.
+
+    **마크업이 이 저장소에서 가장 큰 표면인데(142종) 검사 축이 비어 있었다.**
+    `BND004`는 JS가 *찾는* 이름만 보고, `BND006`은 JS가 *만드는* 이름만 본다 —
+    마크업이 내보내는 이름은 어느 쪽에도 안 걸린다. `skin.html`에서 클래스를
+    개명하고 CSS를 안 고치면 선택자가 매칭되지 않을 뿐 **에러가 없다.**
+
+    규칙이 없는 것이 정상인 이름이 실제로 많다(컨테이너, 기본 층, 예비 훅).
+    그래서 §5.6과 **같은 형식의 예외 목록**을 문서에 두고 여기서 읽는다.
+    목록을 이 파일에 복사하지 않는 이유도 같다 — 갈라지면 코드가 조용히 이긴다.
+
+    CSS는 **src만** 본다. dist는 src의 사본이라 src에서 규칙을 지워도 낡은
+    dist에 남아 있으면 통과해 버린다 (`BND006`·`TIS00x`와 같은 이유).
+    """
+    if not skin or not src_css:
+        return
+    exempt, structural = parse_markup_exemptions()
+    if structural:
+        err("BND009", "%s. 예외 목록이 이 검사의 정본이라 목록을 못 읽으면 검사가 "
+            "통째로 꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
+        return
+
+    body = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+    names = []
+    for m in re.finditer(r"""class=["']([^"']+)["']""", body):
+        for cls in m.group(1).split():
+            # 클래스 자리가 통째로 치환자인 것(`[##_list_style_##]` 등)은 값이
+            # 티스토리에서 오므로 우리가 규칙을 보장할 수 없다.
+            if cls.startswith("[##_") or cls in names:
+                continue
+            names.append(cls)
+
+    # 선택자만 남긴다 (`content: ".post"` 같은 선언 값에 스친 것을 세면 안 된다).
+    selectors = " ".join(re.findall(r"([^{}]*)\{", strip_comments(src_css)))
+    missing = [c for c in names
+               if "." + c not in exempt
+               and not re.search(r"\." + re.escape(c) + r"(?![\w-])", selectors)]
+    if missing:
+        err("BND009", "skin.html이 내보내는 클래스 %d종에 CSS 규칙이 없다: %s. "
+            "마크업에서 이름을 바꾸고 CSS를 안 고치면 선택자가 매칭되지 않을 뿐 "
+            "에러가 없다 — 스타일 없는 날것이 뜬다. 규칙이 없는 것이 정상이면 "
+            "hooks.md §7 「CSS 규칙이 없는 것이 정상인 마크업 클래스」에 **이유와 함께** "
+            "등재한다." % (len(missing), ", ".join("." + c for c in missing[:8])),
+            "src/styles/")
+    else:
+        info("마크업 클래스: %d종 전부 CSS 규칙이 있다 (예외 %d종)"
+             % (len(names), len(exempt)))
+
+
 # ───────────────────────── 4. 디자인 토큰 준수 ─────────────────────────
 
 HEX_RE = re.compile(r"#(?:[0-9a-fA-F]{3,8})\b")
@@ -1033,6 +1119,7 @@ def main():
     lint_boundaries(skin, css, js)
     lint_empty_substitution_decor(skin, src_css or css)
     lint_js_dom_classes(src_css, js)
+    lint_markup_css(skin, src_css)
     lint_tokens(css)
     # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
     # var(--error)·var(--link) 참조가 dist에만 있다.

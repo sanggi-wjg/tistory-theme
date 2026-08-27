@@ -27,6 +27,7 @@ python3 .claude/skills/skin-qa-check/scripts/lint.py --json   # 자동화용
 ```bash
 python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py   # BND006·BND007
 python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py      # BND008
+python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
 ```
 
@@ -59,6 +60,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 
 | `BND001~005` | `data-cat` 경계면, 카테고리 커버리지, JS 셀렉터 ↔ 마크업, **`[class="contents_style"]` 정확일치** |
 | `BND006~007` | **JS가 만드는 클래스**(`docs/hooks.md`의 **§5.6 + §8** 표가 정본)가 CSS에 규칙을 갖는가(`006`, 오류), 그 이름이 `src/js`에 살아 있는가(`007`, 경고). ⚠ 2026-08-27까지 **§5.6만** 읽었다 — 상태 클래스(`.is-ready` `.no-toc` `.is-current` …)는 §8에, 목차 항목(`.toc-item` `.toc-link`)은 §5.1에 있어 **결정 40이 닫으려던 구멍이 절 하나 옆에 그대로** 있었다. §5.1의 이름은 §5.6 표로 옮겼고 파서는 두 절을 읽는다(22 → 35종). 절이 사라지거나 **절은 있는데 표가 비면** 통과가 아니라 오류다. `BND004`는 JS가 *찾는* 클래스만 봐서 이쪽은 뚫려 있었다 — JS에서 이름을 바꾸고 CSS를 안 고치면 무스타일 날것 DOM이 뜨고 에러는 안 난다. `007`이 없으면 `006`은 **죽은 규칙을 보고 통과한다**. CSS 규칙이 없는 것이 정상인 클래스는 §5.6 「CSS 규칙이 없는 것이 정상인 클래스」에 이유와 함께 등재한다 |
 | `BND008` | **치환자 하나만 담은 요소**에 `::before`/`::after` 장식이 있는데 `:empty`(또는 `:has()`) 가드가 없는가 (오류). 치환자는 값이 없으면 에러가 아니라 **빈 문자열**을 낸다 — 값만 사라지고 라벨·구분자는 남는다. 결정 35(태그 `,`)와 결정 42(`댓글`·`·`)가 같은 실패였고, 셋째(`list-count`의 `글 `)는 이 린트가 찾았다. **가드가 죽은 경우도 본다** — `skin.html`에서 치환자를 제 줄로 내리면 공백 텍스트 노드가 남아 `:empty`가 영영 거짓이 된다(`layout.css:9`의 함정). 장식이 **자손**에 붙은 자리(`.entry-tags a::before`)는 대상이 아니다 |
+| `BND009` | **`skin.html`이 내보내는 클래스에 CSS 규칙이 있는가 (오류).** 마크업에서 이름을 바꾸고 CSS를 안 고치면 선택자가 매칭되지 않을 뿐 **에러가 없다** — 스타일 없는 날것이 뜬다. 2026-08-27까지 이 축이 통째로 비어 있었다: `BND004`는 JS가 *찾는* 이름만, `BND006`은 JS가 *만드는* 이름만 봐서 **가장 큰 표면(142종)이 어느 쪽에도 안 걸렸다.** 규칙이 없는 것이 정상인 이름(컨테이너·기본 층·예비 훅 22종)은 `hooks.md §7` 「CSS 규칙이 없는 것이 정상인 마크업 클래스」에 **이유와 함께** 등재한다. 클래스 자리가 통째로 치환자인 것과 주석 안의 `class`는 대상이 아니다 |
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `TOK006` | 토큰의 **정의 ↔ 참조** 대조. 정의 없는 `var(--오타)`는 오류(선언 전체가 무효가 되어 상속값으로 떨어진다 — 에러는 안 난다), 참조가 하나도 없는 토큰은 정보. **`src`가 아니라 빌드 산출물까지 합쳐서 본다** — `scripts/build.mjs`가 생성하는 인라인색 보정이 `var(--link)`·`var(--error)`를 **문자열로** 쓰기 때문에 `src` grep에는 안 잡힌다. 결정 44가 "`--error`에는 살아 있는 사용처가 없다"를 세 문서에 적었다가 정정한 것이 정확히 이 구멍이었다. `dist/style.css`가 없으면 아예 돌지 않는다 |
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |
