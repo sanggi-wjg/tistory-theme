@@ -17,7 +17,7 @@
 4. npm run check                 ← 빌드 → 린트 → 프리뷰. 통과해야 커밋
 5. 커밋
 6. /pr-review-gate               ← 브랜치 diff 리뷰. 차단이 0이어야 PR이 열린다
-7. 푸시 → PR 생성
+7. 푸시 → PR 생성                ← GitHub Actions `check`가 4번을 깨끗한 러너에서 다시 돈다
 8. 머지되면 정리                  ← 아래 「머지 후 정리」
 ```
 
@@ -28,6 +28,13 @@
 브랜치 이름은 작업 범위로 짓는다 — `home-grid`, `toc-scrollspy`, `inline-fix`.
 
 **커밋 전 필수** — `npm run check`가 통과해야 한다. 린트 오류가 남은 채로 커밋하지 않는다. 이 도메인은 조용히 실패하므로 린트가 유일한 조기 경보다.
+
+**같은 검사를 CI가 한 번 더 돈다** — `.github/workflows/check.yml`이 PR과 `main` 푸시마다
+`npm run check`를 깨끗한 러너에서 돌리고, `main` 보호 규칙이 이 잡(`check`)의 통과를 머지
+조건으로 요구한다(관리자 포함 — `main` 직접 푸시도 막힌다). 러너에는 `.claude/.pr-review-ok`도
+`dist/`도 없다 — **로컬 상태 덕에 통과하는 부류**를 거르는 것이 이 잡의 몫이다.
+**CI 초록불은 4번의 보험이지 6번의 대체가 아니다.** 리뷰가 보는 축("검사가 실제 조건을
+재현하는가", "전에 적은 문장이 아직 참인가")은 CI도 못 본다.
 
 **PR 전 필수** — `/pr-review-gate`. `npm run check`와 **보는 축이 다르다.** 린트는 규칙이
 **있는가**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을 재현하는가**를 본다.
@@ -94,6 +101,7 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
+| 2026-08-27 | GitHub Actions `check` 워크플로우 추가 + `main` 보호 규칙(required status check `check`, 관리자 포함) | `.github/workflows/check.yml`, 저장소 설정 | `npm run check`가 로컬 습관으로만 강제됐다 — 4번을 건너뛴 커밋이 PR로 올라와도 아무것도 안 켜졌다. 러너에는 리뷰 마커·`dist/`가 없어 **로컬 상태 덕에 통과하는 부류**(다섯째 위조 신호)를 구조적으로 거른다. 리뷰 게이트의 대체는 아니다 |
 | 2026-08-27 | `test-detect.py`가 **임시 git 저장소**에서 돈다 — 마커 없음·같음·다름 3상태 (14 → 16케이스) | `.claude/hooks/test-detect.py` | 실제 저장소를 `cwd`로 넘겨 진짜 마커를 읽었다. **리뷰 직후엔 마커가 HEAD와 같아 차단 케이스 7개가 전부 통과했다** — `npm run check`의 결과가 게이트 상태에 따라 달라졌다. 마커가 HEAD와 같을 때 열리는 쪽은 한 번도 시험된 적이 없었다 |
 | 2026-08-27 | 린트 `TOK007` + `test:images`(5케이스) 추가, 빌드가 기본 이미지 30장의 쌍·용량·폴백 모티프를 검사 | `skills/skin-qa-check/scripts/lint.py`, `…/test-image-refs.py`, `scripts/build.mjs`, `package.json` | 결정 46으로 기본 이미지가 `images/` 업로드 파일이 되면서 "변수는 있는데 파일이 없다"가 새 침묵이 됐다. `TOK006`은 정의↔참조만 본다 |
 | 2026-08-27 | 린트 `BND009` + `test:markup`(12케이스) 추가 | `skills/skin-qa-check/scripts/lint.py`, `…/test-markup-css.py`, `docs/hooks.md §7`, `package.json` | `skin.html`이 내보내는 **142종**이 어느 검사에도 안 걸렸다. `BND004`는 JS가 찾는 이름만, `BND006`은 JS가 만드는 이름만 본다 — 가장 큰 표면이 비어 있었다 |
