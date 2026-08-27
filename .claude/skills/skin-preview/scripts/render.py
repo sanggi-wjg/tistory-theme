@@ -50,6 +50,13 @@ PAGE_TYPES = {
     # 둘 다 내지 않으면 **실측 68%인 다수 경로가 프리뷰에 한 번도 안 나온다.**
     # 레이아웃도 갈린다 — body.no-toc 유무로 폭이 1,136 ↔ 848로 바뀐다(layout.css).
     "page_toc":  "tt-body-page",
+    # 보호글. **전용 body_id가 없다** — 공식 레퍼런스의 body_id는 6종뿐이고
+    # 보호글도 글 URL이라 tt-body-page로 나온다(docs/tistory-skin-reference.txt:1017~).
+    # 그래서 CSS로 «보호글만» 가려낼 방법이 없다. 좌측 레일도 그대로 선다.
+    # 2026-08-27까지 렌더러가 이 영역을 통째로 버려서 .protected-* 여덟 종이
+    # **화면에 한 번도 나온 적이 없었다** — 결정 3("전 페이지 타입 동작 보장")의 범위인데
+    # 확인 수단이 0이었다.
+    "protected": "tt-body-page",
     # /tag(클라우드)와 /tag/이름(목록)은 body_id가 둘 다 tt-body-tag지만
     # 렌더되는 영역이 다르다. 한 페이지에 둘 다 그리면 h1이 두 개가 되어
     # 실블로그에 없는 화면을 보게 된다. 그래서 나눈다 —
@@ -151,9 +158,16 @@ Total: reserved=2841MB, committed=1974MB
 <tr><td>RSS 증가</td><td>+40MB/h</td><td>0</td><td>-</td></tr></tbody></table>
 <pre data-ke-type="codeblock"><code>spring:
   datasource:
+    url: jdbc:mysql://db.internal:3306/app?useSSL=true
+    username: app
     hikari:
       max-lifetime: 240000
-      keepalive-time: 120000</code></pre>
+      keepalive-time: 120000
+      connection-timeout: 3000
+      minimum-idle: 10
+      maximum-pool-size: 30
+      pool-name: app-pool
+      leak-detection-threshold: 60000</code></pre>
 <p data-ke-size="size16">아래 셋은 <strong>마크다운 펜스</strong>로 쓴 코드블록이다. 티스토리는 이것을 위와 전혀 다른 형태로 저장한다 — <code>&lt;pre&gt;</code>는 무속성이고 언어가 <code>&lt;code&gt;</code>의 클래스로 간다 (결정 43).</p>
 <pre><code class="language-python">def summarize(rows):
     total = sum(r["bytes"] for r in rows)
@@ -164,6 +178,7 @@ Total: reserved=2841MB, committed=1974MB
 <pre><code class="language-info">이건 언어가 아니라 콜아웃 표식 후보다. 라벨이 붙으면 안 된다.</code></pre>
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
+<p data-ke-size="size16">아래 두 색은 <strong>강조색</strong>이라 빌드 생성기가 죽이지 않고 <strong>토큰으로 옮긴다</strong> — 나머지 색은 전부 <code>--ink-body</code>로 눌린다. 이 두 갈래 중 강조 쪽이 프리뷰에 없어서, 결정 44가 <code>--error</code>를 "쓰는 데가 없다"고 잘못 적었다: <span style="color: #006dd7;">파랑 강조 #006dd7는 다크에서 --link로 간다 (실측 12곳).</span> <span style="color: #ee2323;">빨강 강조 #ee2323는 다크에서 --error로 간다 (실측 10곳) — <strong>--error의 유일한 사용처다.</strong></span></p>
 """
 
 # ── 티스토리 에디터 컴포넌트 ─────────────────────────────────────────
@@ -351,6 +366,11 @@ def globals_for(page, posts, cats, skin_vars):
         "category_list": build_category_list_html(
             cats, posts, conform if page == "category" else ""),
         "count_total": "482,193", "count_today": "312", "count_yesterday": "487",
+        # 보호글 — 이 둘은 <s_article_protected> 안에서만 쓰인다. 그 영역은
+        # s_article_rep **바깥**이라 item_scope가 닿지 않아 전역에 둔다.
+        # 값의 모양은 공식 예제를 그대로 따랐다(레퍼런스 1037~1048행).
+        "article_password": "entryPassword",
+        "article_dissolve": "entryDissolve();",
         "search_name": "search", "search_text": "", "search_onclick_submit": "return false;",
         "list_conform": conform, "list_count": "0" if page == "empty" else str(len(posts)),
         # 홈에서는 블로그 설명이 들어간다 (실측: "git-rich-quick 님의 블로그 입니다.").
@@ -379,6 +399,21 @@ def globals_for(page, posts, cats, skin_vars):
                                    for t in ["k8s", "spring", "jvm", "hikaricp",
                                              "oom", "profiler", "메모리", "__slots__"]),
     }
+    # 보호글은 <s_article_protected> 안에서 article_rep_* 치환자를 쓴다(레퍼런스
+    # 1021~1032행). 그 영역이 s_article_rep 바깥이라 item_scope가 닿지 않으므로
+    # 여기서 채운다. **보호글 페이지에서만** 넣는다 — 다른 페이지에 두면 그 값이
+    # 쓰이지 않는데도 전역에 떠 있어, 나중에 누가 영역 밖에서 치환자를 잘못 써도
+    # 렌더러가 조용히 값을 내줘 실패가 가려진다.
+    if page == "protected":
+        p0 = posts[0]
+        g.update({
+            "article_rep_title": "비밀번호로 잠근 글",
+            "article_rep_link": p0["_link"],
+            "article_rep_category": html.escape(p0["category"]),
+            "article_rep_category_link": "/category/" + p0["category"],
+            "article_rep_date": "2026. 8. 20. 09:41",
+            "article_rep_simple_date": "2026. 8. 20.",
+        })
     for k, v in skin_vars.items():
         g["var_" + k] = v
     return g
@@ -646,8 +681,13 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             buf.append(render(inner, sub, page, posts))
         return "".join(buf)
 
+    # 보호글. 본문 대신 비밀번호 폼만 나오는 페이지다 — s_article_rep 계열은
+    # 위에서 이미 ""를 내므로 여기서 이 영역만 그리면 실물과 같은 화면이 된다.
+    if name == "s_article_protected":
+        return R(inner) if page == "protected" else ""
+
     # 표시하지 않는 것들
-    if name in ("s_ad_div", "s_article_protected", "s_cover_group", "s_cover_rep", "s_cover",
+    if name in ("s_ad_div", "s_cover_group", "s_cover_rep", "s_cover",
                 "s_cover_item", "s_cover_item_article_info", "s_cover_item_not_article_info",
                 "s_cover_url", "s_page_rep"):
         return ""

@@ -53,7 +53,7 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 | 목록 | `section.list` | `s_list` | **`tt-body-index`** `tt-body-category` `tt-body-search` `tt-body-tag` `tt-body-archive` |
 | 태그 클라우드 | `section.tagcloud` | `s_tag` | `tt-body-tag` (`/tag`) |
 | 글 | `article.entry` | `s_article_rep` > `s_permalink_article_rep` ⚠️ | `tt-body-page` |
-| 보호글 | `section.protected` | `s_article_protected` | 보호글 |
+| 보호글 | `section.protected` | `s_article_protected` | `tt-body-page` — **전용 body_id가 없다.** 일반 글과 CSS로 구분되지 않는다 |
 | 방명록 | `section.guestbook` | `s_guest` | `tt-body-guestbook` |
 | 페이징 | `nav.paging` | `s_paging` | 홈·목록 |
 | 사이드바 | `aside.sidebar` | `s_sidebar` | **모든 페이지** ⚠️ |
@@ -77,7 +77,12 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 
 **① `.sidebar`** — `s_sidebar`가 페이지를 가리지 않아 **모든 페이지 DOM에 남는다.**
 빈 채로 여백만 차지하지 않도록 body_id로 잠근다. 켜는 곳은 홈·글·목록 4종이고,
-자리는 **왼쪽**이다(결정 30). 방명록·보호글은 1단이라 끈다.
+자리는 **왼쪽**이다(결정 30). 방명록은 1단이라 끈다.
+
+⚠ **보호글은 끄지 못한다.** 공식 body_id는 6종뿐이고 보호글도 글 URL이라
+`tt-body-page`로 나온다 — 일반 글과 CSS로 구분할 수단이 없다. 레일이 서는 것이
+정상이며, `.protected`는 `margin: 0`으로 본문과 같은 x에 세운다. `margin: 0 auto`면
+보호글만 144px 오른쪽으로 뛴다(2026-08-27 실측).
 
 **② `.post-list`** — `s_list`는 홈에서도 렌더된다(2026-08-25 실측). 지우는 게이트가
 아니라 **모양을 가르는 게이트**가 필요하다. 홈은 카드 그리드, 목록 4종은 세로 행이다.
@@ -117,10 +122,16 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 | `tt-body-page` | 레일 + 본문 + 목차 (`.entry-aside`는 1400px~ 우측) |
 | `tt-body-guestbook` 외 | 1단, 레일 없음 |
 
-**`--page-w`는 레일 페이지에서 전부 `--wrap`(1400px)이다.** 페이지마다 폭이 다르면
+**`--page-w`는 레일 페이지에서 전부 `--wrap`(1520px)이다.** 페이지마다 폭이 다르면
 컨테이너가 다른 폭으로 가운데 정렬되어 레일 x좌표가 달라진다 — 홈에서 글로 넘어갈 때
 카테고리가 옆으로 뛴다. 본문은 `--content-w`(800px)로 잠그고 남는 자리는 비워 둔다.
-실측 1440px: 레일 x=44 폭 240 (홈·글·목록 동일), 글 본문 x=316 폭 800 (**목차 유무 무관**).
+
+실측 1440px (2026-08-27): 레일 **x=24** 폭 240, 본문 **x=312.5** — 홈·글(목차 유/무)·
+카테고리·보관함 **다섯 페이지 전부 같다.** 글 본문은 목차 유무와 무관하게 정확히 **800.0px**.
+
+⚠ **레일 x는 폭에 따라 움직인다.** 1600px부터 래퍼(1520)가 뷰포트보다 좁아져
+가운데 정렬이 살아나기 때문이다(1600 → 56.5, 1920 → 216.5). 계약은 「x가 고정」이
+아니라 **「같은 폭에서 페이지끼리 같다」**이다 — 그것이 결정 30이 요구한 것이다.
 
 **주목 글에 별도 클래스가 없는 이유**: 반복 치환자는 첫 항목을 구분해 주지 않는다.
 `#tt-body-index .post-list > .post:first-child`로 잡고 `grid-column: 1 / -1`을 준다.
@@ -229,7 +240,9 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
   <header class="entry-head">
     <a class="entry-cat" href="…">Infrastructure/MSA</a>
     <h1 class="entry-title">…</h1>
-    <div class="entry-meta"><time class="entry-date">…</time><span class="entry-rp">3</span></div>
+    <div class="entry-meta"><time class="entry-date">…</time>
+      <!-- .entry-rp는 <s_rp_count> 안이고 라벨이 마크업에 있다 -->
+      <a class="entry-rp" href="#comments">댓글 3</a></div>
   </header>
   <div class="entry-layout">
     <div class="entry-main">
@@ -375,11 +388,12 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 | 클래스 | 무엇 | 어디에 |
 |---|---|---|
+| `.toc-item` · `.toc-h2` · `.toc-h3` · `.toc-link` | 목차 항목. `<li class="toc-item toc-h2">` 안에 `<a class="toc-link">`. 계약 본문은 §5.1 | `#toc-list` 안 |
 | `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너 | `.contents_style pre`를 감싼다 |
 | `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
 | `.code-wrap.has-lines` | 줄번호를 켠 상태 | 일정 줄 수 이상 |
-| `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안, `pre` 앞 |
+| `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안. **DOM 순서는 `pre` 뒤**이지만 `position: absolute`라 화면에서는 왼쪽 거터다 |
 | `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
 | `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 | `<body>` 끝에 1개 |
@@ -399,6 +413,11 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 - `.external-link` — 표시는 `.external-icon`이 맡는다. 이쪽은 JS가 같은 링크를 두 번
   손대지 않으려고 붙이는 **표식**이라 스타일이 붙을 자리가 없다.
+- `.toc-item` — `<li>` 자체에 줄 것이 없다. 여백·목록기호는 `.toc-list`가, 글자·패딩·
+  현재 표시는 `.toc-link`가 맡는다. 이 이름은 `.toc-h3 .toc-link` 같은 **층 선택자의
+  발판**으로 쓰인다.
+- `.toc-h2` — h2가 **기본 층**이라 보정할 것이 없다. 들여쓰기는 `.toc-h3 .toc-link`
+  한 곳에서만 준다. 여기에 규칙을 만들면 기본값을 다시 적는 죽은 규칙이 된다.
 
 **카테고리 접기 — CSS가 지켜야 할 세 가지** (`src/styles/tistory.css`, `src/js/category.js`)
 
@@ -507,6 +526,50 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 클래스를 기대하지 말고 `.site-nav ul` `.site-nav li` `.site-nav a`로 잡는다.
 현재 메뉴에 붙은 항목 클래스는 티스토리 설정에 따라 달라진다.
 
+### CSS 규칙이 없는 것이 정상인 마크업 클래스
+
+린트 `BND009`는 `skin.html`이 내보내는 클래스에 CSS 규칙이 있는지 본다.
+**마크업에서 이름을 바꾸고 CSS를 안 고치면 아무 에러도 안 난다** — 선택자가
+매칭되지 않을 뿐이고 화면에는 스타일 없는 날것이 뜬다. `BND004`는 JS가 *찾는*
+이름만, `BND006`은 JS가 *만드는* 이름만 봐서 **마크업이라는 가장 큰 표면
+(142종)이 어느 쪽에도 안 걸려 있었다.**
+
+아래는 규칙이 없는 것이 **정상**인 이름이다. §5.6의 예외 목록과 같은 형식이고
+같은 규칙이 걸린다 — **이름 뒤에 `—`와 이유를 쓴다. 이름만 적은 줄은 예외로
+치지 않는다.** 이유가 없으면 "정상"과 "아직 안 한 일"을 구분할 수 없다.
+
+**부모·형제가 맡는다**
+
+- `.entry` — 글 영역 루트. 폭·배치는 `.entry-layout`·`.entry-main`·`.entry-head`가 나눠 갖는다.
+- `.list` — 목록 영역 루트. 안쪽 `.list-head`·`.post-list`가 전부 정한다.
+- `.tagcloud` — 태그 클라우드 영역 루트. `.tagcloud-title`·`.tagcloud-list`가 맡는다.
+- `.side-item` · `.related-item` · `.tagcloud-item` — `<li>`. 항목 간격은 각 목록
+  컨테이너(`.side-list`·`.related-list`·`.tagcloud-list`)의 `gap`이, 내용은
+  `.side-link`·`.related-link`·`.tagcloud-link`가 맡는다.
+- `.entry-date` · `.post-date` · `.side-date` — 색·크기·정렬을 `.entry-meta`·
+  `.post-meta`·`.side-meta`가 한 번에 정한다. 날짜만 다르게 할 이유가 아직 없다.
+- `.paging-prev` · `.paging-next` · `.paging-num` — `.paging a`가 셋을 같은 알약으로
+  그린다. "더 갈 곳 없음" 상태는 티스토리가 붙이는 `.no_more_prev`/`.no_more_next`가 가른다.
+- `.side-body` — 안이 `[##_category_list_##]`의 **티스토리 고정 마크업**이라
+  `tistory.css`가 `.tt_category` 쪽 이름으로 잡는다.
+- `.toc-title` — `.toc-toggle`이 flex 배치와 글자를 정한다. 라벨 자체에 줄 것이 없다.
+- `.notice-body` — `notice.js`가 여기에 `.contents_style`을 붙이고(§5.7),
+  그때부터 `content.css`가 통째로 맡는다.
+
+**기본 층이라 보정할 것이 없다** (변형 쪽만 규칙을 갖는다)
+
+- `.postnav-prev` — `.postnav-item`의 기본 배치가 곧 이전 글 모양(썸네일 왼쪽)이다.
+  좌우를 뒤집는 `.postnav-next`만 규칙을 갖는다. 여기에 규칙을 만들면 기본값을
+  다시 적는 죽은 규칙이 된다.
+
+**자리·모듈을 가르는 이름. 공통 클래스가 일을 한다**
+
+- `.side-notice` · `.side-comments` · `.side-tags` · `.side-count` — 모듈 구분용.
+  치장은 `.side-mod`가 공통으로 한다. 개별 치장이 필요해지면 붙일 자리다
+  (`.side-category`·`.side-recent`·`.side-popular`는 이미 자기 규칙이 있다).
+- `.ad-upper` · `.ad-lower` — 상·하단 자리 구분용. 여백은 `.ad:not(:empty)`가
+  둘을 같이 다룬다. 위아래를 다르게 할 일이 생기면 붙일 자리다.
+
 ---
 
 ## 8. 상태 클래스 한눈에
@@ -530,7 +593,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 ### `.toc-toggle`의 `aria-expanded` — 뷰포트에 따라 존재 자체가 달라진다
 
-`skin.html:283`은 `aria-expanded="false"`를 하드코딩하지만 **그 값이 사용자에게 도달하는 경로는 없다**
+`skin.html`의 `.toc-toggle`은 `aria-expanded="false"`를 하드코딩하지만 **그 값이 사용자에게 도달하는 경로는 없다**
 (`.toc`는 `.is-ready` 없이는 `display:none`이고 `.is-ready`는 toc.js만 붙인다). 실제 값은 toc.js가 정한다.
 
 | 뷰포트 | `aria-expanded` | `tabindex` | 이유 |

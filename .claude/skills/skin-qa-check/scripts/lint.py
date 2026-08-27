@@ -185,7 +185,18 @@ def lint_substitutions(skin, xml, wl):
 # ─────────────────────── 2. 영역 치환자 페이지 정합성 ───────────────────────
 
 def lint_area_scope(skin):
-    """홈 목록과 일반 목록의 접두사가 섞이면 조용히 빈 화면이 된다."""
+    """홈 목록과 일반 목록의 접두사가 섞이면 조용히 빈 화면이 된다.
+
+    ⚠ **주석을 먼저 벗긴다.** 여기 검사들은 전부 "이 이름이 skin.html에 있는가"로
+      묻는데, 주석 안의 글자도 그냥 걸린다. 2026-08-27에 실제로 당했다 —
+      `AREA003`(아래에서 폐기)이 뜨지 않고 있던 유일한 이유가 `skin.html`의
+      **주석 문장 한 줄**에 그 이름이 적혀 있어서였다. 그 문장을 고치는 순간
+      경고가 살아난다. 검사가 무엇을 근거로 조용한지가 우연이면 그건 통과가
+      아니라 침묵이다.
+      (`lint_substitutions`는 자기 지역 변수에서만 벗겨서 여기까지 오지 않았다.)
+    """
+    skin = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+
     def inner_of(tag):
         m = re.search(r"<%s(?:\s[^>]*)?>(.*?)</%s>" % (tag, tag), skin, re.S | re.I)
         return m.group(1) if m else ""
@@ -200,13 +211,25 @@ def lint_area_scope(skin):
         err("AREA002", "<s_list_rep> 안에서 [##_article_rep_*_##]를 쓰고 있다. "
             "목록에서는 [##_list_rep_*_##]를 써야 한다.", "src/skin.html")
 
-    if "s_list_rep" in skin and "s_index_article_rep" not in skin:
-        warn("AREA003", "<s_list_rep>는 있는데 <s_index_article_rep>가 없다. 홈 목록이 비게 된다.",
-             "src/skin.html")
+    # AREA003은 폐기했다 (2026-08-27). 「<s_list_rep>는 있는데 <s_index_article_rep>가
+    # 없다」를 경고했는데, **결정 29가 그 전제를 뒤집었다** — <s_list>는 홈에서도
+    # 렌더되고(2026-08-25 실측) 그래서 홈 목록을 s_index_article_rep로 따로 그릴
+    # 이유가 없어졌다. 즉 이 경고는 지금 규범과 정반대를 요구한다.
+    # 번호는 재사용하지 않는다. SKILL.md에 폐기 사실을 적어 둔다.
 
     if "[##_body_id_##]" not in skin:
         warn("AREA004", "[##_body_id_##]가 없다. body_id로 페이지별 CSS 분기를 할 수 없다.",
              "src/skin.html")
+
+    # AREA005 — AREA003이 지키려던 것(«목록이 통째로 빈다»)은 여전히 실재하는
+    # 위험이다. 다만 지금 그 위험을 만드는 것은 s_index_article_rep의 부재가 아니라
+    # **<s_list> 자체의 부재**다. 결정 29 이후 홈·카테고리·검색·태그·보관함
+    # 다섯 페이지가 전부 이 한 영역에 걸려 있다 — 빠지면 다섯 장이 같이 빈다.
+    # 짝 검사(SUB005)는 «있는 것»의 짝만 보므로 통째로 없는 것은 못 잡는다.
+    if not re.search(r"<s_list(?:\s[^>]*)?>", skin, re.I):
+        err("AREA005", "<s_list> 영역이 없다. 결정 29 이후 홈·카테고리·검색·태그·보관함이 "
+            "전부 이 한 영역으로 그려지므로, 빠지면 다섯 페이지가 동시에 빈다 — "
+            "에러도 미치환 치환자도 없이 목록만 사라진다.", "src/skin.html")
 
 
 # ────────────────── 3. 경계면: 마크업 ↔ CSS ↔ JS ──────────────────
@@ -343,8 +366,23 @@ HOOKS_MD = os.path.join(ROOT, "docs", "hooks.md")
 NO_CSS_HEADING = "**CSS 규칙이 없는 것이 정상인 클래스**"
 
 
+# JS가 만드는 이름이 등재되는 절. **§5.6 하나가 아니다.**
+#
+# 결정 40은 "§5.6이 정본"이라고 못 박고 린트가 그 표만 읽게 했는데, 실제 등재는
+# 흩어져 있었다 — 상태 클래스(`.is-ready` `.no-toc` `.is-current` …)는 §8에 있고
+# 목차 항목(`.toc-item` `.toc-link`)은 §5.1에 있었다. 그래서 `toc.js`에서
+# `.toc-link`를 개명하고 CSS를 안 고쳐도 **아무 검사도 안 켜졌다** —
+# 결정 40이 닫으려던 구멍이 절 하나 옆에 그대로 있었던 셈이다 (2026-08-27).
+#
+# §5.1은 표가 아니라 산문이라 파싱 대상이 아니다. 그쪽 이름은 §5.6 표로 옮겼다.
+REGISTRY_SECTIONS = [
+    (r"^### 5\.6 [^\n]*\n(.*?)^### ", "§5.6 (JS가 새로 만드는 DOM)"),
+    (r"^## 8\. [^\n]*\n(.*?)^### ", "§8 (상태 클래스)"),
+]
+
+
 def parse_js_dom_registry():
-    """docs/hooks.md §5.6 표에서 'JS가 새로 만드는 클래스' 목록을 읽는다.
+    """docs/hooks.md에서 'JS가 만드는 클래스' 목록을 읽는다 (§5.6 + §8).
 
     표가 정본이다. 목록을 이 파일에 복사해 두면 문서와 갈라지고, 갈라진 뒤에는
     **코드 쪽이 조용히 이긴다** — 문서에 클래스를 더해도 검사는 모른 척한다.
@@ -354,27 +392,37 @@ def parse_js_dom_registry():
     doc = read(HOOKS_MD)
     if doc is None:
         return [], set(), "docs/hooks.md가 없다"
-    m = re.search(r"^### 5\.6 [^\n]*\n(.*?)^### ", doc, re.S | re.M)
-    if not m:
-        return [], set(), "docs/hooks.md에서 §5.6 절을 찾지 못했다"
-    sec = m.group(1)
 
-    names = []
-    for line in sec.split("\n"):
-        if not line.startswith("|"):
-            continue
-        cells = line.split("|")
-        if len(cells) < 3:
-            continue
-        for tick in re.findall(r"`([^`]+)`", cells[1].strip()):
-            # `body.is-lightbox-open` → .is-lightbox-open,
-            # `.code-wrap.has-lines` → .code-wrap + .has-lines,
-            # `.hljs-*` → 접두 항목(뒤에서 따로 다룬다)
-            for cls in re.findall(r"\.[A-Za-z][\w-]*\*?", tick):
-                if cls not in names:
-                    names.append(cls)
+    names, sec = [], None
+    for pattern, label in REGISTRY_SECTIONS:
+        m = re.search(pattern, doc, re.S | re.M)
+        if not m:
+            return [], set(), "docs/hooks.md에서 %s 절을 찾지 못했다" % label
+        body = m.group(1)
+        if sec is None:
+            sec = body        # 예외 목록은 §5.6에만 있다
+        found = 0
+        for line in body.split("\n"):
+            if not line.startswith("|"):
+                continue
+            cells = line.split("|")
+            if len(cells) < 3:
+                continue
+            for tick in re.findall(r"`([^`]+)`", cells[1].strip()):
+                # `body.is-lightbox-open` → .is-lightbox-open,
+                # `.code-wrap.has-lines` → .code-wrap + .has-lines,
+                # `.hljs-*` → 접두 항목(뒤에서 따로 다룬다)
+                for cls in re.findall(r"\.[A-Za-z][\w-]*\*?", tick):
+                    found += 1
+                    if cls not in names:
+                        names.append(cls)
+        # 절은 찾았는데 표가 비었다 = 표 모양이 바뀐 것이다. 조용히 줄어들면
+        # 검사가 그만큼 꺼진 채로 초록불이 된다.
+        if not found:
+            return [], set(), "%s 표에서 클래스를 하나도 읽지 못했다 (표 모양이 바뀌었나)" % label
+
     if not names:
-        return [], set(), "§5.6 표에서 클래스를 하나도 읽지 못했다 (표 모양이 바뀌었나)"
+        return [], set(), "등재 표에서 클래스를 하나도 읽지 못했다"
 
     # 예외는 **이유와 함께** 등재해야 인정한다. 이름만 적힌 줄은 예외가 아니다 —
     # 이유 없는 예외는 "안 한 일"과 "정상"을 구분할 수 없게 만든다.
@@ -421,8 +469,8 @@ def lint_js_dom_classes(src_css, js):
         return
     names, exempt, structural = parse_js_dom_registry()
     if structural:
-        err("BND006", "%s. §5.6 표가 이 검사의 정본이라 표를 못 읽으면 검사가 통째로 "
-            "꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
+        err("BND006", "%s. 등재 표(§5.6·§8)가 이 검사의 정본이라 표를 못 읽으면 검사가 "
+            "통째로 꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
         return
 
     # 선택자만 남긴다. `content: "…"` 같은 선언 값에 이름이 스쳐도
@@ -447,18 +495,104 @@ def lint_js_dom_classes(src_css, js):
             no_js.append(cls)
 
     if no_css:
-        err("BND006", "hooks.md §5.6이 등재한 클래스 %d종에 CSS 규칙이 없다: %s. "
+        err("BND006", "hooks.md 등재 표(§5.6·§8)의 클래스 %d종에 CSS 규칙이 없다: %s. "
             "JS가 만들어 붙여도 스타일 없는 날것 DOM이 뜨고 에러는 안 난다. "
             "규칙이 없는 것이 정상이면 §5.6 「CSS 규칙이 없는 것이 정상인 클래스」 목록에 "
             "이유와 함께 등재한다 — 이름만 적은 줄은 예외로 치지 않는다."
             % (len(no_css), ", ".join(no_css)), "src/styles/")
     if no_js:
-        warn("BND007", "hooks.md §5.6이 등재한 클래스 %d종이 src/js 어디에도 없다: %s. "
+        warn("BND007", "hooks.md 등재 표(§5.6·§8)의 클래스 %d종이 src/js 어디에도 없다: %s. "
              "JS에서 이름을 바꿨다면 문서와 CSS가 죽은 이름을 붙들고 있는 것이고, "
              "그러면 BND006은 그 죽은 규칙을 보고 통과한다." % (len(no_js), ", ".join(no_js)),
              "src/js/")
     if not no_css and not no_js:
-        info("§5.6 JS 생성 클래스: %d종 전부 CSS 규칙과 JS 사용처가 있다 (CSS 예외 %d종)"
+        info("JS 생성 클래스(§5.6·§8 등재): %d종 전부 CSS 규칙과 JS 사용처가 있다 (CSS 예외 %d종)"
+             % (len(names), len(exempt)))
+
+
+# ────────── 3c. 마크업이 내보내는 클래스 ↔ CSS (BND009) ──────────
+
+MARKUP_EXEMPT_TITLE = "CSS 규칙이 없는 것이 정상인 마크업 클래스"
+# **줄 전체**로 맞춘다. 부분문자열로 찾으면 산문에 제목을 인용하기만 해도
+# 검사가 «목록을 찾았다»고 착각한다 — 이 검사의 자기 테스트가 그것부터 짚었다.
+MARKUP_EXEMPT_HEADING = re.compile(r"^#{2,4}\s*" + re.escape(MARKUP_EXEMPT_TITLE) + r"\s*$", re.M)
+
+
+def parse_markup_exemptions():
+    """docs/hooks.md §7의 예외 목록을 읽는다. 형식은 §5.6과 같다.
+
+    반환: (예외 집합, 구조 오류 메시지 또는 None)
+    """
+    doc = read(HOOKS_MD)
+    if doc is None:
+        return set(), "docs/hooks.md가 없다"
+    m = MARKUP_EXEMPT_HEADING.search(doc)
+    if not m:
+        return set(), "docs/hooks.md에서 「%s」 절을 찾지 못했다" % MARKUP_EXEMPT_TITLE
+    sec = doc[m.end():]
+    sec = re.split(r"^#{2,3} ", sec, maxsplit=1, flags=re.M)[0]
+
+    exempt = set()
+    for line in sec.split("\n"):
+        if not line.startswith("- "):
+            continue
+        # 한 줄에 이름을 여럿 적을 수 있다 (`.a` · `.b` — 이유).
+        head, sep, reason = line[2:].partition("—")
+        if not sep or not reason.strip():
+            continue          # 이유 없는 줄은 예외가 아니다 (결정 40)
+        exempt |= set(re.findall(r"`(\.[A-Za-z][\w-]*)`", head))
+    if not exempt:
+        return set(), "예외 목록에서 클래스를 하나도 읽지 못했다 (목록 모양이 바뀌었나)"
+    return exempt, None
+
+
+def lint_markup_css(skin, src_css):
+    """skin.html이 내보내는 클래스에 CSS 규칙이 있는가.
+
+    **마크업이 이 저장소에서 가장 큰 표면인데(142종) 검사 축이 비어 있었다.**
+    `BND004`는 JS가 *찾는* 이름만 보고, `BND006`은 JS가 *만드는* 이름만 본다 —
+    마크업이 내보내는 이름은 어느 쪽에도 안 걸린다. `skin.html`에서 클래스를
+    개명하고 CSS를 안 고치면 선택자가 매칭되지 않을 뿐 **에러가 없다.**
+
+    규칙이 없는 것이 정상인 이름이 실제로 많다(컨테이너, 기본 층, 예비 훅).
+    그래서 §5.6과 **같은 형식의 예외 목록**을 문서에 두고 여기서 읽는다.
+    목록을 이 파일에 복사하지 않는 이유도 같다 — 갈라지면 코드가 조용히 이긴다.
+
+    CSS는 **src만** 본다. dist는 src의 사본이라 src에서 규칙을 지워도 낡은
+    dist에 남아 있으면 통과해 버린다 (`BND006`·`TIS00x`와 같은 이유).
+    """
+    if not skin or not src_css:
+        return
+    exempt, structural = parse_markup_exemptions()
+    if structural:
+        err("BND009", "%s. 예외 목록이 이 검사의 정본이라 목록을 못 읽으면 검사가 "
+            "통째로 꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
+        return
+
+    body = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+    names = []
+    for m in re.finditer(r"""class=["']([^"']+)["']""", body):
+        for cls in m.group(1).split():
+            # 클래스 자리가 통째로 치환자인 것(`[##_list_style_##]` 등)은 값이
+            # 티스토리에서 오므로 우리가 규칙을 보장할 수 없다.
+            if cls.startswith("[##_") or cls in names:
+                continue
+            names.append(cls)
+
+    # 선택자만 남긴다 (`content: ".post"` 같은 선언 값에 스친 것을 세면 안 된다).
+    selectors = " ".join(re.findall(r"([^{}]*)\{", strip_comments(src_css)))
+    missing = [c for c in names
+               if "." + c not in exempt
+               and not re.search(r"\." + re.escape(c) + r"(?![\w-])", selectors)]
+    if missing:
+        err("BND009", "skin.html이 내보내는 클래스 %d종에 CSS 규칙이 없다: %s. "
+            "마크업에서 이름을 바꾸고 CSS를 안 고치면 선택자가 매칭되지 않을 뿐 "
+            "에러가 없다 — 스타일 없는 날것이 뜬다. 규칙이 없는 것이 정상이면 "
+            "hooks.md §7 「CSS 규칙이 없는 것이 정상인 마크업 클래스」에 **이유와 함께** "
+            "등재한다." % (len(missing), ", ".join("." + c for c in missing[:8])),
+            "src/styles/")
+    else:
+        info("마크업 클래스: %d종 전부 CSS 규칙이 있다 (예외 %d종)"
              % (len(names), len(exempt)))
 
 
@@ -513,6 +647,48 @@ def lint_tokens(css):
     if not re.search(r"body\s*\{[^}]*background", css, re.S):
         warn("TOK005", "body에 배경색이 지정되지 않았다. 투명 배경은 호스트 색을 그대로 비친다.",
              "src/styles/")
+
+
+def lint_token_usage(css, has_built):
+    """토큰의 **정의 ↔ 참조**를 맞춰 본다.
+
+    두 방향 모두 이 도메인의 조용한 실패다.
+
+    ① 참조는 있는데 정의가 없다 — `var(--cavas)` 오타는 에러가 아니라
+       **선언 전체가 무효**가 되어 그 속성이 상속값이나 초기값으로 떨어진다.
+       화면에는 "왜 여기만 색이 다르지" 정도로만 나타난다. 오류로 낸다.
+
+    ② 정의는 있는데 참조가 없다 — 해롭지는 않다. 정보로만 낸다. 그런데 이쪽이
+       이 검사를 만든 이유다. 2026-08-26 결정 44가 `--error`의 사용처를 옮기고
+       "**살아 있는 사용처가 없다**"고 세 문서에 적었는데 **틀렸다** —
+       `scripts/build.mjs`의 ACCENT 맵이 본문 인라인색 `#ee2323`을 그 토큰으로
+       보내고 있었다. `src/styles`를 grep하면 주석밖에 안 나온다: 사용처가
+       **생성기의 문자열 안**에 있고 결과는 `dist/style.css`에만 있다.
+
+    ⚠ **그래서 src만 보면 안 된다.** 빌드 산출물까지 합친 CSS를 받는다.
+       dist가 없으면 ①의 판정 근거(생성된 `--ph-*` 정의)가 통째로 빠지므로
+       아예 돌지 않는다 — 근거 없이 오류를 내는 것보다 안 도는 편이 낫다.
+    """
+    if not css or not has_built:
+        return
+    body = strip_comments(css)
+    defined = set(re.findall(r"(--[a-z0-9-]+)\s*:", body))
+    used = set(re.findall(r"var\(\s*(--[a-z0-9-]+)", body))
+
+    undefined = sorted(used - defined)
+    if undefined:
+        err("TOK006", "정의되지 않은 토큰을 %d종 참조한다: %s. CSS는 에러를 내지 않는다 — "
+            "선언 전체가 무효가 되어 그 속성이 상속값으로 떨어진다."
+            % (len(undefined), ", ".join(undefined[:8])), "src/styles/")
+
+    unused = sorted(defined - used)
+    if unused:
+        info("참조가 없는 토큰 %d종: %s. 해롭지는 않다. 다만 «비어 있다»고 "
+             "문서에 적기 전에 이 목록을 본다 — 생성기(scripts/build.mjs)가 "
+             "문자열로 쓰는 사용처는 src grep에 안 잡힌다 (결정 44 정정)."
+             % (len(unused), ", ".join(unused)))
+    else:
+        info("토큰: 정의 %d종 전부 참조됨, 미정의 참조 0" % len(defined))
 
 
 # ───────────────────── 5. 인라인 스타일 보정 커버리지 ─────────────────────
@@ -943,7 +1119,11 @@ def main():
     lint_boundaries(skin, css, js)
     lint_empty_substitution_decor(skin, src_css or css)
     lint_js_dom_classes(src_css, js)
+    lint_markup_css(skin, src_css)
     lint_tokens(css)
+    # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
+    # var(--error)·var(--link) 참조가 dist에만 있다.
+    lint_token_usage(css, built is not None)
     lint_inline_coverage(css)
     # 이 둘은 **src만** 본다. dist는 src의 사본이라, src를 망가뜨려도 낡은 dist에
     # 옛 규칙이 남아 있으면 검사가 통과해 버린다(실제로 개발 중에 겪었다).
