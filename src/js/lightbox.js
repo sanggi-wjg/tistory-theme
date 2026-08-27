@@ -80,8 +80,13 @@ function openFor(img) {
 
   const big = document.createElement('img')
   big.className = 'lightbox-img'
-  // 원본 URL이 따로 있으면 그걸 쓴다 (티스토리 이미지 블록은 축소본을 넣는다)
-  big.src = img.getAttribute('data-origin') || img.currentSrc || img.src
+  // ⚠ **원본 URL을 따로 찾지 않는다.** 예전에는 `data-origin`을 먼저 봤는데,
+  //   그 속성의 근거가 이 저장소 어디에도 없었다(2026-08-27 셀프 리뷰).
+  //   실제로 관찰된 티스토리 이미지블록은 `data-origin-width`/`-height`와
+  //   `<span data-url>`을 쓴다 — 이름이 다르다. 없는 속성을 먼저 보는 코드는
+  //   폴백 덕에 조용히 통과하면서 "원본을 쓰고 있다"는 착각만 남긴다.
+  //   무엇이 진짜 원본 주소인지는 TODO `lightbox-origin`에서 실측한다.
+  big.src = img.currentSrc || img.src
   big.alt = img.getAttribute('alt') || ''
 
   const btn = document.createElement('button')

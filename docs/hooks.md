@@ -240,7 +240,9 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
   <header class="entry-head">
     <a class="entry-cat" href="…">Infrastructure/MSA</a>
     <h1 class="entry-title">…</h1>
-    <div class="entry-meta"><time class="entry-date">…</time><span class="entry-rp">3</span></div>
+    <div class="entry-meta"><time class="entry-date">…</time>
+      <!-- .entry-rp는 <s_rp_count> 안이고 라벨이 마크업에 있다 -->
+      <a class="entry-rp" href="#comments">댓글 3</a></div>
   </header>
   <div class="entry-layout">
     <div class="entry-main">
@@ -391,7 +393,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
 | `.code-wrap.has-lines` | 줄번호를 켠 상태 | 일정 줄 수 이상 |
-| `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안, `pre` 앞 |
+| `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안. **DOM 순서는 `pre` 뒤**이지만 `position: absolute`라 화면에서는 왼쪽 거터다 |
 | `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
 | `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 | `<body>` 끝에 1개 |
@@ -591,7 +593,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 ### `.toc-toggle`의 `aria-expanded` — 뷰포트에 따라 존재 자체가 달라진다
 
-`skin.html:283`은 `aria-expanded="false"`를 하드코딩하지만 **그 값이 사용자에게 도달하는 경로는 없다**
+`skin.html`의 `.toc-toggle`은 `aria-expanded="false"`를 하드코딩하지만 **그 값이 사용자에게 도달하는 경로는 없다**
 (`.toc`는 `.is-ready` 없이는 `display:none`이고 `.is-ready`는 toc.js만 붙인다). 실제 값은 toc.js가 정한다.
 
 | 뷰포트 | `aria-expanded` | `tabindex` | 이유 |
