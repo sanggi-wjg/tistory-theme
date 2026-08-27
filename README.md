@@ -38,6 +38,7 @@ src/assets/placeholders/  카테고리 기본 이미지 WebP 30장 (light·dark,
 src/assets/placeholders-src/  그 원본 — 승인된 삽화 SVG 30장. AI 이미지는 같은 이름 .png로 덮어쓰고 `npm run placeholders` (규칙: docs/placeholder-image-brief.md)
 src/assets/motifs/        SVG 모티프 15장 — WebP가 안 올 때의 폴백(data: 인라인). 임시본의 원료이기도
 src/preview/              관리 화면용 미리보기 이미지 4종 (dist/ 루트로 복사된다)
+src/assets/brand/         파비콘·블로그 아이콘 — 원본 PNG와 `npm run icons` 산출물. 스킨이 아니라 관리 화면에 올린다 (결정 49)
 scripts/build.mjs         빌드
 data/*.json               블로그 실측 결과. 인라인색 보정 CSS와 프리뷰 픽스처의 근거
 docs/hooks.md             마크업 ↔ CSS ↔ JS 경계면 계약
