@@ -642,7 +642,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 - **`--ph-*` 변수명은 파일의 slug에서 그대로 나온다** (`arch-light.webp` → `--ph-arch`). 빌드가 이름을 검사하지 않으므로 **slug를 틀리면 변수가 정의되지 않고 카드는 조용히 `--ph-default`로 떨어진다.** 위 블록의 이름이 곧 slug 목록이다.
 - **카테고리를 늘리거나 이름을 바꾸면 이 블록과 이미지 두 장을 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
 - **`og:image`는 안 바뀐다.** CSS 배경이라 검색·SNS 공유 썸네일은 여전히 티스토리 기본이다(`DECISIONS.md` §3 실측). 이 그림은 **사이트 안에서만** 보인다.
-- **AI 이미지는 아직 없다.** 지금 30장은 옛 SVG 모티프를 테마 색 판 위에 래스터화한 **임시본**이다(`prep-placeholders.mjs --stub`). 실제 이미지가 오면 `placeholders-src/`에 넣고 변환한다 — 같은 키의 래스터가 stub SVG를 이긴다. `motifs/`는 폴백이므로 남는다.
+- **삽화 방향은 확정됐다 — 결 3 · 개념 일러스트, Clockwise 결을 스킨 토큰으로**(2026-08-27 사용자 승인). 규칙과 GPT-image 프롬프트 팩은 [`docs/placeholder-image-brief.md`](./docs/placeholder-image-brief.md)에 있다: 굵은 외곽선 한 굵기, 면 3톤, 뒤판 원 하나, `--link` 파랑 한 요소, 작은 장식 셋, 정면, 사람·글자 없음. 지금 `placeholders-src/`의 SVG 30장은 그 방향의 **승인된 목업**이고 곧 실제 기본 이미지다. AI로 더 풍부하게 만든 그림은 같은 이름의 `.png`로 덮어쓴다(래스터가 SVG를 이긴다). `motifs/`는 폴백이므로 남는다.
 - **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.** 다만 이 치환자는 관리 화면에서 카테고리 대표이미지를 설정해야 값이 나오고, 없으면 블록째 사라진다 — **기본 이미지를 배너로 대신 쓸지는 미정**이다(`DECISIONS.md` 미결 12).
 
 ### 6.3 코드블록

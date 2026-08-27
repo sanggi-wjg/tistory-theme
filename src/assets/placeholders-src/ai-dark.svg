@@ -1,4 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="800" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="1600" height="1000">
+<!-- ai · dark — 결 3 개념 일러스트, 스킨 토큰. docs/placeholder-image-brief.md의 참조 이미지이자 AI 이미지가 오기 전의 실제 기본 이미지 -->
+<style>
+.g{fill:#2e2e2e}
+.o{fill:none;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.o3{fill:none;stroke:#ededed;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.p{fill:#0a0a0a;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.s{fill:#454545;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.b{fill:#3291ff;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.bl{fill:#3291ff}
+.d{fill:#8f8f8f}
+.plus{fill:none;stroke:#ededed;stroke-width:3;stroke-linecap:round}
+.chk{fill:none;stroke:#3291ff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+</style>
 <rect width="320" height="200" fill="#121212"/>
-<g fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".62"><g stroke="#8f8f8f" stroke-width="1.1" opacity=".55"><path d="M162 66l54-24M162 66l54 24M162 66l54 58M162 134l54-92M162 134l54 24M162 134l54 58M216 42l54 24M216 42l54 58M216 90l54-24M216 90l54 58M216 124l54-58M216 124l54 24M216 158l54-58M216 158l54 24"/></g><g fill="#8f8f8f"><circle cx="162" cy="66" r="5"/><circle cx="162" cy="134" r="5"/><circle cx="216" cy="42" r="5"/><circle cx="216" cy="90" r="5"/><circle cx="216" cy="124" r="5"/><circle cx="216" cy="158" r="5"/><circle cx="270" cy="66" r="5"/><circle cx="270" cy="132" r="5"/></g></g>
+<circle class="g" cx="160" cy="100" r="74"/>
+<path class="o3" d="M112 70L160 50M112 70L160 100M112 130L160 100M112 130L160 150M160 50L208 70M160 100L208 70M160 100L208 130M160 150L208 130"/>
+<circle class="p" cx="112" cy="70" r="9"/><circle class="p" cx="112" cy="130" r="9"/><circle class="p" cx="160" cy="50" r="9"/><circle class="p" cx="160" cy="150" r="9"/><circle class="p" cx="208" cy="70" r="9"/><circle class="p" cx="208" cy="130" r="9"/>
+<circle class="b" cx="160" cy="100" r="13"/>
+<path class="plus" d="M254 52v12M248 58h12"/><circle class="d" cx="68" cy="148" r="4"/><circle class="bl" cx="252" cy="150" r="3"/>
 </svg>

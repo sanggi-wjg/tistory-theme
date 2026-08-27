@@ -1,4 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="800" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="1600" height="1000">
+<!-- php · light — 결 3 개념 일러스트, 스킨 토큰. docs/placeholder-image-brief.md의 참조 이미지이자 AI 이미지가 오기 전의 실제 기본 이미지 -->
+<style>
+.g{fill:#ebebeb}
+.o{fill:none;stroke:#171717;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.o3{fill:none;stroke:#171717;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.p{fill:#ffffff;stroke:#171717;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.s{fill:#a1a1a1;stroke:#171717;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.b{fill:#0064da;stroke:#171717;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.bl{fill:#0064da}
+.d{fill:#707070}
+.plus{fill:none;stroke:#171717;stroke-width:3;stroke-linecap:round}
+.chk{fill:none;stroke:#0064da;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+</style>
 <rect width="320" height="200" fill="#fafafa"/>
-<g fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".62"><g stroke="#707070" stroke-width="2.2"><path d="M190 64l-30 36 30 36"/><path d="M258 64l30 36-30 36"/><path d="M236 56l-26 88"/></g></g>
+<circle class="g" cx="160" cy="100" r="74"/>
+<rect class="s" x="96" y="70" width="100" height="72" rx="6"/>
+<rect class="p" x="112" y="58" width="100" height="72" rx="6"/>
+<rect class="p" x="128" y="46" width="100" height="72" rx="6"/>
+<path class="o3" d="M144 64h54M144 80h34M144 96h46"/>
+<rect class="bl" x="182" y="90" width="9" height="16" rx="1.5"/>
+<path class="plus" d="M252 132v12M246 138h12"/><circle class="d" cx="72" cy="52" r="4"/><circle class="bl" cx="78" cy="156" r="3"/>
 </svg>

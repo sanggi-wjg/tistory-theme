@@ -1,6 +1,7 @@
 // 기본 이미지 원본 → WebP 30장 (상위 14 + 기본값 1) × (light · dark).
 //
-//   src/assets/placeholders-src/<slug>-<theme>.{png,jpg,jpeg,webp,svg}   ← 원본 (AI 생성 이미지를 여기에 둔다)
+//   src/assets/placeholders-src/<slug>-<theme>.{png,jpg,jpeg,webp,svg}   ← 원본. 지금은 승인된 삽화 SVG 30장(결 3). AI 이미지는 같은 이름 .png로 덮어쓴다
+//                                                                          규칙·프롬프트: docs/placeholder-image-brief.md
 //   src/assets/placeholders/<slug>-<theme>.webp                          ← 변환 결과. 커밋한다. 빌드가 읽는 것은 이것뿐
 //
 //   node scripts/prep-placeholders.mjs           원본 전부 변환

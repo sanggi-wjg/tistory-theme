@@ -1,4 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="800" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="1600" height="1000">
+<!-- sec · dark — 결 3 개념 일러스트, 스킨 토큰. docs/placeholder-image-brief.md의 참조 이미지이자 AI 이미지가 오기 전의 실제 기본 이미지 -->
+<style>
+.g{fill:#2e2e2e}
+.o{fill:none;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.o3{fill:none;stroke:#ededed;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.p{fill:#0a0a0a;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.s{fill:#454545;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.b{fill:#3291ff;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.bl{fill:#3291ff}
+.d{fill:#8f8f8f}
+.plus{fill:none;stroke:#ededed;stroke-width:3;stroke-linecap:round}
+.chk{fill:none;stroke:#3291ff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+</style>
 <rect width="320" height="200" fill="#121212"/>
-<g fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".62"><g stroke="#8f8f8f" stroke-width="1.5"><path d="M224 32l52 19v43c0 31-21 52-52 64-31-12-52-33-52-64V51z"/><circle cx="224" cy="94" r="10"/><path d="M224 104v18"/></g></g>
+<circle class="g" cx="160" cy="100" r="74"/>
+<path class="p" d="M160 38l54 18v42c0 34-25 54-54 64-29-10-54-30-54-64V56z"/>
+<circle class="bl" cx="160" cy="94" r="11"/><rect class="bl" x="155" y="98" width="10" height="24" rx="2"/>
+<path class="plus" d="M252 54v12M246 60h12"/><circle class="d" cx="72" cy="150" r="4"/><circle class="bl" cx="76" cy="56" r="3"/>
 </svg>

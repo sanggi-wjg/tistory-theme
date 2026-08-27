@@ -1,4 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="800" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="1600" height="1000">
+<!-- algo · dark — 결 3 개념 일러스트, 스킨 토큰. docs/placeholder-image-brief.md의 참조 이미지이자 AI 이미지가 오기 전의 실제 기본 이미지 -->
+<style>
+.g{fill:#2e2e2e}
+.o{fill:none;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.o3{fill:none;stroke:#ededed;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.p{fill:#0a0a0a;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.s{fill:#454545;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.b{fill:#3291ff;stroke:#ededed;stroke-width:5;stroke-linejoin:round;stroke-linecap:round}
+.bl{fill:#3291ff}
+.d{fill:#8f8f8f}
+.plus{fill:none;stroke:#ededed;stroke-width:3;stroke-linecap:round}
+.chk{fill:none;stroke:#3291ff;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+</style>
 <rect width="320" height="200" fill="#121212"/>
-<g fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".62"><g fill="#8f8f8f"><rect x="152" y="128" width="17" height="28" rx="3"/><rect x="177" y="112" width="17" height="44" rx="3"/><rect x="202" y="92" width="17" height="64" rx="3"/><rect x="227" y="74" width="17" height="82" rx="3"/><rect x="252" y="58" width="17" height="98" rx="3"/><rect x="277" y="42" width="17" height="114" rx="3"/></g></g>
+<circle class="g" cx="160" cy="100" r="74"/>
+<rect class="p" x="98" y="130" width="14" height="24" rx="3"/>
+<rect class="p" x="118" y="116" width="14" height="38" rx="3"/>
+<rect class="p" x="138" y="102" width="14" height="52" rx="3"/>
+<rect class="b" x="158" y="88" width="14" height="66" rx="3"/>
+<rect class="p" x="178" y="74" width="14" height="80" rx="3"/>
+<rect class="p" x="198" y="60" width="14" height="94" rx="3"/>
+<rect class="s" x="218" y="46" width="14" height="108" rx="3"/>
+<path class="o3" d="M94 160h144"/>
+<path class="plus" d="M84 54v12M78 60h12"/><circle class="d" cx="256" cy="150" r="4"/><circle class="bl" cx="252" cy="48" r="3"/>
 </svg>

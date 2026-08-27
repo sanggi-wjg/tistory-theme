@@ -40,7 +40,7 @@ src/
 │   ├── toc.js  code.js  theme.js  lightbox.js  progress.js  tables.js  links.js  inline-fix.js
 └── assets/
     ├── placeholders/      기본 이미지 WebP 30장 (상위 14 + 기본값 1) × (light · dark). 빌드가 읽는 것은 이것뿐
-    ├── placeholders-src/  원본 (AI 이미지를 여기에). `npm run placeholders`가 800×500 WebP로 변환
+    ├── placeholders-src/  원본 — 승인된 삽화 SVG 30장(결 3). AI 이미지는 같은 이름 .png로 덮어쓴다. `npm run placeholders`가 800×500 WebP로 변환. 규칙은 docs/placeholder-image-brief.md
     └── motifs/            SVG 모티프 15장 — WebP가 안 올 때의 **폴백**(data: 인라인, --ph-*-svg). 임시본(--stub)의 원료이기도. 영구 자산
 ```
 
