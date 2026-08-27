@@ -568,14 +568,14 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 </article>
 ```
 
-**3층으로 쌓는다.** 격자는 CSS, 모티프는 마스크, 진짜 이미지는 그 위.
+**3층으로 쌓는다.** 격자는 CSS, 기본 이미지는 배경, 진짜 이미지는 그 위.
 
 ```css
 /* 0층 — 상자. 위의 세 줄은 장식이 아니라 기계장치다. 지우면 조용히 무너진다.
    · display   — `<span class="thumb">`는 기본이 inline이라 크기를 못 갖는다
    · position  — 없으면 2층 ::before가 .thumb가 아니라 페이지 전체에 붙는다
                  (실측: 높이 1028px짜리 모티프가 화면을 덮었다)
-   · overflow  — 모티프와 img를 radius로 잘라낸다 */
+   · overflow  — 기본 이미지와 img를 radius로 잘라낸다 */
 .post .thumb {
   display: block;
   position: relative;
@@ -584,61 +584,60 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
 
-  /* 1층 — 점격자. 순수 CSS라 SVG 용량이 0이고 토큰을 그냥 따른다 */
+  /* 1층 — 점격자. 순수 CSS라 용량이 0이고 토큰을 그냥 따른다. 이미지가 뜨기 전·못 뜰 때 보이는 자리다 */
   background-color: var(--canvas-soft);
   background-image: radial-gradient(circle, var(--hairline) 1.1px, transparent 1.2px);
   background-size: 8px 8px;
   background-position: -1px -1px;
 }
 
-/* 2층 — 모티프. 모양은 마스크가, 색은 토큰이 정한다 */
+/* 2층 — 기본 이미지. --ph-*는 빌드가 만든다 — :root에 라이트, 다크 두 상태에 다크 (tokens.css와 같은 3블록) */
 .post .thumb::before {
   content: ""; position: absolute; inset: 0;
-  background-color: var(--ink-mute);
-  opacity: .62;
-  -webkit-mask: var(--ph-default) center / cover no-repeat;
-          mask: var(--ph-default) center / cover no-repeat;
+  background: var(--ph-default) center / cover no-repeat;
 }
 
 /* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
 .post[data-cat="인프라"] .thumb::before,
-.post[data-cat^="인프라/"] .thumb::before        { -webkit-mask-image: var(--ph-infra);   mask-image: var(--ph-infra); }
-.post[data-cat="Kotlin·Java"] .thumb::before    { -webkit-mask-image: var(--ph-jvm);     mask-image: var(--ph-jvm); }
+.post[data-cat^="인프라/"] .thumb::before        { background-image: var(--ph-infra); }
+.post[data-cat="Kotlin·Java"] .thumb::before    { background-image: var(--ph-jvm); }
 .post[data-cat="Python"] .thumb::before,
-.post[data-cat^="Python/"] .thumb::before       { -webkit-mask-image: var(--ph-python);  mask-image: var(--ph-python); }
+.post[data-cat^="Python/"] .thumb::before       { background-image: var(--ph-python); }
 .post[data-cat="PHP"] .thumb::before,
-.post[data-cat^="PHP/"] .thumb::before          { -webkit-mask-image: var(--ph-php);     mask-image: var(--ph-php); }
+.post[data-cat^="PHP/"] .thumb::before          { background-image: var(--ph-php); }
 .post[data-cat="아키텍처"] .thumb::before,
-.post[data-cat^="아키텍처/"] .thumb::before       { -webkit-mask-image: var(--ph-arch);    mask-image: var(--ph-arch); }
+.post[data-cat^="아키텍처/"] .thumb::before       { background-image: var(--ph-arch); }
 .post[data-cat="데이터베이스"] .thumb::before,
-.post[data-cat^="데이터베이스/"] .thumb::before    { -webkit-mask-image: var(--ph-db);      mask-image: var(--ph-db); }
-.post[data-cat="네트워크"] .thumb::before         { -webkit-mask-image: var(--ph-net);     mask-image: var(--ph-net); }
-.post[data-cat="보안"] .thumb::before            { -webkit-mask-image: var(--ph-sec);     mask-image: var(--ph-sec); }
-.post[data-cat="AI"] .thumb::before             { -webkit-mask-image: var(--ph-ai);      mask-image: var(--ph-ai); }
+.post[data-cat^="데이터베이스/"] .thumb::before    { background-image: var(--ph-db); }
+.post[data-cat="네트워크"] .thumb::before         { background-image: var(--ph-net); }
+.post[data-cat="보안"] .thumb::before            { background-image: var(--ph-sec); }
+.post[data-cat="AI"] .thumb::before             { background-image: var(--ph-ai); }
 .post[data-cat="코드 품질"] .thumb::before,
-.post[data-cat^="코드 품질/"] .thumb::before      { -webkit-mask-image: var(--ph-quality); mask-image: var(--ph-quality); }
-.post[data-cat="Go"] .thumb::before             { -webkit-mask-image: var(--ph-go);      mask-image: var(--ph-go); }
-.post[data-cat="알고리즘"] .thumb::before         { -webkit-mask-image: var(--ph-algo);    mask-image: var(--ph-algo); }
+.post[data-cat^="코드 품질/"] .thumb::before      { background-image: var(--ph-quality); }
+.post[data-cat="Go"] .thumb::before             { background-image: var(--ph-go); }
+.post[data-cat="알고리즘"] .thumb::before         { background-image: var(--ph-algo); }
 .post[data-cat="개발 도구"] .thumb::before,
-.post[data-cat^="개발 도구/"] .thumb::before      { -webkit-mask-image: var(--ph-tool);    mask-image: var(--ph-tool); }
-.post[data-cat="기록"] .thumb::before            { -webkit-mask-image: var(--ph-note);    mask-image: var(--ph-note); }
+.post[data-cat^="개발 도구/"] .thumb::before      { background-image: var(--ph-tool); }
+.post[data-cat="기록"] .thumb::before            { background-image: var(--ph-note); }
 
 /* 3층 — 진짜 대표이미지가 있으면 앞의 둘을 덮는다. z-index가 있어야 ::before 위로 온다 */
 .post .thumb img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
 
-/* 카테고리 목록에서는 같은 그림이 최대 15번 반복되므로 감춘다 */
+/* 카테고리 목록에서는 같은 그림이 최대 15번 반복되므로 감춘다 (결정 7) */
 #tt-body-category .post:not(:has(.thumb img)) .thumb { display: none; }
 ```
 
-- **한 카테고리에 파일 하나면 된다.** 마스크는 알파만 쓰므로 색이 `background-color`에서, 곧 **토큰에서만** 나온다. §2의 "미디어쿼리 안에서 색을 처음 정의하지 않는다"가 이미지까지 확장된다. 라이트/다크 두 벌을 만들 필요가 없어 **14장 + 기본값 1장 = 15장**이다.
-- **대가는 단색이다.** 모티프 안에서 색을 나눌 수 없다. 강약은 SVG 안의 `opacity`로만 준다(`ai.svg`의 간선이 그렇게 흐리다). 링크색 강조는 포기했다 — 카드에서 색을 갖는 것은 `.cat` 라벨 하나로 충분하다.
+- **이미지는 WebP 래스터 30장이다** — `src/assets/placeholders/<slug>-{light,dark}.webp`, **800×500(16:10)**, 장당 **100KB 이하**. 원본은 `src/assets/placeholders-src/<slug>-<theme>.{png,jpg,webp,svg}`에 두고 `npm run placeholders`(`scripts/prep-placeholders.mjs`)가 크롭·변환한다. 배포 때 스킨 편집기 파일업로드 탭으로 `images/`에 올린다. 2026-08-27까지는 SVG 마스크 15장을 `data:` URI로 `style.css`에 인라인했다 — 결정 5·6 개정.
+- **라이트/다크 두 벌이다.** 래스터는 마스크와 달리 색을 토큰에서 받지 못한다. 빌드가 `--ph-<slug>`를 `:root`에서 라이트로 정의하고 `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }`·`:root[data-theme="dark"]`에서 다크로 재정의한다 — `tokens.css`의 3블록과 같은 패턴이라 §7 "미디어쿼리 안에서 색을 처음 정의하지 않는다"와 맞는다. **한 쌍이라도 빠지면 빌드가 멈춘다**(경고가 아니라 오류). 빠진 쪽 테마에서 점격자만 남는데 에러가 없기 때문이다.
+- **변수가 없으면 그림이 안 나올 뿐이다.** 마스크 시절의 "단색 판이 카드를 덮는" 실패와 `--ph-fallback`은 사라졌다. 새 구멍은 **"변수는 있는데 `images/`에 파일이 없다"**(업로드 누락, 버전 불일치)이고, 린트 `TOK007`이 `dist/style.css`의 `url(./images/…)` 마다 `dist/images/` 실재를 본다.
+- **파일명에 버전이 박힌다** — `dist/images/ph-<slug>-<theme>.v<N>.webp`, N은 `package.json`의 `placeholderVersion`. 티스토리 CDN이 같은 이름을 오래 캐시하므로 **이미지를 바꾸면 N을 올리고 30장을 다시 올린다.** 이미지가 안 바뀐 배포에서는 올리지 않는다.
 - **접두사 충돌이 없다** — 상위 14종 중 어느 이름도 다른 이름의 접두사가 아니다. `^=`가 옆 카테고리를 물지 않는다.
 - **하위가 없는 7종**(`Kotlin·Java` `네트워크` `보안` `AI` `Go` `알고리즘` `기록`)은 `^=` 줄을 두지 않았다. 하위가 생기면 두 줄짜리로 바꾼다 — 안 바꾸면 새 하위 글이 `--ph-default`로 조용히 떨어진다.
 - 이름에 `&`가 없어 이스케이프 걱정은 사라졌지만 **`코드 품질`·`개발 도구`에는 공백이 있으므로** 값은 계속 따옴표로 감싼다.
-- **`--ph-*` 변수명은 `src/assets/placeholders/`의 SVG 파일명에서 그대로 나온다** (`arch.svg` → `--ph-arch`). 빌드가 파일을 훑어 `data:` URI로 만들 뿐 이름을 검사하지 않으므로, **파일명을 틀리면 변수가 정의되지 않고 카드는 조용히 `--ph-default`로 떨어진다.** 위 블록의 이름이 곧 파일명 목록이다.
-- **도안을 고칠 때는 SVG를 직접 손대지 말고 `scripts/gen-placeholders.py`를 고쳐 다시 돌린다.** 15장이 한 파일에 정의돼 있어 좌표·굵기 규칙을 한눈에 맞출 수 있다.
-- **카테고리를 늘리거나 이름을 바꾸면 이 블록과 생성기를 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
-- **기본 이미지는 SVG를 `data:` URI로 `style.css`에 인라인한다.** 배포가 수동이므로 업로드할 파일 수를 줄인다. 15장 전부 합쳐 **base64 약 8KB**다.
+- **`--ph-*` 변수명은 파일의 slug에서 그대로 나온다** (`arch-light.webp` → `--ph-arch`). 빌드가 이름을 검사하지 않으므로 **slug를 틀리면 변수가 정의되지 않고 카드는 조용히 `--ph-default`로 떨어진다.** 위 블록의 이름이 곧 slug 목록이다.
+- **카테고리를 늘리거나 이름을 바꾸면 이 블록과 이미지 두 장을 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
+- **`og:image`는 안 바뀐다.** CSS 배경이라 검색·SNS 공유 썸네일은 여전히 티스토리 기본이다(`DECISIONS.md` §3 실측). 이 그림은 **사이트 안에서만** 보인다.
+- **AI 이미지는 아직 없다.** 지금 30장은 옛 SVG 모티프를 테마 색 판 위에 래스터화한 **임시본**이다(`prep-placeholders.mjs --stub`, 원료는 `src/assets/motifs/`·`scripts/gen-placeholders.py`). 실제 이미지가 오면 `placeholders-src/`에 넣고 변환한다 — 같은 키의 래스터가 stub SVG를 이긴다. 30장이 다 들어오면 `motifs/`와 생성기를 지운다.
 - **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.** 다만 이 치환자는 관리 화면에서 카테고리 대표이미지를 설정해야 값이 나오고, 없으면 블록째 사라진다 — **기본 이미지를 배너로 대신 쓸지는 미정**이다(`DECISIONS.md` 미결 12).
 
 ### 6.3 코드블록
@@ -736,7 +735,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 - ~~**다크 코드 팔레트는 여전히 임시다.**~~ **해결 (2026-08-26)** — 코드 전용 토큰 6종을 신설했다(결정 44 · §8.1). 다만 `.hljs ` 접두가 없으면 그 임시 팔레트조차 화면에 닿지 않는다는 것은 2026-08-26에 잡았다(§8.1).
 - **티스토리 하드코딩 색 목록은 수동 갱신이다.** `data/tistory-hardcoded-colors.json`은 2026-08-26 기준으로 받아 적은 것이고, 티스토리가 `content.css`를 바꾸거나 새 에디터 컴포넌트를 내면 **자동으로 알 방법이 없다.** 린트는 목록 대비 우리 CSS만 검사한다 — 목록 자체가 낡으면 조용히 통과한다. 새 컴포넌트를 쓴 글을 쓰거나 다크에서 이상한 것이 보이면 시트를 다시 받아 대조할 것.
-- **기본 이미지 도안은 들어왔다** — `src/assets/placeholders/` 15장(상위 14 + 기본값 1), `scripts/gen-placeholders.py`가 정본이다. 마스크 방식이라 라이트/다크가 한 파일로 갈린다. 빌드 산출물에서 확인했다(2026-08-27) — `dist/style.css`에 도안 15장의 `--ph-*`(+ `--ph-fallback`)가 박히고 린트 `BND003`이 `npm run check`에서 돈다.
+- **기본 이미지 30장은 임시본이다** — `src/assets/placeholders/` WebP 30장(상위 14 + 기본값 1, light·dark)이 자리를 잡았고 빌드가 `dist/images/`에 복사하며 `--ph-*`를 3블록으로 낸다(2026-08-27, 결정 5·6 개정). 그런데 그 30장은 옛 SVG 모티프를 래스터화한 것이지 **AI 이미지가 아니다.** 실제 이미지가 오면 `placeholders-src/`에 넣고 `npm run placeholders` → `placeholderVersion` 올림 → 30장 재업로드. 린트는 `BND003`(카테고리 커버리지)·`TOK007`(파일 실재)이 `npm run check`에서 돈다.
 - ~~**`preview.gif` / `preview256.jpg` / `preview560.jpg` / `preview1600.jpg`** 스킨 미리보기 이미지가 필요하다.~~ **끝났다** — `src/preview/`, `scripts/gen-preview.mjs`가 만든다.
 - **인라인 색 열거 목록은 2026-08-24 기준 275편 전수 조사 결과다.** 새 글이 쌓이면 다시 세야 하며, 그때까지는 JS 안전망이 막는다.
 - **인라인 보정 CSS의 스코프는 여섯 상태를 모두 덮어야 한다.** `scripts/build.mjs`가 다크·라이트 각각을 **명시 스코프 + 시스템 스코프** 두 벌로 낸다(§8.1 참조). 새 색이 실측에 추가되면 자동으로 따라가지만, **스코프 구조를 손대면 여섯 상태를 다시 재야 한다** — 명시 다크/라이트 × OS 다크/라이트 4가지 + stamp 없음 × OS 2가지.

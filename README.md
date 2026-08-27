@@ -32,7 +32,9 @@ src/skin.html             치환자가 든 스킨 마크업 (빌드가 변환하
 src/index.xml             스킨 정보·옵션 변수
 src/styles/*.css          tokens → base → layout → content → tistory → components 순으로 합쳐진다
 src/js/*.js               index.js를 진입점으로 esbuild 번들
-src/assets/placeholders/  카테고리 기본이미지 SVG (data: URI로 CSS에 인라인된다)
+src/assets/placeholders/  카테고리 기본 이미지 WebP 30장 (light·dark, 빌드가 dist/images/로 복사)
+src/assets/placeholders-src/  그 원본 — AI 생성 이미지를 여기에 두고 `npm run placeholders`
+src/assets/motifs/        옛 SVG 모티프 — 임시본의 원료. 실제 이미지가 다 오면 지운다
 src/preview/              관리 화면용 미리보기 이미지 4종 (dist/ 루트로 복사된다)
 scripts/build.mjs         빌드
 data/*.json               블로그 실측 결과. 인라인색 보정 CSS와 프리뷰 픽스처의 근거

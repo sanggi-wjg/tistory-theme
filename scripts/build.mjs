@@ -1,13 +1,15 @@
 // 티스토리 스킨 빌드.
 //
-// 산출물은 붙여넣는 파일 3개 + 업로드하는 파일 5개여야 한다. 배포를 사람이 손으로 하기 때문이다.
-// images/에 파일이 2개 이상 생기면 설계가 잘못된 것이다 — 기본이미지 SVG는 data: URI로 CSS에 인라인한다.
-// 미리보기 4종은 images/에 세지 않는다. 파일업로드 탭이 그 이름들만 스킨 루트로 보낸다(2026-08-25 실측).
+// 산출물은 붙여넣는 파일 3개 + 업로드하는 파일 35개다. 배포를 사람이 손으로 하기 때문에 이 수를 늘리지 않는다.
+//   images/  = script.js 1 + 기본 이미지 WebP 30 (상위 14 + 기본값 1, light·dark — 결정 5·6 개정)
+//   루트     = 미리보기 4종. 파일업로드 탭이 그 이름들만 스킨 루트로 보낸다(2026-08-25 실측)
+// 기본 이미지는 이미지가 바뀐 배포에서만 다시 올린다. 파일명에 버전이 박혀 있어(package.json placeholderVersion)
+// CDN 캐시를 비켜 간다 — 같은 이름으로 다시 올리면 한동안 옛 그림이 보인다.
 //
 //   node scripts/build.mjs
 //   node scripts/build.mjs --watch
 
-import { readFile, writeFile, mkdir, readdir, rm, cp } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, readdir, rm, cp, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
@@ -23,19 +25,59 @@ async function readIf(p) {
   return existsSync(p) ? readFile(p, 'utf8') : null
 }
 
-/** 카테고리 기본이미지 SVG를 data: URI CSS 변수로 만든다. */
+// 기본 이미지 URL의 앞부분. 스킨 편집기의 파일 개수 상한(DECISIONS.md 미결 1)에 막히면
+// 이 값만 jsDelivr 같은 외부 CDN으로 바꾼다 — CSS 선택자·변수명은 그대로다.
+const PLACEHOLDER_BASE = './images/'
+const PH_MAX_BYTES = 100 * 1024
+
+/** 카테고리 기본 이미지 WebP를 dist/images/로 복사하고 --ph-<slug> 변수를 만든다.
+ *
+ *  tokens.css와 같은 3블록 패턴이다 — :root에서 라이트를 정의하고, 시스템 다크와 명시 다크에서
+ *  재정의한다(DESIGN.md §7 "미디어쿼리 안에서 색을 처음 정의하지 않는다").
+ *  light·dark 한 쌍이 빠지면 그 카테고리는 한쪽 테마에서 점격자만 남는데 에러가 없다 — 그래서 빌드를 멈춘다. */
 async function placeholderVars() {
   const dir = path.join(SRC, 'assets', 'placeholders')
-  if (!existsSync(dir)) return ''
-  const files = (await readdir(dir)).filter(f => f.endsWith('.svg')).sort()
-  if (!files.length) return ''
-  const lines = []
-  for (const f of files) {
-    const svg = await readFile(path.join(dir, f), 'utf8')
-    const b64 = Buffer.from(svg, 'utf8').toString('base64')
-    lines.push(`  --ph-${path.basename(f, '.svg')}: url("data:image/svg+xml;base64,${b64}");`)
+  if (!existsSync(dir)) {
+    console.error('\n  ❌ src/assets/placeholders/ 없음. 먼저 `npm run placeholders -- --stub`\n')
+    process.exit(1)
   }
-  return `:root {\n${lines.join('\n')}\n}\n`
+  const bySlug = {}
+  for (const f of (await readdir(dir)).sort()) {
+    const m = /^([a-z0-9]+)-(light|dark)\.webp$/.exec(f)
+    if (!m) { console.warn(`  [주의] 이름 규칙 밖의 기본 이미지 파일: ${f} — 무시`); continue }
+    ;(bySlug[m[1]] ??= {})[m[2]] = f
+  }
+  const version = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).placeholderVersion ?? 1
+
+  const problems = []
+  if (!bySlug.default) problems.push('default 슬러그가 없다 — 14종 밖의 카테고리가 빈 카드로 떨어진다')
+  for (const [slug, t] of Object.entries(bySlug)) {
+    for (const theme of ['light', 'dark']) {
+      if (!t[theme]) { problems.push(`${slug}-${theme}.webp 없음`); continue }
+      const { size } = await stat(path.join(dir, t[theme]))
+      if (size > PH_MAX_BYTES) problems.push(`${t[theme]} ${(size / 1024).toFixed(0)}KB > ${PH_MAX_BYTES / 1024}KB`)
+    }
+  }
+  if (problems.length) {
+    console.error('\n  ❌ 기본 이미지: ' + problems.join('\n  ❌ 기본 이미지: ') + '\n     npm run placeholders 로 다시 만든다.\n')
+    process.exit(1)
+  }
+
+  const light = [], dark = []
+  for (const slug of Object.keys(bySlug).sort()) {
+    for (const theme of ['light', 'dark']) {
+      const out = `ph-${slug}-${theme}.v${version}.webp`
+      await cp(path.join(dir, bySlug[slug][theme]), path.join(DIST, 'images', out))
+      ;(theme === 'light' ? light : dark).push(`  --ph-${slug}: url("${PLACEHOLDER_BASE}${out}");`)
+    }
+  }
+  return [
+    '/* ── 기본 이미지 (src/assets/placeholders/ — DESIGN.md §6.2, 결정 5·6) ──',
+    '   라이트를 :root에서 정의하고 다크 두 상태에서 재정의한다. tokens.css의 3블록과 같은 패턴. */',
+    `:root {\n${light.join('\n')}\n}`,
+    `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"]) {\n${dark.map(l => '  ' + l).join('\n')}\n  }\n}`,
+    `:root[data-theme="dark"] {\n${dark.join('\n')}\n}`,
+  ].join('\n') + '\n'
 }
 
 /** 상대 휘도. 0.5 미만이면 어두운 색으로 본다. */
@@ -220,9 +262,12 @@ async function run() {
   console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? '✓' : '—'}` +
               `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
               `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}`)
-  if (uploads > 1) {
-    console.warn('  ⚠️ images/에 파일이 2개 이상이다. 배포가 수동이므로 1개로 줄여야 한다 —\n' +
-                 '     SVG는 data: URI로 CSS에 인라인하고, 폰트는 CDN에서 받는다.')
+  // script.js 1 + 기본 이미지 30. 더 생기면 배포가 그만큼 손이 더 가고, 덜 생기면 어느 카테고리가 빈 카드다.
+  const expected = 1 + (existsSync(path.join(SRC, 'assets', 'placeholders'))
+    ? (await readdir(path.join(SRC, 'assets', 'placeholders'))).filter(f => f.endsWith('.webp')).length : 0)
+  if (uploads !== expected) {
+    console.warn(`  ⚠️ images/가 ${uploads}개다. script.js 1 + 기본 이미지 ${expected - 1} = ${expected}개여야 한다 —\n` +
+                 '     기본 이미지 말고는 images/에 두지 않는다. 폰트는 CDN, 도안은 WebP 30장뿐이다.')
   }
   console.log('  다음: npm run lint  ·  npm run preview')
 }

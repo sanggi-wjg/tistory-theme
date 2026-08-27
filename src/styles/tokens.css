@@ -147,14 +147,6 @@
   --radius-lg: 8px;   /* 카드·코드블록 */
   --radius-xl: 12px;  /* 히어로 — 이보다 더 굴리지 않는다 */
 
-  /* 기본이미지 마스크 폴백 — 완전 투명한 1×1 SVG.
-     빌드가 src/assets/placeholders/*.svg에서 --ph-*를 만든다. 파일이 없거나
-     파일명을 틀리면 그 변수가 정의되지 않는데, 마스크 방식에서는 그것이
-     **mask-image 선언 무효 → 마스크 없는 --ink-mute 단색 판이 카드를 덮는 것**으로
-     나타난다(배경 방식일 때의 "그림이 안 나온다"보다 훨씬 나쁘다).
-     투명 마스크로 떨어뜨려 알파 0 = 아무것도 안 그리게 만든다. 카드는 점격자만 남는다. */
-  --ph-fallback: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E");
-
   /* ── 폭 (DESIGN.md §4 E안) ───────────────────────────────────
      --content-w 800px은 index.xml <contentWidth>800</contentWidth>과의 계약이다.
      여기를 바꾸면 index.xml도 바꿔야 하고, index.xml을 바꾸면 스킨 설정이 초기화된다. */
