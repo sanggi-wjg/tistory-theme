@@ -15,6 +15,9 @@
 // 왜 앵커에 핸들러를 걸지 않는가
 //   상위 카테고리 링크도 실제로 이동하는 링크다(/category/IT). 클릭을 가로채면
 //   "상위 카테고리 글 전체 보기"로 가는 길이 사라진다. 접기/펼치기는 별도의 버튼이다.
+//
+// 아래 파서(childrenByTag · pickList · ownAnchor · labelOf · decodePath · onPath)는
+// cat-chips.js도 쓴다(결정 50). 트리를 읽는 규칙이 한 벌이어야 레일과 칩이 같은 목록을 낸다.
 
 import { uniqueId } from './util.js'
 
@@ -25,7 +28,7 @@ const CHEVRON =
   ' stroke-linecap="round" stroke-linejoin="round"></path></svg>'
 
 /** el의 직속 자식 중 태그가 tag인 것만. querySelector로는 손자까지 딸려온다. */
-function childrenByTag(el, tag) {
+export function childrenByTag(el, tag) {
   const out = []
   let n = el.firstElementChild
   while (n) {
@@ -44,7 +47,7 @@ function childrenByTag(el, tag) {
  * 그 안에 ul이 있으면 래퍼로 보고 한 단계만 내려간다. (딱 한 번만 — 더 내려가면
  * 상위 카테고리가 하나뿐인 블로그에서 엉뚱한 층을 고른다)
  */
-function pickList(rootUl) {
+export function pickList(rootUl) {
   const lis = childrenByTag(rootUl, 'LI')
   if (lis.length !== 1) return rootUl
   const nested = childrenByTag(lis[0], 'UL')
@@ -52,7 +55,7 @@ function pickList(rootUl) {
 }
 
 /** li 자신의 링크. 하위 목록 안쪽 링크를 잘못 집지 않도록 sub를 제외한다. */
-function ownAnchor(li, sub) {
+export function ownAnchor(li, sub) {
   const direct = childrenByTag(li, 'A')
   if (direct.length) return direct[0]
   const all = li.getElementsByTagName('a')
@@ -67,7 +70,7 @@ function ownAnchor(li, sub) {
  * 앵커 안에는 글 수 배지가 요소로 섞여 있다(렌더 예: `<a> IT <span>(37)</span> </a>`).
  * 그 요소의 클래스 이름을 모르므로, 요소 자식은 통째로 무시하고 직속 텍스트 노드만 모은다.
  */
-function labelOf(a) {
+export function labelOf(a) {
   let t = ''
   let n = a.firstChild
   while (n) {
@@ -79,7 +82,7 @@ function labelOf(a) {
 }
 
 /** 퍼센트 인코딩을 벗긴 경로. 카테고리 이름에 공백·&·한글이 들어간다. */
-function decodePath(p) {
+export function decodePath(p) {
   if (!p) return ''
   if (p.charAt(0) !== '/') p = '/' + p
   try {
@@ -102,7 +105,7 @@ function decodePath(p) {
  * /entry/... 라 카테고리 경로와 겹치지 않는다. 그래서 글 페이지에서는 둘 다 안 걸리고
  * 트리는 접힌 채로 시작한다. 의도한 동작이다.
  */
-function onPath(here, path) {
+export function onPath(here, path) {
   if (!path || path === '/') return false
   return here === path || here.indexOf(path + '/') === 0
 }
