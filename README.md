@@ -25,6 +25,8 @@ open _preview/index.html
 
 명령과 작업 흐름은 [USAGE.md](./USAGE.md)에 있다.
 
+릴리즈 태그(`vYYYY.MM.DD`)는 **지금 라이브에 있는 커밋**을 가리키고, Releases의 `skin-<태그>.zip`이 그 커밋의 `dist/` 전체다(`DECISIONS.md` 결정 47).
+
 ## 구조
 
 ```

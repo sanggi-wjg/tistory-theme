@@ -1,0 +1,96 @@
+# 릴리즈 = "이 커밋이 지금 라이브에 있다"는 표식이다 (DECISIONS.md 결정 47).
+# 배포하고 seo-verify-live 를 통과한 뒤 주석 태그(vYYYY.MM.DD, 같은 날 재배포는 .2)를 푸시하면 이 잡이 돈다.
+#
+# 산출물 skin-<태그>.zip 은 그 커밋의 dist/ 전체(skin.html · style.css · index.xml · images/ 31 · 미리보기 4) —
+# 붙여넣기·롤백용이다. 티스토리는 zip 업로드를 받지 않는다(skin-deploy 스킬). 롤백도 편집기 붙여넣기 + 파일업로드다.
+#
+# 셋업(node 26 · python 3.14 · npm ci · npm run check)은 check.yml 과 같다 — 여기서 빌드한 것이 릴리즈에 붙는다.
+# main 보호 규칙은 태그 푸시를 보지 않는다. "main 위의 커밋인가"는 이 잡이 직접 검사한다.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+# 같은 태그가 두 번 돌 일은 없지만, 돌더라도 앞선 실행을 끊지 않는다 — 릴리즈는 반쯤 만들어진 채 남으면 안 된다
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # main 조상 검사에 이력이 필요하다
+
+      - name: 태그 형식 — vYYYY.MM.DD 또는 vYYYY.MM.DD.N (결정 47)
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}(\.[0-9]+)?$ ]]; then
+            echo "::error::태그 '$TAG'가 vYYYY.MM.DD(.N) 형식이 아니다 (결정 47)"
+            exit 1
+          fi
+
+      # GITHUB_SHA 는 주석 태그일 때 태그 객체를 가리킬 수 있다. 체크아웃된 HEAD 는 항상 커밋이다
+      - name: main 위의 커밋인가
+        run: |
+          commit=$(git rev-parse HEAD)
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "::error::태그 커밋 $commit 이 origin/main 에 없다 — 릴리즈는 main 위에만 찍는다"
+            exit 1
+          fi
+
+      # 버전은 check.yml 과 맞춘다. 로컬(2026-08-27 기준 node 26 · python 3.14)과도 같다
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - run: npm ci
+
+      # 빌드 → 린트 → 테스트 7종 → 프리뷰. 통과한 dist/ 만 릴리즈에 붙는다
+      - run: npm run check
+
+      - name: dist/ 를 zip 으로
+        run: |
+          (cd dist && zip -qr "../skin-${TAG}.zip" .)
+          unzip -l "skin-${TAG}.zip" | tail -1
+
+      # 주석 태그의 메시지가 릴리즈 노트 앞머리가 된다 — 무엇을 올렸고 라이브에서 무엇을 확인했는지.
+      # actions/checkout 이 주석 태그를 가벼운 태그로 바꿔 놓는 경우가 있어(actions/checkout#290) 로컬 git 대신 API 로 읽는다.
+      - name: 태그 주석 → 릴리즈 노트 앞머리
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ref="repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}"
+          if [ "$(gh api "$ref" --jq .object.type)" = "tag" ]; then
+            sha=$(gh api "$ref" --jq .object.sha)
+            gh api "repos/${GITHUB_REPOSITORY}/git/tags/${sha}" --jq .message > notes.md
+          else
+            echo "::warning::가벼운 태그다 — 무엇을 올렸고 무엇을 확인했는지가 노트에 없다. 다음부터는 git tag -a"
+            : > notes.md
+          fi
+          echo "--- notes.md"; cat notes.md
+
+      # gh 문서: "--notes 로 준 노트는 자동 생성 노트(직전 태그 이후 PR 제목) 앞에 붙는다". --notes-file 은 그 보장이 문서에 없어 --notes 를 쓴다.
+      # 주석이 비어 있으면(가벼운 태그) --notes 를 아예 빼서 자동 노트만 남긴다 — --notes "" 의 동작은 문서에 없다.
+      # 릴리즈가 이미 있으면 실패한다 — 의도다
+      - name: 릴리즈 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          args=(--title "$TAG" --generate-notes)
+          if [ -s notes.md ]; then args+=(--notes "$(cat notes.md)"); fi
+          gh release create "$TAG" "skin-${TAG}.zip" "${args[@]}"
