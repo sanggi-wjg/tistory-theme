@@ -63,7 +63,7 @@ export default function initCatChips() {
   if (list !== rootUl) {
     const wrapper = childrenByTag(rootUl, 'LI')[0]
     const all = wrapper && ownAnchor(wrapper, list)
-    if (all) frag.appendChild(chip(all.getAttribute('href'), '전체', '', 'is-all'))
+    if (all && all.getAttribute('href')) frag.appendChild(chip(all.getAttribute('href'), '전체', '', 'is-all'))
   }
 
   let current = null
