@@ -175,7 +175,7 @@ Total: reserved=2841MB, committed=1974MB
 <pre><code class="language-typescript">export function toMB(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1) + "MB"
 }</code></pre>
-<pre><code class="language-info">이건 언어가 아니라 콜아웃 표식 후보다. 라벨이 붙으면 안 된다.</code></pre>
+<pre><code class="language-info">이건 언어 이름이 아니다. 펜스에는 표식이나 오타도 들어오므로 라벨이 붙으면 안 된다.</code></pre>
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
 <p data-ke-size="size16">아래 두 색은 <strong>강조색</strong>이라 빌드 생성기가 죽이지 않고 <strong>토큰으로 옮긴다</strong> — 나머지 색은 전부 <code>--ink-body</code>로 눌린다. 이 두 갈래 중 강조 쪽이 프리뷰에 없어서, 결정 44가 <code>--error</code>를 "쓰는 데가 없다"고 잘못 적었다: <span style="color: #006dd7;">파랑 강조 #006dd7는 다크에서 --link로 간다 (실측 12곳).</span> <span style="color: #ee2323;">빨강 강조 #ee2323는 다크에서 --error로 간다 (실측 10곳) — <strong>--error의 유일한 사용처다.</strong></span></p>

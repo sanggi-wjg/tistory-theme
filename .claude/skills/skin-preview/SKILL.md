@@ -58,7 +58,7 @@ open _preview/index.html
 - 언어 미지정 코드블록
 - **마크다운 펜스 3종** — `<code class="language-python">`(칠하고 라벨) ·
   `language-typescript`(번들에 없어 **라벨만**) · `language-info`(언어가 아니라
-  콜아웃 표식 후보라 **라벨도 안 붙는다**). 결정 43의 세 갈래를 화면에서 가른다
+  언어가 아니라 표식·오타 부류라 **라벨도 안 붙는다**). 결정 43의 세 갈래를 화면에서 가른다
 - **12줄짜리 코드블록** — `code.js`의 `LINES_FOR_NUMBERS`(8)를 넘겨 줄번호 거터를
   켠다. 2026-08-27까지 픽스처 최대가 5줄이라 `.code-wrap.has-lines`와
   `.code-lines`의 CSS `counter` 번호가 **로컬에서 한 번도 그려진 적이 없었다**

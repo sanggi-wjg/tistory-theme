@@ -60,8 +60,9 @@ const LABEL = {
 const AUTHOR_CLASS = /^language-([a-zA-Z0-9#+._-]+)$/
 
 /** 번들에 없지만 **언어인 줄 아는** 이름. 하이라이팅은 못 해도 라벨은 맞게 단다.
- *  여기에 없는 이름은 라벨도 달지 않는다 — `info`·`warning` 같은 콜아웃 표식이나
- *  오타에 "Info" 라벨이 붙는 것을 막는다. */
+ *  여기에 없는 이름은 **라벨도 달지 않는다.** 펜스에는 언어가 아닌 것도 들어온다
+ *  (`info`·`warning` 같은 표식, 그리고 오타). 그런 이름에 "Info" 라벨을 달면
+ *  틀린 정보를 화면에 새로 만드는 것이다 — 모르면 아무 말도 하지 않는다. */
 const KNOWN_ONLY_LABEL = {
   javascript: 'JavaScript', js: 'JavaScript', typescript: 'TypeScript', ts: 'TypeScript',
   html: 'HTML', css: 'CSS', scss: 'SCSS', dockerfile: 'Dockerfile',
