@@ -104,6 +104,12 @@ gtag('config', 'G-PHQ5FKMZ37');
       </button>
     </div>
   </div>
+
+  <!-- 모바일 카테고리 칩 — DECISIONS.md 결정 50. 레일이 본문 아래로 내려가는 1024px 이하에서만
+       CSS가 편다. 빈 그릇이다: cat-chips.js가 사이드바 트리의 상위 카테고리로 채운다(hooks.md §5.9).
+       못 채우면 빈 채로 남고 :empty로 감춰진다 — 여는 태그와 닫는 태그를 붙여 둔다
+       (사이에 줄바꿈이 들어가면 공백 노드 때문에 :empty가 영영 거짓이다). -->
+  <nav class="cat-chips" id="cat-chips" aria-label="카테고리"></nav>
 </header>
 
 <!-- 홈·목록 상단 광고 자리 (DECISIONS.md 결정 21 — 노출은 티스토리 관리에서 결정) -->

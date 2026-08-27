@@ -132,6 +132,18 @@
 .icon-sun  { display: var(--icon-sun-display); }
 .icon-moon { display: var(--icon-moon-display); }
 
+/* [##_blog_menu_##]이 비어 있으면(라이브가 그렇다) 767px 이하 규칙의 padding·border가
+   빈 줄로 남아 헤더를 13px 키웠다. 한 줄에 붙어 있어 :empty가 참이다(결정 50). */
+.site-nav:empty { display: none; }
+
+/* 640px 이하 — 헤더 압축(결정 50). 브랜드 설명을 접고 검색을 줄여 브랜드·검색·토글이
+   한 줄(프리뷰 실측 73px)에 든다. 390px 라이브 실측: 압축 전 159px = 뷰포트의 19%.
+   산수: 브랜드 ≈100 + 간격 20 + 검색(8+96+4+24+8) 140 + 간격 8 + 토글 34 = 302 < 350. */
+@media (max-width: 640px) {
+  .brand-desc { display: none; }
+  .search-input { width: 96px; }
+}
+
 @media (max-width: 767px) {
   .site-nav {
     order: 3;
@@ -139,6 +151,64 @@
     padding-top: var(--sp-3);
     border-top: 1px solid var(--hairline);
   }
+}
+
+/* ══════════ 모바일 카테고리 칩 — #cat-chips ═══════════════════
+   결정 50. 1024px 이하에서는 레일이 본문 아래로 내려가 카테고리가 사실상 안 보였다
+   (390px 라이브 실측: 홈 5,800px·글 15,300px 아래). 헤더 안 빈 <nav>를 cat-chips.js가
+   상위 카테고리 14종 + 「전체」로 채우고, 여기서는 그 줄을 **1024px 이하에서만** 편다.
+   못 채우면(폴더형·JS 실패) :empty라 아무것도 안 그린다 — 오늘 화면 그대로다.
+   1025px~는 레일이 있으므로 감춘다. hooks.md §5.9 */
+.cat-chips { display: none; }
+
+@media (max-width: 1024px) {
+  .cat-chips:not(:empty) {
+    display: flex;
+    gap: var(--sp-2);
+    overflow-x: auto;
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: var(--sp-3) var(--pad-x);
+    border-top: 1px solid var(--hairline);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cat-chips::-webkit-scrollbar { display: none; }
+}
+
+/* 마지막 칩이 오른쪽 끝에서 잘려 보이는 것이 "뒤에 더 있다"는 유일한 힌트다.
+   페이드·그림자는 두지 않는다(DESIGN §7). 높이 28px(5+18+5) — 터치 하한 24 위. */
+.cat-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 5px var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  color: var(--ink-body);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-caption);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.cat-chip:hover { color: var(--ink); border-color: var(--hairline-strong); }
+.cat-chip.is-all { color: var(--ink); font-weight: 600; }
+
+/* 현재 가지 — 레일의 알약(결정 37)과 같은 재료: --canvas-soft-2 배경 + --link 글자.
+   :hover 규칙과 특이도가 같고 뒤에 오므로 현재 칩은 호버해도 파랑을 지킨다. */
+.cat-chip.is-current {
+  color: var(--link);
+  background: var(--canvas-soft-2);
+  border-color: transparent;
+}
+
+.cat-chip-count {
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ══════════ 광고 자리 ═════════════════════════════════════════

@@ -122,6 +122,9 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 | `tt-body-page` | 레일 + 본문 + 목차 (`.entry-aside`는 1400px~ 우측) |
 | `tt-body-guestbook` 외 | 1단, 레일 없음 |
 
+**1024px 이하에서는 레일이 본문 아래로 내려가고, 헤더 안 `nav.cat-chips`가 상위 카테고리 14종을
+한 줄로 낸다**(§5.9, 결정 50). 레일 자체는 그대로 아래에 남는다 — 하위 21종과 최근 글은 거기에 있다.
+
 **`--page-w`는 레일 페이지에서 전부 `--wrap`(1520px)이다.** 페이지마다 폭이 다르면
 컨테이너가 다른 폭으로 가운데 정렬되어 레일 x좌표가 달라진다 — 홈에서 글로 넘어갈 때
 카테고리가 옆으로 뛴다. 본문은 `--content-w`(800px)로 잠그고 남는 자리는 비워 둔다.
@@ -397,6 +400,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
 | `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 | `<body>` 끝에 1개 |
+| `.cat-chip` · `.cat-chip-count` · `.cat-chip.is-all` | 모바일 카테고리 칩. `<a class="cat-chip">인프라<span class="cat-chip-count">42</span></a>`. 「전체」는 `.is-all`. 계약 본문은 §5.9 | `#cat-chips` 안 |
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |
 | `.external-link` | 외부링크임을 표시하는 **상태 클래스**. JS가 `<a>`에 붙이고 `target="_blank" rel="noopener noreferrer"`를 함께 건다. **표시는 `.external-icon`이 담당하므로 이 클래스에 CSS 규칙이 없는 것이 정상이다** (중복 처리를 막는 표식 겸용) | `.contents_style a` |
 | `.external-icon` | 외부링크 아이콘 SVG. 실제 스타일은 여기에 | `.external-link` 끝 |
@@ -478,6 +482,28 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 그 뒤 번호가 전부 한 칸씩 밀린다. 목차는 그대로 뜨고 앵커도 그대로 보이므로
 **눌러 보기 전에는 아무 신호가 없다.** `util.headingsWithIds()` 하나만 부른다.
 
+### 5.9 모바일 카테고리 칩 — `#cat-chips`
+
+```html
+<header class="site-header">
+  <div class="header-inner">…</div>
+  <nav class="cat-chips" id="cat-chips" aria-label="카테고리"></nav>   <!-- ← JS가 채운다. 한 줄에 붙여 둔다 -->
+</header>
+```
+
+| 계약 | 내용 |
+|---|---|
+| JS가 만드는 것 | `<a class="cat-chip" href="/category/인프라">인프라<span class="cat-chip-count">42</span></a>` × 상위 카테고리 수. 맨 앞에 「전체」(`.is-all`, `/category`) |
+| 출처 | 사이드바 트리(`.side-category .side-body ul`) — **`category.js`와 같은 파서**(`pickList`·`ownAnchor`·`labelOf`). 둘이 각자 세면 레일과 칩이 다른 목록을 낼 수 있고 화면에 신호가 없다 |
+| 렌더 조건 | 트리를 못 찾으면(폴더형·구조 다름) **아무것도 넣지 않는다.** 그릇은 비어 있고 CSS가 `:empty`로 감춘다 |
+| CSS 기본값 | `.cat-chips { display: none }` → `@media (max-width: 1024px)`에서 `.cat-chips:not(:empty)`만 flex. **1025px~에서는 항상 감춤**(레일이 있다). DOM은 폭과 무관하게 항상 만든다 |
+| 현재 가지 | 티스토리 `li.selected`(카테고리 페이지) 또는 URL 대조 → `.is-current` + `aria-current="page"`. 하위 카테고리 페이지에서는 **그 상위 칩**이 켜진다. 글 페이지에서는 아무것도 안 켜진다(URL이 `/entry/…`) |
+| 스크롤 | 현재 칩이 오른쪽 밖이면 `nav.scrollLeft`만 옮긴다. `scrollIntoView`는 쓰지 않는다 — 페이지를 세로로 움직일 수 있다 |
+| 왜 마크업에 그릇을 두나 | §5 원칙. JS가 `<nav>`째 만들면 CSS가 붙잡을 자리를 JS가 정하는 셈이고, 실패 시 흔적 없이 사라져 "원래 없던 것"과 구분이 안 된다 |
+
+⚠ **`:empty` 가드는 여는 태그와 닫는 태그가 붙어 있을 때만 참이다** — 사이에 줄바꿈을 넣는
+순간 공백 노드가 생겨 빈 줄(border-top + 패딩)이 모바일 헤더에 영영 남는다. `.ad`와 같은 함정이다.
+
 ## 6. 사이드바 — `aside.sidebar`
 
 모듈 7개. 전부 같은 뼈대다.
@@ -519,7 +545,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 방명록 | `section.guestbook` `.guestbook-title` — 본체는 `[##_guestbook_group_##]`, 안은 `tt-*` |
 | 광고 | `.ad` `.ad-upper` `.ad-lower` — 비어 있을 때 여백이 생기지 않게 (자식이 없으면 높이 0) |
 | 푸터 | `footer.site-footer` `.footer-inner` `.footer-brand`(안이 `a.footer-title` · `p.footer-desc`) `.footer-links` `.footer-copy` |
-| 헤더 | `header.site-header` `.header-inner` `.site-brand` `.brand-title` `.brand-desc` `.site-nav` `.header-util` |
+| 헤더 | `header.site-header` `.header-inner` `.site-brand` `.brand-title` `.brand-desc` `.site-nav` `.header-util` · `nav.cat-chips`(§5.9, 1024px 이하 전용) |
 | 유틸 | `.a11y-hidden` (스크린리더 전용 텍스트) · `.skip-link` · `.icon` (모든 인라인 SVG) |
 
 `nav.site-nav` 안은 `[##_blog_menu_##]`가 만든 **티스토리 고정 마크업**이다.
@@ -590,6 +616,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.heading-anchor` | 본문 `h2`/`h3` **안쪽 끝** | heading-anchor.js (**상태가 아니라 새 요소다.** 조건 없이 항상 붙는다) |
 | `li.has-toggle` · `li.is-collapsed` / `li.is-expanded` | 사이드바 카테고리 `li` | category.js |
 | `.cat-tree` | 상위 카테고리가 늘어선 `ul` | category.js |
+| `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조. `aria-current="page"`도 같이) |
 
 ### `.toc-toggle`의 `aria-expanded` — 뷰포트에 따라 존재 자체가 달라진다
 
