@@ -366,8 +366,23 @@ HOOKS_MD = os.path.join(ROOT, "docs", "hooks.md")
 NO_CSS_HEADING = "**CSS 규칙이 없는 것이 정상인 클래스**"
 
 
+# JS가 만드는 이름이 등재되는 절. **§5.6 하나가 아니다.**
+#
+# 결정 40은 "§5.6이 정본"이라고 못 박고 린트가 그 표만 읽게 했는데, 실제 등재는
+# 흩어져 있었다 — 상태 클래스(`.is-ready` `.no-toc` `.is-current` …)는 §8에 있고
+# 목차 항목(`.toc-item` `.toc-link`)은 §5.1에 있었다. 그래서 `toc.js`에서
+# `.toc-link`를 개명하고 CSS를 안 고쳐도 **아무 검사도 안 켜졌다** —
+# 결정 40이 닫으려던 구멍이 절 하나 옆에 그대로 있었던 셈이다 (2026-08-27).
+#
+# §5.1은 표가 아니라 산문이라 파싱 대상이 아니다. 그쪽 이름은 §5.6 표로 옮겼다.
+REGISTRY_SECTIONS = [
+    (r"^### 5\.6 [^\n]*\n(.*?)^### ", "§5.6 (JS가 새로 만드는 DOM)"),
+    (r"^## 8\. [^\n]*\n(.*?)^### ", "§8 (상태 클래스)"),
+]
+
+
 def parse_js_dom_registry():
-    """docs/hooks.md §5.6 표에서 'JS가 새로 만드는 클래스' 목록을 읽는다.
+    """docs/hooks.md에서 'JS가 만드는 클래스' 목록을 읽는다 (§5.6 + §8).
 
     표가 정본이다. 목록을 이 파일에 복사해 두면 문서와 갈라지고, 갈라진 뒤에는
     **코드 쪽이 조용히 이긴다** — 문서에 클래스를 더해도 검사는 모른 척한다.
@@ -377,27 +392,37 @@ def parse_js_dom_registry():
     doc = read(HOOKS_MD)
     if doc is None:
         return [], set(), "docs/hooks.md가 없다"
-    m = re.search(r"^### 5\.6 [^\n]*\n(.*?)^### ", doc, re.S | re.M)
-    if not m:
-        return [], set(), "docs/hooks.md에서 §5.6 절을 찾지 못했다"
-    sec = m.group(1)
 
-    names = []
-    for line in sec.split("\n"):
-        if not line.startswith("|"):
-            continue
-        cells = line.split("|")
-        if len(cells) < 3:
-            continue
-        for tick in re.findall(r"`([^`]+)`", cells[1].strip()):
-            # `body.is-lightbox-open` → .is-lightbox-open,
-            # `.code-wrap.has-lines` → .code-wrap + .has-lines,
-            # `.hljs-*` → 접두 항목(뒤에서 따로 다룬다)
-            for cls in re.findall(r"\.[A-Za-z][\w-]*\*?", tick):
-                if cls not in names:
-                    names.append(cls)
+    names, sec = [], None
+    for pattern, label in REGISTRY_SECTIONS:
+        m = re.search(pattern, doc, re.S | re.M)
+        if not m:
+            return [], set(), "docs/hooks.md에서 %s 절을 찾지 못했다" % label
+        body = m.group(1)
+        if sec is None:
+            sec = body        # 예외 목록은 §5.6에만 있다
+        found = 0
+        for line in body.split("\n"):
+            if not line.startswith("|"):
+                continue
+            cells = line.split("|")
+            if len(cells) < 3:
+                continue
+            for tick in re.findall(r"`([^`]+)`", cells[1].strip()):
+                # `body.is-lightbox-open` → .is-lightbox-open,
+                # `.code-wrap.has-lines` → .code-wrap + .has-lines,
+                # `.hljs-*` → 접두 항목(뒤에서 따로 다룬다)
+                for cls in re.findall(r"\.[A-Za-z][\w-]*\*?", tick):
+                    found += 1
+                    if cls not in names:
+                        names.append(cls)
+        # 절은 찾았는데 표가 비었다 = 표 모양이 바뀐 것이다. 조용히 줄어들면
+        # 검사가 그만큼 꺼진 채로 초록불이 된다.
+        if not found:
+            return [], set(), "%s 표에서 클래스를 하나도 읽지 못했다 (표 모양이 바뀌었나)" % label
+
     if not names:
-        return [], set(), "§5.6 표에서 클래스를 하나도 읽지 못했다 (표 모양이 바뀌었나)"
+        return [], set(), "등재 표에서 클래스를 하나도 읽지 못했다"
 
     # 예외는 **이유와 함께** 등재해야 인정한다. 이름만 적힌 줄은 예외가 아니다 —
     # 이유 없는 예외는 "안 한 일"과 "정상"을 구분할 수 없게 만든다.
@@ -444,8 +469,8 @@ def lint_js_dom_classes(src_css, js):
         return
     names, exempt, structural = parse_js_dom_registry()
     if structural:
-        err("BND006", "%s. §5.6 표가 이 검사의 정본이라 표를 못 읽으면 검사가 통째로 "
-            "꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
+        err("BND006", "%s. 등재 표(§5.6·§8)가 이 검사의 정본이라 표를 못 읽으면 검사가 "
+            "통째로 꺼진다 — 조용히 꺼지지 않게 오류로 낸다." % structural, "docs/hooks.md")
         return
 
     # 선택자만 남긴다. `content: "…"` 같은 선언 값에 이름이 스쳐도
@@ -470,18 +495,18 @@ def lint_js_dom_classes(src_css, js):
             no_js.append(cls)
 
     if no_css:
-        err("BND006", "hooks.md §5.6이 등재한 클래스 %d종에 CSS 규칙이 없다: %s. "
+        err("BND006", "hooks.md 등재 표(§5.6·§8)의 클래스 %d종에 CSS 규칙이 없다: %s. "
             "JS가 만들어 붙여도 스타일 없는 날것 DOM이 뜨고 에러는 안 난다. "
             "규칙이 없는 것이 정상이면 §5.6 「CSS 규칙이 없는 것이 정상인 클래스」 목록에 "
             "이유와 함께 등재한다 — 이름만 적은 줄은 예외로 치지 않는다."
             % (len(no_css), ", ".join(no_css)), "src/styles/")
     if no_js:
-        warn("BND007", "hooks.md §5.6이 등재한 클래스 %d종이 src/js 어디에도 없다: %s. "
+        warn("BND007", "hooks.md 등재 표(§5.6·§8)의 클래스 %d종이 src/js 어디에도 없다: %s. "
              "JS에서 이름을 바꿨다면 문서와 CSS가 죽은 이름을 붙들고 있는 것이고, "
              "그러면 BND006은 그 죽은 규칙을 보고 통과한다." % (len(no_js), ", ".join(no_js)),
              "src/js/")
     if not no_css and not no_js:
-        info("§5.6 JS 생성 클래스: %d종 전부 CSS 규칙과 JS 사용처가 있다 (CSS 예외 %d종)"
+        info("JS 생성 클래스(§5.6·§8 등재): %d종 전부 CSS 규칙과 JS 사용처가 있다 (CSS 예외 %d종)"
              % (len(names), len(exempt)))
 
 

@@ -386,6 +386,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 | 클래스 | 무엇 | 어디에 |
 |---|---|---|
+| `.toc-item` · `.toc-h2` · `.toc-h3` · `.toc-link` | 목차 항목. `<li class="toc-item toc-h2">` 안에 `<a class="toc-link">`. 계약 본문은 §5.1 | `#toc-list` 안 |
 | `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너 | `.contents_style pre`를 감싼다 |
 | `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
@@ -410,6 +411,11 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 - `.external-link` — 표시는 `.external-icon`이 맡는다. 이쪽은 JS가 같은 링크를 두 번
   손대지 않으려고 붙이는 **표식**이라 스타일이 붙을 자리가 없다.
+- `.toc-item` — `<li>` 자체에 줄 것이 없다. 여백·목록기호는 `.toc-list`가, 글자·패딩·
+  현재 표시는 `.toc-link`가 맡는다. 이 이름은 `.toc-h3 .toc-link` 같은 **층 선택자의
+  발판**으로 쓰인다.
+- `.toc-h2` — h2가 **기본 층**이라 보정할 것이 없다. 들여쓰기는 `.toc-h3 .toc-link`
+  한 곳에서만 준다. 여기에 규칙을 만들면 기본값을 다시 적는 죽은 규칙이 된다.
 
 **카테고리 접기 — CSS가 지켜야 할 세 가지** (`src/styles/tistory.css`, `src/js/category.js`)
 

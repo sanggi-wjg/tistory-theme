@@ -110,6 +110,21 @@ def m_section_renamed(root):
                                         "### 5.6a JS가 새로 만드는 DOM", 1))
 
 
+def m_section8_renamed(root):
+    """§8도 등재 표다 (2026-08-27). 상태 클래스가 거기 있어서, 이 절이 사라지면
+    `.is-ready` `.no-toc` 같은 이름이 통째로 검사 밖으로 나간다."""
+    edit(root, DOC, lambda s: s.replace("## 8. 상태 클래스 한눈에",
+                                        "## 8a. 상태 클래스 한눈에", 1))
+
+
+def m_section8_table_gone(root):
+    """§8 절은 남기고 **표만** 없앤다. 절을 찾았는데 표가 비면 검사가 그만큼
+    조용히 꺼진다 — 통과가 아니라 오류여야 한다."""
+    edit(root, DOC, lambda s: re.sub(
+        r"(## 8\. 상태 클래스 한눈에\n).*?(\n### )",
+        r"\1\n표가 사라졌다.\n\2", s, count=1, flags=re.S))
+
+
 def m_exception_no_reason(root):
     """예외 줄에서 이유를 지운다. 이름만 적힌 줄은 예외가 아니다."""
     edit(root, DOC, lambda s: re.sub(
@@ -147,7 +162,9 @@ CASES = [
     ("이름이 선언 값에만 있음",            m_css_in_declaration,    ".code-copy",     False),
     ("JS만 이름을 바꿈",                   m_js_renamed,            False,            ".heading-anchor"),
     ("문서에만 등재, CSS 없음",            m_doc_new_class,         ".brand-new",     ".brand-new"),
-    ("§5.6 절이 사라짐",                   m_section_renamed,       "§5.6 절을",      False),
+    ("§5.6 절이 사라짐",                   m_section_renamed,       "§5.6",           False),
+    ("§8 절이 사라짐",                     m_section8_renamed,      "§8",             False),
+    ("§8 절은 있는데 표가 비었음",         m_section8_table_gone,   "§8",             False),
     ("예외에 이유가 없음",                 m_exception_no_reason,   ".external-link", False),
     ("예외 목록 제목이 사라짐",            m_exception_heading_gone, ".external-link", False),
     ("예외 둘, 첫째가 줄바꿈",             m_second_exception,      False,            False),
