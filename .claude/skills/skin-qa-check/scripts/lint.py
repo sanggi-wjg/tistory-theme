@@ -713,16 +713,18 @@ def lint_image_refs(built, dist_dir):
     body = strip_comments(built)
 
     # url() 안의 따옴표는 세 가지가 다 유효하다: url(x) url('x') url("x").
-    # data:·http(s):·프로토콜 상대는 대상이 아니다 — 파일 시스템에 있어야 할 것이 아니다.
+    # data:는 대상이 아니다. 절대 URL은 **경로에 images/<파일>이 있으면** 본다 —
+    # 빌드의 PLACEHOLDER_BASE를 CDN으로 바꿔도(미결 1의 탈출구) 파일은 dist/images/에 그대로
+    # 남고 CDN은 그것을 비추는 것이라, 접두사가 무엇이든 이 검사가 조용히 꺼져서는 안 된다.
     refs = {}
     for m in re.finditer(r"""url\(\s*(['"]?)([^'")]+?)\1\s*\)""", body):
         target = m.group(2).strip()
-        if target.startswith(("data:", "http:", "https:", "//")):
+        if target.startswith("data:"):
             continue
-        rel = re.match(r"(?:\.{1,2}/)*images/(.+)$", target)
+        rel = re.search(r"(?:^|/)images/([^/?#]+)$", target.split("?")[0].split("#")[0])
         if not rel:
             continue
-        name = rel.group(1).split("?")[0].split("#")[0]
+        name = rel.group(1)
         refs[name] = refs.get(name, 0) + 1
 
     if not refs:

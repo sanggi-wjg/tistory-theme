@@ -29,6 +29,7 @@ async function readIf(p) {
 // 이 값만 jsDelivr 같은 외부 CDN으로 바꾼다 — CSS 선택자·변수명은 그대로다.
 const PLACEHOLDER_BASE = './images/'
 const PH_MAX_BYTES = 100 * 1024
+let phCount = 0   // placeholderVars가 실제로 복사한 장수. run()의 images/ 개수 검사가 쓴다
 
 /** 카테고리 기본 이미지 WebP를 dist/images/로 복사하고 --ph-<slug> 변수를 만든다.
  *
@@ -37,10 +38,7 @@ const PH_MAX_BYTES = 100 * 1024
  *  light·dark 한 쌍이 빠지면 그 카테고리는 한쪽 테마에서 점격자만 남는데 에러가 없다 — 그래서 빌드를 멈춘다. */
 async function placeholderVars() {
   const dir = path.join(SRC, 'assets', 'placeholders')
-  if (!existsSync(dir)) {
-    console.error('\n  ❌ src/assets/placeholders/ 없음. 먼저 `npm run placeholders -- --stub`\n')
-    process.exit(1)
-  }
+  if (!existsSync(dir)) throw new Error('src/assets/placeholders/ 없음. 먼저 `npm run placeholders -- --stub`')
   const bySlug = {}
   for (const f of (await readdir(dir)).sort()) {
     const m = /^([a-z0-9]+)-(light|dark)\.webp$/.exec(f)
@@ -58,16 +56,19 @@ async function placeholderVars() {
       if (size > PH_MAX_BYTES) problems.push(`${t[theme]} ${(size / 1024).toFixed(0)}KB > ${PH_MAX_BYTES / 1024}KB`)
     }
   }
+  // 실패는 던진다. 단발 빌드는 아래에서 exit 1로 바꾸고, --watch는 로그만 남기고 다음 변경을 기다린다 —
+  // 여기서 exit하면 `npm run placeholders`가 30장을 차례로 다시 쓰는 중간에 감시자가 죽는다.
   if (problems.length) {
-    console.error('\n  ❌ 기본 이미지: ' + problems.join('\n  ❌ 기본 이미지: ') + '\n     npm run placeholders 로 다시 만든다.\n')
-    process.exit(1)
+    throw new Error('기본 이미지: ' + problems.join('\n     기본 이미지: ') + '\n     npm run placeholders 로 다시 만든다.')
   }
 
   const light = [], dark = []
+  phCount = 0
   for (const slug of Object.keys(bySlug).sort()) {
     for (const theme of ['light', 'dark']) {
       const out = `ph-${slug}-${theme}.v${version}.webp`
       await cp(path.join(dir, bySlug[slug][theme]), path.join(DIST, 'images', out))
+      phCount++
       ;(theme === 'light' ? light : dark).push(`  --ph-${slug}: url("${PLACEHOLDER_BASE}${out}");`)
     }
   }
@@ -263,8 +264,8 @@ async function run() {
               `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
               `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}`)
   // script.js 1 + 기본 이미지 30. 더 생기면 배포가 그만큼 손이 더 가고, 덜 생기면 어느 카테고리가 빈 카드다.
-  const expected = 1 + (existsSync(path.join(SRC, 'assets', 'placeholders'))
-    ? (await readdir(path.join(SRC, 'assets', 'placeholders'))).filter(f => f.endsWith('.webp')).length : 0)
+  // 기대치는 placeholderVars가 **실제로 복사한** 장수다 — 디렉터리의 .webp를 세면 이름 규칙 밖 파일까지 세어 메시지가 뒤집힌다.
+  const expected = 1 + phCount
   if (uploads !== expected) {
     console.warn(`  ⚠️ images/가 ${uploads}개다. script.js 1 + 기본 이미지 ${expected - 1} = ${expected}개여야 한다 —\n` +
                  '     기본 이미지 말고는 images/에 두지 않는다. 폰트는 CDN, 도안은 WebP 30장뿐이다.')
@@ -272,7 +273,12 @@ async function run() {
   console.log('  다음: npm run lint  ·  npm run preview')
 }
 
-await run()
+try {
+  await run()
+} catch (e) {
+  console.error(`\n  ❌ ${e.message}\n`)
+  process.exit(1)
+}
 
 if (WATCH) {
   const { watch } = await import('node:fs')
@@ -280,6 +286,6 @@ if (WATCH) {
   let t
   watch(SRC, { recursive: true }, () => {
     clearTimeout(t)
-    t = setTimeout(() => run().catch(e => console.error(e.message)), 120)
+    t = setTimeout(() => run().catch(e => console.error(`\n  ❌ ${e.message}\n  (감시는 계속된다)`)), 120)
   })
 }

@@ -28,7 +28,8 @@ REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 
 STYLE = "dist/style.css"
 IMAGES = "dist/images"
-REF_RE = re.compile(r"""url\(\s*['"]?((?:\.{1,2}/)*images/[^'")]+?)['"]?\s*\)""")
+# 상대경로든 CDN 절대 URL이든 경로에 images/<파일>이 있으면 참조다 — lint.py의 TOK007과 같은 기준.
+REF_RE = re.compile(r"""url\(\s*['"]?([^'"()]*?images/[^'")/?#]+)['"]?\s*\)""")
 
 
 def build_fixture(dst):
@@ -88,6 +89,14 @@ def m_version_bump(root):
     return bumped[0]
 
 
+def m_cdn_prefix_file_gone(root):
+    """빌드의 PLACEHOLDER_BASE를 CDN으로 바꾼 상태(미결 1의 탈출구)에서 한 장이 빠졌다.
+    접두사가 절대 URL이어도 검사가 **꺼지지 않고** 파일을 봐야 한다 — /code-review가
+    첫 판에서 "CDN으로 바꾸면 info 한 줄만 남기고 조용히 꺼진다"를 잡았다."""
+    edit(root, STYLE, lambda s: s.replace('url("./images/', 'url("https://cdn.jsdelivr.net/gh/x/y@v1/dist/images/'))
+    return m_file_gone(root)
+
+
 def m_dist_gone(root):
     """dist를 통째로 지운다. 검사가 **안 도는** 것이 정상이다 —
     images/ 경로는 dist 기준 상대경로라 src에는 판정할 근거가 없다."""
@@ -99,6 +108,7 @@ CASES = [
     ("기준선 — 손대지 않은 사본",          None,           False),
     ("업로드 누락 — webp 한 장 삭제",       m_file_gone,    True),
     ("버전 불일치 — 참조만 .v+1 로",        m_version_bump, True),
+    ("CDN 접두사로 바꿔도 본다 — 한 장 삭제",  m_cdn_prefix_file_gone, True),
     ("dist가 없으면 안 돈다",               m_dist_gone,    False),
 ]
 
@@ -111,7 +121,7 @@ def preflight():
             print("❌ %s 가 없다 — `npm run build` 를 먼저 돌려라." % rel)
             sys.exit(1)
     if not refs(REPO):
-        print("❌ dist/style.css에 url(./images/…) 참조가 하나도 없다.")
+        print("❌ dist/style.css에 url(…images/…) 참조가 하나도 없다.")
         print("   빌드가 새 구조가 아니다(기본 이미지가 아직 data: 인라인이다) — "
               "`npm run build` 를 먼저 돌려라.")
         print("   여기서 통과시키면 TOK007이 켜지는지 아닌지를 아무도 모르게 된다.")
