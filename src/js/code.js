@@ -55,7 +55,7 @@ const LABEL = {
  * ⚠ 이 신호는 **편집 왕복 한 번에 사라진다**(측정됨: language-python → pre.isbl,
  *   kotlin·javascript → 둘 다 pre.angelscript). 사라지면 아래 자동 감지로
  *   조용히 되돌아간다 — 화면에 신호가 없다. 되돌아간 상태가 지금과 같아서
- *   **나빠지지는 않는다**는 근거로 이 설계를 골랐다(TODO `codeblock-readability` ③, 선택지 A).
+ *   **나빠지지는 않는다**는 근거로 이 설계를 골랐다 (DECISIONS.md 결정 43).
  */
 const AUTHOR_CLASS = /^language-([a-zA-Z0-9#+._-]+)$/
 

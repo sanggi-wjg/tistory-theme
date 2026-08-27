@@ -457,7 +457,7 @@ def lint_js_dom_classes(src_css, js):
     BND004는 **반대 방향만** 본다 — JS가 *찾는* 클래스가 skin.html에 있는가.
     JS가 *만드는* 클래스는 마크업에 자리가 없어 그 검사에 애초에 안 걸리고,
     JS에서 이름을 바꾸거나 새로 만들면서 CSS를 안 고쳐도 아무 에러도 안 난다.
-    스타일 없는 날것 DOM이 뜨고 끝이다 (TODO `js-class-css-drift`).
+    스타일 없는 날것 DOM이 뜨고 끝이다 (DECISIONS.md 결정 40).
 
     두 축을 같이 본다. CSS 축만 보면 **문서가 JS에서 떨어져 나간 순간 검사가
     죽은 이름을 보고 통과한다** — 위조된 통과 신호(CLAUDE.md)의 네 번째 판이다.
