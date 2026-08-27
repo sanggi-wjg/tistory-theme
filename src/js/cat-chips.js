@@ -71,13 +71,25 @@ export default function initCatChips() {
     try {
       const sub = childrenByTag(li, 'UL')[0]
       const link = sub ? ownAnchor(li, sub) : childrenByTag(li, 'A')[0]
-      if (!link) return
-      const c = chip(link.getAttribute('href'), labelOf(link), countOf(link))
+      const href = link && link.getAttribute('href')
+      if (!href) return // href 없는 앵커로 칩을 만들면 href="null" 링크가 된다
+      const c = chip(href, labelOf(link), countOf(link))
 
-      // 현재 가지 — 티스토리가 붙인 selected(카테고리 페이지)를 먼저, URL 대조를 함께.
-      // 하위 카테고리 페이지에서는 그 상위 칩을 켠다. 규칙은 category.js와 같다.
+      // 현재 가지 — 티스토리가 붙인 selected(카테고리 페이지)를 먼저, URL 대조를 함께,
+      // 그래도 아니면 하위 링크 중 하나가 현재 경로인가(하위 URL이 계층 없이 올 가능성).
+      // 세 단계 **전부** category.js와 같아야 한다 — 하나라도 빠지면 레일은 펼치는데
+      // 칩은 안 켜지는 상태가 되고 화면에는 신호가 없다.
       let on = li.classList.contains('selected') || !!(sub && sub.querySelector('.selected'))
       if (!on) on = onPath(here, decodePath(link.pathname))
+      if (!on && sub) {
+        const subLinks = sub.getElementsByTagName('a')
+        for (let i = 0; i < subLinks.length; i++) {
+          if (onPath(here, decodePath(subLinks[i].pathname))) {
+            on = true
+            break
+          }
+        }
+      }
       if (on) {
         c.classList.add('is-current')
         c.setAttribute('aria-current', 'page')
