@@ -1,10 +1,11 @@
 """상위 카테고리 기본 이미지의 **모티프** SVG를 만든다.
 
 2026-08-27까지는 이 SVG가 곧 기본 이미지였다(CSS 마스크, 결정 5·6 구판). 지금 기본 이미지는
-`src/assets/placeholders/<slug>-{light,dark}.webp` 래스터 30장이고(결정 5·6 개정), 이 SVG는
-**실제 AI 이미지가 오기 전까지 임시 래스터를 만드는 원료**로만 쓰인다 —
-`scripts/prep-placeholders.mjs --stub`가 여기 모티프를 테마 색으로 감싸 래스터화한다.
-실제 이미지 30장이 전부 들어오면 이 파일과 `src/assets/motifs/`는 지운다.
+`src/assets/placeholders/<slug>-{light,dark}.webp` 래스터 30장이고(결정 46), 이 SVG는 두 곳에 쓰인다.
+  1. **폴백** — 빌드가 `--ph-<slug>-svg`로 data: 인라인하고 CSS 다중 배경의 아래 겹에 깐다.
+     WebP가 404·네트워크 실패면 이것이 드러난다(DESIGN.md §6.2). 그래서 영구 자산이다.
+  2. 임시 래스터의 원료 — `scripts/prep-placeholders.mjs --stub`가 테마 색으로 감싸 래스터화한다.
+새 slug를 더하면 여기에도 모티프를 그린다 — 없으면 빌드가 멈춘다.
 
 색은 #000 고정이다. 임시 래스터를 만들 때 prep 스크립트가 토큰 색으로 바꿔 넣는다.
 KEY가 곧 slug다 — `arch` → `arch-light.webp` → `--ph-arch`. DESIGN.md §6.2의 선택자와

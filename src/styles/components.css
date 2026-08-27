@@ -404,39 +404,46 @@
   background-position: -1px -1px;
 }
 
-/* 2층 — 기본 이미지. --ph-*는 빌드가 src/assets/placeholders/<slug>-{light,dark}.webp에서 만든다
-   (라이트 정의 + 다크 재정의, tokens.css와 같은 3블록). 변수가 없으면 이 선언이 무효가 되어
-   그림 없이 1층 점격자만 남는다 — 마스크 시절의 "단색 판이 카드를 덮는" 실패는 사라졌다.
-   그 대신 "파일은 없는데 변수는 있다"가 새 구멍이고, 린트 TOK007이 dist/images/ 실재를 본다. */
+/* 2층 — 기본 이미지. 다중 배경 두 겹이다.
+     위 겹  --ph-*      빌드가 src/assets/placeholders/<slug>-{light,dark}.webp에서 만든다
+                       (라이트 정의 + 다크 재정의, tokens.css와 같은 3블록)
+     아래 겹 --ph-*-svg 같은 slug의 모티프 SVG를 data:로 인라인한 **폴백**. WebP가 404·네트워크 실패면
+                       브라우저가 그 겹만 none으로 취급해 이것이 드러난다. WebP가 오기 전에도 먼저 그려진다.
+   ⚠ 두 변수 중 하나라도 없으면 선언 전체가 무효 — 둘 다 사라지고 1층 점격자만 남는다. 빌드가 slug마다
+     WebP 한 쌍과 모티프 SVG를 요구하고, 린트 TOK006이 정의 없는 var()를, TOK007이 파일 실재를 본다.
+   ⚠ 폴백은 방문자를 위한 안전망이지 검사를 대신하지 않는다 — 업로드를 빠뜨려도 화면은 옛 도안으로 멀쩡해
+     보인다. 배포 후 curl -I 로 30장이 200인지 보는 절차(skin-deploy)는 그대로다. */
 .post .thumb::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--ph-default) center / cover no-repeat;
+  background:
+    var(--ph-default)     center / cover no-repeat,
+    var(--ph-default-svg) center / cover no-repeat;
 }
 
 /* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
 .post[data-cat="인프라"] .thumb::before,
-.post[data-cat^="인프라/"] .thumb::before    { background-image: var(--ph-infra); }
-.post[data-cat="Kotlin·Java"] .thumb::before { background-image: var(--ph-jvm); }
+.post[data-cat^="인프라/"] .thumb::before    { background-image: var(--ph-infra), var(--ph-infra-svg); }
+.post[data-cat="Kotlin·Java"] .thumb::before { background-image: var(--ph-jvm), var(--ph-jvm-svg); }
 .post[data-cat="Python"] .thumb::before,
-.post[data-cat^="Python/"] .thumb::before { background-image: var(--ph-python); }
+.post[data-cat^="Python/"] .thumb::before { background-image: var(--ph-python), var(--ph-python-svg); }
 .post[data-cat="PHP"] .thumb::before,
-.post[data-cat^="PHP/"] .thumb::before    { background-image: var(--ph-php); }
+.post[data-cat^="PHP/"] .thumb::before    { background-image: var(--ph-php), var(--ph-php-svg); }
 .post[data-cat="아키텍처"] .thumb::before,
-.post[data-cat^="아키텍처/"] .thumb::before   { background-image: var(--ph-arch); }
+.post[data-cat^="아키텍처/"] .thumb::before   { background-image: var(--ph-arch), var(--ph-arch-svg); }
 .post[data-cat="데이터베이스"] .thumb::before,
-.post[data-cat^="데이터베이스/"] .thumb::before { background-image: var(--ph-db); }
-.post[data-cat="네트워크"] .thumb::before     { background-image: var(--ph-net); }
-.post[data-cat="보안"] .thumb::before       { background-image: var(--ph-sec); }
-.post[data-cat="AI"] .thumb::before       { background-image: var(--ph-ai); }
+.post[data-cat^="데이터베이스/"] .thumb::before { background-image: var(--ph-db), var(--ph-db-svg); }
+.post[data-cat="네트워크"] .thumb::before     { background-image: var(--ph-net), var(--ph-net-svg); }
+.post[data-cat="보안"] .thumb::before       { background-image: var(--ph-sec), var(--ph-sec-svg); }
+.post[data-cat="AI"] .thumb::before       { background-image: var(--ph-ai), var(--ph-ai-svg); }
 .post[data-cat="코드 품질"] .thumb::before,
-.post[data-cat^="코드 품질/"] .thumb::before  { background-image: var(--ph-quality); }
-.post[data-cat="Go"] .thumb::before       { background-image: var(--ph-go); }
-.post[data-cat="알고리즘"] .thumb::before     { background-image: var(--ph-algo); }
+.post[data-cat^="코드 품질/"] .thumb::before  { background-image: var(--ph-quality), var(--ph-quality-svg); }
+.post[data-cat="Go"] .thumb::before       { background-image: var(--ph-go), var(--ph-go-svg); }
+.post[data-cat="알고리즘"] .thumb::before     { background-image: var(--ph-algo), var(--ph-algo-svg); }
 .post[data-cat="개발 도구"] .thumb::before,
-.post[data-cat^="개발 도구/"] .thumb::before  { background-image: var(--ph-tool); }
-.post[data-cat="기록"] .thumb::before       { background-image: var(--ph-note); }
+.post[data-cat^="개발 도구/"] .thumb::before  { background-image: var(--ph-tool), var(--ph-tool-svg); }
+.post[data-cat="기록"] .thumb::before       { background-image: var(--ph-note), var(--ph-note-svg); }
 
 /* 카테고리 목록에서는 같은 그림이 한 화면에 최대 15번 반복된다. 그 경우만 감춘다.
    대표이미지가 있는 글은 그대로 보인다. */

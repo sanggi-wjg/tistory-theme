@@ -3,15 +3,38 @@
 훅이 명령을 **실행 위치에서만** 잡는지 본다. 첫 판은 명령문 어디에나 있는
 문자열을 잡아서, 훅을 설명하는 문서를 heredoc으로 쓰는 명령이 막혔다.
 탐지기를 손대면 이 파일을 먼저 돌린다.
+
+⚠ 실제 저장소가 아니라 **임시 git 저장소**에서 돌린다 (2026-08-27).
+  첫 판은 `cwd`로 실제 저장소를 넘겨 진짜 마커(`.claude/.pr-review-ok`)를 읽었다 —
+  리뷰 직후처럼 마커가 HEAD와 같으면 차단 케이스 7개가 **전부 통과해 버렸다.**
+  `npm run check`의 결과가 게이트 상태에 따라 달라지는 검사는 검사가 아니다.
+  그래서 마커 세 상태(없음 · HEAD와 같음 · 다름)를 각각 만들어 본다.
 """
 import json
+import os
+import shutil
 import subprocess
 import sys
-
-import os
+import tempfile
 
 HOOK = os.path.abspath(os.path.join(os.path.dirname(__file__), "pr-review-gate.py"))
-ROOT = os.path.abspath(os.path.join(os.path.dirname(HOOK), "..", ".."))
+MARKER = ".claude/.pr-review-ok"
+
+
+def make_repo(marker):
+    """커밋 하나짜리 임시 저장소. marker: None(없음) · "HEAD"(같음) · 그 밖의 문자열(다름)."""
+    d = tempfile.mkdtemp(prefix="gate-fixture-")
+    g = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+    subprocess.run(g + ["init", "-q", "-b", "main", d], check=True)
+    subprocess.run(g + ["-C", d, "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+    if marker is not None:
+        head = subprocess.run(["git", "-C", d, "rev-parse", "HEAD"], capture_output=True,
+                              text=True, check=True).stdout.strip()
+        os.makedirs(os.path.join(d, ".claude"))
+        with open(os.path.join(d, MARKER), "w", encoding="utf-8") as f:
+            f.write(head if marker == "HEAD" else marker)
+    return d
+
 
 G = "gh pr " + "create"  # 이 파일 자체가 게이트에 걸리지 않게 쪼개 둔다
 
@@ -37,26 +60,48 @@ PASS = [
 ]
 
 
-def run(cmd):
-    payload = json.dumps({"tool_input": {"command": cmd}, "cwd": ROOT})
+def run(cmd, root):
+    payload = json.dumps({"tool_input": {"command": cmd}, "cwd": root})
     p = subprocess.run(
         [sys.executable, HOOK], input=payload, capture_output=True, text=True
     )
     return p.returncode
 
 
-fails = 0
-for label, cmd in BLOCK:
-    rc = run(cmd)
-    ok = rc == 2
-    fails += not ok
-    print(("  OK  " if ok else "  !!  ") + "차단해야 함 — %-22s rc=%s" % (label, rc))
+def main():
+    fails = 0
+    no_marker = make_repo(None)
+    reviewed = make_repo("HEAD")
+    stale = make_repo("0000000000000000000000000000000000000000")
+    try:
+        for label, cmd in BLOCK:
+            rc = run(cmd, no_marker)
+            ok = rc == 2
+            fails += not ok
+            print(("  OK  " if ok else "  !!  ") + "차단해야 함 (마커 없음) — %-22s rc=%s" % (label, rc))
 
-for label, cmd in PASS:
-    rc = run(cmd)
-    ok = rc == 0
-    fails += not ok
-    print(("  OK  " if ok else "  !!  ") + "통과해야 함 — %-22s rc=%s" % (label, rc))
+        for label, cmd in PASS:
+            rc = run(cmd, no_marker)
+            ok = rc == 0
+            fails += not ok
+            print(("  OK  " if ok else "  !!  ") + "통과해야 함 — %-22s rc=%s" % (label, rc))
 
-print("\n실패 %d건" % fails)
-sys.exit(1 if fails else 0)
+        # 마커 상태 — 탐지가 아니라 판정 쪽. 같으면 열리고, 다르면(리뷰 뒤 커밋이 쌓임) 막힌다.
+        rc = run(BLOCK[0][1], reviewed)
+        ok = rc == 0
+        fails += not ok
+        print(("  OK  " if ok else "  !!  ") + "통과해야 함 — %-22s rc=%s" % ("마커 == HEAD", rc))
+        rc = run(BLOCK[0][1], stale)
+        ok = rc == 2
+        fails += not ok
+        print(("  OK  " if ok else "  !!  ") + "차단해야 함 — %-22s rc=%s" % ("마커 != HEAD", rc))
+    finally:
+        for d in (no_marker, reviewed, stale):
+            shutil.rmtree(d, ignore_errors=True)
+
+    print("\n실패 %d건" % fails)
+    sys.exit(1 if fails else 0)
+
+
+if __name__ == "__main__":
+    main()

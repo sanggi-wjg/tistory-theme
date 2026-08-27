@@ -29,9 +29,15 @@ async function readIf(p) {
 // 이 값만 jsDelivr 같은 외부 CDN으로 바꾼다 — CSS 선택자·변수명은 그대로다.
 const PLACEHOLDER_BASE = './images/'
 const PH_MAX_BYTES = 100 * 1024
+// 폴백 SVG의 선 색. url() 안의 SVG는 페이지 토큰을 못 받으므로 색을 박는다 — 라이트 #fafafa·다크 #121212
+// 양쪽에서 읽히는 중간 회색 하나로 두 테마를 한 벌로 간다. 아래 1층 점격자는 토큰을 따르므로 테마감은 거기서 난다.
+const PH_SVG_INK = '#8a8a8a'
 let phCount = 0   // placeholderVars가 실제로 복사한 장수. run()의 images/ 개수 검사가 쓴다
 
 /** 카테고리 기본 이미지 WebP를 dist/images/로 복사하고 --ph-<slug> 변수를 만든다.
+ *  같은 slug의 모티프 SVG(src/assets/motifs/)는 --ph-<slug>-svg 로 data: 인라인한다 — WebP가 404·네트워크 실패면
+ *  CSS 다중 배경의 아래 레이어로 드러나는 **폴백**이다(DESIGN.md §6.2). 모티프가 없는 slug는 빌드 오류다:
+ *  `background-image: var(--ph-x), var(--ph-x-svg)`에서 한쪽 변수가 없으면 선언 전체가 무효가 되어 **둘 다** 사라진다.
  *
  *  tokens.css와 같은 3블록 패턴이다 — :root에서 라이트를 정의하고, 시스템 다크와 명시 다크에서
  *  재정의한다(DESIGN.md §7 "미디어쿼리 안에서 색을 처음 정의하지 않는다").
@@ -58,13 +64,22 @@ async function placeholderVars() {
   }
   // 실패는 던진다. 단발 빌드는 아래에서 exit 1로 바꾸고, --watch는 로그만 남기고 다음 변경을 기다린다 —
   // 여기서 exit하면 `npm run placeholders`가 30장을 차례로 다시 쓰는 중간에 감시자가 죽는다.
+  const motifDir = path.join(SRC, 'assets', 'motifs')
+  for (const slug of Object.keys(bySlug)) {
+    if (!existsSync(path.join(motifDir, `${slug}.svg`))) problems.push(`폴백 모티프 src/assets/motifs/${slug}.svg 없음 — python3 scripts/gen-placeholders.py`)
+  }
   if (problems.length) {
     throw new Error('기본 이미지: ' + problems.join('\n     기본 이미지: ') + '\n     npm run placeholders 로 다시 만든다.')
   }
 
-  const light = [], dark = []
+  const light = [], dark = [], svg = []
   phCount = 0
   for (const slug of Object.keys(bySlug).sort()) {
+    // 폴백 — 모티프는 마스크용이라 #000 고정. 선 색을 박고 62%로 눌러 옛 도안과 같은 농도로 만든다
+    const motif = (await readFile(path.join(motifDir, `${slug}.svg`), 'utf8'))
+      .replaceAll('#000', PH_SVG_INK)
+      .replace(/(<svg[^>]*>)/, '$1<g opacity=".62">').replace(/<\/svg>\s*$/, '</g></svg>')
+    svg.push(`  --ph-${slug}-svg: url("data:image/svg+xml;base64,${Buffer.from(motif, 'utf8').toString('base64')}");`)
     for (const theme of ['light', 'dark']) {
       const out = `ph-${slug}-${theme}.v${version}.webp`
       await cp(path.join(dir, bySlug[slug][theme]), path.join(DIST, 'images', out))
@@ -75,7 +90,7 @@ async function placeholderVars() {
   return [
     '/* ── 기본 이미지 (src/assets/placeholders/ — DESIGN.md §6.2, 결정 5·6) ──',
     '   라이트를 :root에서 정의하고 다크 두 상태에서 재정의한다. tokens.css의 3블록과 같은 패턴. */',
-    `:root {\n${light.join('\n')}\n}`,
+    `:root {\n${light.join('\n')}\n  /* 폴백 — WebP가 안 오면 다중 배경의 아래 레이어로 드러난다. 테마 공통 */\n${svg.join('\n')}\n}`,
     `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"]) {\n${dark.map(l => '  ' + l).join('\n')}\n  }\n}`,
     `:root[data-theme="dark"] {\n${dark.join('\n')}\n}`,
   ].join('\n') + '\n'

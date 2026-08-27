@@ -41,13 +41,13 @@ src/
 └── assets/
     ├── placeholders/      기본 이미지 WebP 30장 (상위 14 + 기본값 1) × (light · dark). 빌드가 읽는 것은 이것뿐
     ├── placeholders-src/  원본 (AI 이미지를 여기에). `npm run placeholders`가 800×500 WebP로 변환
-    └── motifs/            옛 SVG 모티프 15장 — 임시본(--stub)의 원료. 실제 이미지가 다 오면 지운다
+    └── motifs/            SVG 모티프 15장 — WebP가 안 올 때의 **폴백**(data: 인라인, --ph-*-svg). 임시본(--stub)의 원료이기도. 영구 자산
 ```
 
 ## 빌드가 하는 일
 
 1. **CSS 병합** — `styles/*.css`를 정해진 순서로 이어붙인다. 순서가 곧 특이도 순서이므로 임의로 바꾸지 않는다: `tokens → base → layout → content → tistory → components`
-2. **기본 이미지 복사 + 변수** — `assets/placeholders/<slug>-<theme>.webp`를 `dist/images/ph-<slug>-<theme>.v<N>.webp`로 복사하고 `--ph-<slug>`를 **3블록**(`:root` 라이트 / 시스템 다크 / 명시 다크)으로 `style.css` 맨 앞에 낸다. slug마다 light·dark 한 쌍이 없거나 100KB를 넘으면 **빌드가 멈춘다** — 한쪽 테마만 점격자로 남는 실패는 에러가 없기 때문이다
+2. **기본 이미지 복사 + 변수** — `assets/placeholders/<slug>-<theme>.webp`를 `dist/images/ph-<slug>-<theme>.v<N>.webp`로 복사하고 `--ph-<slug>`를 **3블록**(`:root` 라이트 / 시스템 다크 / 명시 다크)으로 `style.css` 맨 앞에 낸다. slug마다 light·dark 한 쌍이 없거나 100KB를 넘으면 **빌드가 멈춘다** — 한쪽 테마만 점격자로 남는 실패는 에러가 없기 때문이다. 같은 slug의 `assets/motifs/<slug>.svg`는 `--ph-<slug>-svg`로 `data:` 인라인한다(다중 배경 폴백, 약 8KB). 모티프가 없어도 멈춘다
 3. **JS 번들** — esbuild로 `js/index.js`부터 단일 파일로 묶는다. highlight.js는 필요한 언어만 담는다 (`python bash shell sql java kotlin go json yaml xml`)
 4. **인라인 보정 CSS 생성** — `data/inline-styles.json`에서 색 17종 + 배경 11종을 읽어 **공백 유/무 두 형태**의 선택자를 만든다. 실제 마크업이 `style="color: #000000;"`(공백 있음)이라 무공백형만 쓰면 609곳 중 1곳에만 걸린다. 손으로 쓰지 않는다
 5. **skin.html 복사** — 치환자가 있으므로 어떤 변환도 하지 않는다. HTML 최소화도 하지 않는다 (치환자가 깨질 수 있다)

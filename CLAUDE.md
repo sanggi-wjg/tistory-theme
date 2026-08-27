@@ -94,6 +94,8 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
+| 2026-08-27 | `test-detect.py`가 **임시 git 저장소**에서 돈다 — 마커 없음·같음·다름 3상태 (14 → 16케이스) | `.claude/hooks/test-detect.py` | 실제 저장소를 `cwd`로 넘겨 진짜 마커를 읽었다. **리뷰 직후엔 마커가 HEAD와 같아 차단 케이스 7개가 전부 통과했다** — `npm run check`의 결과가 게이트 상태에 따라 달라졌다. 마커가 HEAD와 같을 때 열리는 쪽은 한 번도 시험된 적이 없었다 |
+| 2026-08-27 | 린트 `TOK007` + `test:images`(5케이스) 추가, 빌드가 기본 이미지 30장의 쌍·용량·폴백 모티프를 검사 | `skills/skin-qa-check/scripts/lint.py`, `…/test-image-refs.py`, `scripts/build.mjs`, `package.json` | 결정 46으로 기본 이미지가 `images/` 업로드 파일이 되면서 "변수는 있는데 파일이 없다"가 새 침묵이 됐다. `TOK006`은 정의↔참조만 본다 |
 | 2026-08-27 | 린트 `BND009` + `test:markup`(12케이스) 추가 | `skills/skin-qa-check/scripts/lint.py`, `…/test-markup-css.py`, `docs/hooks.md §7`, `package.json` | `skin.html`이 내보내는 **142종**이 어느 검사에도 안 걸렸다. `BND004`는 JS가 찾는 이름만, `BND006`은 JS가 만드는 이름만 본다 — 가장 큰 표면이 비어 있었다 |
 | 2026-08-27 | `BND006`·`BND007` 파서가 **§5.6 + §8**을 읽는다 (22 → 35종). §5.1의 목차 클래스는 §5.6 표로 이동 | `…/lint.py`, `…/test-js-dom-classes.py`(12→14), `docs/hooks.md` | 결정 40이 "§5.6이 정본"이라 했는데 상태 클래스는 §8에, 목차 항목은 §5.1에 있었다. `toc.js`에서 `.toc-link`를 개명해도 **아무것도 안 켜졌다** |
 | 2026-08-27 | 린트 `TOK006` 추가 (토큰 정의 ↔ 참조) | `…/lint.py`, `…/SKILL.md` | 결정 44가 `--error`를 "사용처 없다"고 세 문서에 적었는데 틀렸다. 사용처가 **생성기의 문자열 안**이라 `src` grep에 안 잡혔다. **빌드 산출물까지** 봐야 한다 |

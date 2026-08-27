@@ -4,7 +4,7 @@
 //   src/assets/placeholders/<slug>-<theme>.webp                          ← 변환 결과. 커밋한다. 빌드가 읽는 것은 이것뿐
 //
 //   node scripts/prep-placeholders.mjs           원본 전부 변환
-//   node scripts/prep-placeholders.mjs --stub    원본이 없는 자리를 src/assets/motifs/의 SVG로 채운 뒤 변환
+//   node scripts/prep-placeholders.mjs --stub    원본이 없는 자리를 src/assets/motifs/의 SVG(폴백 모티프)로 채운 뒤 변환
 //
 // 빌드(scripts/build.mjs)에 넣지 않는다 — 원본이 바뀔 때만 사람이 돌린다. gen-preview.mjs와 같은 위치다.
 //

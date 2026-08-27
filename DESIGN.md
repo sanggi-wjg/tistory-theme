@@ -591,34 +591,37 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
   background-position: -1px -1px;
 }
 
-/* 2층 — 기본 이미지. --ph-*는 빌드가 만든다 — :root에 라이트, 다크 두 상태에 다크 (tokens.css와 같은 3블록) */
+/* 2층 — 기본 이미지, 다중 배경 두 겹. 위 겹은 WebP(--ph-*, 라이트 정의 + 다크 재정의),
+   아래 겹은 같은 slug의 모티프 SVG를 data:로 인라인한 폴백(--ph-*-svg). WebP가 404면 아래가 드러난다 */
 .post .thumb::before {
   content: ""; position: absolute; inset: 0;
-  background: var(--ph-default) center / cover no-repeat;
+  background:
+    var(--ph-default)     center / cover no-repeat,
+    var(--ph-default-svg) center / cover no-repeat;
 }
 
-/* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
+/* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3). 두 겹을 항상 같이 쓴다 */
 .post[data-cat="인프라"] .thumb::before,
-.post[data-cat^="인프라/"] .thumb::before        { background-image: var(--ph-infra); }
-.post[data-cat="Kotlin·Java"] .thumb::before    { background-image: var(--ph-jvm); }
+.post[data-cat^="인프라/"] .thumb::before        { background-image: var(--ph-infra), var(--ph-infra-svg); }
+.post[data-cat="Kotlin·Java"] .thumb::before    { background-image: var(--ph-jvm), var(--ph-jvm-svg); }
 .post[data-cat="Python"] .thumb::before,
-.post[data-cat^="Python/"] .thumb::before       { background-image: var(--ph-python); }
+.post[data-cat^="Python/"] .thumb::before       { background-image: var(--ph-python), var(--ph-python-svg); }
 .post[data-cat="PHP"] .thumb::before,
-.post[data-cat^="PHP/"] .thumb::before          { background-image: var(--ph-php); }
+.post[data-cat^="PHP/"] .thumb::before          { background-image: var(--ph-php), var(--ph-php-svg); }
 .post[data-cat="아키텍처"] .thumb::before,
-.post[data-cat^="아키텍처/"] .thumb::before       { background-image: var(--ph-arch); }
+.post[data-cat^="아키텍처/"] .thumb::before       { background-image: var(--ph-arch), var(--ph-arch-svg); }
 .post[data-cat="데이터베이스"] .thumb::before,
-.post[data-cat^="데이터베이스/"] .thumb::before    { background-image: var(--ph-db); }
-.post[data-cat="네트워크"] .thumb::before         { background-image: var(--ph-net); }
-.post[data-cat="보안"] .thumb::before            { background-image: var(--ph-sec); }
-.post[data-cat="AI"] .thumb::before             { background-image: var(--ph-ai); }
+.post[data-cat^="데이터베이스/"] .thumb::before    { background-image: var(--ph-db), var(--ph-db-svg); }
+.post[data-cat="네트워크"] .thumb::before         { background-image: var(--ph-net), var(--ph-net-svg); }
+.post[data-cat="보안"] .thumb::before            { background-image: var(--ph-sec), var(--ph-sec-svg); }
+.post[data-cat="AI"] .thumb::before             { background-image: var(--ph-ai), var(--ph-ai-svg); }
 .post[data-cat="코드 품질"] .thumb::before,
-.post[data-cat^="코드 품질/"] .thumb::before      { background-image: var(--ph-quality); }
-.post[data-cat="Go"] .thumb::before             { background-image: var(--ph-go); }
-.post[data-cat="알고리즘"] .thumb::before         { background-image: var(--ph-algo); }
+.post[data-cat^="코드 품질/"] .thumb::before      { background-image: var(--ph-quality), var(--ph-quality-svg); }
+.post[data-cat="Go"] .thumb::before             { background-image: var(--ph-go), var(--ph-go-svg); }
+.post[data-cat="알고리즘"] .thumb::before         { background-image: var(--ph-algo), var(--ph-algo-svg); }
 .post[data-cat="개발 도구"] .thumb::before,
-.post[data-cat^="개발 도구/"] .thumb::before      { background-image: var(--ph-tool); }
-.post[data-cat="기록"] .thumb::before            { background-image: var(--ph-note); }
+.post[data-cat^="개발 도구/"] .thumb::before      { background-image: var(--ph-tool), var(--ph-tool-svg); }
+.post[data-cat="기록"] .thumb::before            { background-image: var(--ph-note), var(--ph-note-svg); }
 
 /* 3층 — 진짜 대표이미지가 있으면 앞의 둘을 덮는다. z-index가 있어야 ::before 위로 온다 */
 .post .thumb img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
@@ -629,7 +632,9 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
 - **이미지는 WebP 래스터 30장이다** — `src/assets/placeholders/<slug>-{light,dark}.webp`, **800×500(16:10)**, 장당 **100KB 이하**. 원본은 `src/assets/placeholders-src/<slug>-<theme>.{png,jpg,webp,svg}`에 두고 `npm run placeholders`(`scripts/prep-placeholders.mjs`)가 크롭·변환한다. 배포 때 스킨 편집기 파일업로드 탭으로 `images/`에 올린다. 2026-08-27까지는 SVG 마스크 15장을 `data:` URI로 `style.css`에 인라인했다 — 결정 5·6 개정.
 - **라이트/다크 두 벌이다.** 래스터는 마스크와 달리 색을 토큰에서 받지 못한다. 빌드가 `--ph-<slug>`를 `:root`에서 라이트로 정의하고 `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }`·`:root[data-theme="dark"]`에서 다크로 재정의한다 — `tokens.css`의 3블록과 같은 패턴이라 §7 "미디어쿼리 안에서 색을 처음 정의하지 않는다"와 맞는다. **한 쌍이라도 빠지면 빌드가 멈춘다**(경고가 아니라 오류). 빠진 쪽 테마에서 점격자만 남는데 에러가 없기 때문이다.
-- **변수가 없으면 그림이 안 나올 뿐이다.** 마스크 시절의 "단색 판이 카드를 덮는" 실패와 `--ph-fallback`은 사라졌다. 새 구멍은 **"변수는 있는데 `images/`에 파일이 없다"**(업로드 누락, 버전 불일치)이고, 린트 `TOK007`이 `dist/style.css`의 `url(./images/…)` 마다 `dist/images/` 실재를 본다.
+- **WebP가 안 오면 옛 모티프가 드러난다 — 다중 배경 폴백.** 빌드가 `src/assets/motifs/<slug>.svg`를 중간 회색(`#8a8a8a`, 62%)으로 구워 `--ph-<slug>-svg`에 `data:`로 인라인하고(15장 약 8KB, 테마 공통 — 아래 점격자가 토큰을 따르니 테마감은 거기서 난다), 2층은 `var(--ph-x), var(--ph-x-svg)` 두 겹이다. 브라우저는 404·네트워크 실패한 겹만 `none`으로 취급하므로 아래 겹이 보이고, WebP가 오기 전에도 먼저 그려진다. **그래서 `motifs/`와 `scripts/gen-placeholders.py`는 영구 자산이다** — 새 slug를 더하면 모티프도 같이 그린다(없으면 빌드 오류).
+- **두 변수 중 하나라도 없으면 둘 다 사라진다.** `background-image: var(--ph-x), var(--ph-x-svg)`는 한 변수만 비어도 선언 전체가 무효가 되어 1층 점격자만 남는다. 빌드가 slug마다 WebP 한 쌍 + 모티프를 요구하고, 린트 `TOK006`이 정의 없는 `var()`를 잡는다. 마스크 시절의 "단색 판이 카드를 덮는" 실패와 `--ph-fallback`은 사라졌다.
+- **폴백은 방문자를 위한 안전망이지 검사를 대신하지 않는다.** 업로드를 빠뜨려도 화면은 옛 도안으로 멀쩡해 보인다 — AI 사진 자리에 선 그림이 뜨니 사람 눈엔 다르지만, 그걸 발견 수단으로 삼지 않는다. 린트 `TOK007`이 배포 전에 `dist/style.css`의 `url(…images/…)` 마다 `dist/images/` 실재를 보고, 배포 후에는 `curl -I`로 30장이 200인지 본다(`skin-deploy`).
 - **파일명에 버전이 박힌다** — `dist/images/ph-<slug>-<theme>.v<N>.webp`, N은 `package.json`의 `placeholderVersion`. 티스토리 CDN이 같은 이름을 오래 캐시하므로 **이미지를 바꾸면 N을 올리고 30장을 다시 올린다.** 이미지가 안 바뀐 배포에서는 올리지 않는다.
 - **접두사 충돌이 없다** — 상위 14종 중 어느 이름도 다른 이름의 접두사가 아니다. `^=`가 옆 카테고리를 물지 않는다.
 - **하위가 없는 7종**(`Kotlin·Java` `네트워크` `보안` `AI` `Go` `알고리즘` `기록`)은 `^=` 줄을 두지 않았다. 하위가 생기면 두 줄짜리로 바꾼다 — 안 바꾸면 새 하위 글이 `--ph-default`로 조용히 떨어진다.
@@ -637,7 +642,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 - **`--ph-*` 변수명은 파일의 slug에서 그대로 나온다** (`arch-light.webp` → `--ph-arch`). 빌드가 이름을 검사하지 않으므로 **slug를 틀리면 변수가 정의되지 않고 카드는 조용히 `--ph-default`로 떨어진다.** 위 블록의 이름이 곧 slug 목록이다.
 - **카테고리를 늘리거나 이름을 바꾸면 이 블록과 이미지 두 장을 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
 - **`og:image`는 안 바뀐다.** CSS 배경이라 검색·SNS 공유 썸네일은 여전히 티스토리 기본이다(`DECISIONS.md` §3 실측). 이 그림은 **사이트 안에서만** 보인다.
-- **AI 이미지는 아직 없다.** 지금 30장은 옛 SVG 모티프를 테마 색 판 위에 래스터화한 **임시본**이다(`prep-placeholders.mjs --stub`, 원료는 `src/assets/motifs/`·`scripts/gen-placeholders.py`). 실제 이미지가 오면 `placeholders-src/`에 넣고 변환한다 — 같은 키의 래스터가 stub SVG를 이긴다. 30장이 다 들어오면 `motifs/`와 생성기를 지운다.
+- **AI 이미지는 아직 없다.** 지금 30장은 옛 SVG 모티프를 테마 색 판 위에 래스터화한 **임시본**이다(`prep-placeholders.mjs --stub`). 실제 이미지가 오면 `placeholders-src/`에 넣고 변환한다 — 같은 키의 래스터가 stub SVG를 이긴다. `motifs/`는 폴백이므로 남는다.
 - **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.** 다만 이 치환자는 관리 화면에서 카테고리 대표이미지를 설정해야 값이 나오고, 없으면 블록째 사라진다 — **기본 이미지를 배너로 대신 쓸지는 미정**이다(`DECISIONS.md` 미결 12).
 
 ### 6.3 코드블록
