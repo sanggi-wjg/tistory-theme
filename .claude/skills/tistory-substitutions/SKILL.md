@@ -17,7 +17,7 @@ description: "티스토리 스킨 치환자(그룹 치환자 <s_*>, 값 치환�
 그룹 치환자의 세 역할을 구분하는 것이 중요하다:
 - **반복** — `<s_list_rep>` 안쪽이 글 개수만큼 복제된다
 - **조건** — `<s_list_rep_thumbnail>`은 대표이미지가 없으면 **블록째 사라진다**. 이 성질이 이 프로젝트의 기본이미지 fallback을 가능하게 한다
-- **영역 선언** — `<s_index_article_rep>`은 홈에서만 살아남는다
+- **영역 선언** — `<s_permalink_article_rep>`·`<s_index_article_rep>`는 **`<s_article_rep>` 안에서만** 살아남는다. 바깥에 두면 에러 없이 통째로 버려진다(결정 29, 린트 `SUB008`)
 
 ## 검증이 먼저다
 
@@ -37,7 +37,7 @@ print([g for g in d['groups'] if 'thumb' in g])"
 
 | body_id | 페이지 | 목록 치환자 |
 |---|---|---|
-| `tt-body-index` | 홈 | **`<s_index_article_rep>`** |
+| `tt-body-index` | 홈 | **`<s_list_rep>`** — `<s_list>`는 홈에서도 렌더된다(결정 29) |
 | `tt-body-page` | 글 | `<s_permalink_article_rep>` |
 | `tt-body-category` | 카테고리 목록 | **`<s_list_rep>`** |
 | `tt-body-search` | 검색결과 | `<s_list_rep>` |
@@ -46,7 +46,7 @@ print([g for g in d['groups'] if 'thumb' in g])"
 | `tt-body-guestbook` | 방명록 | — |
 | `tt-body-location` | 지역로그 | — |
 
-**홈 목록에 `<s_list_rep>`를 쓰면 아무것도 안 나온다.** 홈은 `<s_index_article_rep>` + `[##_article_rep_*_##]`, 목록은 `<s_list_rep>` + `[##_list_rep_*_##]`로 접두사가 다르다.
+**홈 목록도 `<s_list_rep>`로 그린다.** `<s_list>`는 홈에서도 렌더되고 `[##_list_conform_##]`이 "전체 글"로 채워진다(2026-08-25 실측, 결정 29). `<s_index_article_rep>`은 `<s_article_rep>`의 하위 영역이라 바깥에 두면 통째로 버려진다 — 이 스킨은 쓰지 않는다. 글 페이지의 `<s_permalink_article_rep>`도 같은 이유로 `<s_article_rep>` 안에 둔다. 안에서 쓰는 접두사는 각각 `[##_list_rep_*_##]` / `[##_article_rep_*_##]`다(린트 `AREA001`).
 
 ## 손댈 수 없는 영역
 
@@ -54,7 +54,7 @@ print([g for g in d['groups'] if 'thumb' in g])"
 
 | 치환자 | 출력 | 훅 |
 |---|---|---|
-| `[##_category_##]` | 카테고리 트리 전체 | `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.c_cnt` |
+| `[##_category_list_##]` (리스트형 — 폴더형 `[##_category_##]`은 다른 UI를 내며 `CAT001`이 막는다, 결정 31) | 카테고리 트리 전체 | `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.c_cnt` |
 | `[##_comment_group_##]` | 댓글 UI 전체 (React) | `.tt-comment-cont` `.tt-area-reply` `.tt-item-reply` `.tt_desc` `.tt_date` … |
 | `[##_guestbook_group_##]` | 방명록 UI 전체 (React) | 댓글과 동일 |
 

@@ -23,7 +23,7 @@ model: opus
 |---|---|---|---|
 | 훅 이름 | `skin.html`의 class·data 속성 | `style.css` 선택자 / `script.js` 셀렉터 | 스타일 미적용, JS 무동작 |
 | `data-cat` | `skin.html`의 `data-cat="[##_..._##]"` | CSS `[data-cat^="IT/"]` 접두 선택자 | **기본이미지 전부 무너짐** |
-| 카테고리 목록 | `data/posts.json`의 실제 카테고리 | CSS 기본이미지 규칙 11종 | 새 카테고리가 기본값으로 떨어짐 |
+| 카테고리 목록 | `data/posts.json`의 실제 카테고리 | CSS 기본이미지 규칙(상위 14종 + 기본값, `DESIGN.md` §6.2 · 린트 `BND003`) | 새 카테고리가 기본값으로 떨어짐 |
 | 스킨 옵션 | `index.xml`의 `<variable><name>` | `skin.html`의 `[##_var_*_##]`, `<s_if_var_*>` | 빈 값 출력 |
 | 영역 치환자 | 치환자가 놓인 위치 | 그 치환자가 유효한 페이지 타입 | **화면이 통째로 빔** |
 | 인라인색 열거 | `DESIGN.md` §5.2의 CSS 목록 | `data/posts.json` 재조사 결과 | 다크에서 글자 실종 |
@@ -39,10 +39,10 @@ model: opus
 - `<s_if_var_*>` `[##_var_*_##]`의 이름이 `index.xml`에 정의되어 있는가
 - 그룹 치환자의 여닫이가 짝을 이루는가
 - **`<s_t3>`가 있는가** — 없으면 댓글·공유가 전부 죽는다
-- 영역 치환자가 올바른 페이지 영역 안에 있는가 (홈 목록은 `<s_index_article_rep>`, 카테고리·검색·태그 목록은 `<s_list_rep>`)
+- 영역 치환자가 올바른 위치에 있는가 — `<s_permalink_article_rep>`·`<s_index_article_rep>`는 `<s_article_rep>` **안**(결정 29, `SUB008`), `*_group`은 자기 래퍼 `<s_rp>`·`<s_guest>` 안(결정 34, `SUB009`), 목록은 홈까지 `<s_list_rep>` 한 벌(결정 29)
 
 ### 페이지 타입 커버리지
-`tt-body-index` `tt-body-page` `tt-body-category` `tt-body-archive` `tt-body-tag` `tt-body-search` `tt-body-guestbook` 각각이 **빈 화면 없이** 렌더링되는가. 로컬 프리뷰로 8종을 모두 확인한다.
+`tt-body-index` `tt-body-page` `tt-body-category` `tt-body-archive` `tt-body-tag` `tt-body-search` `tt-body-guestbook` 각각이 **빈 화면 없이** 렌더링되는가. 로컬 프리뷰(`/skin-preview`)가 만드는 11개 페이지를 모두 확인한다.
 
 ### 다크모드
 - 세 상태(`data-theme="dark"` / `"light"` / **stamp 없음**)에서 모두 정상인가

@@ -266,7 +266,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | 훅 | 메모 |
 |---|---|
 | `.entry-head` `.entry-cat` `.entry-title` `.entry-meta` `.entry-date` `.entry-rp` | display-lg 제목 |
-| `.entry-layout` | 본문 + 목차 2칸. 1024px 미만에서 1칸으로 |
+| `.entry-layout` | 본문 + 목차 2칸. 1399px 이하에서 1칸으로(목차는 본문 위 접이식) |
 | `.entry-main` | 본문 칸. **`min-width: 0`을 반드시 준다** — 안 주면 1,777자짜리 코드 줄이 그리드를 밀어 페이지가 가로 스크롤한다 |
 | `.entry-body` | 본문 래퍼. **`.contents_style`은 이 안에 티스토리가 넣는다.** 실제 클래스는 `tt_article_useless_p_margin contents_style`이므로 **부분일치**로 잡을 것 (`.contents_style`, 절대 `[class="contents_style"]` 금지) |
 | `.entry-aside` | 목차 칸. `position: sticky`는 여기 또는 `.toc`에 |
@@ -303,9 +303,9 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | JS가 만드는 것 | `.toc-list` 안에 `<li class="toc-item toc-h2">` 또는 `toc-h3` → `<a class="toc-link" href="#…">` |
 | 렌더 조건 | 본문 `h2`/`h3`가 **3개 이상**일 때만. 조건 충족 시 `#toc`에 **`.is-ready`**를 붙인다 |
 | CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 |
-| **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`) |
+| **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다 |
 | 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) |
-| 모바일 접이식 | 1024px 미만에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1024px 미만에서만) |
+| 모바일 접이식 | 1399px 이하에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1399px 이하에서만 — 3단 경계 1400과 같다, 결정 48) |
 | id 앵커 | 본문 소제목에 id가 없으면 JS가 만든다. 형식 `toc-h-1`, `toc-h-2`… (한글 슬러그를 피한다 — URL 인코딩 문제) |
 
 **왜 `.is-ready`가 아니라 `body.no-toc`가 레이아웃을 정하는가**
@@ -579,8 +579,8 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `html[data-theme="dark"|"light"]` | `<html>` | head 인라인 + `#theme-toggle` |
 | `html.js` | `<html>` | head 인라인 |
 | `.toc.is-ready` | `#toc` | toc.js |
-| `body.no-toc` | `<body>` | toc.js (**목차를 못 만들 때만**. 글 페이지가 아니면 붙이지 않는다) |
-| `.toc.is-open` | `#toc` | toc.js (**1024px 미만에서만**. 데스크톱으로 넘어가면 지운다) |
+| `body.no-toc` | `<body>` | `skin.html` 인라인(첫 페인트 전, 결정 48) + toc.js 폴백 (**목차를 못 만들 때만**. 글 페이지가 아니면 붙이지 않는다) |
+| `.toc.is-open` | `#toc` | toc.js (**1399px 이하에서만**. 3단으로 넘어가면 지운다) |
 | `.toc-link.is-current` | 목차 링크 | toc.js 스크롤스파이 |
 | `.to-top.is-visible` | `#to-top` | progress.js |
 | `.code-copy.is-copied` | 복사 버튼 | code.js |
@@ -598,11 +598,12 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 | 뷰포트 | `aria-expanded` | `tabindex` | 이유 |
 |---|---|---|---|
-| ~1024px (접이식 활성) | `"false"` / `"true"` — `.is-open`과 동기 | 없음(=0) | 눌리고, 눌리면 목록 높이가 바뀐다 |
-| 1025px~ | **속성 없음** | `"-1"` | CSS가 `pointer-events:none`으로 라벨화한다. 목록은 항상 펼쳐져 있으므로 "축소됨"은 거짓말이고, 아무 일도 못 하는 탭 정거장도 만들지 않는다 |
+| ~1399px (접이식 활성) | `"false"` / `"true"` — `.is-open`과 동기 | 없음(=0) | 눌리고, 눌리면 목록 높이가 바뀐다 |
+| 1400px~ (3단, 목차가 옆 칸) | **속성 없음** | `"-1"` | CSS가 `pointer-events:none`으로 라벨화한다. 목록은 항상 펼쳐져 있으므로 "축소됨"은 거짓말이고, 아무 일도 못 하는 탭 정거장도 만들지 않는다 |
 
-`matchMedia('(max-width: 1024px)')`를 구독하므로 창 크기를 바꾸면 따라온다.
-**CSS의 `1024px` 경계를 옮기면 `toc.js`의 `COLLAPSIBLE_MQ`도 같이 옮겨야 한다.**
+`matchMedia('(max-width: 1399px)')`를 구독하므로 창 크기를 바꾸면 따라온다.
+**CSS의 `1399px` 경계를 옮기면 `toc.js`의 `COLLAPSIBLE_MQ`도 같이 옮겨야 한다.** 이 경계는 레일 경계(1025)가 아니라
+`layout.css`의 3단 경계(1400)다 — 둘을 섞어 썼던 것이 1280px에서 목차가 본문 위에 펼쳐진 채 고정된 원인이었다(결정 48).
 
 ---
 

@@ -117,18 +117,47 @@ function openFor(img) {
   }
 }
 
+/** 라이트박스 대상인가 — 본문 figure 안 이미지. 링크가 걸려 있으면 링크가 우선이다. */
+function isTarget(root, img) {
+  if (!img || !root.contains(img)) return false
+  if (!img.closest('figure')) return false
+  if (img.closest('a')) return false
+  return true
+}
+
 export default function initLightbox() {
   contentRoots().forEach(function (root) {
+    // 키보드 진입로. <img>는 원래 포커스 대상이 아니라 클릭만 받으면 키보드·스크린리더
+    // 사용자에게는 cursor:zoom-in이 광고하는 기능이 존재하지 않는다(결정 48).
+    // figure당 하나뿐이라 탭 정거장은 실측 최대 19개다.
+    Array.prototype.slice.call(root.querySelectorAll('figure img')).forEach(function (img) {
+      if (!isTarget(root, img)) return
+      if (!img.hasAttribute('tabindex')) img.setAttribute('tabindex', '0')
+      img.setAttribute('role', 'button')
+      const alt = img.getAttribute('alt')
+      img.setAttribute('aria-label', alt ? alt + ' — 확대' : '이미지 확대')
+    })
+
     root.addEventListener('click', function (e) {
       const img = e.target && e.target.closest ? e.target.closest('img') : null
-      if (!img || !root.contains(img)) return
-      if (!img.closest('figure')) return // 본문 figure 안 이미지만
-      if (img.closest('a')) return // 링크가 걸려 있으면 링크가 우선이다
+      if (!isTarget(root, img)) return
       e.preventDefault()
       try {
         openFor(img)
       } catch (err) {
         /* 라이트박스가 실패해도 본문은 그대로다 */
+      }
+    })
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return
+      const img = e.target && e.target.tagName === 'IMG' ? e.target : null
+      if (!isTarget(root, img)) return
+      e.preventDefault()
+      try {
+        openFor(img)
+      } catch (err) {
+        /* 위와 같다 */
       }
     })
   })

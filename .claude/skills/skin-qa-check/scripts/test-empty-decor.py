@@ -60,9 +60,12 @@ def m_guard_gone(root):
 
 
 def m_side_guard_gone(root):
-    """사이드바 가드를 지운다. 여기 가드는 :empty가 아니라 :has()다."""
-    edit(root, CSS, lambda s: s.replace(
-        ".side-rp:empty,\n.side-rp:has(> span:empty) { display: none; }", ""))
+    """사이드바 가드를 지운다. :empty와 :has()가 **따로** 선 두 규칙이다(결정 48 —
+    한 선택자 목록으로 묶으면 :has 미지원 브라우저에서 통째로 죽는다). 둘 다 지워야
+    가드가 없는 상태가 된다 — 하나만 남아도 BND008은 가드가 있다고 본다."""
+    edit(root, CSS, lambda s: s
+         .replace(".side-rp:empty { display: none; }", "")
+         .replace(".side-rp:has(> span:empty) { display: none; }", ""))
 
 
 def m_guard_in_comment(root):

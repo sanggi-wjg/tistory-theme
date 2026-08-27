@@ -9,9 +9,11 @@ import { entryRoot, headingsWithIds, onMediaChange, rafThrottle, reducedMotion }
 const MIN_HEADINGS = 3 // 이 미만이면 목차를 만들지 않는다
 const SPY_OFFSET = 120 // 화면 위쪽 이 높이를 지나면 "현재 위치"로 본다
 
-// 접이식이 살아 있는 구간. components.css의 @media (max-width: 1024px)와 같은 값이어야 한다.
+// 접이식이 살아 있는 구간. components.css의 @media (max-width: 1399px)와 같은 값이어야 한다.
 // 여기가 어긋나면 ARIA가 화면과 다른 말을 한다 — QA F2가 정확히 그 사고였다.
-const COLLAPSIBLE_MQ = '(max-width: 1024px)'
+// 경계가 1400인 이유: 목차가 옆 칸에 서는 3단이 거기서 시작한다(layout.css). 그 아래에서
+// 펼쳐 두면 목차가 본문 위에 1칸으로 선다 — 1280px 라이브 실측, 결정 48.
+const COLLAPSIBLE_MQ = '(max-width: 1399px)'
 
 /**
  * 목차를 만들지 못했다고 CSS에 알린다 — hooks.md §5.1
@@ -19,6 +21,10 @@ const COLLAPSIBLE_MQ = '(max-width: 1024px)'
  * 레이아웃은 기본이 2단이고 이 클래스가 붙을 때만 1단이 된다. 반대로(=목차가 생길 때만
  * 2단으로) 만들면 **첫 페인트에서 모든 글이 1단**이었다가 스크립트가 돌 때 68%가 2단으로
  * 바뀐다 — 1400px에서 본문이 144px 밀리는 것을 실측했다. 다수를 밀지 않는 쪽을 기본으로 둔다.
+ *
+ * 첫 판정은 skin.html의 인라인 스크립트가 .entry-body 직후, 첫 페인트 전에 한다(결정 48).
+ * 여기는 폴백이다 — 본문을 못 찾았거나 인라인이 실패한 경로. **조건은 인라인과 같아야 한다**
+ * (h2·h3, 빈 소제목 제외, MIN_HEADINGS 미만). classList.add라 두 번 붙여도 같다.
  */
 function markNoToc() {
   if (document.body) document.body.classList.add('no-toc')
@@ -57,7 +63,7 @@ export default function initToc() {
   toc.classList.add('is-ready')
 
   /* ── 모바일 접이식 ──
-     1025px 이상에서 CSS는 .toc-toggle을 "목차" 라벨로 바꾼다(pointer-events: none)
+     1400px 이상에서 CSS는 .toc-toggle을 "목차" 라벨로 바꾼다(pointer-events: none)
      — 눌러도 목록 높이가 변하지 않는다. 그런 상태에서 aria-expanded="false"를 남기면
      스크린리더는 "축소됨"이라고 읽는데 링크들은 이미 탭 순서 안에 있다.
      그래서 접이식이 실제로 동작하는 구간에서만 속성을 두고, 데스크톱에서는
