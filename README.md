@@ -15,11 +15,11 @@
 
 ## 빠른 시작
 
-Node 20+와 Python 3이 필요하다 (파이썬 스크립트는 표준 라이브러리만 쓴다).
+Node 20+(`.nvmrc`·CI는 26)와 Python 3이 필요하다 (파이썬 스크립트는 표준 라이브러리만 쓴다).
 
 ```bash
 npm install
-npm run check   # 빌드 → 린트 → 프리뷰
+npm run check   # 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰
 open _preview/index.html
 ```
 

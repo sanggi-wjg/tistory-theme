@@ -110,7 +110,9 @@ def scan_orphan_areas(skin):
 # 우리보다 뒤에 온다. 뒤에 오는 쪽은 특이도가 같으면 이긴다 — 그 조건을 재현해야
 # `.hljs` 접두가 정말 필요한지 눈으로 확인된다. 여기 순서를 바꾸지 말 것.
 TISTORY_CONTENT_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
-                       "userblog-d748cfd5e0a0f73a4f05afc297a1e4fc6364eea5/static/style/content.css")
+                       "userblog-626ea1866044955da92690211f447663fdb36491/static/style/content.css")
+# ↑ 해시는 티스토리가 배포할 때마다 바뀐다. seo-verify-live의 V017이 라이브 홈과 대조해 알려 준다
+#   (2026-08-27: d748cfd5… → 626ea186…, 내용은 34,426B 동일).
 TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/"
                     "styles/atom-one-light.min.css")
 

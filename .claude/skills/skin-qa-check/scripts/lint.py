@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+from html.parser import HTMLParser
 
 ROOT = os.getcwd()
 SRC = os.path.join(ROOT, "src")
@@ -38,6 +39,70 @@ def read(p):
 
 def lines_of(text, needle):
     return [i + 1 for i, l in enumerate(text.split("\n")) if needle in l]
+
+
+# ─────────────────────────── 0. 태그 균형 (SYN002) ───────────────────────────
+
+# 자식을 가질 수 없는 요소. 닫는 태그가 없는 것이 정상이다.
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+             "param", "source", "track", "wbr"}
+
+
+class _TagBalance(HTMLParser):
+    """여는 태그와 닫는 태그가 짝을 이루는가. <s_*> 그룹 치환자도 요소로 센다 —
+    티스토리 치환 엔진이 그 쌍을 찾기 때문이다(SUB005가 짝 수를, 여기서는 위치를 본다)."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self.stack, self.problems = [], []
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in VOID_TAGS:
+            self.stack.append((tag, self.getpos()[0]))
+
+    def handle_startendtag(self, tag, attrs):
+        # `<br/>`는 무해하지만 `<div/>`·`<s_x/>`는 브라우저가 **여는 태그**로 읽는다 —
+        # 자기 닫힘 표기가 있어도 그 뒤 형제를 삼키는 정확히 그 침묵이다.
+        if tag not in VOID_TAGS:
+            self.handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        if tag in VOID_TAGS:
+            return
+        line = self.getpos()[0]
+        if self.stack and self.stack[-1][0] == tag:
+            self.stack.pop()
+            return
+        names = [t for t, _ in self.stack]
+        if tag in names:
+            i = len(names) - 1 - names[::-1].index(tag)
+            for t, l in self.stack[i + 1:]:
+                self.problems.append("%d행의 <%s>가 닫히지 않은 채 %d행에서 </%s>를 만났다" % (l, t, line, tag))
+            del self.stack[i:]
+        else:
+            self.problems.append("%d행: 여는 태그 없는 </%s>" % (line, tag))
+
+
+def lint_html_balance(skin):
+    """skin.html의 태그 균형 — SYN002.
+
+    2026-08-27 하네스 리뷰: `</section>` 하나를 지우거나 닫지 않는 `<div>`를 끼워도
+    린트 45종이 **오류 0**이었다. 브라우저는 알아서 복구해 그리므로 에러가 없고,
+    복구된 트리는 CSS 선택자·레이아웃이 조용히 어긋난다. 마크업이 이 저장소의 가장 큰
+    표면인데 문법 자체를 보는 검사가 없었다 — 규칙 하나가 아니라 파서가 그 부류를 덮는다.
+    """
+    p = _TagBalance()
+    try:
+        p.feed(skin)
+        p.close()
+    except Exception as e:  # pragma: no cover — 파서 자체가 죽으면 그것도 오류다
+        err("SYN002", "skin.html을 파싱하지 못했다: %s" % e, "src/skin.html")
+        return
+    for tag, line in p.stack:
+        p.problems.append("%d행의 <%s>가 파일 끝까지 닫히지 않았다" % (line, tag))
+    for m in p.problems:
+        err("SYN002", m + ". 브라우저는 복구해 그리지만 복구된 트리는 CSS·레이아웃이 조용히 어긋난다.",
+            "src/skin.html")
 
 
 # ─────────────────────────── 1. 치환자 유효성 ───────────────────────────
@@ -262,6 +327,17 @@ def lint_boundaries(skin, css, js):
         sels = set()
         for m in re.finditer(r"""querySelector(?:All)?\(\s*['"]([^'"]+)['"]""", js):
             sels.add(m.group(1))
+        # 마크업이 내보내는 클래스를 **토큰으로** 모은다. 2026-08-27까지는
+        # `'class="%s' % cls in skin`(접두 일치)와 `' %s' % cls in skin`(주석·산문의 아무
+        # 단어)로 봐서, `entry-body`를 `entry-body-v2`로 개명해도 통과했다.
+        markup_classes = set()
+        for m in re.finditer(r"""class=["']([^"']+)["']""", re.sub(r"<!--.*?-->", "", skin, flags=re.S)):
+            markup_classes.update(m.group(1).split())
+        # JS가 만드는 DOM(§5.6·§8 등재)은 마크업에 없는 것이 정상이다 — BND006·007이 본다.
+        # 등재 표를 못 읽으면(구조 오류) BND006이 오류로 내므로 여기서는 제외 목록만 비운다 —
+        # 그러면 등재 클래스마다 BND004가 뜨는데, 그 원인은 BND006 한 줄이 말한다.
+        registry, _, structural = parse_js_dom_registry()
+        js_made = set() if structural else set(c[1:] for c in registry if not c.endswith("*"))
         for s in sorted(sels):
             for cls in re.findall(r"\.([a-zA-Z][\w-]*)", s):
                 # 티스토리가 렌더링하는 것. selected는 카테고리 트리에서 현재 가지의
@@ -270,10 +346,10 @@ def lint_boundaries(skin, css, js):
                            "sub_category_list", "link_tit", "link_item",
                            "link_sub_item", "c_cnt", "selected") or cls.startswith("tt-"):
                     continue
-                if ('class="%s' % cls) not in skin and ("class='%s" % cls) not in skin \
-                        and (" %s" % cls) not in skin:
-                    warn("BND004", "JS가 '%s'를 찾지만 skin.html에서 클래스 '%s'를 찾을 수 없다. "
-                         "JS가 만드는 DOM이면 무시해도 된다." % (s, cls), "src/js/")
+                if cls in js_made or cls in markup_classes:
+                    continue
+                warn("BND004", "JS가 '%s'를 찾지만 skin.html의 class 속성에 '%s'가 없다(정확 일치). "
+                     "JS가 만드는 DOM이면 hooks.md §5.6·§8에 등재하라." % (s, cls), "src/js/")
 
     # 본문 래퍼 정확일치 — 오래된 글이 누락되는 고전적 실수
     for label, body, path in (("CSS", css, "src/styles/"), ("JS", js, "src/js/")):
@@ -1258,6 +1334,7 @@ def main():
 
     wl = json.load(open(os.path.join(ROOT, "data", "substitutions.json"), encoding="utf-8"))
 
+    lint_html_balance(skin)
     lint_substitutions(skin, xml, wl)
     lint_area_scope(skin)
     lint_boundaries(skin, css, js)

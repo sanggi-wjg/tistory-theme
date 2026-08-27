@@ -51,7 +51,7 @@ jobs:
       # 버전은 check.yml 과 맞춘다. 로컬(2026-08-27 기준 node 26 · python 3.14)과도 같다
       - uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version-file: .nvmrc
           cache: npm
 
       - uses: actions/setup-python@v5

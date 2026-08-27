@@ -32,10 +32,11 @@ jobs:
       - uses: actions/checkout@v4
 
       # 버전은 로컬 개발 환경과 맞춘다 (2026-08-27 기준 node 26 · python 3.14).
-      # 로컬에서 통과한 것이 여기서 다른 이유로 깨지면 안 된다.
+      # 로컬에서 통과한 것이 여기서 다른 이유로 깨지면 안 된다. node는 .nvmrc가 정본이고
+      # package.json engines(>=20)가 하한이다.
       - uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version-file: .nvmrc
           cache: npm
 
       - uses: actions/setup-python@v5
@@ -44,15 +45,18 @@ jobs:
 
       - run: npm ci
 
-      # 빌드 → 린트 → 테스트 7종 → 프리뷰 렌더. package.json의 check 스크립트가 정본이다.
+      # 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰 렌더. package.json의 check 스크립트가 정본이다.
       - run: npm run check
 
-      # 프리뷰 HTML을 남겨 PR에서 렌더 결과를 받아볼 수 있게 한다 (실패해도 남긴다)
+      # 프리뷰 HTML을 남겨 PR에서 렌더 결과를 받아볼 수 있게 한다 (실패해도 남긴다).
+      # dist/를 같이 올린다 — 페이지가 ../../dist/style.css 를 참조하므로 _preview/만 받으면 무스타일이다.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: preview-${{ github.sha }}
-          path: _preview/
+          path: |
+            _preview/
+            dist/
           if-no-files-found: ignore
           overwrite: true          # 잡 재실행 때 같은 이름으로 다시 올린다 — v4는 기본이 충돌 실패다
           retention-days: 7

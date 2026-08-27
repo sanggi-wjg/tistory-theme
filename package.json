@@ -9,24 +9,31 @@
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
     "placeholders": "node scripts/prep-placeholders.mjs",
-    "preview": "npm run build && python3 .claude/skills/skin-preview/scripts/render.py",
-    "lint": "python3 .claude/skills/skin-qa-check/scripts/lint.py",
-    "check": "npm run build && npm run lint && npm run test:lint && npm run test:codes && npm run test:markup && npm run test:decor && npm run test:images && npm run test:code && npm run test:hooks && npm run preview",
+    "icons": "node scripts/gen-icons.mjs",
+    "preview:only": "python3 .claude/skills/skin-preview/scripts/render.py",
+    "preview": "npm run build && npm run preview:only",
     "preview:images": "npm run preview && node scripts/gen-preview.mjs",
+    "lint": "python3 .claude/skills/skin-qa-check/scripts/lint.py",
+    "check": "npm run build && npm run lint && npm run test:css && npm run test:syntax && npm run test:lint && npm run test:codes && npm run test:markup && npm run test:decor && npm run test:images && npm run test:code && npm run test:hooks && npm run preview:only",
+    "test:css": "node scripts/check-css.mjs",
+    "test:syntax": "python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py",
     "test:hooks": "python3 .claude/hooks/test-detect.py",
     "test:lint": "python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py",
     "test:codes": "python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py",
     "test:markup": "python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py",
     "test:decor": "python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py",
     "test:code": "node scripts/probe-code-detect.mjs",
-    "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py",
-    "icons": "node scripts/gen-icons.mjs"
+    "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py"
   },
   "devDependencies": {
+    "css-tree": "^3.2.1",
     "esbuild": "^0.25.0",
     "sharp": "^0.35.4"
   },
   "dependencies": {
     "highlight.js": "^11.11.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
