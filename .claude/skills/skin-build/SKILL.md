@@ -64,6 +64,7 @@ npm run placeholders -- --stub # 원본이 없는 자리를 motifs/ SVG로 채�
 ## 주의
 
 - **`skin.html`을 minify하지 않는다.** `<s_...>` 태그를 HTML 파서가 알 수 없는 태그로 보고 재배치하거나 제거할 수 있다.
+- **CSS 주석은 벗긴다(결정 51).** 주석 제거는 minify가 아니다 — 공백·선택자·선언을 건드리지 않는다. `dist/style.css`의 절반(77KB)이 주석이었다. 파일 경계 마커 한 줄씩만 남긴다. 용량 예산(`style.css` ≤ 96KB · `script.js` ≤ 80KB)을 넘으면 빌드가 실패한다.
 - **CSS를 minify해도 인라인 오염 보정 선택자는 보존되어야 한다.** `[style*="color:#000000"]`의 공백 처리가 minifier에 따라 달라지면 매칭이 깨진다. 확신이 없으면 minify하지 않는다 — style.css 한 장의 크기보다 정확성이 중요하다.
 - **highlight.js 전체 번들(약 1MB)을 넣지 않는다.** 언어를 골라 담으면 100KB 안팎이다.
 - 빌드 후 `dist/images/`에 파일이 **31개**(script.js + WebP 30)인지 확인한다. 빌드가 개수를 세어 다르면 경고한다.

@@ -686,6 +686,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 
   **속성·변수(`attr` `attribute` `variable`)는 `--ink-body`, 메타·태그는 `--ink-mute`로 무채색을 유지한다.** 한 줄에 유채색이 넷을 넘으면 강조가 강조를 잡아먹는다 — 여기까지가 이 팔레트의 상한이다.
 - highlight.js 언어 번들은 필요한 것만: `python bash shell sql java kotlin go json yaml xml`
+- **하이라이트는 첫 페인트 뒤 유휴 시간에 청크로 돈다**(결정 51). **20,000자 넘는 블록**은 감지·하이라이트·라벨을 건너뛰고 복사 버튼·줄번호 규칙만 붙는다 — 로그 덤프에 10개 문법을 돌리지 않는다.
 - 복사 버튼은 우상단, 호버 시 노출. 줄 번호는 일정 줄 수 이상에서만.
 
 ### 6.4 목차 (TOC)

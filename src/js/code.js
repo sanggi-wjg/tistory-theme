@@ -105,6 +105,9 @@ const MIN_CHARS = 12 // 이보다 짧으면 감지가 우연에 가깝다
 const MAX_HANGUL = 0.25 // 한글 비중이 이 이상이면 코드가 아니라 메모로 본다
 const LINES_FOR_NUMBERS = 8 // 줄번호를 켜는 최소 줄 수
 const MAX_LINES_FOR_NUMBERS = 400 // 이보다 길면 거터를 만들지 않는다 (DOM 낭비)
+// 이보다 긴 블록(로그 덤프 — 실측 최대 1,777자짜리 줄이 있다)은 감지·하이라이트를 건너뛴다.
+// highlightAuto는 후보 10개 문법을 전부 돌리므로 비용이 길이 × 10이다. 복사 버튼·줄번호 규칙은 그대로(결정 51).
+const MAX_CHARS = 20000
 
 let registered = false
 function register() {
@@ -263,10 +266,13 @@ function enhance(pre) {
 
   // 2) 언어를 정한다. 글쓴이가 쓴 것이 있으면 그것을 쓰고, 없으면 자동 감지.
   //    ⚠ `<pre>`의 클래스는 **보지 않는다** — 에디터 자동 감지 결과다 (결정 43).
-  const author = authorLanguage(codeEl.className)
+  const tooLong = src.length > MAX_CHARS
+  const author = tooLong ? null : authorLanguage(codeEl.className)
   let label = null
 
-  if (author && author.lang) {
+  if (tooLong) {
+    // 감지도 하이라이트도 라벨도 없다. 원문 그대로 — 아래 복사 버튼과 줄번호 규칙만 붙는다.
+  } else if (author && author.lang) {
     // 글쓴이가 지정했고 번들에도 있다 — 신뢰도 임계·한글 가드를 건너뛴다.
     // 그 가드들은 "우리가 추측할 때" 틀리지 않으려는 장치이지,
     // 글쓴이가 직접 쓴 것을 되묻는 장치가 아니다.
@@ -315,6 +321,34 @@ function enhance(pre) {
   }
 }
 
+/**
+ * 유휴 시간에 조금씩 돌린다(결정 51). 블록 하나에 highlightAuto가 10개 문법을 전부 돌리므로
+ * 블록 20개면 200회 파싱이 DOMContentLoaded에서 **동기로** 돌았고, 그 뒤에야 목차·진행바가
+ * 초기화됐다. 이제 enhance는 한 프레임 예산 안에서 돌고, 부트는 곧바로 다음 모듈로 넘어간다.
+ * requestIdleCallback이 없으면(Safari) setTimeout 0으로 같은 모양을 흉내 낸다.
+ * timeout을 두는 이유: 바쁜 페이지에서 유휴가 안 오면 영영 안 칠해진다.
+ */
+function schedule(work) {
+  const ric = typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback : null
+  function step(deadline) {
+    const t0 = Date.now()
+    let more = true
+    while (more) {
+      const budgetLeft = deadline && typeof deadline.timeRemaining === 'function'
+        ? deadline.timeRemaining() > 4
+        : Date.now() - t0 < 12
+      if (!budgetLeft) break
+      more = work()
+    }
+    if (more) next()
+  }
+  function next() {
+    if (ric) ric(step, { timeout: 1000 })
+    else setTimeout(function () { step(null) }, 0)
+  }
+  next()
+}
+
 export default function initCode() {
   const pres = []
   contentRoots().forEach(function (root) {
@@ -323,11 +357,15 @@ export default function initCode() {
   if (!pres.length) return
 
   register()
-  pres.forEach(function (pre) {
+  let i = 0
+  schedule(function () {
+    const pre = pres[i++]
+    if (!pre) return false
     try {
       enhance(pre)
     } catch (e) {
       /* 블록 하나가 실패해도 나머지는 처리한다. 원문은 그대로 남는다. */
     }
+    return i < pres.length
   })
 }
