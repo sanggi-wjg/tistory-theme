@@ -5,7 +5,7 @@
 인라인 스타일 오염과 코드블록 실태를 집계한다(--bodies).
 
 이 프로젝트의 설계 결정 대부분이 이 수치에서 나왔다. 잘못 집계하면
-잘못된 CSS가 만들어진다 — DECISIONS.md §7의 정정 기록 참조.
+잘못된 CSS가 만들어진다 — DECISIONS.md §5의 정정 기록 참조.
 
 사용:
   python3 .claude/skills/blog-census/scripts/census.py --posts

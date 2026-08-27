@@ -27,7 +27,7 @@ model: opus
 
 ## 이 프로젝트의 확정 구조
 
-`DECISIONS.md`의 E안을 따른다. 상세는 `DESIGN.md` §4.
+`DECISIONS.md` 결정 30(좌측 레일)을 따른다. 상세는 `DESIGN.md` §4.
 
 | 페이지 | `body_id` | 구성 |
 |---|---|---|

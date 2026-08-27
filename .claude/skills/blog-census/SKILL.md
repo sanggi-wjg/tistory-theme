@@ -32,7 +32,7 @@ python3 .claude/skills/blog-census/scripts/census.py --posts --bodies --limit 50
 
 ## 집계에서 반드시 지킬 것
 
-여기 적힌 것들은 전부 **이 프로젝트에서 실제로 틀렸던 것**이다 (`DECISIONS.md` §7).
+여기 적힌 것들은 전부 **이 프로젝트에서 실제로 틀렸던 것**이다 (`DECISIONS.md` §5).
 
 | 함정 | 옳은 방법 |
 |---|---|
