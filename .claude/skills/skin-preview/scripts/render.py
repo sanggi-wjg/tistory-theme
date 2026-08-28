@@ -81,7 +81,12 @@ LIST_PAGES = {"category", "search", "tag", "archive", "empty"}
 POST_PAGES = {"page", "page_toc", "page_bare"}
 
 # page_bare에서 **없는 것으로 그리는** 영역. 티스토리는 값이 없으면 블록째 지운다.
-BARE_EMPTY_AREAS = {"s_tag_label", "s_article_related", "s_article_prev", "s_article_next"}
+#
+# ⚠ 이전·다음 중 **한쪽만** 지운다. 둘 다 없는 글은 이 블로그에 없다 — 첫 글도
+#   마지막 글도 한쪽은 있다(둘 다 없으려면 글이 한 편이어야 한다). 실재하지 않는
+#   상태를 그리면 그 화면을 보고 내린 판단이 전부 헛것이 된다. 실재하는 것은
+#   «한쪽만 있는» 상태이고, 첫 글·마지막 글에서 매번 나온다.
+BARE_EMPTY_AREAS = {"s_tag_label", "s_article_related", "s_article_next", "s_notice_rep"}
 
 # <s_list>는 **홈에서도 렌더된다.** 2026-08-25 실측 — 홈에 list_conform "전체 글",
 # list_count(전체 글 수), 글 카드, 페이징이 모두 나왔다. 렌더러가 이걸 몰라서
@@ -482,9 +487,6 @@ def item_scope(p, prefix, page=""):
         prefix + "_date_hour": "14", prefix + "_date_minute": "22", prefix + "_date_second": "05",
         prefix + "_summary": p["_summary"],
         prefix + "_desc": ARTICLE_BODY_TOC if page == "page_toc" else ARTICLE_BODY,
-        # page_bare는 댓글 0인 글이다 — 숫자가 나오되 0이다(결정 42의 세 영역 중
-        # 글 페이지는 «숫자가 나온다» 쪽이다). 목록·사이드바가 비는 것과 다르다.
-        **({prefix + "_rp_cnt": "0"} if page == "page_bare" and prefix == "article_rep" else {}),
         prefix + "_rp_cnt": rp_cnt(p, prefix),
         prefix + "_author": "상쾌한기분",
         prefix + "_thumbnail": "https://placehold.co/400x250/eeeeee/999999?text=thumb",
@@ -678,7 +680,7 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     #    모른다. 여기서는 .contents_style을 **씌우지 않은** 형태로 낸다 — 최악의 경우를
     #    보여 주는 쪽이 안전하고, js/notice.js가 그 경우를 받는지도 같이 보인다.
     if name == "s_notice_rep":
-        if page not in ("index", "page", "page_toc"):
+        if page not in (POST_PAGES | {"index"}) or name in (BARE_EMPTY_AREAS if page == "page_bare" else ()):
             return ""
         buf = []
         for i, pst in enumerate(posts[:2]):

@@ -42,7 +42,7 @@ model: opus
 - 영역 치환자가 올바른 위치에 있는가 — `<s_permalink_article_rep>`·`<s_index_article_rep>`는 `<s_article_rep>` **안**(결정 29, `SUB008`), `*_group`은 자기 래퍼 `<s_rp>`·`<s_guest>` 안(결정 34, `SUB009`), 목록은 홈까지 `<s_list_rep>` 한 벌(결정 29)
 
 ### 페이지 타입 커버리지
-`tt-body-index` `tt-body-page` `tt-body-category` `tt-body-archive` `tt-body-tag` `tt-body-search` `tt-body-guestbook` 각각이 **빈 화면 없이** 렌더링되는가. 로컬 프리뷰(`/skin-preview`)가 만드는 11개 페이지를 모두 확인한다.
+`tt-body-index` `tt-body-page` `tt-body-category` `tt-body-archive` `tt-body-tag` `tt-body-search` `tt-body-guestbook` 각각이 **빈 화면 없이** 렌더링되는가. 로컬 프리뷰(`/skin-preview`)가 만드는 12개 페이지를 모두 확인한다.
 
 ### 다크모드
 - 세 상태(`data-theme="dark"` / `"light"` / **stamp 없음**)에서 모두 정상인가

@@ -402,7 +402,7 @@ def resolve_targets(base, base_host, cli_post=None, cli_cat=None):
 def page_targets(base, base_host):
     """라이브 URL 8종.
 
-    skin-preview는 10개를 렌더하지만 그중 page_toc·tag_cloud는 **같은 URL 타입의 다른 상태**다
+    skin-preview는 12개를 렌더하지만 그중 page_toc·tag_cloud는 **같은 URL 타입의 다른 상태**다
     (목차 유/무, 태그 목록/클라우드). 여기서 세는 것은 URL 종류이므로 8이 맞다.
     """
     t = resolve_targets(base, base_host)
