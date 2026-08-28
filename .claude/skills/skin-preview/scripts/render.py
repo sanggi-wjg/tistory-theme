@@ -57,6 +57,14 @@ PAGE_TYPES = {
     # **화면에 한 번도 나온 적이 없었다** — 결정 3("전 페이지 타입 동작 보장")의 범위인데
     # 확인 수단이 0이었다.
     "protected": "tt-body-page",
+    # 부속이 **전부 비어 있는** 글. 태그 0 · 관련글 0 · 이전다음 없음 · 공지 0 ·
+    # [##_blog_menu_##] 빈 값(라이브가 그렇다 — 메뉴를 설정하지 않았다).
+    # 2026-08-28까지 프리뷰는 이 조건을 **한 번도 그리지 않았다** — 태그는 늘 8개,
+    # 관련글 5개, 이전다음 둘 다 있었다. 값이 비면 장식만 남는 실패(결정 42)가
+    # 태어난 자리가 정확히 이 부류인데, 그것을 볼 화면이 없었다.
+    # 실블로그에서 이 상태가 나오는 때 — 태그를 안 단 글(흔하다), 그 카테고리에
+    # 글이 하나뿐일 때, 첫 글·마지막 글(이전 또는 다음이 없다).
+    "page_bare": "tt-body-page",
     # /tag(클라우드)와 /tag/이름(목록)은 body_id가 둘 다 tt-body-tag지만
     # 렌더되는 영역이 다르다. 한 페이지에 둘 다 그리면 h1이 두 개가 되어
     # 실블로그에 없는 화면을 보게 된다. 그래서 나눈다 —
@@ -66,6 +74,14 @@ PAGE_TYPES = {
 }
 
 LIST_PAGES = {"category", "search", "tag", "archive", "empty"}
+
+# 글 퍼머링크 페이지. 셋 다 s_article_rep 안이 렌더되고 body_id가 tt-body-page다.
+# 하나로 묶어 두지 않으면 페이지를 더할 때마다 `("page", "page_toc")` 튜플을
+# 여기저기서 고쳐야 하고, 한 곳을 빠뜨리면 그 영역만 조용히 비어 나온다.
+POST_PAGES = {"page", "page_toc", "page_bare"}
+
+# page_bare에서 **없는 것으로 그리는** 영역. 티스토리는 값이 없으면 블록째 지운다.
+BARE_EMPTY_AREAS = {"s_tag_label", "s_article_related", "s_article_prev", "s_article_next"}
 
 # <s_list>는 **홈에서도 렌더된다.** 2026-08-25 실측 — 홈에 list_conform "전체 글",
 # list_count(전체 글 수), 글 카드, 페이징이 모두 나왔다. 렌더러가 이걸 몰라서
@@ -359,7 +375,11 @@ def globals_for(page, posts, cats, skin_vars):
         "blog_image": '<img src="https://placehold.co/200x200/eeeeee/999999?text=logo" alt="">',
         "blog_link": "/", "rss_url": "/rss", "taglog_link": "/tag", "guestbook_link": "/guestbook",
         "page_title": "상쾌한기분", "body_id": PAGE_TYPES[page],
-        "blog_menu": '<ul class="blog-menu"><li><a href="/">홈</a></li>'
+        # ⚠ 라이브는 이 값이 **비어 있다** — 블로그 관리에 메뉴를 설정하지 않았다.
+        #   프리뷰가 늘 메뉴를 그려서 `.site-nav:empty` 경로(빈 줄이 헤더를 13px
+        #   키우던 것, 결정 50)가 화면에 한 번도 안 나왔다. page_bare가 그 조건을 낸다.
+        "blog_menu": "" if page == "page_bare" else
+                     '<ul class="blog-menu"><li><a href="/">홈</a></li>'
                      '<li><a href="/tag">태그</a></li><li><a href="/guestbook">방명록</a></li></ul>',
         # 두 치환자를 **다른 마크업**에 매핑한다. 같은 것에 매핑해 두었다가
         # 2026-08-25 첫 배포에서 폴더형이 나간 것을 못 잡았다 (DECISIONS.md 결정 31).
@@ -462,6 +482,9 @@ def item_scope(p, prefix, page=""):
         prefix + "_date_hour": "14", prefix + "_date_minute": "22", prefix + "_date_second": "05",
         prefix + "_summary": p["_summary"],
         prefix + "_desc": ARTICLE_BODY_TOC if page == "page_toc" else ARTICLE_BODY,
+        # page_bare는 댓글 0인 글이다 — 숫자가 나오되 0이다(결정 42의 세 영역 중
+        # 글 페이지는 «숫자가 나온다» 쪽이다). 목록·사이드바가 비는 것과 다르다.
+        **({prefix + "_rp_cnt": "0"} if page == "page_bare" and prefix == "article_rep" else {}),
         prefix + "_rp_cnt": rp_cnt(p, prefix),
         prefix + "_author": "상쾌한기분",
         prefix + "_thumbnail": "https://placehold.co/400x250/eeeeee/999999?text=thumb",
@@ -542,9 +565,9 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     if name == "s_index_article_rep":
         return repeat(inner, posts[:12], "article_rep", ctx, page, posts) if page == "index" else ""
     if name == "s_permalink_article_rep":
-        return R(inner, {**ctx, **item_scope(posts[0], "article_rep", page)}) if page in ("page", "page_toc") else ""
+        return R(inner, {**ctx, **item_scope(posts[0], "article_rep", page)}) if page in POST_PAGES else ""
     if name == "s_article_rep":
-        if page in ("page", "page_toc"):
+        if page in POST_PAGES:
             return R(inner, {**ctx, **item_scope(posts[0], "article_rep", page)})
         if page == "index":
             return repeat(inner, posts[:12], "article_rep", ctx, page, posts)
@@ -567,7 +590,11 @@ def handle_group(name, attrs, inner, ctx, page, posts):
 
     # 글 페이지 부속
     if name in ("s_article_related", "s_tag_label", "s_rp", "s_article_prev", "s_article_next"):
-        if page not in ("page", "page_toc"):
+        if page not in POST_PAGES:
+            return ""
+        # 부속이 빈 글. s_rp는 남는다 — 댓글 영역은 댓글이 0개여도 티스토리가 그린다
+        # (라이브 실측: 댓글 0인 글에도 입력 폼이 나온다). 나머지 넷은 블록째 사라진다.
+        if page == "page_bare" and name in BARE_EMPTY_AREAS:
             return ""
         if name == "s_article_prev":
             return R(inner, {**ctx, **item_scope(posts[1], "article_prev", page)})
