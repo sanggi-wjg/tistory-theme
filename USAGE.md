@@ -9,7 +9,7 @@ Node 20+(`.nvmrc`·CI는 26) · Python 3. 처음 한 번 `npm install`.
 | `npm run build` | `src/` → `dist/` 배포 산출물 생성 |
 | `npm run watch` | 변경 감시 빌드 |
 | `npm run lint` | 정적 검증. 오류가 있으면 exit 1 |
-| `npm run preview` | 빌드 후 `_preview/`에 11개 페이지 렌더 |
+| `npm run preview` | 빌드 후 `_preview/`에 12개 페이지 렌더 |
 | `npm run check` | 빌드 → 린트 → CSS 구문(`test:css`) → 테스트 → 프리뷰. **커밋 전에 통과해야 한다** |
 | `npm run preview:images` | 관리 화면용 미리보기 이미지 4종 재생성 (macOS + Chrome 필요) |
 | `npm run icons` | 파비콘·블로그 아이콘 재생성 → `src/assets/brand/` (결정 49) |

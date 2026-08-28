@@ -200,7 +200,7 @@ skin-qa (일괄 검증)
 ## Phase 4: 빌드·프리뷰·검증
 
 1. `/skin-build` — `npm run build`
-2. `/skin-preview` — 11개 페이지 렌더, 경고 확인
+2. `/skin-preview` — 12개 페이지 렌더, 경고 확인
 3. `/skin-qa-check` — 린트. **오류 0이 될 때까지 Phase 3로 되돌린다** (최대 3회). `SEO001`(반복 블록 안의 `h1`)과 `SEO002`(내부링크 치환자 **전부** 누락)도 오류다 — 일부만 빠지면 경고다
 4. **다크모드를 프리뷰에서 눈으로 본다.** 린트는 규칙의 **존재**만 확인한다. 티스토리 시트와의
    특이도 싸움에서 실제로 이기는지는 계산된 색을 봐야 안다 (DESIGN.md §5.2b).
@@ -280,9 +280,9 @@ skin-qa (일괄 검증)
 3. Phase 1 — `data/posts.json`이 최신이라 건너뜀
 4. Phase 2 — 팀 4명 + 작업 15개 등록
 5. Phase 3 — markup이 훅 계약 공표 → 셋이 병렬 작업, qa가 중간 검증 2회
-6. Phase 4 — 빌드 → 프리뷰 11페이지 → 린트 오류 2건 → Phase 3 복귀 → 재검증 통과
+6. Phase 4 — 빌드 → 프리뷰 12페이지 → 린트 오류 2건 → Phase 3 복귀 → 재검증 통과
 7. Phase 5 — 팀 정리, 커밋 → `/pr-review-gate` 경고 1·차단 0 → 마커 → 푸시 → PR
-8. 예상 결과: `dist/skin.html` · `dist/style.css` · `dist/images/script.js` 생성, 프리뷰 11페이지 정상
+8. 예상 결과: `dist/skin.html` · `dist/style.css` · `dist/images/script.js` 생성, 프리뷰 12페이지 정상
 
 ### 에러 흐름
 1. Phase 3에서 `skin-behavior`가 응답 없음
