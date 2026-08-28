@@ -1410,7 +1410,11 @@
   margin: var(--sp-5) 0;
 }
 
-.code-wrap pre { margin: 0; }
+/* ⚠ `.contents_style` 접두가 필요하다. 상대(`.contents_style pre`, content.css)가 (0,1,1)이라
+   `.code-wrap pre`도 (0,1,1)로 동점이고, 지금 이기는 것은 **빌드가 잇는 순서** 덕이다
+   (CSS_ORDER에서 components가 content보다 뒤). 파일을 쪼개거나 순서를 바꾸는 순간 조용히
+   뒤집힌다 — `.table-scroll > table`은 같은 위험을 주석으로만 적어 두었던 자리다. */
+.contents_style .code-wrap pre { margin: 0; }
 
 .code-lang {
   position: absolute;

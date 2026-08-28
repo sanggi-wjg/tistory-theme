@@ -347,8 +347,10 @@ Vercel docs는 `max-width` 래퍼가 없다. 레일을 뷰포트 왼쪽, 목차�
 
 4px 기준. `4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 · 96`
 
-- 카드 내부 패딩 16px, 카드 사이 간격 24px
-- 섹션 사이 48px, 페이지 상하 여백 64px
+- **카드에는 내부 패딩이 없다** — 썸네일이 모서리까지 차고, 자식 간격은 `.post-link`의 `gap` 12px이다.
+  카드 사이 간격은 24px(`--sp-5`).
+- 섹션 사이 48px. **페이지 여백은 위 48px · 아래 96px**(`.layout`의 `--sp-7`/`--sp-9`) — 위아래가 다르다.
+  아래를 넓게 둔 것은 푸터와 붙지 않게 하려는 것이다.
 - 본문 문단 사이 24px, 소제목 위 48px / 아래 16px
 
 ### 모서리
@@ -385,6 +387,16 @@ Vercel docs는 `max-width` 래퍼가 없다. 레일을 뷰포트 왼쪽, 목차�
 **1399px에서 1400px로 넘어가는 순간 거터가 48 → 28.5로 한 번 좁아진다.** 목차가
 들어오면서 같은 폭에 트랙이 하나 늘기 때문이고, 1440px이면 다시 48로 돌아온다.
 창을 줄일 때만 보이는 과도 구간이라 그대로 둔다 — 페이지를 옮길 때 뛰는 것은 아니다.
+
+**위 표에 없는 문턱이 셋 더 있다** — 표는 «레이아웃이 바뀌는 폭»만 적고, 아래는 컴포넌트 하나씩만
+바꾸므로 따로 둔다. 새 문턱을 만들 때는 표와 이 목록 중 어디에 속하는지 정한다.
+
+| 폭 | 무엇 | 어디 |
+|---|---|---|
+| `max-width: 640px` | 헤더 압축 — 브랜드 설명을 접고 검색을 96px로(결정 50) | `components.css` |
+| `max-width: 767px` | 블로그 메뉴(`.site-nav`)를 헤더 아랫줄로 내린다. **메뉴가 비면 `:empty`가 먼저 지운다**(결정 50) | `components.css` |
+| `min-width: 561px` | 목록 4종의 카드를 세로 → **가로**(썸네일 왼쪽)로 | `components.css` |
+| `min-width: 768px` | `--pad-x` 20 → 24px | `tokens.css` |
 
 1399px 이하에서 접히는 것은 **목차**다. 카테고리는 모든 데스크톱 폭에서 남는다.
 
@@ -551,13 +563,22 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 ### 6.1 카드 (홈 그리드 / 목록)
 
 ```
-.post
-  .thumb        16:10, radius lg, 1px hairline
-    img         대표이미지가 있을 때만 (치환자가 없으면 블록째 사라짐)
-  .cat          caption, --link
-  .title        display-sm, 2줄 클램프
-  .meta         caption, --ink-mute, tabular-nums
+.post                     ← <article>. data-cat에 카테고리 전체 경로가 들어간다
+  .post-link              ← 카드 전체를 감싼 단 하나의 <a> (중첩 앵커를 피한다)
+    .thumb                16:10, radius lg, 1px hairline
+      img.thumb-img       대표이미지가 있을 때만 (치환자가 없으면 블록째 사라짐)
+    .post-text
+      .post-cat           caption, --link
+      .post-title         display-sm, 2줄 클램프
+      .post-excerpt       발췌
+      .post-meta          caption, --ink-mute, tabular-nums
+        .post-date · .post-rp
 ```
+
+**이름은 `docs/hooks.md` §2가 정본이다.** 2026-08-28까지 여기에는 `.cat`·`.title`·`.meta`로 적혀
+있었는데 실제 마크업은 `.post-cat`·`.post-title`·`.post-meta`다 — 접두 없는 이름은 이 스킨에
+하나도 없다. 카드 자식이 전부 인라인 요소(span·strong·time)인 것도 `.post-link` 하나로 감쌌기
+때문이다(hooks.md §2).
 
 - **제목은 반드시 2줄에서 자른다.** 홈에 노출되는 최신 20편의 제목 중앙값이 49자, 40자 초과가 75%다.
 - 카드 높이를 고정해 그리드 정렬을 유지한다.
@@ -631,10 +652,10 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 .post[data-cat="기록"] .thumb::before            { background-image: var(--ph-note), var(--ph-note-svg); }
 
 /* 3층 — 진짜 대표이미지가 있으면 앞의 둘을 덮는다. z-index가 있어야 ::before 위로 온다 */
-.post .thumb img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
+.post .thumb-img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
 
 /* 카테고리 목록에서는 같은 그림이 최대 15번 반복되므로 감춘다 (결정 7) */
-#tt-body-category .post:not(:has(.thumb img)) .thumb { display: none; }
+#tt-body-category .post:not(:has(.thumb-img)) .thumb { display: none; }
 ```
 
 - **이미지는 WebP 래스터 30장이다** — `src/assets/placeholders/<slug>-{light,dark}.webp`, **800×500(16:10)**, 장당 **100KB 이하**. 원본은 `src/assets/placeholders-src/<slug>-<theme>.{png,jpg,webp,svg}`에 두고 `npm run placeholders`(`scripts/prep-placeholders.mjs`)가 크롭·변환한다. 배포 때 스킨 편집기 파일업로드 탭으로 `images/`에 올린다. 2026-08-27까지는 SVG 마스크 15장을 `data:` URI로 `style.css`에 인라인했다 — 결정 5·6 개정.
@@ -657,12 +678,12 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 ```css
 .contents_style pre {
   font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: var(--fs-mono);      /* 13px */
+  line-height: var(--lh-mono);    /* 1.7 */
   background: var(--canvas-soft);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: var(--sp-4);           /* 16px */
   overflow-x: auto;          /* 줄바꿈하지 않는다 — 최대 1,777자짜리 줄이 있다 */
 }
 ```
