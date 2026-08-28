@@ -189,16 +189,32 @@ async function inlineFixCss() {
   const systemDark  = indent(darkRules(DARK_SYSTEM))
   const systemLight = indent(lightRules(LIGHT_SYSTEM))
 
-  const out = [
-    `/* ── 인라인 스타일 보정 (data/inline-styles.json ${d.crawledAt ?? ''}에서 생성 — 직접 수정하지 말 것) ── */`,
-    `/* 폰트 — 전부 무력화. inherit이므로 <pre> 안에서는 --font-mono를 물려받는다 */`,
-    `.contents_style [style*="font-family"] { font-family: inherit !important; }`,
+  // ── 인쇄 (결정 52) ──────────────────────────────────────────────
+  // 종이는 팔레트가 **라이트로 고정**된다(tokens.css가 다크 블록을 @media not print로 좁혔다).
+  // 그런데 여기 보정은 테마 스코프에 묶여 있어 인쇄를 모른다 — 다크를 명시한 사용자가
+  // 인쇄하면 배경은 흰데 **라이트 보정이 한 줄도 발화하지 않는다**:
+  //   · 밝은 글자(#eeffff 13곳)가 흰 종이에 그대로 → 안 보인다
+  //   · 어두운 배경(#212121 13곳)은 검은 상자로 남는데 그 안 글자는 다크 규칙이
+  //     var(--ink-body)=#4d4d4d로 !important 고정 → 1.9:1
+  // 그래서 테마 스코프 전체를 화면에만 걸고, 종이에는 **라이트 보정만** 테마 없이 건다.
+  // 여섯 상태 대칭(위 주석)은 화면 안에서 그대로 유지된다.
+  const themed = [
     darkRules(DARK_EXPLICIT),
     `/* stamp 없음(시스템 따름) 상태 — 저장된 선택이 없는 첫 방문자의 기본값이다 */`,
     `@media (prefers-color-scheme: dark) {\n${systemDark}\n}`,
     lightRules(LIGHT_EXPLICIT),
     `/* stamp 없음 + 시스템 라이트 */`,
     `@media (prefers-color-scheme: light) {\n${systemLight}\n}`,
+  ].filter(Boolean).join('\n')
+
+  const out = [
+    `/* ── 인라인 스타일 보정 (data/inline-styles.json ${d.crawledAt ?? ''}에서 생성 — 직접 수정하지 말 것) ── */`,
+    `/* 폰트 — 전부 무력화. inherit이므로 <pre> 안에서는 --font-mono를 물려받는다 */`,
+    `.contents_style [style*="font-family"] { font-family: inherit !important; }`,
+    `/* 아래 보정은 테마에 묶여 있으므로 화면 전용이다 — 종이는 그 아래 인쇄 블록이 맡는다 */`,
+    `@media not print {\n${indent(themed)}\n}`,
+    `/* 인쇄 — 팔레트가 라이트로 고정되므로 라이트 보정만, 테마 스코프 없이 건다 (결정 52) */`,
+    `@media print {\n${indent(lightRules('.contents_style'))}\n}`,
   ].filter(Boolean).join('\n')
 
   const n = (darkTextHex.length + darkBgHex.length + accentHex.length
