@@ -207,8 +207,53 @@
 /* ── 다크 : 시스템 따름 (stamp 없음) ──────────────────────────────
    :not([data-theme="light"]) 가드가 없으면, 사용자가 라이트를 명시했는데
    OS가 다크일 때 OS가 이긴다. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+/* ⚠ `@media not print`로 감싼다 — 인쇄는 라이트 팔레트로 나간다 (결정 52).
+   전에는 인쇄 블록에서 토큰을 **다시 나열**했는데, 다크가 재정의하는 것이 20종이 넘어
+   (`--code-*` 6종 · `--link-deep` · `--link-bg-soft` · `--error` · `--selection-*` · `--veil` …)
+   나열은 반드시 갈라진다. 실제로 첫 판이 10종만 덮어, 다크 사용자가 인쇄하면 흰 종이에
+   다크 코드색(`--code-string #5ec27a`)과 다크 강조색(`--error #ff6166`)이 그대로 남았다.
+   **덮는 대신 다크를 화면에만 건다** — 종이는 위 `:root`의 라이트 정의를 그대로 쓴다. */
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --canvas:          #0a0a0a;
+      --canvas-soft:     #121212;
+      --canvas-soft-2:   #1a1a1a;
+      --surface:         #121212;
+      --hairline:        #2e2e2e;
+      --hairline-strong: #454545;
+      --ink:             #ededed;
+      --ink-body:        #b0b0b0;
+      --ink-mute:        #8f8f8f;
+      --link:            #3291ff;
+      --link-deep:       #52a8ff;
+      --link-bg-soft:    #10233f;
+      --error:           #ff6166;
+      --warning:         #f7b955;
+      --accent-cyan:     #50e3c2;
+      /* 코드 구문 색 — 세 면(#0a0a0a / #121212 / #1a1a1a) 실측은 결정 44 */
+      --code-keyword:    #3291ff;
+      --code-string:     #5ec27a;
+      --code-number:     #e0a458;
+      --code-fn:         #c4a7f7;
+      --code-comment:    #8f8f8f;
+      --code-deleted:    #ff6166;
+      --selection-bg:    #ededed;
+      --selection-fg:    #171717;
+      --icon-sun-display:  block;
+      --icon-moon-display: none;
+      --font-smooth:     auto;
+      --font-smooth-moz: auto;
+      --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */
+    }
+  }
+}
+
+/* ── 다크 : 사용자가 명시 ──────────────────────────────────────── */
+/* 위와 같은 이유로 화면 전용이다 (결정 52). */
+@media not print {
+  :root[data-theme="dark"] {
     color-scheme: dark;
     --canvas:          #0a0a0a;
     --canvas-soft:     #121212;
@@ -240,40 +285,6 @@
     --font-smooth-moz: auto;
     --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */
   }
-}
-
-/* ── 다크 : 사용자가 명시 ──────────────────────────────────────── */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --canvas:          #0a0a0a;
-  --canvas-soft:     #121212;
-  --canvas-soft-2:   #1a1a1a;
-  --surface:         #121212;
-  --hairline:        #2e2e2e;
-  --hairline-strong: #454545;
-  --ink:             #ededed;
-  --ink-body:        #b0b0b0;
-  --ink-mute:        #8f8f8f;
-  --link:            #3291ff;
-  --link-deep:       #52a8ff;
-  --link-bg-soft:    #10233f;
-  --error:           #ff6166;
-  --warning:         #f7b955;
-  --accent-cyan:     #50e3c2;
-  /* 코드 구문 색 — 세 면(#0a0a0a / #121212 / #1a1a1a) 실측은 결정 44 */
-  --code-keyword:    #3291ff;
-  --code-string:     #5ec27a;
-  --code-number:     #e0a458;
-  --code-fn:         #c4a7f7;
-  --code-comment:    #8f8f8f;
-  --code-deleted:    #ff6166;
-  --selection-bg:    #ededed;
-  --selection-fg:    #171717;
-  --icon-sun-display:  block;
-  --icon-moon-display: none;
-  --font-smooth:     auto;
-  --font-smooth-moz: auto;
-  --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */
 }
 
 /* ── 가림막을 토큰에서 파생시키는 건 지원 브라우저에서만 ──────────
