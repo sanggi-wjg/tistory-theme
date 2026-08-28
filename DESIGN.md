@@ -388,15 +388,21 @@ Vercel docs는 `max-width` 래퍼가 없다. 레일을 뷰포트 왼쪽, 목차�
 들어오면서 같은 폭에 트랙이 하나 늘기 때문이고, 1440px이면 다시 48로 돌아온다.
 창을 줄일 때만 보이는 과도 구간이라 그대로 둔다 — 페이지를 옮길 때 뛰는 것은 아니다.
 
-**위 표에 없는 문턱이 셋 더 있다** — 표는 «레이아웃이 바뀌는 폭»만 적고, 아래는 컴포넌트 하나씩만
-바꾸므로 따로 둔다. 새 문턱을 만들 때는 표와 이 목록 중 어디에 속하는지 정한다.
+**위 표에 없는 문턱이 일곱 있다** — 표는 «레이아웃이 바뀌는 폭»(레일·열 수·목차)만 적고, 아래는
+컴포넌트 하나씩만 바꾸므로 따로 둔다. 새 문턱을 만들 때는 표와 이 목록 중 어디에 속하는지 정하고,
+**같은 폭을 다른 이유로 쓰면 줄을 따로 적는다** — 640과 641이 각각 둘씩이다.
 
 | 폭 | 무엇 | 어디 |
 |---|---|---|
 | `max-width: 640px` | 헤더 압축 — 브랜드 설명을 접고 검색을 96px로(결정 50) | `components.css` |
+| `max-width: 640px` | 제목 한 단 축소 — `.entry-title`·`.list-title`·`.tagcloud-title`이 `display-md`로 | `components.css` |
 | `max-width: 767px` | 블로그 메뉴(`.site-nav`)를 헤더 아랫줄로 내린다. **메뉴가 비면 `:empty`가 먼저 지운다**(결정 50) | `components.css` |
 | `min-width: 561px` | 목록 4종의 카드를 세로 → **가로**(썸네일 왼쪽)로 | `components.css` |
+| `min-width: 641px` | 홈 **주목 글**(첫 카드)을 가로로 — 썸네일이 왼쪽 46% | `components.css` |
+| `min-width: 641px` | 이전/다음 글을 1열 → **2열**로 | `components.css` |
 | `min-width: 768px` | `--pad-x` 20 → 24px | `tokens.css` |
+
+`layout.css`의 `min-width: 641px`(홈 그리드 2열)은 여기가 아니라 **위 표**의 「641~1024px 2열」이다.
 
 1399px 이하에서 접히는 것은 **목차**다. 카테고리는 모든 데스크톱 폭에서 남는다.
 
@@ -591,7 +597,9 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 ```html
 <article class="post" data-cat="[##_list_rep_category_##]">
   <span class="thumb">
-    <s_list_rep_thumbnail><img src="[##_list_rep_thumbnail_##]" alt=""></s_list_rep_thumbnail>
+    <s_list_rep_thumbnail>
+      <img class="thumb-img" src="[##_list_rep_thumbnail_##]" alt="" loading="lazy" decoding="async">
+    </s_list_rep_thumbnail>
   </span>
 </article>
 ```
@@ -652,7 +660,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 .post[data-cat="기록"] .thumb::before            { background-image: var(--ph-note), var(--ph-note-svg); }
 
 /* 3층 — 진짜 대표이미지가 있으면 앞의 둘을 덮는다. z-index가 있어야 ::before 위로 온다 */
-.post .thumb-img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
+.thumb-img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
 
 /* 카테고리 목록에서는 같은 그림이 최대 15번 반복되므로 감춘다 (결정 7) */
 #tt-body-category .post:not(:has(.thumb-img)) .thumb { display: none; }
