@@ -51,12 +51,19 @@
    그 폭에서 240px 레일을 세우면 본문이 읽을 수 없게 좁아진다. */
 .sidebar { display: none; }
 
-#tt-body-index    .sidebar,
-#tt-body-page     .sidebar,
-#tt-body-category .sidebar,
-#tt-body-search   .sidebar,
-#tt-body-tag      .sidebar,
-#tt-body-archive  .sidebar { display: block; min-width: 0; }
+/* ⚠ `@media not print`로 감싼 이유 — 인쇄에서 레일을 끄려면 이 규칙을 이겨야 하는데
+   상대가 ID 스코프(1,1,0)라 클래스로는 못 이기고, `!important`는 이 저장소에서
+   **인라인 스타일 보정 전용**이다(components.css 머리말). 끄는 규칙을 새로 쓰는 대신
+   켜는 쪽을 좁힌다 — 종이에는 위 `.sidebar { display: none }`가 그대로 남는다.
+   인쇄 규칙 본체는 components.css 「인쇄」 절에 있다 (결정 52). */
+@media not print {
+  #tt-body-index    .sidebar,
+  #tt-body-page     .sidebar,
+  #tt-body-category .sidebar,
+  #tt-body-search   .sidebar,
+  #tt-body-tag      .sidebar,
+  #tt-body-archive  .sidebar { display: block; min-width: 0; }
+}
 
 /* ── 페이지별 폭 ─────────────────────────────────────────────────
    본문 폭 800px은 index.xml <contentWidth>와의 계약이다(hooks.md §4).
