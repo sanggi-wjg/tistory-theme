@@ -206,6 +206,11 @@
   display: block;
 }
 
+/* ⚠ base.css의 `img`(0,0,1)와 겹쳐 보이지만 **지우면 안 된다.** 티스토리 content.css가
+   img·hr·iframe·video를 건드리는 규칙을 27개 갖고 있고(2026-08-28 실측), 그중 다수가
+   `figure img`(0,1,1)이나 `#tt-body-page figure img`(1,0,2)다. 우리 base 규칙은 (0,0,1)이라
+   `figure img`에도 진다 — 여기 (0,1,1)이 동점을 만들고, 우리 시트가 뒤에 오므로 이긴다.
+   ID 스코프 상대는 여전히 못 이기지만 그건 이 규칙이 없어도 마찬가지다. */
 .contents_style img {
   height: auto;
   max-width: 100%;
