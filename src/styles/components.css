@@ -1130,7 +1130,15 @@
 }
 
 /* ══════════ 페이징 ════════════════════════════════════════════
-   티스토리가 더 갈 곳이 없을 때 no_more_prev / no_more_next를 함께 붙인다. */
+   라이브 실측 2026-09-10. 티스토리가 내보내는 세 가지를 전제한다 —
+   소스만 보면 셋 다 보이지 않고, 틀려도 화면에 에러가 없다.
+
+   ① [##_paging_rep_link_num_##]는 숫자가 아니라 <span class="selected">N</span>
+      / <span class="">N</span>으로 치환된다. **현재 페이지 표시는 이 span뿐이다** —
+      앵커에는 아무 표시도 붙지 않는다.
+   ② 생략 부호 ···도 a.paging-num으로 나오는데 **href가 없다.**
+   ③ 더 갈 곳이 없을 때 붙는 클래스는 no-more-prev / no-more-next(**하이픈**)다.
+      밑줄(no_more_prev)은 라이브에 존재하지 않는 이름이라 지웠다. */
 
 .paging {
   display: flex;
@@ -1170,8 +1178,39 @@
   gap: var(--sp-2);
 }
 
-.paging .no_more_prev,
-.paging .no_more_next {
+/* ── 현재 페이지 ───────────────────────────────────────────────
+   카테고리 트리의 현재 가지와 같은 어휘다 — --canvas-soft-2 알약 + --link
+   글자(DESIGN §5.3, 결정 37). 표시가 span에만 붙어 있어 앵커를 :has()로 잡는다.
+   :hover와 특이도가 (0,2,1)로 같으므로 **이 규칙이 뒤에 와야** 현재 페이지가
+   hover에서 색을 바꾸지 않는다. 순서가 계약이다.
+   :has() 미지원 브라우저에서는 아래 span 규칙만 적용돼 글자색으로만 표시된다. */
+.paging a:has(> .selected) {
+  background: var(--canvas-soft-2);
+  border-color: var(--hairline);
+  color: var(--link);
+  font-weight: 600;
+}
+
+.paging .selected {
+  color: var(--link);
+  font-weight: 600;
+}
+
+/* ── href 없는 앵커 ────────────────────────────────────────────
+   생략 부호와 비활성 이전/다음 둘 다다. 클릭 대상이 아니다. */
+.paging a:not([href]) {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* 생략 부호는 알약이 아니다 — 테두리를 지우고 글자만 남긴다. */
+.paging-num:not([href]) {
+  border-color: transparent;
+  color: var(--ink-mute);
+}
+
+.paging .no-more-prev,
+.paging .no-more-next {
   opacity: 0.35;
   pointer-events: none;
 }

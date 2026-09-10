@@ -425,6 +425,130 @@
 .entry-body .another_category h4,
 .entry-body .another_category h4 a { color: var(--ink) !important; }
 
+/* ══════════ Namecard 프로필 카드 ══════════════════════════════
+   **스킨 마크업이 아니다.** 티스토리가 글 페이지에서 `<s_rp>` 출력 **앞에**
+   `<div data-tistory-react-app="Namecard"></div>` 빈 껍데기를 주입하고
+   React가 런타임에 채운다. 방명록·홈에는 없다(2026-09-10 라이브 실측).
+   소스 HTML에는 클래스가 하나도 없어 크롤로는 존재조차 보이지 않는다 —
+   아래 tt_* 는 전부 라이브 DOM에서 직접 읽은 것이다.
+
+   부모는 우리 `.entry-main`이다. 그것을 접두의 첫 칸으로 쓴다.
+
+   ── 특이도 ────────────────────────────────────────────────────
+   상대 시트는 댓글 앱과 **같은 시트**(static/pc/dist/index.css)다. head에서는
+   우리보다 앞에 오지만 **순서에 기대지 않는다** — 순서는 티스토리가 정하고,
+   댓글 블록은 실제로 순서가 뒤집힌 채 실측됐다(아래 블록 주석). 상대 최대
+   특이도가 (0,3,0)(`.tt_btn_subscribe .tt_txt_g`, `.type2`)이므로 우리는
+   최소 (0,4,0)이어야 한다. 접두 자체가 (0,3,0)이고 marker를 붙이면 (0,4,0),
+   `.tt_btn_subscribe .tt_txt_g`까지 가면 (0,5,0)이다.
+
+     .entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard
+
+   이 접두를 **문자 그대로** 쓴다(§5.2b 원칙 3 — 줄이면 특이도가 떨어져 진다).
+   린트 TIS005가 이 문자열을 리터럴로 찾는다.
+
+   ── 무엇을 고치나 ─────────────────────────────────────────────
+   ① 라이트 전용 리터럴: 배경 #f7f7f7 · 이름 #333 · 설명 #888 ·
+      버튼 테두리 #555(구독 중 #d0d0d0) · 버튼 글자 #222.
+      다크에서 밝은 회색 판으로 떠 있었다(이슈 #59).
+   ② min-height:206px(600px 이하 225px). 내용은 ~120px이라 빈 공간이 남는다.
+      미디어쿼리는 특이도를 더하지 않으므로 우리 (0,4,0) 하나가 두 값을 다 이긴다 —
+      600px 분기를 따로 쓰지 않는다.
+   값은 토큰만 쓴다. 테마 분기를 여기서 하지 않는다(§5.2b 원칙 1). */
+
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard {
+  min-height: 0;
+  margin: var(--sp-6) 0 0;
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);   /* .postnav-item과 같은 모서리 — 바로 위에 붙는다 */
+}
+
+/* 32px 위 패딩은 206px 상자를 채우려던 값이다. 상자가 내용 높이로 내려앉으면
+   과해진다. 썸네일 마진도 같은 이유로 다시 준다(둘이 같은 줄을 만든다). */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_cont {
+  padding: var(--sp-5) 0 var(--sp-5) var(--sp-5);
+}
+
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_wrap_thumb {
+  margin: var(--sp-5) var(--sp-5) 0 0;
+  border-radius: var(--radius-md);
+}
+
+/* 상대가 얹는 검은 4% 오버레이. 다크에서는 어두운 위에 어두운 것을 덮어
+   의미가 없고 프로필 사진만 탁해진다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_wrap_thumb:after {
+  background-color: transparent;
+}
+
+/* 블로그 이름. .postnav-title(--fs-body-sm)을 그대로 쓰면 바로 아래 설명과
+   같은 크기가 돼 위계가 사라진다 — 한 급 위 --fs-body에 굵기로 급을 만든다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_tit_cont {
+  color: var(--ink);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body-sm);
+  font-weight: 600;
+}
+
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_desc {
+  color: var(--ink-mute);
+}
+
+/* ⚠ 조건 미상 — 2026-09-10 라이브 DOM에 **없다.** 그런데도 미리 덮는다.
+   index.css에 `.tt_box_namecard .tt_link` 갈래가 네 줄 있다(아이콘 14px +
+   12px 글자 + 화살표 한 줄, 자리는 .tt_desc와 .tt_btn_subscribe 사이).
+
+   남의 컴포넌트를 빌려 온 것이 아니라 **같은 카드의 다른 변형**으로 본 근거는
+   이 시트 전체를 단어 경계로 센 결과다(`.이름` 뒤에 [\w-]가 안 오는 것만):
+
+     .tt_tit_g       규칙 1개 · Namecard 밖 0
+     .tt_wrap_svg    규칙 2개 · Namecard 밖 0
+     .tt_link        규칙 5개 · Namecard 밖 0
+     .tt_ico_arrow2  규칙 2개 · Namecard 밖 **1** — 그 1개는 다른 컴포넌트의
+                     사용처가 아니라 아이콘 자신의 스프라이트 좌표 기본값
+                     (`.tt_ico_arrow2{width:5px;height:11px;background-position:…}`)
+
+   ⚠ 이것을 「네 이름이 Namecard 밖에서 한 번도 안 쓰인다」로 줄여 적으면
+     그 순간 거짓이 된다. 넷 중 하나는 밖에 있고, 밖에 있어도 결론이 서는
+     이유가 위의 괄호다. 단어 경계 없이 세도 양방향으로 틀린다 —
+     `.tt_tit_g`는 `.tt_tit_guide`에 접두로 걸려 «밖에 하나 있다»가 나온다.
+
+   뜨는 조건은 프로필 설정으로 보이지만 확인하지 못했다. 뜨는 순간 #333이
+   다크 카드에 1.3:1로 얹히고, **트리거가 코드가 아니라 설정이라 우리 쪽에는
+   아무 신호도 오지 않는다.** 선언 하나가 그보다 싸다.
+   TIS005의 namecardRules에는 넣지 않는다 — 그 목록은 실측한 것의 기록이다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_link .tt_tit_g {
+  color: var(--ink-body);
+}
+
+/* 구독 버튼. margin-bottom:32px도 206px 상자를 채우던 값이라 같이 걷는다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe {
+  margin: var(--sp-3) 0 0;
+  border-color: var(--hairline-strong);
+}
+
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe:hover {
+  border-color: var(--ink);
+}
+
+/* 구독 중 상태. 상대가 .type2로 (0,3,0)을 쓴다 — 우리는 (0,4,0)이라 이긴다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe.type2 {
+  border-color: var(--hairline);
+}
+
+/* 상대가 (0,3,0)으로 #222를 박는 유일한 자리. 접두 + marker 둘로 (0,5,0). */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_txt_g {
+  color: var(--ink-body);
+}
+
+/* 구독 버튼의 + 아이콘(.tt_ico_cross 12×12)은 티스토리 **스프라이트 이미지**다 —
+   색 토큰이 원리적으로 못 닿는다. 짙은 회색 십자라 다크에서는 보이지 않는다
+   (2026-09-10 라이브에 빌드 CSS를 주입해 확인). 테마 분기 대신 §2의 "색이 아닌
+   값" 토큰 --sprite-invert(라이트 0 · 다크 1)로 반전시킨다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_cross {
+  filter: invert(var(--sprite-invert));
+}
+
 /* ══════════ 댓글 · 방명록 ══════════════════════════════════════
    댓글과 방명록은 티스토리가 **런타임에 React로 그린다.** 소스 HTML에는
    `<div data-tistory-react-app="Comment"></div>` 빈 껍데기뿐이라 마크업을

@@ -205,6 +205,7 @@ CSS에 `@media`나 `[data-theme]` 분기가 새는 것을 막는 것이 목적�
 | `--icon-moon-display` | `block` | `none` | 위와 짝 |
 | `--font-smooth` | `antialiased` | `auto` | `body`의 `-webkit-font-smoothing` |
 | `--font-smooth-moz` | `grayscale` | `auto` | `body`의 `-moz-osx-font-smoothing` |
+| `--sprite-invert` | `0` | `1` | 티스토리 **스프라이트 이미지 아이콘**의 `filter: invert()` — Namecard 구독 버튼의 `+`(§5.4). 이미지라 색 토큰이 못 닿는 자리다 (결정 53) |
 
 **`--font-smooth`가 왜 테마별인가.** macOS에서 `antialiased`는 서브픽셀 렌더링을 끄고
 **획을 얇게** 만든다. 어두운 글자를 밝은 배경에 얹는 라이트에서는 깔끔해 보이지만,
@@ -563,6 +564,27 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 주요 훅: `.tt-comment-cont` · `.tt-box-total` · `.tt-area-reply` · `.tt-list-reply` · `.tt-item-reply` · `.tt-box-thumb` · `.tt-thumbnail` · `.tt-link-user` · `.tt_desc` · `.tt_date` · `.tt-cmt` · `.tt-btn_register`
 
 **직접 마크업을 짜지 않는다.** `<s_rp>` 계열 치환자는 구형이라 핀 고정·프로필 레이어·더보기를 잃는다.
+
+#### Namecard (블로그 프로필 카드)
+
+**우리 마크업이 아니다.** 티스토리가 **글 페이지에서만** `<s_rp>` 출력 앞에 `<div data-tistory-react-app="Namecard"></div>`를 주입하고 React가 채운다(방명록·홈에는 없다 — 2026-09-10 라이브 실측). 소스 HTML에는 클래스가 하나도 없어 크롤로도 프리뷰로도 보이지 않는다.
+
+**숨기지 않는다.** 블로그 이름·설명·구독 버튼은 독자에게 쓸모가 있다. 댓글 앱과 같은 방식으로 **토큰만 입힌다** (결정 53).
+
+선택자 접두는 아래 문자열을 **그대로** 쓴다. 줄이면 특이도가 떨어져 진다(§5.2b 원칙 3).
+
+```
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard
+```
+
+상대 시트는 댓글 앱과 같은 `static/pc/dist/index.css`이고 최대 특이도가 `(0,3,0)`이다(`.tt_btn_subscribe .tt_txt_g`, `.type2`). 접두 자체가 `(0,3,0)`, marker를 붙이면 `(0,4,0)` — **순서에 기대지 않고 특이도로 이긴다.**
+
+주요 훅: `.tt_box_namecard` · `.tt_cont` · `.tt_tit_cont` · `.tt_desc` · `.tt_btn_subscribe` · `.tt_txt_g` · `.tt_wrap_thumb` · `.tt_thumb_g`
+
+- 라이트 전용 리터럴 여섯: 배경 `#f7f7f7` · 이름 `#333` · 설명 `#888` · 버튼 테두리 `#555`(구독 중 `#d0d0d0`) · 버튼 글자 `#222`. 다크에서 밝은 회색 판으로 떴다.
+- `min-height: 206px`(600px 이하 `225px`)이 내용(~120px) 아래 빈 공간의 원인이다. **미디어쿼리는 특이도를 더하지 않으므로** `min-height: 0` 하나가 두 값을 다 이긴다 — 600px 분기를 따로 쓰지 않는다.
+- `.tt_ico_cross`(구독 버튼의 `+`)는 스프라이트 이미지 아이콘이라 색 토큰이 못 닿는다. 짙은 회색 십자라 다크에서 안 보였다(2026-09-10 라이브 주입 실측) — `--sprite-invert`(§2 "색이 아닌 값")로 반전시킨다.
+- 린트 `TIS005`가 접두 문자열과 여섯 marker의 덮어쓰기를 지킨다.
 
 ---
 
