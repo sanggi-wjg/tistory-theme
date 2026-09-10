@@ -12,7 +12,7 @@
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 51705,
+   "bytes": 52249,
    "url": "https://sanggi-jayg.tistory.com/"
   },
   "page": {
@@ -26,7 +26,7 @@
    "jsonld": [
     "BlogPosting"
    ],
-   "bytes": 69541,
+   "bytes": 71384,
    "url": "https://sanggi-jayg.tistory.com/entry/%ED%83%80%EC%9D%B4%EB%B0%8D-%EC%96%B4%ED%83%9D-%EC%96%B4%EB%94%94%EA%B9%8C%EC%A7%80-%EB%A7%89%EC%95%84%EC%95%BC-%ED%95%A0%EA%B9%8C-%EB%B9%84%EA%B5%90%EB%B6%80%ED%84%B0-%ED%94%84%EB%A0%88%EC%9E%84%EC%9B%8C%ED%81%AC-CVE%EA%B9%8C%EC%A7%80"
   },
   "category": {
@@ -40,7 +40,7 @@
    "jsonld": [
     "BreadcrumbList"
    ],
-   "bytes": 50628,
+   "bytes": 51144,
    "url": "https://sanggi-jayg.tistory.com/category/AI"
   },
   "archive": {
@@ -54,7 +54,7 @@
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 31775,
+   "bytes": 30499,
    "url": "https://sanggi-jayg.tistory.com/archive"
   },
   "tag": {
@@ -68,7 +68,7 @@
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 89210,
+   "bytes": 89734,
    "url": "https://sanggi-jayg.tistory.com/tag"
   },
   "search": {
@@ -82,7 +82,7 @@
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 43513,
+   "bytes": 44037,
    "url": "https://sanggi-jayg.tistory.com/search/%EB%A6%AC%ED%8C%A9%ED%86%A0%EB%A7%81"
   },
   "empty": {
@@ -96,7 +96,7 @@
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 30155,
+   "bytes": 30679,
    "url": "https://sanggi-jayg.tistory.com/search/%EC%A1%B4%EC%9E%AC%ED%95%98%EC%A7%80%EC%95%8A%EB%8A%94%EA%B2%80%EC%83%89%EC%96%B4zzz"
   },
   "guestbook": {
@@ -110,7 +110,7 @@
    "jsonld": [
     "WebSite"
    ],
-   "bytes": 29652,
+   "bytes": 30176,
    "url": "https://sanggi-jayg.tistory.com/guestbook"
   }
  },
