@@ -354,5 +354,61 @@
       "ours": "600",
       "note": ""
     }
+  ],
+  "namecardCrawledAt": "2026-09-10",
+  "namecardSource": "static/pc/dist/index.css (userblog-626ea1866044955da92690211f447663fdb36491, 59,563B) — 댓글 앱과 **같은 시트**다. 이 시트는 **모든 페이지** head에 링크된다(2026-09-10 재실측: 홈·방명록·글 페이지 각 1건). 라이브 head에서는 우리 style.css 앞에 오지만 순서는 티스토리가 정한다 — 그래서 순서가 아니라 특이도로 이긴다. V017이 라이브 홈과 URL·바이트를 대조한다.",
+  "namecardPrefix": ".entry-main [data-tistory-react-app=\"Namecard\"] .tt_box_namecard",
+  "namecardNote": "프로필 카드(Namecard)는 티스토리가 **글 페이지에서만** <s_rp> 앞에 주입한다(홈·방명록 0건). ⚠ 글 페이지 전용인 것은 이 **div**이지 시트가 아니다 — namecardSource의 index.css는 모든 페이지에 링크된다. 둘을 섞으면 V017이 엉뚱한 페이지에서 시트를 찾는다(2026-09-10에 실제로 그랬다). 소스 HTML에는 클래스도 없는 <div data-tistory-react-app=\"Namecard\"></div> 빈 껍데기뿐이고 알맹이는 React가 채운다 — 댓글과 같은 부류다. 상대 최대 특이도가 (0,3,0)(.tt_btn_subscribe .tt_txt_g, .type2)이므로 우리는 **최소 (0,4,0)** 이어야 하고, 그 형태를 namecardPrefix 하나로 못박는다: 접두 자체가 (0,3,0)이고 marker를 붙이면 (0,4,0) 이상이 된다. 속성 선택자는 **큰따옴표**로, 공백 하나씩 — 린트 TIS005가 이 문자열을 문자 그대로 찾는다(TIS002·TIS003과 같은 이유: 근접 검색은 옆 규칙이 우연히 걸려 통과시킨다). 라이트 전용 리터럴이 다크에서 밝은 회색 판으로 뜨던 것이 이슈 #59다. min-height:206px(600px 이하 225px)는 색이 아니라 **빈 공간**의 원인이라 같이 걷는다 — 내용은 ~120px이다.",
+  "namecardPropertyNote": "properties는 그 자리에서 **반드시 덮어야 하는 속성**이다. 선택자만 보면 «규칙은 있는데 엉뚱한 것을 덮는» 상태를 통과시킨다 — 2026-09-10 리뷰에서 재현했다: .tt_desc의 color를 font-size로 바꿔도 오류 0이었다. TIS005는 접두+marker 규칙의 선언 블록에 이 속성들이 있는지까지 본다. border-color는 단축 border로도 쓸 수 있어 린트가 둘 다 인정한다(background-color ← background, min-height는 단축이 없다).",
+  "namecardRules": [
+    {
+      "component": "카드 배경",
+      "marker": "",
+      "properties": ["background-color", "min-height"],
+      "value": "#f7f7f7",
+      "kind": "background",
+      "contrastNote": "다크에서 밝은 회색 판이 본문 아래 떠 있다. min-height:206px(≤600px에서 225px)도 같은 규칙에 들어 있다 — 미디어쿼리는 특이도를 더하지 않으므로 (0,4,0) 하나가 두 값을 다 이긴다. 색과 달리 이쪽은 **빈 공간**으로 드러난다(내용은 ~120px)."
+    },
+    {
+      "component": "블로그 이름",
+      "marker": ".tt_tit_cont",
+      "properties": ["color"],
+      "value": "#333333",
+      "darkContrast": 1.66,
+      "kind": "text"
+    },
+    {
+      "component": "블로그 설명",
+      "marker": ".tt_desc",
+      "properties": ["color"],
+      "value": "#888888",
+      "darkContrast": 4.62,
+      "kind": "text"
+    },
+    {
+      "component": "구독 버튼 테두리",
+      "marker": ".tt_btn_subscribe",
+      "properties": ["border-color"],
+      "value": "#555555",
+      "kind": "background",
+      "contrastNote": "테두리 색이라 대비 수치로 표현되지 않는다. 다크 캔버스에서 어두운 테두리가 묻힌다."
+    },
+    {
+      "component": "구독 중 버튼 테두리",
+      "marker": ".tt_btn_subscribe.type2",
+      "properties": ["border-color"],
+      "value": "#d0d0d0",
+      "kind": "background",
+      "contrastNote": "상대가 (0,3,0)으로 쓰는 유일한 자리 중 하나다. **로그인 상태에서만** 나오는 클래스라 프리뷰 픽스처에 없다 — 눈으로 볼 수 없으므로 린트가 유일한 검사다."
+    },
+    {
+      "component": "구독 버튼 글자",
+      "marker": ".tt_btn_subscribe .tt_txt_g",
+      "properties": ["color"],
+      "value": "#222222",
+      "darkContrast": 1.16,
+      "kind": "text",
+      "contrastNote": "상대가 (0,3,0)이라 접두+marker로 (0,5,0)이 된다."
+    }
   ]
 }

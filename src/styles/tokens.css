@@ -101,6 +101,9 @@
      토글 버튼은 "누르면 갈 곳"을 보여준다 — 라이트에서 달, 다크에서 해. */
   --icon-sun-display:  none;
   --icon-moon-display: block;
+  /* 티스토리 스프라이트 아이콘(Namecard 구독 버튼의 +)은 이미지라 색 토큰이 못 닿는다.
+     다크에서 반전시켜 살린다 — 결정 53. 라이트 0, 다크 1. */
+  --sprite-invert:     0;
 
   /* 글자 렌더링. macOS에서 antialiased는 서브픽셀 렌더링을 끄고 **획을 얇게** 만든다.
      라이트(어두운 글자 / 밝은 배경)에서는 깔끔해 보이지만, 다크에서는 이미 번져
@@ -243,6 +246,7 @@
       --selection-fg:    #171717;
       --icon-sun-display:  block;
       --icon-moon-display: none;
+      --sprite-invert:     1;
       --font-smooth:     auto;
       --font-smooth-moz: auto;
       --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */
@@ -281,6 +285,7 @@
     --selection-fg:    #171717;
     --icon-sun-display:  block;
     --icon-moon-display: none;
+    --sprite-invert:     1;
     --font-smooth:     auto;
     --font-smooth-moz: auto;
     --veil: rgba(10, 10, 10, 0.88);   /* = --canvas #0a0a0a 88% (폴백) */

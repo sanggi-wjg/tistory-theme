@@ -278,6 +278,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | `.related` `.related-title` `.related-list` `.related-item` `.related-link` `.related-thumb` `.related-thumb-img` `.related-text` `.related-date` `.related-more` | 같은 카테고리 다른 글. `.related-item`에 티스토리가 주는 `text_type` / `thumb_type` 클래스가 **함께** 붙는다 |
 | `.postnav` `.postnav-item` `.postnav-prev` `.postnav-next` `.postnav-label` `.postnav-title` `.postnav-thumb` `.postnav-thumb-img` | 이전/다음 글. `.postnav-item`에도 `text_type`/`thumb_type`이 붙는다 |
 | `.comments` `#comments` | `[##_comment_group_##]` 한 줄. 안은 전부 `tt-*` (DESIGN §5.4) |
+| *(없음)* `[data-tistory-react-app="Namecard"]` | **스킨 마크업이 아니다.** 티스토리가 글 페이지의 `<s_rp>` 출력 **앞**에 클래스 없는 빈 div를 주입하고 React가 채운다 — `.tt_box_namecard > .tt_cont(.tt_tit_cont .tt_desc .tt_btn_subscribe > .tt_txt_g) + .tt_wrap_thumb > .tt_thumb_g`. 방명록·홈에는 없다(2026-09-10 라이브 실측). `tistory.css`가 `.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard` 접두로 덮는다(결정 53, 린트 `TIS005`). `<s_rp>` 안쪽은 티스토리가 `#entryNComment`로 한 번 더 감싼다 |
 
 **본문 폭 계약** — `index.xml`의 `<contentWidth>800</contentWidth>`은
 `.entry-body`의 실제 콘텐츠 폭이 **800px**라는 선언이다. 에디터 위지윅이 이 값에 맞춰진다.
@@ -539,7 +540,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 영역 | 훅 |
 |---|---|
 | 태그 클라우드 페이지 | `section.tagcloud` `.tagcloud-title` `.tagcloud-list` `.tagcloud-item` `.tagcloud-link` |
-| 페이징 | `nav.paging` `.paging-prev` `.paging-next` `.paging-nums` `.paging-num` — **티스토리가 `no_more_prev` / `no_more_next` 클래스를 함께 붙인다** (더 갈 곳이 없을 때). 그 상태를 흐리게 |
+| 페이징 | `nav.paging` `.paging-prev` `.paging-next` `.paging-nums` `.paging-num` — 티스토리가 내보내는 것 셋(2026-09-10 라이브 실측, 결정 53): ① `[##_paging_rep_link_num_##]`은 숫자가 아니라 **`<span class="selected">N</span>`**(현재 페이지) / `<span class="">N</span>`이다 — 현재 위치 신호는 이 `span.selected`뿐이다 ② 생략 부호 `···`도 `a.paging-num`인데 **href가 없다** ③ 더 갈 곳이 없을 때 붙는 클래스는 **`no-more-prev` / `no-more-next`(하이픈)** 이고 그 앵커에도 href가 없다. 2026-09-10까지 CSS·이 문서가 `no_more_prev`(밑줄)로 적혀 있어 라이브에서 한 번도 매칭된 적이 없었다. href 없는 앵커는 `.paging a:not([href])`가 한 번에 잡는다 |
 | 공지 | `article.notice` `.notice-head` `.notice-badge` `.notice-title` `.notice-date` `.notice-body`(안이 `.contents_style`) |
 | 보호글 | `section.protected` `.protected-title` `.protected-desc` `.protected-form` `.protected-label` `.protected-input` `.protected-submit` |
 | 방명록 | `section.guestbook` `.guestbook-title` — 본체는 `[##_guestbook_group_##]`, 안은 `tt-*` |
@@ -575,7 +576,8 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 - `.entry-date` · `.post-date` · `.side-date` — 색·크기·정렬을 `.entry-meta`·
   `.post-meta`·`.side-meta`가 한 번에 정한다. 날짜만 다르게 할 이유가 아직 없다.
 - `.paging-prev` · `.paging-next` · `.paging-num` — `.paging a`가 셋을 같은 알약으로
-  그린다. "더 갈 곳 없음" 상태는 티스토리가 붙이는 `.no_more_prev`/`.no_more_next`가 가른다.
+  그린다. "더 갈 곳 없음" 상태는 티스토리가 붙이는 `.no-more-prev`/`.no-more-next`(하이픈)와
+  **href 부재**가 가르고, 현재 페이지는 안쪽 `span.selected`가 가른다(§7 페이징 행).
 - `.side-body` — 안이 `[##_category_list_##]`의 **티스토리 고정 마크업**이라
   `tistory.css`가 `.tt_category` 쪽 이름으로 잡는다.
 - `.toc-title` — `.toc-toggle`이 flex 배치와 글자를 정한다. 라벨 자체에 줄 것이 없다.

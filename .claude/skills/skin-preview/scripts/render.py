@@ -37,6 +37,75 @@ WRAP_WARN = ('<div style="border:2px dashed #d60000;color:#d60000;padding:12px;'
 REACT_BOX = ('<div data-tistory-react-app="Comment">'
              '<div class="tt-comment-cont">[%s: 티스토리 React가 렌더링]</div></div>')
 
+# 프로필 카드. 티스토리가 **글 페이지에서만** <s_rp> 출력 앞에 주입한다
+# (2026-09-10 라이브 실측 — 홈·방명록에는 0건). 소스에는 클래스도 없는 빈 div뿐이고
+# 알맹이는 React가 채우므로, 댓글과 마찬가지로 프리뷰에 한 번도 나온 적이 없었다.
+# 그래서 다크에서 밝은 회색 판이 떠 있는 것(이슈 #59)을 라이브에서만 볼 수 있었다.
+#
+# 클래스 트리는 **실측 그대로**여야 한다 — 여기 이름이 한 글자라도 다르면
+# tistory.css의 (0,4,0) 덮어쓰기가 프리뷰에서 매칭되지 않아, 고쳐 놓고도
+# "아직 안 먹는다"고 읽거나 그 반대가 된다. 상대 규칙은 TISTORY_INDEX_CSS가 싣는다.
+#
+# .tt_ico_cross(구독 버튼의 +)는 index.css가 CDN 상대경로로 스프라이트를 가져오므로 프리뷰에도
+# 뜬다 — 다크에서 --sprite-invert로 반전되는지까지 여기서 보인다(결정 53).
+# 재현하지 못하는 것:
+# 구독 중 상태 .tt_btn_subscribe.type2도 없다 — 로그인 상태에서만 나오는 클래스다.
+NAMECARD_BOX = (
+    '<!-- 티스토리 React가 렌더링: Namecard (소스에는 빈 div뿐이다) -->'
+    '<div data-tistory-react-app="Namecard" data-preview="티스토리 React가 런타임에 그린다">'
+    '<div class="tt_box_namecard">'
+    '<div class="tt_cont">'
+    '<a class="tt_tit_cont" href="/">상쾌한기분</a>'
+    '<a class="tt_desc" href="/">오늘도 상쾌한기분</a>'
+    '<button type="button" class="tt_btn_subscribe">'
+    '<span class="tt_txt_g">구독하기</span>'
+    '<span class="tt_img_area_reply tt_ico_cross"></span>'
+    '</button>'
+    '</div>'
+    '<a class="tt_wrap_thumb" href="/">'
+    '<span class="tt_thumb_g" style="background-image:url(https://placehold.co/200x200/eeeeee/999999?text=logo);'
+    'display:block;width:100%;height:100%;background-size:cover"></span>'
+    '</a>'
+    '</div></div>')
+
+# ── 페이징 ────────────────────────────────────────────────────────
+# 2026-09-10 라이브 실측(이슈 #58). 세 가지가 프리뷰에 없었다:
+#   1. [##_paging_rep_link_num_##]은 숫자가 아니라 **<span class="selected">N</span> /
+#      <span class="">N</span>** 으로 치환된다. 현재 페이지 표시는 이 span뿐이다.
+#   2. 생략 부호 ···도 a.paging-num으로 나오고 **href가 없다**([##_paging_rep_link_##]이 빈 값).
+#   3. 더 갈 곳이 없을 때 붙는 클래스는 **no-more-prev / no-more-next (하이픈)** 이고
+#      그 앵커에도 href가 없다. 렌더러가 이 셋을 한 번도 그리지 않아, CSS가 밑줄
+#      이름(no_more_prev)을 보고 있는데도 프리뷰는 통과 신호를 냈다.
+PAGING_TOTAL = 22           # 라이브 홈의 실제 페이지 수(275편 / 페이지당 …)
+
+# 페이지 타입별 «지금 몇 페이지인가». 한 벌만 그리면 조건 하나만 재현된다 —
+# 세 모양이 서로 다른 것을 켠다.
+#   index    1페이지  → selected가 첫 칸, 이전 비활성(no-more-prev + href 없음)
+#   category 9페이지  → 양끝 생략 부호 두 개, 이전·다음 둘 다 활성 (라이브 /?page=9 그대로)
+#   archive  마지막   → 다음 비활성(no-more-next, href 없음) + `1 ··· 19 20 21 22`
+#                      (라이브 /?page=22 실측 — paging_items(22)와 같다). CSS가 두 클래스를
+#                      같이 다루므로 한쪽만 그리면 나머지 절반이 다시 안 보이는 채로 남는다.
+# 나머지 목록 페이지(search·tag)는 category와 같은 중간 모양이다.
+PAGING_CURRENT = {"index": 1, "category": 9, "archive": PAGING_TOTAL}
+PAGING_DEFAULT = 9          # 목록에 없는 페이지 — 중간 모양
+
+
+def paging_items(cur, total=PAGING_TOTAL, window=3):
+    """티스토리가 내놓는 번호 목록. None은 생략 부호(···) 자리다.
+
+    라이브 두 모양이 같은 규칙에서 나온다 — 첫·끝 페이지 + 현재 ±3, 끊기면 ···.
+      cur=9  → 1 ··· 6 7 8 9 10 11 12 ··· 22   (/?page=9 실측)
+      cur=1  → 1 2 3 4 ··· 22                  (/ 실측)
+    """
+    nums = sorted({1, total} | set(range(max(1, cur - window), min(total, cur + window) + 1)))
+    out, prev = [], 0
+    for n in nums:
+        if prev and n != prev + 1:
+            out.append(None)
+        out.append(n)
+        prev = n
+    return out
+
 PAGE_TYPES = {
     "index":     "tt-body-index",
     "page":      "tt-body-page",
@@ -136,8 +205,30 @@ TISTORY_CONTENT_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
 #   (2026-08-27: d748cfd5… → 626ea186…, 내용은 34,426B 동일).
 TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/"
                     "styles/atom-one-light.min.css")
+# 티스토리 **React 앱**들의 시트다 — 댓글(Comment)과 프로필 카드(Namecard)가 같은
+# 파일에서 온다. 2026-09-10까지 프리뷰가 이 시트를 싣지 않아, 소스에 빈 껍데기뿐인
+# 두 앱의 특이도 싸움이 **로컬에서 한 번도 벌어지지 않았다.** 그 침묵이 이슈 #59다:
+# Namecard가 라이트 전용 #f7f7f7 판으로 다크에 떠 있는데 프리뷰는 멀쩡했다.
+#
+# ⚠ 이 시트는 **모든 페이지** head에 링크된다 — 홈·방명록·글 페이지 셋 다 각 1건
+#    (2026-09-10 라이브 재실측). 글 페이지 전용인 것은 시트가 아니라 **Namecard div**다.
+#    한때 "글 페이지에만 온다"고 적었는데 틀렸다 — V017이 그 전제로 글 페이지에서만
+#    링크를 찾으면, 글 페이지를 못 받은 실행에서 대조가 통째로 미검증이 된다.
+#
+# ⚠ **우리 뒤에** 싣는다. 라이브 <head>에서는 우리 앞이지만(2026-09-10 실측),
+#    tistory.css 댓글 블록의 2026-08-26 실측은 "티스토리 시트가 우리 뒤"였다 —
+#    순서는 티스토리가 정하고 예고 없이 바뀐다. 뒤에 싣는 쪽이 **더 엄격한 조건**이라
+#    (같은 특이도면 뒤가 이긴다) 여기서 이기면 어느 순서에서도 이긴다.
+#    atom-one-light을 뒤에 싣는 것과 같은 논리다(V017 주석).
+# 이 시트는 클래스 스코프 규칙뿐이다 — bare 요소 선택자 0개(2026-09-10 실측 59,563B)라
+# 실어도 다른 화면을 흔들지 않는다.
+TISTORY_INDEX_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
+                     "userblog-626ea1866044955da92690211f447663fdb36491/static/pc/dist/index.css")
 
-# 네트워크가 없으면 위 두 시트가 조용히 빠지고 프리뷰는 다시 거짓말을 한다.
+# 네트워크가 없으면 위 세 시트(content.css · atom-one-light · index.css)가 조용히
+# 빠지고 프리뷰는 다시 거짓말을 한다.
+# ⚠ 기대 개수(__NEED__)를 손으로 적지 않는다 — 아래 stack 조립이 원격 시트를 세어 넣는다.
+#   시트를 더하고 이 숫자를 잊으면 **가드가 먼저 낡는다**: 하나가 빠져도 띠가 안 뜬다.
 # 눈에 띄는 띠를 띄워 "지금 보고 있는 것은 반쪽"이라고 알린다.
 # ⚠ `%` 포맷을 쓰지 않는다. 이 문자열은 CSS를 담고 있어 `width:100%` 같은 값이
 #    언제든 들어올 수 있고, 그러면 "%" 포맷이 ValueError로 터진다. 자리표시자로 바꾼다.
@@ -371,6 +462,10 @@ def globals_for(page, posts, cats, skin_vars):
     # li.selected를 고르는 기준이기도 하므로 data/categories.json에 실재하는 이름이어야 한다.
     # 가장 긴 하위 이름을 고른 것은 의도적이다 — 240px 레일에서 줄바꿈이 나는지를
     # 선택 상태와 함께 매 렌더마다 눈에 띄게 하려는 것이다.
+    # 이 페이지가 몇 페이지인가. **여기 한 곳에서만 정한다** — ctx의 _paging_cur로
+    # 실어 s_paging_rep가 그것을 읽는다. 두 곳에서 각자 기본값을 적으면 이전·다음의
+    # 활성 여부(globals_for)와 번호 목록(s_paging_rep)이 서로 다른 페이지를 그린다.
+    cur = PAGING_CURRENT.get(page, PAGING_DEFAULT)
     conform = {"index": "전체 글",
                "category": "Python/성능과 동시성", "search": "OOMKilled",
                "tag": "hikaricp", "archive": "2026", "empty": "존재하지않는검색어"}.get(page, "")
@@ -404,8 +499,17 @@ def globals_for(page, posts, cats, skin_vars):
         "list_description": ("오늘도 상쾌한기분" if page == "index"
                              else "카테고리 설명이 들어가는 자리다."),
         "list_style": "list", "list_image": "https://placehold.co/1200x300/eeeeee/999999?text=category",
-        "prev_page": 'href="?page=1"', "next_page": 'href="?page=3"',
-        "no_more_prev": "", "no_more_next": "",
+        # 이전·다음. **끝에서는 클래스가 붙고 href가 통째로 사라진다** — 2026-09-10
+        # 라이브 실측: `<a class="paging-prev no-more-prev" >이전</a>`. 하이픈이다.
+        # 여기를 늘 빈 문자열로 두는 동안 프리뷰는 비활성 상태를 한 번도 그리지 않았고,
+        # 우리 CSS가 밑줄 이름(.no_more_prev)을 보고 있는 것이 라이브에서만 드러났다.
+        "prev_page": "" if cur <= 1 else 'href="?page=%d"' % (cur - 1),
+        "next_page": "" if cur >= PAGING_TOTAL else 'href="?page=%d"' % (cur + 1),
+        "no_more_prev": "no-more-prev" if cur <= 1 else "",
+        "no_more_next": "no-more-next" if cur >= PAGING_TOTAL else "",
+        # 치환자가 아니라 렌더러 내부 값이다(item_scope의 _has_thumb와 같은 부류).
+        # s_paging_rep가 이것을 읽어 번호 목록과 selected 자리를 정한다.
+        "_paging_cur": cur,
         "revenue_list_upper": '<div class="_ad">[광고 자리: 홈·목록 상단]</div>',
         "revenue_list_lower": '<div class="_ad">[광고 자리: 홈·목록 하단]</div>',
         # ⚠ 래퍼 밖에서는 **경고를 그린다.** 티스토리는 조용히 빈 문자열로 치환하지만,
@@ -604,7 +708,13 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             return R(inner, {**ctx, **item_scope(posts[2], "article_next", page)})
         if name == "s_rp":
             # 래퍼 안에서만 진짜 상자가 된다 — 밖에서는 base ctx의 경고가 그려진다.
-            return R(inner, {**ctx, "comment_group": REACT_BOX % "댓글"})
+            #
+            # 티스토리는 이 영역 **앞에** Namecard를 주입하고, 영역 출력을
+            # <div id="entry{글번호}Comment">로 감싼다 (2026-09-10 라이브 실측).
+            # 둘 다 우리 마크업이 아니라 서버가 끼우는 것이라, 재현하지 않으면
+            # .entry-main의 마지막 자식이 무엇인지도 실물과 달라진다.
+            return (NAMECARD_BOX + '<div id="entry179Comment">'
+                    + R(inner, {**ctx, "comment_group": REACT_BOX % "댓글"}) + '</div>')
         return R(inner)
     if name == "s_article_related_rep":
         return repeat(inner, posts[3:8], "article_related_rep", ctx, page, posts)
@@ -645,10 +755,25 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     if name == "s_paging":
         return R(inner) if (is_list or page == "index") and page != "empty" else ""
     if name == "s_paging_rep":
+        # 라이브 모양 그대로 — 숫자는 span에 싸여 오고, 현재 페이지만 class="selected"다.
+        # 생략 부호는 href 없는 a로 온다(paging_rep_link가 **빈 문자열**).
+        # 2026-09-10까지 여기서 1~5를 맨 숫자로 냈다: selected도 ···도 프리뷰에 없었고,
+        # 그래서 "현재 페이지가 어디인지 화면에 표시가 없다"(이슈 #58)를 로컬에서
+        # 볼 방법이 없었다. 스킨 마크업은 멀쩡했다 — 없던 것은 CSS와 그 조건이다.
+        # globals_for가 정한 값을 그대로 읽는다 — 여기서 다시 정하지 않는다.
+        # 없으면 KeyError로 죽는 편이 낫다: 조용히 다른 페이지를 그리면 이전·다음의
+        # 활성 여부와 번호 목록이 어긋난 화면을 보고 판단하게 된다.
+        cur = ctx["_paging_cur"]
         buf = []
-        for n in range(1, 6):
+        for n in paging_items(cur):
             sub = dict(ctx)
-            sub.update({"paging_rep_link": 'href="?page=%d"' % n, "paging_rep_link_num": str(n)})
+            if n is None:
+                sub.update({"paging_rep_link": "",
+                            "paging_rep_link_num": '<span class="">···</span>'})
+            else:
+                sub.update({"paging_rep_link": 'href="?page=%d"' % n,
+                            "paging_rep_link_num": '<span class="%s">%d</span>'
+                                                   % ("selected" if n == cur else "", n)})
             buf.append(render(inner, sub, page, posts))
         return "".join(buf)
 
@@ -785,12 +910,17 @@ def main():
         # _preview/index.html은 목차 페이지이므로, page 타입 'index'와 파일명이 충돌한다.
         # 티스토리 시트를 **실제 순서대로** 끼운다 — content.css는 우리 앞, hljs는 우리 뒤.
         # 감시 스크립트가 링크보다 먼저 와야 onload 콜백이 정의되어 있다.
-        stack = "\n".join((
-            TISTORY_CSS_GUARD.replace("__NEED__", "2"),
-            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_CONTENT_CSS,
-            '<link rel="stylesheet" href="../../dist/style.css">',
-            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_HLJS_CSS,
-        ))
+        # **이 목록의 순서가 곧 검사다** — content.css는 우리 앞, atom-one-light과
+        # index.css(React 앱 시트)는 우리 뒤. 뒤에 오는 쪽은 특이도가 같으면 이긴다.
+        # 가드의 기대 개수는 여기서 **세어서** 낸다(우리 시트는 로컬이라 빼고).
+        ours = "../../dist/style.css"
+        sheets = [TISTORY_CONTENT_CSS, ours, TISTORY_HLJS_CSS, TISTORY_INDEX_CSS]
+        remote = [s for s in sheets if s != ours]
+        stack = "\n".join(
+            [TISTORY_CSS_GUARD.replace("__NEED__", str(len(remote)))]
+            + ['<link rel="stylesheet" href="%s">' % s if s == ours
+               else '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % s
+               for s in sheets])
         before = out
         out = out.replace('<link rel="stylesheet" href="./style.css">', stack, 1)
         if out == before:

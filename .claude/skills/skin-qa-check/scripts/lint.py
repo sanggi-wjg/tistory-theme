@@ -1039,6 +1039,108 @@ def lint_tistory_comment_scope(css):
         info("댓글·방명록 하드코딩 값: %d종 전부 .comments/.guestbook 짝으로 덮음" % len(rules))
 
 
+# 프로필 카드 덮어쓰기의 **유일한 형태**. 데이터(json)에도 같은 문자열이 있고
+# 여기서는 그것을 기본값으로만 쓴다 — 둘이 갈라지면 json 쪽을 따른다.
+NAMECARD_PREFIX = '.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard'
+
+
+def selector_blocks(body, needle):
+    """`needle`이 **선택자 하나로 끝나는** 규칙들의 선언 블록을 모은다.
+
+    단순 부분문자열 검사로는 안 된다. `… .tt_btn_subscribe`는
+    `… .tt_btn_subscribe.type2`의 부분문자열이기도 해서, 구독 중 상태만 덮고
+    기본 상태를 안 덮어도 통과해 버린다 — 「썼는데 절반만 이긴다」가 그렇게 생긴다.
+    그래서 뒤에 오는 첫 비공백 문자가 `{` 또는 `,`인 것만 센다.
+
+    **선언 블록까지 돌려주는 이유**: 선택자만 보면 「규칙은 있는데 엉뚱한 것을
+    덮는」 상태를 통과시킨다. 2026-09-10 리뷰에서 재현했다 — `.tt_desc`의
+    `color`를 `font-size`로 바꿔도 오류가 0이었다. 검사가 확인한 것보다
+    많이 말하면 없느니만 못하다.
+    """
+    out = []
+    i = body.find(needle)
+    while i != -1:
+        j = i + len(needle)
+        while j < len(body) and body[j] in " \t\r\n":
+            j += 1
+        if j < len(body) and body[j] in "{,":
+            k = body.find("{", j)
+            end = body.find("}", k + 1) if k != -1 else -1
+            out.append(body[k + 1:end] if k != -1 and end != -1 else "")
+        i = body.find(needle, i + 1)
+    return out
+
+
+# 단축 속성으로 써도 그 자리를 덮은 것으로 인정한다. `min-height`처럼 단축이
+# 없는 것은 여기 없다 — 없는 것을 넣으면 검사가 조용히 헐거워진다.
+CSS_SHORTHAND = {"background-color": ("background",), "border-color": ("border",)}
+
+
+def declares(block, prop):
+    """선언 블록이 `prop`(또는 그 단축)을 **선언하는가**.
+
+    ⚠ 이름 경계를 본다. `color:`를 그냥 찾으면 `background-color:`·`border-color:`가
+       걸려, 배경만 덮고 글자색을 안 덮어도 통과한다.
+    """
+    for name in (prop,) + CSS_SHORTHAND.get(prop, ()):
+        if re.search(r"(?<![-\w])%s\s*:" % re.escape(name), block):
+            return True
+    return False
+
+
+def lint_tistory_namecard_scope(css):
+    """프로필 카드(Namecard)에 (0,4,0) 덮어쓰기가 있는가.
+
+    TIS003과 같은 부류다 — 상대가 **React가 런타임에 그리는** 앱이라 소스 HTML에는
+    `<div data-tistory-react-app="Namecard"></div>` 빈 껍데기뿐이고, 시트도 댓글과
+    같은 `static/pc/dist/index.css`에서 온다. 크롤로는 존재가 안 보인다.
+
+    왜 프리뷰가 있는데도 린트가 필요한가 — 2026-09-10부터 프리뷰가 그 시트를 싣고
+    카드 픽스처도 그리므로 **눈으로도 보인다.** 그러나 프리뷰는 시트를 우리 **뒤에**
+    싣고 라이브 head는 우리 **앞**이다. 순서는 티스토리가 정하고 예고 없이 바뀌므로,
+    화면이 멀쩡한 것은 "지금 이 순서에서 이겼다"까지만 말해 준다. 특이도 자체는
+    화면에 나타나지 않는다 — 그것을 보는 것이 이 검사다.
+
+    상대 최대 특이도가 (0,3,0)(`.tt_btn_subscribe .tt_txt_g`, `.type2`)이라
+    우리는 최소 (0,4,0)이어야 한다. 접두를 **문자 그대로** 대조하는 이유는
+    TIS002·TIS003과 같다 — 근접 검색은 옆 규칙이 우연히 걸려 통과시킨다.
+    """
+    known = os.path.join(ROOT, "data", "tistory-hardcoded-colors.json")
+    if not os.path.exists(known) or not css:
+        return
+    d = json.load(open(known, encoding="utf-8"))
+    rules = d.get("namecardRules", [])
+    if not rules:
+        return
+    prefix = d.get("namecardPrefix", NAMECARD_PREFIX)
+    body = strip_comments(css)
+    missing, weak = [], []
+    for r in rules:
+        marker = r["marker"]
+        needle = prefix + (" " + marker if marker else "")
+        blocks = selector_blocks(body, needle)
+        if not blocks:
+            missing.append(r["component"])
+            continue
+        # 선택자가 있어도 **그 속성을 덮지 않으면** 상대 값이 그대로 이긴다.
+        # 규칙을 여러 개로 쪼개 쓸 수 있으므로 블록 전체를 합쳐서 본다.
+        lack = [p for p in r.get("properties", []) if not any(declares(b, p) for b in blocks)]
+        if lack:
+            weak.append("%s(%s 없음)" % (r["component"], ", ".join(lack)))
+    if missing:
+        err("TIS005", "프로필 카드(Namecard)에 라이트 전용 값이 박힌 %d종에 (0,4,0) 덮어쓰기가 "
+            "없다: %s. 접두를 «%s» 형태 그대로 쓰고 marker를 붙여야 한다 — 클래스 셋 이하로는 "
+            "상대 (0,3,0)에 지고, 순서는 티스토리가 정한다. 다크에서 카드가 밝은 회색 판으로 뜬다."
+            % (len(missing), ", ".join(missing[:8]), prefix), "src/styles/tistory.css")
+    if weak:
+        err("TIS005", "%d종은 선택자는 (0,4,0)인데 **덮어야 할 속성을 선언하지 않는다**: %s. "
+            "규칙이 있으니 고친 것처럼 보이지만 그 자리는 상대 값이 그대로 이긴다 — "
+            "덮어쓰기 중 가장 찾기 어려운 상태다."
+            % (len(weak), ", ".join(weak[:8])), "src/styles/tistory.css")
+    if not missing and not weak:
+        info("Namecard 하드코딩 값: %d종 전부 (0,4,0) 접두 + 해당 속성으로 덮음" % len(rules))
+
+
 def lint_tistory_typography(css):
     """티스토리 content.css가 **색이 아닌 속성**을 덮는 자리를 본다.
 
@@ -1354,6 +1456,7 @@ def main():
     # INL001과 달리 이 둘은 빌드가 생성하는 규칙을 보지 않으므로 src면 충분하다.
     lint_tistory_hardcoded(src_css)
     lint_tistory_comment_scope(src_css)
+    lint_tistory_namecard_scope(src_css)
     lint_tistory_typography(src_css)
     lint_hljs_scope(src_css)
     lint_hljs_tokens(src_css)

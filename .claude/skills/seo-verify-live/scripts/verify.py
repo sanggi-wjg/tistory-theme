@@ -749,42 +749,80 @@ def verify_tistory_sheets(base, home_doc, post_doc):
     낡은 상대와 싸우면서 통과 신호를 낸다 — 아무 검사도 모르는 채로. 여기서 라이브 홈이
     링크한 URL과 대조하고, URL이 다르면 바이트까지 대조한다.
 
+    시트는 둘이다 — content.css와 `static/pc/dist/index.css`(**댓글·프로필 카드 React 앱의
+    시트**). 둘 다 **홈 head**에서 찾는다: 2026-09-10 재실측에서 index.css 링크는 홈·방명록·
+    글 페이지 셋 다 각 1건이었다. 한때 "글 페이지에만 온다"고 적고 `post_doc`에서만 찾았는데
+    틀렸다 — 글 페이지를 못 받은 실행에서 대조가 통째로 미검증이 됐다. 글 페이지 전용인 것은
+    시트가 아니라 **Namecard div**다. index.css는 TIS003·TIS005의 상대인데, 그 둘은 소스에
+    빈 껍데기뿐이라 크롤로도 프리뷰로도 존재가 안 보인다. 시트가 갈리면 프리뷰의 카드·댓글이
+    **없는 상대와 싸우고** 통과 신호를 낸다.
+
     atom-one-light(결정 32의 두 번째 전제)은 2026-08-27 실측에서 글 페이지 소스 HTML에
     **없었다.** 있든 없든 info로 남긴다 — 프리뷰가 그 시트를 우리 뒤에 싣는 것은 더 엄격한
     조건이라 해롭지 않지만, 전제가 흔들린 것은 적어 둬야 다음 사람이 안다.
     """
-    want = preview_sheet_url("TISTORY_CONTENT_CSS")
-    if not want:
-        unverified("V017", "render.py에서 TISTORY_CONTENT_CSS를 읽지 못했다 — 상수 모양이 바뀌었나.", RENDER_PY)
-        return
-    live = None
-    for tag in re.findall(r"<link\b[^>]*>", head_of(home_doc or ""), re.I):
-        h = href_of(tag)
-        if h and "/static/style/content.css" in h:
-            live = urllib.parse.urljoin(base + "/", h)
-            break
-    if not home_doc:
-        unverified("V017", "홈을 받지 못해 티스토리 시트를 대조하지 못했다.", base + "/")
-    elif not live:
-        unverified("V017", "라이브 홈 head에서 티스토리 content.css 링크를 찾지 못했다. "
-                   "티스토리가 시트 경로를 바꿨다면 render.py 상수도 같이 봐야 한다.", base + "/")
-    elif live == want:
-        info("V017 — 프리뷰가 싣는 티스토리 content.css가 라이브와 같은 URL이다.")
-    else:
-        s1, b1, _ = fetch(live)
-        s2, b2, _ = fetch(want)
-        if s1 is None or s2 is None:
-            # 네트워크 실패를 «내용이 다르다»로 읽으면 render.py를 고치라는 거짓 지시가 된다.
-            unverified("V017", "티스토리 content.css를 받지 못해(라이브 HTTP %s / render.py HTTP %s) "
-                       "내용을 대조하지 못했다. URL은 다르다 — 라이브: %s" % (s1, s2, live), RENDER_PY)
-        elif s1 == 200 and s2 == 200 and b1 == b2:
-            info("V017 — 티스토리 content.css 해시가 바뀌었지만 내용은 같다(%d bytes). render.py "
-                 "TISTORY_CONTENT_CSS를 %s 로 갱신해 두라." % (len(b1.encode("utf-8")), live))
+    def compare(const, path_fragment, label, doc, doc_url, codes):
+        want = preview_sheet_url(const)
+        if not want:
+            unverified("V017", "render.py에서 %s를 읽지 못했다 — 상수 모양이 바뀌었나." % const, RENDER_PY)
+            return
+        live = None
+        for tag in re.findall(r"<link\b[^>]*>", head_of(doc or ""), re.I):
+            h = href_of(tag)
+            if h and path_fragment in h:
+                live = urllib.parse.urljoin(base + "/", h)
+                break
+        if not doc:
+            unverified("V017", "%s를 받지 못해 티스토리 %s를 대조하지 못했다." % (doc_url, label), doc_url)
+        elif not live:
+            unverified("V017", "라이브 head에서 티스토리 %s 링크를 찾지 못했다(%s). "
+                       "티스토리가 시트 경로를 바꿨다면 render.py 상수도 같이 봐야 한다."
+                       % (label, doc_url), doc_url)
+        elif live == want:
+            info("V017 — 프리뷰가 싣는 티스토리 %s가 라이브와 같은 URL이다." % label)
         else:
-            warn("V017", "프리뷰가 싣는 티스토리 content.css가 라이브와 다르다 — render.py: %s (HTTP %s) / "
-                 "라이브: %s (HTTP %s). 프리뷰의 특이도 싸움이 낡은 상대와 벌어진다. 상수를 갱신하고 "
-                 "data/tistory-hardcoded-colors.json을 새 시트와 다시 대조하라(TIS001~004)."
-                 % (want, s2, live, s1), RENDER_PY)
+            s1, b1, _ = fetch(live)
+            s2, b2, _ = fetch(want)
+            if s1 is None or s2 is None:
+                # 네트워크 실패를 «내용이 다르다»로 읽으면 render.py를 고치라는 거짓 지시가 된다.
+                unverified("V017", "티스토리 %s를 받지 못해(라이브 HTTP %s / render.py HTTP %s) "
+                           "내용을 대조하지 못했다. URL은 다르다 — 라이브: %s"
+                           % (label, s1, s2, live), RENDER_PY)
+            elif s1 == 200 and s2 == 200 and b1 == b2:
+                info("V017 — 티스토리 %s 해시가 바뀌었지만 내용은 같다(%d bytes). render.py "
+                     "%s를 %s 로 갱신해 두라." % (label, len(b1.encode("utf-8")), const, live))
+            else:
+                warn("V017", "프리뷰가 싣는 티스토리 %s가 라이브와 다르다 — render.py: %s (HTTP %s) / "
+                     "라이브: %s (HTTP %s). 프리뷰의 특이도 싸움이 낡은 상대와 벌어진다. 상수를 갱신하고 "
+                     "data/tistory-hardcoded-colors.json을 새 시트와 다시 대조하라(%s)."
+                     % (label, want, s2, live, s1, codes), RENDER_PY)
+
+    compare("TISTORY_CONTENT_CSS", "/static/style/content.css", "content.css",
+            home_doc, base + "/", "TIS001~004")
+    # React 앱 시트(댓글 Comment · 프로필 카드 Namecard). **모든 페이지**에 링크된다
+    # (2026-09-10 실측: 홈·방명록·글 페이지 각 1건). 그래서 content.css와 똑같이 홈에서
+    # 찾는다 — 글 페이지를 못 받아도 대조가 선다. TIS003·TIS005의 상대가 이 파일이고,
+    # 그 둘은 프리뷰로도 크롤로도 존재가 안 보이는 부류라 이 대조가 유일한 신호다.
+    compare("TISTORY_INDEX_CSS", "/static/pc/dist/index.css", "index.css",
+            home_doc, base + "/", "TIS003·TIS005")
+    # 글 페이지에도 같은 URL로 오는지는 덤이다. 다르면 두 페이지가 서로 다른 배포를
+    # 받고 있다는 뜻이라, 프리뷰가 어느 쪽과 싸우는지부터 다시 정해야 한다.
+    if post_doc:
+        want_idx = preview_sheet_url("TISTORY_INDEX_CSS")
+        live_idx = None
+        for tag in re.findall(r"<link\b[^>]*>", head_of(post_doc), re.I):
+            h = href_of(tag)
+            if h and "/static/pc/dist/index.css" in h:
+                live_idx = urllib.parse.urljoin(base + "/", h)
+                break
+        if live_idx and want_idx and live_idx == want_idx:
+            info("V017 — 글 페이지의 index.css도 같은 URL이다(Namecard·댓글이 여기서 온다).")
+        elif live_idx:
+            warn("V017", "index.css가 홈과 글 페이지에서 다르다 — 글 페이지: %s. 두 페이지가 "
+                 "서로 다른 배포를 받고 있다." % live_idx, RENDER_PY)
+        else:
+            info("V017 — 글 페이지 head에서 index.css 링크를 찾지 못했다. 2026-09-10 실측과 "
+                 "다르다(그때는 홈·방명록·글 셋 다 있었다) — 티스토리가 주입 방식을 바꿨을 수 있다.")
     if post_doc:
         if re.search(r"highlight\.js/[\d.]+/styles/atom-one-light", post_doc):
             info("V017 — 글 페이지 소스 HTML에 티스토리의 atom-one-light 링크가 있다(결정 32의 전제 유효).")

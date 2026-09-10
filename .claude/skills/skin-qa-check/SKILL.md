@@ -27,6 +27,7 @@ python3 .claude/skills/skin-qa-check/scripts/lint.py --json   # 자동화용
 ```bash
 python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py   # BND006·BND007
 python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py      # BND008
+python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py   # TIS005 (변형 10종)
 python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py       # TOK007
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
@@ -36,7 +37,11 @@ python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다
 (12개 케이스). `BND008`은 같은 방식에 **오탐 케이스를 더한다**(9개 중 3개) — 첫 판이
 `.entry-tags a::before`를 잡았는데 거기 장식은 자손에 붙어 있어 대상이 아니었다.
-"떠야 한다"만 있는 테스트는 오탐을 못 잡는다.
+"떠야 한다"만 있는 테스트는 오탐을 못 잡는다. `TIS005`도 같은 형태다(10개 중 3개가
+오탐 케이스) — 접두를 **더 강하게** 쓰거나 선택자를 쉼표로 묶는 것은 정상이므로
+잡으면 안 되고, 반대로 `.tt_btn_subscribe.type2`만 덮고 기본을 안 덮는 것은 잡아야 한다.
+**변형은 저장소 CSS 문자열을 하드코딩하지 않고** `lint.py`의 접두 상수와 json의 marker에서
+만든다 — 2026-08-27에 `test-empty-decor.py`가 하드코딩 탓에 `.side-rp` 규칙을 쪼개자 깨졌다.
 
 **`test-lint-codes.py`는 아래 표 자신을 검사한다** — 린트가 `err()`/`warn()`으로
 내는 코드가 전부 표에 있는가. 2026-08-27 셀프 리뷰에서 `SUB008`·`SUB009`·
@@ -72,6 +77,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·
 | `INL001` | 인라인색 보정 커버리지. `data/inline-styles.json`이 필요하고, 규칙이 빌드로 생성되므로 **`npm run build` 후에 실행**해야 한다 |
 | `TIS001~002` | 티스토리 시트가 박은 라이트 전용 색에 덮어쓰기가 있는가(`001`), 상대가 `#tt-body-page` ID 스코프일 때 **ID 짝**이 있는가(`002`). 목록은 `data/tistory-hardcoded-colors.json` |
 | `TIS003` | **댓글·방명록에 (0,3,0) 덮어쓰기가 있는가 (오류).** 상대가 React 런타임 시트라 **크롤로도 프리뷰로도 존재가 안 보인다** — 소스에는 빈 껍데기뿐이다. 특이도가 (0,2,0)이라 클래스 둘로 써도 순서로 지고, 순서는 티스토리가 정한다. `.comments`(글)·`.guestbook`(방명록) **짝을 함께** 본다 — 안쪽 `tt-*`가 완전히 같아 한쪽만 쓰면 다른 페이지에서만 조용히 진다. 다크에서 댓글 본문이 1.16:1이던 것을 이 축으로 찾았다 (결정 35) |
+| `TIS005` | **프로필 카드(Namecard)에 (0,4,0) 덮어쓰기가 있는가 (오류).** `TIS003`과 같은 부류다 — 티스토리가 글 페이지에서만 `<s_rp>` **앞에** 주입하고, 소스에는 클래스도 없는 빈 `<div data-tistory-react-app="Namecard">`뿐이며 시트도 댓글과 **같은** `static/pc/dist/index.css`에서 온다. 상대 최대 특이도가 (0,3,0)(`.tt_btn_subscribe .tt_txt_g`·`.type2`)이라 **최소 (0,4,0)** 이 필요하고, 그 형태를 `data/tistory-hardcoded-colors.json`의 `namecardPrefix` 하나로 못박아 **문자 그대로** 대조한다(`TIS002`·`TIS003`과 같은 이유 — 근접 검색은 옆 규칙이 우연히 걸려 통과시킨다). marker 뒤에 `{`나 `,`가 오는 것만 센다: `… .tt_btn_subscribe`는 `… .tt_btn_subscribe.type2`의 부분문자열이라, 그러지 않으면 **구독 중 상태만 덮고 기본을 안 덮어도 통과한다**. **선택자만이 아니라 선언 블록의 속성까지 본다**(json의 `properties`) — 2026-09-10 리뷰에서 `.tt_desc`의 `color`를 `font-size`로 바꿔도 오류 0인 것이 재현됐다. 규칙이 버젓이 있어 「고쳤다」고 읽히는데 그 자리는 상대가 그대로 이기는, 덮어쓰기 중 가장 찾기 어려운 상태다. 단축(`background`·`border`)으로 쓴 것도 덮은 것으로 인정하고, 이름 경계를 봐서 `background-color:`가 `color:` 요구를 대신 채우지 못하게 한다. 2026-09-10부터 프리뷰가 `index.css`를 싣고 카드 픽스처도 그려 **눈으로도 보이지만** 그것으로 부족하다 — 프리뷰는 그 시트를 우리 **뒤**에 싣고 라이브 head는 우리 **앞**이다. 순서는 티스토리가 정하므로 화면이 멀쩡한 것은 "지금 이 순서에서 이겼다"까지만 말한다. 다크에서 카드가 `#f7f7f7` 판으로 뜨던 것이 이 축이다(이슈 #59). 변이 테스트 `npm run test:namecard` 10케이스(그중 3개는 뜨면 안 되는 케이스) |
 | `TIS004` | **티스토리가 색이 아닌 속성을 덮는 자리에 (1,2,1) 짝이 있는가 (오류).** `TIS001`과 상대는 같은 시트인데 축을 나눈 이유는 **드러나는 방식**이다 — 색은 다크에서 "안 보인다"로 신고되지만 굵기·크기는 **두 테마 모두 멀쩡해 보인다.** 우리 값이 그냥 반영되지 않을 뿐이라 보고 있어도 모른다. **속성 선택자만 뗀 모양은 따로 잡는다** — `[data-ke-size]`를 떼면 (1,1,1)로 내려가 상대와 같아지고, 「썼는데 지는」 상태는 아예 없는 것보다 나쁘다 (결정 36-b) |
 | `HLJS002` | 구문 색이 **코드 전용 토큰**(`--code-*`)을 쓰는가 (오류). 범용 토큰을 빌려 쓰면 누가 그것을 다른 이유로 조정할 때 코드블록이 조용히 같이 움직인다 — `--link`를 "링크니까 흰 배경 기준으로" 잡았다가 코드블록 위에서 AA 미달이 드러난 전례가 있다(§8.1). **무채색으로 남기기로 한 자리**(`--ink-body` 속성·변수, `--ink-mute` 메타·태그)만 예외다. 결정 44 |
 | `HLJS001` | `.hljs-*` 구문 색 선택자에 `.hljs ` 접두가 있는가. 없으면 나중에 실리는 `atom-one-light`이 순서로 이겨 팔레트가 통째로 무효가 된다 |
