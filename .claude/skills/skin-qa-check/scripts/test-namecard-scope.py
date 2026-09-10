@@ -45,7 +45,8 @@ LINTMOD = load_lint_module()
 
 
 def spec_of(root=REPO):
-    """접두는 json이 정본이고 lint.py 상수가 기본값이다 — 린트와 같은 순서로 읽는다."""
+    """접두는 **json이 정본**이고 `lint.py`의 `NAMECARD_PREFIX`는 그것이 없을 때 쓰는
+    기본값일 뿐이다 — 린트와 같은 순서로 읽어야 둘이 갈렸을 때 테스트가 린트를 따라간다."""
     d = json.load(open(os.path.join(root, KNOWN), encoding="utf-8"))
     return d.get("namecardPrefix", LINTMOD.NAMECARD_PREFIX), d.get("namecardRules", [])
 
@@ -98,6 +99,12 @@ def find_rule(css, sel):
 def run(root):
     r = subprocess.run([sys.executable, LINT, "--json"], cwd=root,
                        capture_output=True, text=True)
+    # 린트는 오류가 있으면 1, 없으면 0으로 끝난다. 그 밖의 코드는 **린트가 죽은 것**이다
+    # (import 오류·JSON 파싱 실패 등). 그대로 두면 json.loads가 나는 자리에서
+    # 「JSONDecodeError」만 보이고 진짜 원인인 스택트레이스는 버려진다.
+    if r.returncode not in (0, 1):
+        raise AssertionError("린트가 비정상 종료했다 (rc=%d)\n--- stderr ---\n%s"
+                             % (r.returncode, r.stderr.strip()[:2000]))
     return json.loads(r.stdout)
 
 
@@ -162,6 +169,29 @@ def m_comma_grouped(root):
     edit(root, CSS, group)
 
 
+def m_property_swapped(root):
+    """선택자는 (0,4,0) 그대로 두고 **속성만** 바꾼다 — 2026-09-10 리뷰어가 재현한 상태다.
+    규칙이 버젓이 있어 「고쳤다」고 읽히는데 그 자리는 상대 #888이 그대로 이긴다.
+    선택자 존재만 보던 첫 판이 여기서 오류 0을 냈다."""
+    n = needle(marker_of("블로그 설명"))
+
+    def swap(s):
+        a, b = find_rule(s, n)
+        return s[:a] + n + " {\n  font-size: 12px;\n}" + s[b:]
+    edit(root, CSS, swap)
+
+
+def m_shorthand(root):
+    """`border-color`를 단축 `border`로 쓴다 — 덮은 것이 맞다. 잡으면 안 된다.
+    (`background-color` ← `background`도 같다. `min-height`는 단축이 없다.)"""
+    n = needle(marker_of("구독 버튼 테두리"))
+
+    def short(s):
+        a, b = find_rule(s, n)
+        return s[:a] + n + " {\n  border: 1px solid var(--hairline-strong);\n}" + s[b:]
+    edit(root, CSS, short)
+
+
 def m_untouched(root):
     return None
 
@@ -174,8 +204,10 @@ CASES = [
     ("구독 버튼 기본 규칙만 삭제(.type2는 남음)", m_base_button_dropped, "구독 버튼 테두리"),
     ("규칙이 주석 안에만 있음",                  m_rule_in_comment,    "블로그 설명"),
     ("속성 선택자 홑따옴표 — 형식 이탈",         m_single_quotes,      "카드 배경"),
+    ("선택자는 그대로, 속성만 바꿈",             m_property_swapped,   "블로그 설명"),
     ("접두 앞에 body id 추가 — 더 강하다",       m_stronger_prefix,    False),
     ("쉼표로 묶은 선택자 목록",                  m_comma_grouped,      False),
+    ("단축 border로 덮은 것도 덮은 것이다",      m_shorthand,          False),
 ]
 
 

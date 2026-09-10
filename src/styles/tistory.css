@@ -541,11 +541,23 @@
   color: var(--ink-body);
 }
 
-/* 구독 버튼의 + 아이콘(.tt_ico_cross 12×12)은 티스토리 **스프라이트 이미지**다 —
-   색 토큰이 원리적으로 못 닿는다. 짙은 회색 십자라 다크에서는 보이지 않는다
+/* 구독 버튼의 아이콘(12×12)은 티스토리 **스프라이트 이미지**다 — 색 토큰이
+   원리적으로 못 닿는다. 짙은 회색이라 다크에서는 보이지 않는다
    (2026-09-10 라이브에 빌드 CSS를 주입해 확인). 테마 분기 대신 §2의 "색이 아닌
-   값" 토큰 --sprite-invert(라이트 0 · 다크 1)로 반전시킨다. */
-.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_cross {
+   값" 토큰 --sprite-invert(라이트 0 · 다크 1)로 반전시킨다.
+
+   **아이콘이 둘이다.** index.css가 둘을 한 규칙에 묶어 둔다:
+     .tt_box_namecard .tt_btn_subscribe .tt_ico_check,
+     .tt_box_namecard .tt_btn_subscribe .tt_ico_cross { margin-left:2px }
+   `+`(.tt_ico_cross)는 구독 전, 체크(.tt_ico_check, 좌표 -82px -60px)는
+   **구독 중(.type2)** 상태다. 한쪽만 반전시키면 로그인한 구독자에게만 —
+   버튼 테두리는 토큰인데 아이콘만 안 보이는 — 반쪽 상태가 된다. 부분적으로
+   동작하는 것이 통째로 안 되는 것보다 찾기 어렵다(결정 35).
+   ⚠ .tt_ico_check는 **미검증**이다. 구독 중 상태는 로그인해야 나와서
+     픽스처에도 프리뷰에도 없다(.type2와 같은 이유). 좌표만 보고 같은 스프라이트로
+     판단했다. */
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_cross,
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_check {
   filter: invert(var(--sprite-invert));
 }
 

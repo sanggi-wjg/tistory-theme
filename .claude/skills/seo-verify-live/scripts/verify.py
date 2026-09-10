@@ -749,10 +749,13 @@ def verify_tistory_sheets(base, home_doc, post_doc):
     낡은 상대와 싸우면서 통과 신호를 낸다 — 아무 검사도 모르는 채로. 여기서 라이브 홈이
     링크한 URL과 대조하고, URL이 다르면 바이트까지 대조한다.
 
-    시트는 둘이다. content.css는 홈 head에서, `static/pc/dist/index.css`(**댓글·프로필 카드
-    React 앱의 시트**)는 **글 페이지** head에서 찾는다 — 홈에는 링크가 없다. 후자는
-    TIS003·TIS005의 상대인데, 그 둘은 소스에 빈 껍데기뿐이라 크롤로도 프리뷰로도 존재가
-    안 보인다. 시트가 갈리면 프리뷰의 카드·댓글이 **없는 상대와 싸우고** 통과 신호를 낸다.
+    시트는 둘이다 — content.css와 `static/pc/dist/index.css`(**댓글·프로필 카드 React 앱의
+    시트**). 둘 다 **홈 head**에서 찾는다: 2026-09-10 재실측에서 index.css 링크는 홈·방명록·
+    글 페이지 셋 다 각 1건이었다. 한때 "글 페이지에만 온다"고 적고 `post_doc`에서만 찾았는데
+    틀렸다 — 글 페이지를 못 받은 실행에서 대조가 통째로 미검증이 됐다. 글 페이지 전용인 것은
+    시트가 아니라 **Namecard div**다. index.css는 TIS003·TIS005의 상대인데, 그 둘은 소스에
+    빈 껍데기뿐이라 크롤로도 프리뷰로도 존재가 안 보인다. 시트가 갈리면 프리뷰의 카드·댓글이
+    **없는 상대와 싸우고** 통과 신호를 낸다.
 
     atom-one-light(결정 32의 두 번째 전제)은 2026-08-27 실측에서 글 페이지 소스 HTML에
     **없었다.** 있든 없든 info로 남긴다 — 프리뷰가 그 시트를 우리 뒤에 싣는 것은 더 엄격한
@@ -796,11 +799,30 @@ def verify_tistory_sheets(base, home_doc, post_doc):
 
     compare("TISTORY_CONTENT_CSS", "/static/style/content.css", "content.css",
             home_doc, base + "/", "TIS001~004")
-    # React 앱 시트(댓글 Comment · 프로필 카드 Namecard). **글 페이지에만** 온다 —
-    # 홈에서 찾으면 링크가 없어 늘 미검증이 된다. TIS003·TIS005의 상대가 이 파일이고,
+    # React 앱 시트(댓글 Comment · 프로필 카드 Namecard). **모든 페이지**에 링크된다
+    # (2026-09-10 실측: 홈·방명록·글 페이지 각 1건). 그래서 content.css와 똑같이 홈에서
+    # 찾는다 — 글 페이지를 못 받아도 대조가 선다. TIS003·TIS005의 상대가 이 파일이고,
     # 그 둘은 프리뷰로도 크롤로도 존재가 안 보이는 부류라 이 대조가 유일한 신호다.
     compare("TISTORY_INDEX_CSS", "/static/pc/dist/index.css", "index.css",
-            post_doc, base + "/(글 페이지)", "TIS003·TIS005")
+            home_doc, base + "/", "TIS003·TIS005")
+    # 글 페이지에도 같은 URL로 오는지는 덤이다. 다르면 두 페이지가 서로 다른 배포를
+    # 받고 있다는 뜻이라, 프리뷰가 어느 쪽과 싸우는지부터 다시 정해야 한다.
+    if post_doc:
+        want_idx = preview_sheet_url("TISTORY_INDEX_CSS")
+        live_idx = None
+        for tag in re.findall(r"<link\b[^>]*>", head_of(post_doc), re.I):
+            h = href_of(tag)
+            if h and "/static/pc/dist/index.css" in h:
+                live_idx = urllib.parse.urljoin(base + "/", h)
+                break
+        if live_idx and want_idx and live_idx == want_idx:
+            info("V017 — 글 페이지의 index.css도 같은 URL이다(Namecard·댓글이 여기서 온다).")
+        elif live_idx:
+            warn("V017", "index.css가 홈과 글 페이지에서 다르다 — 글 페이지: %s. 두 페이지가 "
+                 "서로 다른 배포를 받고 있다." % live_idx, RENDER_PY)
+        else:
+            info("V017 — 글 페이지 head에서 index.css 링크를 찾지 못했다. 2026-09-10 실측과 "
+                 "다르다(그때는 홈·방명록·글 셋 다 있었다) — 티스토리가 주입 방식을 바꿨을 수 있다.")
     if post_doc:
         if re.search(r"highlight\.js/[\d.]+/styles/atom-one-light", post_doc):
             info("V017 — 글 페이지 소스 HTML에 티스토리의 atom-one-light 링크가 있다(결정 32의 전제 유효).")

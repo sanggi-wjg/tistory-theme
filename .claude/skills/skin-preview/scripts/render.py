@@ -87,6 +87,7 @@ PAGING_TOTAL = 22           # 라이브 홈의 실제 페이지 수(275편 / 페
 #                      같이 다루므로 한쪽만 그리면 나머지 절반이 다시 안 보이는 채로 남는다.
 # 나머지 목록 페이지(search·tag)는 category와 같은 중간 모양이다.
 PAGING_CURRENT = {"index": 1, "category": 9, "archive": PAGING_TOTAL}
+PAGING_DEFAULT = 9          # 목록에 없는 페이지 — 중간 모양
 
 
 def paging_items(cur, total=PAGING_TOTAL, window=3):
@@ -209,6 +210,11 @@ TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/
 # 두 앱의 특이도 싸움이 **로컬에서 한 번도 벌어지지 않았다.** 그 침묵이 이슈 #59다:
 # Namecard가 라이트 전용 #f7f7f7 판으로 다크에 떠 있는데 프리뷰는 멀쩡했다.
 #
+# ⚠ 이 시트는 **모든 페이지** head에 링크된다 — 홈·방명록·글 페이지 셋 다 각 1건
+#    (2026-09-10 라이브 재실측). 글 페이지 전용인 것은 시트가 아니라 **Namecard div**다.
+#    한때 "글 페이지에만 온다"고 적었는데 틀렸다 — V017이 그 전제로 글 페이지에서만
+#    링크를 찾으면, 글 페이지를 못 받은 실행에서 대조가 통째로 미검증이 된다.
+#
 # ⚠ **우리 뒤에** 싣는다. 라이브 <head>에서는 우리 앞이지만(2026-09-10 실측),
 #    tistory.css 댓글 블록의 2026-08-26 실측은 "티스토리 시트가 우리 뒤"였다 —
 #    순서는 티스토리가 정하고 예고 없이 바뀐다. 뒤에 싣는 쪽이 **더 엄격한 조건**이라
@@ -219,7 +225,10 @@ TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/
 TISTORY_INDEX_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
                      "userblog-626ea1866044955da92690211f447663fdb36491/static/pc/dist/index.css")
 
-# 네트워크가 없으면 위 두 시트가 조용히 빠지고 프리뷰는 다시 거짓말을 한다.
+# 네트워크가 없으면 위 세 시트(content.css · atom-one-light · index.css)가 조용히
+# 빠지고 프리뷰는 다시 거짓말을 한다.
+# ⚠ 기대 개수(__NEED__)를 손으로 적지 않는다 — 아래 stack 조립이 원격 시트를 세어 넣는다.
+#   시트를 더하고 이 숫자를 잊으면 **가드가 먼저 낡는다**: 하나가 빠져도 띠가 안 뜬다.
 # 눈에 띄는 띠를 띄워 "지금 보고 있는 것은 반쪽"이라고 알린다.
 # ⚠ `%` 포맷을 쓰지 않는다. 이 문자열은 CSS를 담고 있어 `width:100%` 같은 값이
 #    언제든 들어올 수 있고, 그러면 "%" 포맷이 ValueError로 터진다. 자리표시자로 바꾼다.
@@ -453,7 +462,10 @@ def globals_for(page, posts, cats, skin_vars):
     # li.selected를 고르는 기준이기도 하므로 data/categories.json에 실재하는 이름이어야 한다.
     # 가장 긴 하위 이름을 고른 것은 의도적이다 — 240px 레일에서 줄바꿈이 나는지를
     # 선택 상태와 함께 매 렌더마다 눈에 띄게 하려는 것이다.
-    cur = PAGING_CURRENT.get(page, 9)
+    # 이 페이지가 몇 페이지인가. **여기 한 곳에서만 정한다** — ctx의 _paging_cur로
+    # 실어 s_paging_rep가 그것을 읽는다. 두 곳에서 각자 기본값을 적으면 이전·다음의
+    # 활성 여부(globals_for)와 번호 목록(s_paging_rep)이 서로 다른 페이지를 그린다.
+    cur = PAGING_CURRENT.get(page, PAGING_DEFAULT)
     conform = {"index": "전체 글",
                "category": "Python/성능과 동시성", "search": "OOMKilled",
                "tag": "hikaricp", "archive": "2026", "empty": "존재하지않는검색어"}.get(page, "")
@@ -495,6 +507,9 @@ def globals_for(page, posts, cats, skin_vars):
         "next_page": "" if cur >= PAGING_TOTAL else 'href="?page=%d"' % (cur + 1),
         "no_more_prev": "no-more-prev" if cur <= 1 else "",
         "no_more_next": "no-more-next" if cur >= PAGING_TOTAL else "",
+        # 치환자가 아니라 렌더러 내부 값이다(item_scope의 _has_thumb와 같은 부류).
+        # s_paging_rep가 이것을 읽어 번호 목록과 selected 자리를 정한다.
+        "_paging_cur": cur,
         "revenue_list_upper": '<div class="_ad">[광고 자리: 홈·목록 상단]</div>',
         "revenue_list_lower": '<div class="_ad">[광고 자리: 홈·목록 하단]</div>',
         # ⚠ 래퍼 밖에서는 **경고를 그린다.** 티스토리는 조용히 빈 문자열로 치환하지만,
@@ -745,7 +760,10 @@ def handle_group(name, attrs, inner, ctx, page, posts):
         # 2026-09-10까지 여기서 1~5를 맨 숫자로 냈다: selected도 ···도 프리뷰에 없었고,
         # 그래서 "현재 페이지가 어디인지 화면에 표시가 없다"(이슈 #58)를 로컬에서
         # 볼 방법이 없었다. 스킨 마크업은 멀쩡했다 — 없던 것은 CSS와 그 조건이다.
-        cur = PAGING_CURRENT.get(page, 9)
+        # globals_for가 정한 값을 그대로 읽는다 — 여기서 다시 정하지 않는다.
+        # 없으면 KeyError로 죽는 편이 낫다: 조용히 다른 페이지를 그리면 이전·다음의
+        # 활성 여부와 번호 목록이 어긋난 화면을 보고 판단하게 된다.
+        cur = ctx["_paging_cur"]
         buf = []
         for n in paging_items(cur):
             sub = dict(ctx)
@@ -892,14 +910,17 @@ def main():
         # _preview/index.html은 목차 페이지이므로, page 타입 'index'와 파일명이 충돌한다.
         # 티스토리 시트를 **실제 순서대로** 끼운다 — content.css는 우리 앞, hljs는 우리 뒤.
         # 감시 스크립트가 링크보다 먼저 와야 onload 콜백이 정의되어 있다.
-        # index.css(React 앱 시트)는 **우리 뒤**다 — 상수 주석의 이유대로 더 엄격한 조건.
-        stack = "\n".join((
-            TISTORY_CSS_GUARD.replace("__NEED__", "3"),
-            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_CONTENT_CSS,
-            '<link rel="stylesheet" href="../../dist/style.css">',
-            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_HLJS_CSS,
-            '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % TISTORY_INDEX_CSS,
-        ))
+        # **이 목록의 순서가 곧 검사다** — content.css는 우리 앞, atom-one-light과
+        # index.css(React 앱 시트)는 우리 뒤. 뒤에 오는 쪽은 특이도가 같으면 이긴다.
+        # 가드의 기대 개수는 여기서 **세어서** 낸다(우리 시트는 로컬이라 빼고).
+        ours = "../../dist/style.css"
+        sheets = [TISTORY_CONTENT_CSS, ours, TISTORY_HLJS_CSS, TISTORY_INDEX_CSS]
+        remote = [s for s in sheets if s != ours]
+        stack = "\n".join(
+            [TISTORY_CSS_GUARD.replace("__NEED__", str(len(remote)))]
+            + ['<link rel="stylesheet" href="%s">' % s if s == ours
+               else '<link rel="stylesheet" href="%s" onload="__tistoryCssLoaded()">' % s
+               for s in sheets])
         before = out
         out = out.replace('<link rel="stylesheet" href="./style.css">', stack, 1)
         if out == before:
