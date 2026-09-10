@@ -82,10 +82,9 @@ PAGING_TOTAL = 22           # 라이브 홈의 실제 페이지 수(275편 / 페
 # 세 모양이 서로 다른 것을 켠다.
 #   index    1페이지  → selected가 첫 칸, 이전 비활성(no-more-prev + href 없음)
 #   category 9페이지  → 양끝 생략 부호 두 개, 이전·다음 둘 다 활성 (라이브 /?page=9 그대로)
-#   archive  마지막   → 다음 비활성(no-more-next). ⚠ prev 쪽은 실측이고 next 쪽은
-#                      **같은 치환자 짝의 대칭**으로 그린 것이다(마지막 페이지는 실재하지만
-#                      그 HTML을 직접 재지는 않았다). CSS가 두 클래스를 같이 다루므로
-#                      한쪽만 그리면 나머지 절반이 다시 안 보이는 채로 남는다.
+#   archive  마지막   → 다음 비활성(no-more-next, href 없음) + `1 ··· 19 20 21 22`
+#                      (라이브 /?page=22 실측 — paging_items(22)와 같다). CSS가 두 클래스를
+#                      같이 다루므로 한쪽만 그리면 나머지 절반이 다시 안 보이는 채로 남는다.
 # 나머지 목록 페이지(search·tag)는 category와 같은 중간 모양이다.
 PAGING_CURRENT = {"index": 1, "category": 9, "archive": PAGING_TOTAL}
 
