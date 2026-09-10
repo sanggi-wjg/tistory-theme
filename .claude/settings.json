@@ -14,6 +14,7 @@
       "Bash(git fetch *)",
       "Bash(git pull:*)",
       "Bash(git checkout:*)",
+      "Bash(gh issue *)",
       "Bash(git --no-pager diff:*)",
       "Bash(git --no-pager log:*)",
       "Bash(git --no-pager show:*)",
