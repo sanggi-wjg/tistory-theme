@@ -56,7 +56,7 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 ### 미리보기 이미지도 파일업로드 탭으로 올린다
 
 `preview.gif` · `preview256.jpg` · `preview560.jpg` · `preview1600.jpg`는 스킨 **루트**에
-있어야 한다(`docs/tistory-skin-reference.txt:51`). 없으면 관리 화면의 "사용중인 스킨"과
+있어야 한다(`docs/tistory-skin-reference.txt` 「style.css」 항목). 없으면 관리 화면의 "사용중인 스킨"과
 스킨 보관함에 **깨진 이미지가 뜬다.**
 
 **파일업로드 탭이 이 이름들을 루트로 보낸다.** 목적지가 파일명으로 갈린다 —

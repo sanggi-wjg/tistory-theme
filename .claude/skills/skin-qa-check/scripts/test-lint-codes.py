@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LINT = os.path.join(HERE, "lint.py")
 SKILL = os.path.abspath(os.path.join(HERE, "..", "SKILL.md"))
 
-PREFIX = r"(?:SUB|AREA|BND|TOK|INL|TIS|HLJS|ROB|A11Y|SEO|CAT|SYN)"
+PREFIX = r"(?:SUB|AREA|BND|TOK|INL|TIS|HLJS|ROB|A11Y|SEO|CAT|SYN|DOC)"
 
 # 표에는 있는데 lint.py가 err/warn으로 내지 않는 코드는 **여기 이유가 적힌 것만** 정상이다.
 # 2026-08-27까지는 그런 코드를 출력만 하고 통과시켰다 — lint.py에서 TIS003 호출을 지워도
