@@ -87,13 +87,15 @@ function openFor(img) {
 
   const big = document.createElement('img')
   big.className = 'lightbox-img'
-  // ⚠ **원본 URL을 따로 찾지 않는다.** 예전에는 `data-origin`을 먼저 봤는데,
-  //   그 속성의 근거가 이 저장소 어디에도 없었다(2026-08-27 셀프 리뷰).
-  //   실제로 관찰된 티스토리 이미지블록은 `data-origin-width`/`-height`와
-  //   `<span data-url>`을 쓴다 — 이름이 다르다. 없는 속성을 먼저 보는 코드는
-  //   폴백 덕에 조용히 통과하면서 "원본을 쓰고 있다"는 착각만 남긴다.
-  //   무엇이 진짜 원본 주소인지는 TODO `lightbox-origin`에서 실측한다.
-  big.src = img.currentSrc || img.src
+  // 원본은 **`src` 속성**이다 (결정 56, 2026-09-14 라이브 실측). 티스토리 이미지블록은
+  //   `src`에 원본(실측 4406px)을, `srcset`에 `img1.daumcdn.net/thumb/R1280x0/…` **축소본 하나를
+  //   서술자 없이** 싣는다 — 서술자 없는 후보는 1x라 브라우저는 srcset을 고르고, `currentSrc`는
+  //   1280px 축소본이 된다. 2019~2026년 글 전부 같은 모양이고 `<span data-url>`은 `src`와 같다.
+  //   그래서 `currentSrc`를 먼저 보던 코드는 라이트박스에 축소본을 띄우고 있었다 — 화면은
+  //   멀쩡해 보였다(뷰포트에 맞춰 커지니까), 선명도만 조용히 잃고 있었다.
+  //   `getAttribute('src')`가 비면(에디터 밖에서 붙인 이미지) 지금까지처럼 currentSrc로 간다.
+  //   `data-origin`은 예전에 근거 없이 보던 이름이다 — 어디에도 없다(2026-08-27 셀프 리뷰).
+  big.src = img.getAttribute('src') || img.currentSrc || img.src
   big.alt = img.getAttribute('alt') || ''
 
   const btn = document.createElement('button')
