@@ -18,6 +18,9 @@ python3 .claude/skills/blog-census/scripts/census.py --posts --bodies
 
 # 본문 일부만 맛보기
 python3 .claude/skills/blog-census/scripts/census.py --posts --bodies --limit 50
+
+# 코드블록 하이라이팅 커버리지 — --bodies가 남긴 블록 원문에 code.js의 판정을 그대로 돌린다 (결정 55)
+node scripts/probe-code-coverage.mjs        # = npm run census:coverage
 ```
 
 ## 산출물
@@ -26,7 +29,8 @@ python3 .claude/skills/blog-census/scripts/census.py --posts --bodies --limit 50
 |---|---|---|
 | `data/posts.json` | 전수 목록 (제목·날짜·카테고리·썸네일·URL) | 프리뷰 픽스처 |
 | `data/categories.json` | 카테고리별 집계 (하위 + 상위) | 기본이미지 규칙, 린트 BND003 |
-| `data/inline-styles.json` | 인라인 색·배경·폰트, 코드블록 실태 | **린트 INL001** — 보정 규칙 커버리지 검사 |
+| `data/inline-styles.json` | 인라인 색·배경·폰트, 코드블록 실태(라벨 **세 신호를 따로**: `keLanguage`·`preClass`·`authorLanguage`) | **린트 INL001** — 보정 규칙 커버리지 검사 |
+| `_workspace/code-blocks.json` | `<pre>` 728개의 원문·클래스 (커밋하지 않는다) | `scripts/probe-code-coverage.mjs` — 몇 %가 칠해지는지 |
 
 `--bodies` 없이 돌리면 `inline-styles.json`은 갱신되지 않는다.
 
@@ -43,6 +47,9 @@ python3 .claude/skills/blog-census/scripts/census.py --posts --bodies --limit 50
 | 코드 내용을 스타일로 오인 | `<code>` 내용을 먼저 제거한다. 파이썬 코드의 `color = green`이 섞인다 |
 | `og:image` 유무로 대표이미지 판정 | 없으면 티스토리 **기본 OG 이미지**로 떨어진다. 목록의 `class="thumb"` 유무가 정확하다 |
 | 평균만 보고 | 중앙값·최대·분포를 함께 본다. "전체 45%지만 최신 20편은 85%"가 여기서 나온다 |
+| 코드블록 라벨을 한 신호로 셈 | `data-ke-language`·`<pre class>`·`<code class="language-*">`는 **만든 주체가 다르다**(에디터·에디터 감지·글쓴이). 따로 세고 합치지 않는다 — 첫째만 세어 「39%」로 적혔던 것이 전수로는 72%·17%가 따로 있었다 (결정 55) |
+| 표본 한 편의 최빈값을 전수처럼 적음 | 홈 12편 41블록의 `<pre class>` 최빈값은 `reasonml`이었지만 전수 527개의 최빈값은 `python`이다. 표본 수치에는 표본 범위를 붙인다 |
+| 썸네일을 `.thumb` 상자로 셈 | 우리 스킨은 기본 이미지에도 `.thumb`가 있다. **`img.thumb-img`가 있을 때만** 실물이다 |
 
 ## 결과가 설계에 미치는 영향
 
@@ -62,4 +69,9 @@ python3 .claude/skills/blog-census/scripts/census.py --posts --bodies --limit 50
 
 ## 마크업이 바뀌었을 때
 
-스킨을 교체하면 목록 페이지 구조가 달라져 파싱이 실패한다. 스크립트는 `<div class="post">`를 기준으로 자른다. **임의로 고치지 말고 새 구조를 보고**한 뒤 지시를 받는다 — 잘못 고치면 조용히 틀린 수치가 나온다.
+스킨을 교체하면 목록 페이지 구조가 달라져 파싱이 실패한다. 스크립트는 두 모양을 안다(`census.py`의 `LIST_SHAPES`) —
+**우리 스킨**(`article.post` + `.post-title`·`.post-date`·`.post-cat`·`.post-link`·`img.thumb-img`, 계약은
+`docs/hooks.md` §3)과 2026-08-25까지의 **구 스킨**(`div.post` + `.tit`·`.date`·`.category`·`a.link`). 첫 페이지에서
+어느 쪽인지 고르고 stderr에 적는다. **우리 스킨의 목록 훅을 개명하면 이 스크립트도 따라와야 한다** — 린트는
+`census.py`를 보지 않는다. 둘 다 0건이면 마크업이 또 바뀐 것이다: **임의로 고치지 말고 새 구조를 보고**한 뒤
+지시를 받는다 — 잘못 고치면 조용히 틀린 수치가 나온다.

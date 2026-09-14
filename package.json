@@ -24,6 +24,7 @@
     "test:decor": "python3 .claude/skills/skin-qa-check/scripts/test-empty-decor.py",
     "test:namecard": "python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py",
     "test:code": "node scripts/probe-code-detect.mjs",
+    "census:coverage": "node scripts/probe-code-coverage.mjs",
     "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py"
   },
   "devDependencies": {

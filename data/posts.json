@@ -1,8 +1,22 @@
 {
  "blog": "sanggi-jayg.tistory.com",
- "crawledAt": "2026-08-25",
- "total": 275,
+ "crawledAt": "2026-09-14",
+ "total": 277,
  "posts": [
+  {
+   "title": "우리 귀여운 오즈 보고 가세요",
+   "date": "2026.09.10",
+   "category": "기록",
+   "hasThumbnail": true,
+   "url": "/entry/%EC%9A%B0%EB%A6%AC-%EA%B7%80%EC%97%AC%EC%9A%B4-%EC%98%A4%EC%A6%88-%EB%B3%B4%EA%B3%A0-%EA%B0%80%EC%84%B8%EC%9A%94"
+  },
+  {
+   "title": "K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기 - 4편: 전환 후 6개월간 운영해본 회고",
+   "date": "2026.08.27",
+   "category": "Kotlin·Java",
+   "hasThumbnail": true,
+   "url": "/entry/K8s-CronJob-%EA%B8%B0%EB%B0%98-Spring-Batch-Argo-Workflows%EB%A1%9C-%EC%A0%84%ED%99%98%ED%95%98%EA%B8%B0-4%ED%8E%B8-%EC%A0%84%ED%99%98-%ED%9B%84-6%EA%B0%9C%EC%9B%94%EA%B0%84-%EC%9A%B4%EC%98%81%ED%95%B4%EB%B3%B8-%ED%9A%8C%EA%B3%A0"
+  },
   {
    "title": "타이밍 어택, 어디까지 막아야 할까? == 비교부터 프레임워크 CVE까지",
    "date": "2026.08.12",
@@ -182,14 +196,14 @@
    "title": "좋은 엔지니어 되기: 핵심 원칙과 실천 방안",
    "date": "2025.05.26",
    "category": "기록",
-   "hasThumbnail": false,
+   "hasThumbnail": true,
    "url": "/entry/%EC%A2%8B%EC%9D%80-%EC%97%94%EC%A7%80%EB%8B%88%EC%96%B4-%EB%90%98%EA%B8%B0-%ED%95%B5%EC%8B%AC-%EC%9B%90%EC%B9%99%EA%B3%BC-%EC%8B%A4%EC%B2%9C-%EB%B0%A9%EC%95%88"
   },
   {
    "title": "Jira와 GitHub 연동을 통한 태스크 상태 전환 및 버전 릴리스 자동화",
    "date": "2025.05.02",
    "category": "인프라/CI·CD",
-   "hasThumbnail": false,
+   "hasThumbnail": true,
    "url": "/entry/Jira%EC%99%80-GitHub-%EC%97%B0%EB%8F%99%EC%9D%84-%ED%86%B5%ED%95%9C-%ED%83%9C%EC%8A%A4%ED%81%AC-%EC%83%81%ED%83%9C-%EC%A0%84%ED%99%98-%EB%B0%8F-%EB%B2%84%EC%A0%84-%EB%A6%B4%EB%A6%AC%EC%8A%A4-%EC%9E%90%EB%8F%99%ED%99%94"
   },
   {
@@ -280,7 +294,7 @@
    "title": "ORM 사용에 관한 에이전트 토론 들어보기",
    "date": "2024.12.12",
    "category": "AI",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/ORM-%EC%82%AC%EC%9A%A9%EC%97%90-%EA%B4%80%ED%95%9C-%EC%97%90%EC%9D%B4%EC%A0%84%ED%8A%B8-%ED%86%A0%EB%A1%A0-%EB%93%A4%EC%96%B4%EB%B3%B4%EA%B8%B0"
   },
   {
@@ -420,7 +434,7 @@
    "title": "[CDC] MySQL Debezium Change Data Capture 따라해보기 - 2",
    "date": "2024.02.10",
    "category": "인프라/데이터 파이프라인",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/CDC-MySQL-Debezium-Change-Data-Capture-%EB%94%B0%EB%9D%BC%ED%95%B4%EB%B3%B4%EA%B8%B0-2"
   },
   {
@@ -482,7 +496,7 @@
   {
    "title": "[Docker] 도커 사용하지 않는 볼륨, 이미지 삭제하는 방법",
    "date": "2023.12.02",
-   "category": "인프라/쿠버네티스",
+   "category": "개발 도구/에디터·터미널",
    "hasThumbnail": false,
    "url": "/entry/Docker-%EC%82%AC%EC%9A%A9%ED%95%98%EC%A7%80-%EC%95%8A%EB%8A%94-%EB%B3%BC%EB%A5%A8-%EC%82%AD%EC%A0%9C%ED%95%98%EB%8A%94-%EB%B0%A9%EB%B2%95"
   },
@@ -560,7 +574,7 @@
    "title": "[보안] Cookie bomb attack",
    "date": "2023.05.01",
    "category": "보안",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/%EB%B3%B4%EC%95%88-Cookie-bomb-attack"
   },
   {
@@ -700,7 +714,7 @@
    "title": "[Python] Concurrency Thread Decorator - 3",
    "date": "2022.08.14",
    "category": "Python/성능과 동시성",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/Python-Concurrency-Thread-Decorator-3"
   },
   {
@@ -840,7 +854,7 @@
    "title": "[Python] Thread와 Async를 이용한 비동기 방법",
    "date": "2022.07.09",
    "category": "Python/성능과 동시성",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/Python-Thread%EC%99%80-Async%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-%EB%B9%84%EB%8F%99%EA%B8%B0-%EB%B0%A9%EB%B2%95"
   },
   {
@@ -1120,7 +1134,7 @@
    "title": "[Clean Code] 11-1 Concern",
    "date": "2021.09.06",
    "category": "코드 품질/Clean Code",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/Clean-Code-11-1-Concern"
   },
   {
@@ -1260,7 +1274,7 @@
    "title": "[Ubuntu 20.04] MySQL 5.6.xx 설치",
    "date": "2021.06.17",
    "category": "데이터베이스/MySQL",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/Ubuntu-2004-MySQL-56xx-%EC%84%A4%EC%B9%98"
   },
   {
@@ -1400,7 +1414,7 @@
    "title": "프로그래머스 - 나머지 한 점",
    "date": "2021.01.22",
    "category": "알고리즘",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8%EC%8A%A4-%EB%82%98%EB%A8%B8%EC%A7%80-%ED%95%9C-%EC%A0%90"
   },
   {
@@ -1540,7 +1554,7 @@
    "title": "[Python] builtin all() 함수",
    "date": "2021.01.08",
    "category": "Python/기초",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/Python-builtinall-%ED%95%A8%EC%88%98"
   },
   {
@@ -1680,7 +1694,7 @@
    "title": "Flask Flask-SQLAlchemy",
    "date": "2019.10.25",
    "category": "Python/Django·Flask",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/Flask-Flask-SQLAlchemy"
   },
   {
@@ -1820,7 +1834,7 @@
    "title": "MySQL 접속 유저 추가",
    "date": "2019.10.22",
    "category": "데이터베이스/MySQL",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/MySQL-%EC%A0%91%EC%86%8D-%EC%9C%A0%EC%A0%80-%EC%B6%94%EA%B0%80"
   },
   {
@@ -1925,7 +1939,7 @@
    "title": "쉘 접속 지연 문제 해결 방법",
    "date": "2019.10.22",
    "category": "인프라/리눅스",
-   "hasThumbnail": true,
+   "hasThumbnail": false,
    "url": "/entry/%EC%89%98-%EC%A0%91%EC%86%8D-%EC%A7%80%EC%97%B0-%EB%AC%B8%EC%A0%9C-%ED%95%B4%EA%B2%B0-%EB%B0%A9%EB%B2%95"
   }
  ]

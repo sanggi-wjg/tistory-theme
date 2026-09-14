@@ -2,9 +2,9 @@
 // DESIGN.md §6.3 · hooks.md §5.6
 //
 // ── 라벨을 믿는 기준: 누가 썼는가 (결정 18 · 43) ──
-// **에디터가 붙인 것은 안 믿는다.** `data-ke-language` 285개(39%) 중 `javascript`
-// 44개가 전부 오답이었고(셸·설정·SQL·한국어 메모), `<pre>`의 클래스는 더 나쁘다 —
-// 2026-08-26 실측에서 홈 12편 41블록의 최빈값이 `reasonml` 6개였다.
+// **에디터가 붙인 것은 안 믿는다.** `data-ke-language` 286개(39%) 중 `javascript`
+// 44개가 전부 오답이었고(셸·설정·SQL·한국어 메모), `<pre>`의 클래스(전수 527개, 72%)에는
+// 이 블로그에 없는 언어(`routeros`·`reasonml`·`angelscript`)가 46개 섞여 있다(결정 55 전수).
 // **글쓴이가 마크다운 펜스로 쓴 `<code class="language-X">`만 믿는다.**
 // 둘 중 어느 것도 없으면 highlightAuto로 넘어간다.
 //
@@ -108,7 +108,7 @@ const MAX_LINES_FOR_NUMBERS = 400 // 이보다 길면 거터를 만들지 않는
 // 이보다 긴 블록(로그 덤프 — 실측 최대 1,777자짜리 줄이 있다)은 **자동 감지**를 건너뛴다.
 // highlightAuto는 후보 10개 문법을 전부 돌리므로 비용이 길이 × 10이다. 글쓴이가 언어를 쓴
 // 블록은 문법 하나라 상한과 무관하게 칠한다(결정 43·51). 복사 버튼·줄번호 규칙은 그대로.
-const MAX_CHARS = 20000
+export const MAX_CHARS = 20000
 
 let registered = false
 function register() {
