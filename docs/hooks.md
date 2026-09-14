@@ -275,8 +275,8 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | `.entry-aside` | 목차 칸. `position: sticky`는 여기 또는 `.toc`에 |
 | `.entry-tags` | 안의 `<a>`는 티스토리가 만든다 (`[##_tag_label_rep_##]`). `.entry-tags a`로 스타일 |
 | `.entry-admin` | 관리자 전용 링크 줄. 조용히 작게 |
-| `.related` `.related-title` `.related-list` `.related-item` `.related-link` `.related-thumb` `.related-thumb-img` `.related-text` `.related-date` `.related-more` | 같은 카테고리 다른 글. `.related-item`에 티스토리가 주는 `text_type` / `thumb_type` 클래스가 **함께** 붙는다 |
-| `.postnav` `.postnav-item` `.postnav-prev` `.postnav-next` `.postnav-label` `.postnav-title` `.postnav-thumb` `.postnav-thumb-img` | 이전/다음 글. `.postnav-item`에도 `text_type`/`thumb_type`이 붙는다 |
+| `.related` `.related-title` `.related-list` `.related-item` `.related-link` `.related-thumb` `.related-thumb-img` `.related-text` `.related-date` `.related-more` | 같은 카테고리 다른 글. `.related-item`에 티스토리가 주는 `text_type` / `thumb_type` 클래스가 **함께** 붙는다. `.related-thumb` 상자는 **항상 있고** `.related-thumb-img`만 대표이미지가 있을 때 존재한다 — 홈 카드 `.thumb`/`.thumb-img`와 같은 구조(결정 57) |
+| `.postnav` `.postnav-item` `.postnav-prev` `.postnav-next` `.postnav-label` `.postnav-title` `.postnav-thumb` `.postnav-thumb-img` | 이전/다음 글. `.postnav-item`에도 `text_type`/`thumb_type`이 붙지만 칸을 그걸로 켜고 끄지 않는다 — `.postnav-thumb` 상자는 **항상 있고** `.postnav-thumb-img`만 대표이미지가 있을 때 존재한다(결정 57, 린트 `BND011`) |
 | `.comments` `#comments` | `[##_comment_group_##]` 한 줄. 안은 전부 `tt-*` (DESIGN §5.4) |
 | *(없음)* `[data-tistory-react-app="Namecard"]` | **스킨 마크업이 아니다.** 티스토리가 글 페이지의 `<s_rp>` 출력 **앞**에 클래스 없는 빈 div를 주입하고 React가 채운다 — `.tt_box_namecard > .tt_cont(.tt_tit_cont .tt_desc .tt_btn_subscribe > .tt_txt_g) + .tt_wrap_thumb > .tt_thumb_g`. 방명록·홈에는 없다(2026-09-10 라이브 실측). `tistory.css`가 `.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard` 접두로 덮는다(결정 53, 린트 `TIS005`). `<s_rp>` 안쪽은 티스토리가 `#entryNComment`로 한 번 더 감싼다 |
 
@@ -525,7 +525,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 |---|---|---|
 | `.side-category` | `[##_category_list_##]` 한 줄 — **폴더형 `[##_category_##]`이 아니다**(결정 31, 린트 `CAT001`) | **티스토리 고정 마크업.** `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.link_sub_item` `.c_cnt`, 현재 가지에 `li.selected` (DESIGN §5.3) |
 | `.side-notice` | 최근 공지 | `.side-list` `.side-item` `.side-link` |
-| `.side-recent` | 최근 글 | `.side-list` `.side-item` `.side-link` `.side-thumb` `.side-thumb-img` `.side-text` `.side-meta` `time.side-date` `.side-rp` |
+| `.side-recent` | 최근 글 | `.side-list` `.side-item` `.side-link` `.side-thumb` `.side-thumb-img` `.side-text` `.side-meta` `time.side-date` `.side-rp`. `.side-thumb` 상자는 **항상 있고** `.side-thumb-img`만 대표이미지가 있을 때 존재한다(결정 57) |
 | `.side-popular` | 인기글 | 위와 동일 |
 | `.side-comments` | 최근 댓글 | `.sidecmt-list` `.sidecmt-item` `.sidecmt-link` `.sidecmt-name` `.sidecmt-date` |
 | `.side-tags` | 태그 클라우드 | `.tagcloud-list` `.tagcloud-item` `.tagcloud-link` + 티스토리가 주는 `cloud1`~`cloud5` |
@@ -552,6 +552,8 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 `nav.site-nav` 안은 `[##_blog_menu_##]`가 만든 **티스토리 고정 마크업**이다.
 클래스를 기대하지 말고 `.site-nav ul` `.site-nav li` `.site-nav a`로 잡는다.
 현재 메뉴에 붙은 항목 클래스는 티스토리 설정에 따라 달라진다.
+**메뉴를 설정하지 않으면 빈 문자열이 아니라 빈 `<ul></ul>`이 온다**(2026-09-14 라이브 실측) —
+"비었다"는 `.site-nav:has(> ul:empty)`로 잡는다. `:empty`는 폴백이다(결정 57).
 
 ### CSS 규칙이 없는 것이 정상인 마크업 클래스
 
