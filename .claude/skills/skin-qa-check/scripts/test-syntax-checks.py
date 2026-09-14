@@ -4,6 +4,7 @@
   SYN001  scripts/check-css.mjs   괄호(파일 끝·시작 `}`)·속성 오타·값 오타
   SYN002  lint.py                 닫는 태그 삭제·닫지 않는 <div>·자기 닫힘 <div/>
   BND004  lint.py                 마크업+CSS에서만 개명(접두 공유)
+  DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
 규칙을 썼다는 것과 그 규칙이 조건을 재현한다는 것은 다르다(결정 40). 변형은 **append·삭제**
@@ -129,6 +130,31 @@ def c_bnd004(root):
         edit(root, os.path.join("src", "styles", f),
              lambda s: re.sub(r"\.entry-body(?![\w-])", ".entry-body-v2", s)) if ".entry-body" in open(os.path.join(root, "src", "styles", f), encoding="utf-8").read() else None
     return any("entry-body" in m for m in lint_codes(root, "BND004"))
+
+
+# ── DOC001 ──
+@case("DOC001 기준선 — 사본의 문서에 줄번호 인용이 없다", False)
+def c_doc_base(root):
+    return bool(lint_codes(root, "DOC001"))
+
+
+@case("DOC001 문서에 `파일:줄` 인용을 넣으면 잡는다", True)
+def c_doc_hit(root):
+    edit(root, "docs/hooks.md", lambda s: s + "\n`src/js/toc.js:42`가 목차를 만든다.\n")
+    return any("toc.js:42" in m for m in lint_codes(root, "DOC001"))
+
+
+@case("DOC001 범위 인용(`파일:59-60`)도 잡는다", True)
+def c_doc_range(root):
+    edit(root, "docs/hooks.md", lambda s: s + "\n`docs/tistory-skin-reference.txt:59-60`을 보라.\n")
+    return bool(lint_codes(root, "DOC001"))
+
+
+@case("DOC001 오탐 방지 — 심볼 인용·URL·시각·`파일`만은 정상", False)
+def c_doc_ok(root):
+    edit(root, "docs/hooks.md", lambda s: s +
+         "\n`toc.js`의 `MIN_HEADINGS` · https://cdn.example.com/lib/x.js:1 · 12:30 · `layout.css` 머리말\n")
+    return bool(lint_codes(root, "DOC001"))
 
 
 # ── test:codes ──

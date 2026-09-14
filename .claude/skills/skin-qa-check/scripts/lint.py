@@ -1396,6 +1396,38 @@ def lint_seo(skin):
 
 # ─────────────────────────────── main ───────────────────────────────
 
+# ─────────────────────────── 문서 인용 (DOC001) ───────────────────────────
+
+# `파일:줄` 인용. 확장자 뒤에 `:숫자`(선택적으로 `-숫자`·`~숫자` 범위). 경로는 단어 문자나 `.`로
+# 시작해야 하고 그 앞이 `/`·`.`·`:`·단어 문자면 안 된다 — URL 안(`https://cdn…/x.js:1`)은 모든
+# 위치가 그 조건에 걸려 매칭되지 않는다. 첫 판은 `:` 뒤의 `//cdn…`에서 시작해 URL을 잡았다(테스트가 잡았다).
+LINE_REF = re.compile(r"(?<![\w/.:-])([\w.][\w./-]*\.(?:js|mjs|css|html|py|xml|json|md|txt)):(\d+)(?:[-~]\d+)?\b")
+DOC_SKIP_DIRS = {"node_modules", ".git", "dist", "_preview", "backup"}
+
+
+def lint_doc_line_refs(root):
+    """문서의 `파일:줄번호` 인용을 막는다 (결정 54).
+
+    줄번호는 그 위에 한 줄만 들어가도 조용히 다른 줄을 가리킨다 — 2026-08-26 한 세션에서
+    5건, 2026-08-27 전체 대조에서 20건 중 1건이 이미 썩어 있었고, 그중 둘은 쓴 PR에서
+    리뷰가 놓쳤다. 심볼 인용(`` `code.js`의 `LANGS` ``)은 줄이 밀려도 안 썩는다.
+    심볼의 존재까지는 검사하지 않는다 — 이름을 바꾸면 저장소 전체를 훑는 규범이 이미 있다."""
+    for dirpath, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if d not in DOC_SKIP_DIRS and not d.startswith("_workspace"))
+        for f in sorted(files):
+            if not f.endswith(".md"):
+                continue
+            path = os.path.join(dirpath, f)
+            rel = os.path.relpath(path, root)
+            for i, line in enumerate(read(path).split("\n"), 1):
+                for m in LINE_REF.finditer(line):
+                    err("DOC001",
+                        "문서가 `%s:%s`처럼 줄번호로 인용한다 — 위에 한 줄만 들어가도 다른 줄을 가리키는데 "
+                        "화면에 신호가 없다. `` `%s`의 `심볼` `` 형태로 쓴다 (결정 54)"
+                        % (m.group(1), m.group(2), os.path.basename(m.group(1))),
+                        "%s %d행" % (rel, i))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
@@ -1462,6 +1494,8 @@ def main():
     lint_hljs_tokens(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
+    # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.
+    lint_doc_line_refs(ROOT)
 
     if args.json:
         print(json.dumps({"errors": ERRORS, "warnings": WARNINGS, "info": INFO},

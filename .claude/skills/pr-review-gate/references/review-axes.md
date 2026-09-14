@@ -119,6 +119,7 @@ CLAUDE.md 「핵심 위험」: "검증 도구가 통과 신호를 위조한 적�
 | TODO 항목을 닫았다 | `TODO.md` — 항목을 지우고 **닫힌 항목** 표에 어디로 갔는지 |
 | 린트 규칙을 냈다 | `/skin-qa-check` 규칙 목록 |
 | 실측 수치가 바뀌었다 | `DECISIONS.md` §3, `data/*.json` |
+| 코드를 인용했다 | **`파일`의 `심볼`** 형태로. `파일:줄` 인용은 린트 `DOC001`이 막는다 — 위에 한 줄만 들어가도 다른 줄을 가리키고 화면에 신호가 없다(결정 54) |
 
 **번호로 식별하는 목록**(`DECISIONS.md` 미결, `TODO.md`)에 항목을 **더할** 때는
 번호가 아니라 슬러그를 쓴다 — 동시 작업이 겹친 전례가 세 번 있다.
@@ -140,8 +141,8 @@ CLAUDE.md 「핵심 위험」: "검증 도구가 통과 신호를 위조한 적�
 
 > ❌ "스타일이 안 먹을 것 같다"
 >
-> ✅ "`src/styles/content.css:77`의 `.contents_style .heading-anchor`는 (0,2,0)이라
-> 같은 파일 `:107`의 `.contents_style a`(0,1,1)를 이긴다. 다만 티스토리
+> ✅ "`src/styles/content.css`의 `.contents_style .heading-anchor`는 (0,2,0)이라
+> 같은 파일의 `.contents_style a`(0,1,1)를 이긴다. 다만 티스토리
 > `content.css`에 `#tt-body-page .contents_style a`가 있으면 (1,1,1)로 진다 —
 > `data/tistory-hardcoded-colors.json`에 그런 규칙은 없다. **통과**"
 
