@@ -400,7 +400,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안. **DOM 순서는 `pre` 뒤**이지만 `position: absolute`라 화면에서는 왼쪽 거터다 |
 | `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
-| `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 | `<body>` 끝에 1개 |
+| `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대. `.lightbox-img`의 `src`는 **본문 `<img>`의 `src` 속성**이다 — 티스토리가 `srcset`에 1280px 축소본을 싣어 `currentSrc`는 축소본이 된다(결정 56) | `<body>` 끝에 1개 |
 | `.cat-chip` · `.cat-chip-count` · `.cat-chip.is-all` | 모바일 카테고리 칩. `<a class="cat-chip">인프라<span class="cat-chip-count">42</span></a>`. 「전체」는 `.is-all`. 계약 본문은 §5.9 | `#cat-chips` 안 |
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |
 | `.external-link` | 외부링크임을 표시하는 **상태 클래스**. JS가 `<a>`에 붙이고 `target="_blank" rel="noopener noreferrer"`를 함께 건다. **표시는 `.external-icon`이 담당하므로 이 클래스에 CSS 규칙이 없는 것이 정상이다** (중복 처리를 막는 표식 겸용) | `.contents_style a` |

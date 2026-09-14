@@ -1083,6 +1083,27 @@ TODO `doc-line-refs`. 줄번호 인용은 그 위에 한 줄만 들어가도 **�
 가리키던 4곳은 절 제목으로, `layout.css` 머리말 2곳, 그리고 **리뷰 지적의 예문 3곳**(`skin-qa.md`·
 `skin-qa-check/SKILL.md`·`review-axes.md`)이 줄번호 형식을 **가르치고 있었다** — 규범이 예문에서 어긋나면
 예문이 이긴다. `TODO.md`의 「썩은 인용」 기록 5건은 항목을 닫으면서 같이 걷었다.
+**결정 56 — 라이트박스는 본문 `<img>`의 `src` 속성을 띄운다. `currentSrc`는 티스토리가 `srcset`에 실은 1280px 축소본이다 (2026-09-14).**
+
+TODO `lightbox-origin`. "원본을 띄우는지 모른다"였는데 실측하니 **띄우지 않고 있었다.**
+
+**실측.** 대표이미지 있는 글 12편(2026)과 연도별 2편(2019~2026)의 서버 HTML에서 이미지블록 35+40개를 봤다.
+전부 같은 모양이다 — `<figure class="imageblock" data-origin-width="4406" …><span data-url="A" data-phocus="A">
+<img src="A" srcset="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=A" …></span></figure>`.
+`src`와 `data-url`은 **같은 값이고 원본**이다(내려받아 `sips`로 잰 픽셀 4406×1062, 245KB). `srcset`은 **후보 하나,
+서술자 없이** — 서술자가 없으면 1x이고 브라우저는 `srcset`이 있으면 `src`를 보지 않으므로 **`currentSrc`는
+1280×308 축소본(68KB)**이다. 그러니 `img.currentSrc || img.src`는 라이트박스에 축소본을 띄우고 있었다. 뷰포트에
+맞춰 커지니 화면은 멀쩡해 보였고, 1440px 이상·레티나에서 선명도만 조용히 잃었다.
+
+**정한 것.** `lightbox.js`는 **`img.getAttribute('src')`를 먼저** 본다 — 티스토리가 원본을 두는 자리다. 비면
+지금까지처럼 `currentSrc`로 간다(에디터 밖에서 붙인 이미지). `<span data-url>`을 안 고른 이유: `src`와 같은 값이고,
+`<img>`가 `onerror`로 `src`를 no-image로 바꿔 놓은 경우 `data-url`은 여전히 깨진 원본을 가리켜 라이트박스만
+따로 깨진다 — `src`를 따르면 본문과 같은 그림이 뜬다.
+
+**검사가 이 조건을 재현하지 않았다.** 프리뷰 픽스처의 이미지블록에는 `srcset`이 없어 `currentSrc`가 늘 `src`였다
+— 축소본을 띄우는 상태를 로컬에서 볼 방법이 없었다(결정 42 부류의 넷째). 픽스처에 라이브와 같이 **서술자
+없는 `srcset` 후보 하나**를 넣었고, 본문에는 `srcset thumb 400`·라이트박스에는 `original 800`이 보여야 맞다. 둘이
+같은 그림이면 `currentSrc`를 쓰고 있는 것이다(`skin-preview/SKILL.md`).
 
 ---
 

@@ -63,7 +63,7 @@ open _preview/index.html
 - **12줄짜리 코드블록** — `code.js`의 `LINES_FOR_NUMBERS`(8)를 넘겨 줄번호 거터를
   켠다. 2026-08-27까지 픽스처 최대가 5줄이라 `.code-wrap.has-lines`와
   `.code-lines`의 CSS `counter` 번호가 **로컬에서 한 번도 그려진 적이 없었다**
-- `<figure class="imageblock">` · 4열 `<table>` · `<blockquote data-ke-style>` · 인라인 `<code>` · 외부링크
+- `<figure class="imageblock">` — 라이브와 같이 **`src`에 원본, `srcset`에 서술자 없는 축소본 하나**(라이브는 `R1280x0`). 브라우저는 srcset을 고르므로 본문에는 축소본(`srcset thumb 400`)이, 라이트박스에는 원본(`original 800`)이 보여야 맞다(결정 56). 둘이 같은 그림이면 라이트박스가 `currentSrc`를 쓰고 있는 것이다 · 4열 `<table>` · `<blockquote data-ke-style>` · 인라인 `<code>` · 외부링크
 - **티스토리 에디터 컴포넌트 6종** (`EDITOR_COMPONENTS`) — 오픈그래프 링크 카드, 인용 `style1`+`cite`,
   인용 `box`, 첨부 파일 블록, 표 `style12`, `.another_category`. 전부 티스토리가 **라이트 전용 색을
   박아 둔** 것들이라 다크에서 사라졌던 요소다 (DESIGN.md §5.2b). `.another_category`는 티스토리가

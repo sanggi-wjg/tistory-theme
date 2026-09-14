@@ -264,7 +264,7 @@ ARTICLE_BODY_INNER = """
 Total: reserved=2841MB, committed=1974MB
 -  Internal (reserved=612MB, committed=612MB)
 -      Thread (reserved=318MB, committed=318MB)</code></pre>
-<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="800" data-origin-height="533"><span data-url="https://placehold.co/800x450/eeeeee/999999?text=screenshot"><img src="https://placehold.co/800x450/eeeeee/999999?text=screenshot" alt=""></span><figcaption>논힙 메모리 추이</figcaption></figure></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="800" data-origin-height="450"><span data-url="https://placehold.co/800x450/eeeeee/999999?text=original+800"><img src="https://placehold.co/800x450/eeeeee/999999?text=original+800" srcset="https://placehold.co/400x225/eeeeee/999999?text=srcset+thumb+400" alt="" loading="lazy" width="800" height="450" data-origin-width="800" data-origin-height="450"></span><figcaption>논힙 메모리 추이</figcaption></figure></p>
 <h2 data-ke-size="size26"><span style="color: #252525;">maxLifetime 조정과 검증</span></h2>
 <p data-ke-size="size16" style="background-color: #f8f8f8;">설정을 바꾼 뒤 24시간 동안 RSS 추이를 관찰했다. 증가 곡선이 사라졌다.</p>
 <table><thead><tr><th>항목</th><th>변경 전</th><th>변경 후</th><th>비고</th></tr></thead>
