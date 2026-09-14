@@ -39,14 +39,38 @@ def fetch(url, retries=2):
             time.sleep(1.5 * (i + 1))
 
 
+# 목록 항목 마크업 — 두 스킨을 안다.
+#   our  : 2026-08-26 배포한 우리 스킨. `article.post` + `.post-title`·`.post-date`·`.post-cat`·`.post-link`
+#          (계약은 docs/hooks.md §3). 썸네일은 **`img.thumb-img`가 있을 때만** 실물이다 — `.thumb` 상자는
+#          기본 이미지일 때도 있으므로 `class="thumb`로 세면 100%가 나온다.
+#   old  : 2026-08-25까지의 구 스킨. `div.post` + `.tit`·`.date`·`.category`·`a.link`
+# 둘 다 0건이면 마크업이 또 바뀐 것이다 — 임의로 고치지 말고 새 구조를 보고한다.
+LIST_SHAPES = {
+    "our": dict(split=r'<article class="post[" ]', title=r'<strong class="post-title">(.*?)</strong>',
+                date=r'<time class="post-date">(.*?)</time>', cat=r'<span class="post-cat">(.*?)</span>',
+                link=r'<a class="post-link" href="([^"]+)"', thumb='class="thumb-img"'),
+    "old": dict(split=r'<div class="post">', title=r'<div class="tit">(.*?)</div>',
+                date=r'<time class="date">(.*?)</time>', cat=r'<div class="category">(.*?)</div>',
+                link=r'<a class="link" href="([^"]+)"', thumb='class="thumb'),
+}
+
+
 def crawl_list(base):
     """목록 페이지를 끝까지 훑는다. RSS는 최신 50편만 주므로 쓰지 않는다."""
-    posts, page = [], 1
+    posts, page, shape = [], 1, None
     while True:
         h = fetch("%s/?page=%d" % (base, page))
         if h is None:
             break
-        blocks = re.split(r'<div class="post">', h)[1:]
+        if shape is None:
+            for name, sh in LIST_SHAPES.items():
+                if re.search(sh["split"], h):
+                    shape = sh
+                    sys.stderr.write("  목록 마크업: %s 스킨\n" % name)
+                    break
+            if shape is None:
+                break
+        blocks = re.split(shape["split"], h)[1:]
         if not blocks:
             break
         for b in blocks:
@@ -54,12 +78,12 @@ def crawl_list(base):
             def pick(pat):
                 m = re.search(pat, b, re.S)
                 return html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip() if m else ""
-            link = re.search(r'<a class="link" href="([^"]+)"', b)
+            link = re.search(shape["link"], b)
             posts.append({
-                "title": pick(r'<div class="tit">(.*?)</div>'),
-                "date": pick(r'<time class="date">(.*?)</time>'),
-                "category": pick(r'<div class="category">(.*?)</div>') or "(없음)",
-                "hasThumbnail": 'class="thumb' in b,
+                "title": pick(shape["title"]),
+                "date": pick(shape["date"]),
+                "category": pick(shape["cat"]) or "(없음)",
+                "hasThumbnail": shape["thumb"] in b,
                 "url": html.unescape(link.group(1)) if link else "",
             })
         sys.stderr.write("  page %d — 누적 %d편\n" % (page, len(posts)))
@@ -72,8 +96,15 @@ def crawl_list(base):
 def crawl_bodies(base, posts, limit=None):
     """본문을 받아 인라인 스타일과 코드블록을 집계한다."""
     colors, bgs, fonts = collections.Counter(), collections.Counter(), collections.Counter()
-    langs = collections.Counter()
-    pre_total = lang_total = kor_blocks = 0
+    # 코드블록 라벨은 **세 신호를 따로** 센다 — 만든 주체가 다르고 신뢰도가 다르다(결정 43).
+    #   data-ke-language  : 에디터가 붙인다. 믿지 않는다(결정 18)
+    #   <pre class>       : 에디터 자동 감지. 믿지 않는다(이 블로그에 없는 언어가 46개 섞여 있다)
+    #   <code class="language-*"> : 글쓴이가 펜스로 쓴 것. 이것만 믿는다
+    # 2026-08-26까지 첫째만 세어 「라벨 39%」가 나왔는데 셋째·둘째가 통째로 빠져 있었다
+    # (TODO census-pre-class). 합치지 않는다 — 합치면 다시 «라벨 있음» 한 숫자가 된다.
+    ke_langs, pre_classes, author_langs = collections.Counter(), collections.Counter(), collections.Counter()
+    pre_total = ke_total = pre_class_total = author_total = kor_blocks = 0
+    blocks = []   # 블록별 원문 — 감지 커버리지(scripts/probe-code-coverage.mjs)가 읽는다
     parsed = 0
     targets = posts if limit is None else posts[:limit]
     for i, p in enumerate(targets):
@@ -100,17 +131,38 @@ def crawl_bodies(base, posts, limit=None):
                      re.findall(r'font-family:\s*([^;"]+)', code_stripped))
         pres = re.findall(r"<pre.*?</pre>", bd, re.S)
         pre_total += len(pres)
-        ls = re.findall(r'data-ke-language="([^"]*)"', bd)
-        lang_total += len(ls)
-        langs.update(ls)
         for pre in pres:
-            if re.search(r"[가-힣]", re.sub(r"<[^>]+>", "", pre)):
+            open_tag = re.match(r"<pre[^>]*>", pre).group(0)
+            ke = re.search(r'data-ke-language="([^"]*)"', open_tag)
+            pc = re.search(r'\sclass="([^"]*)"', open_tag)
+            code_open = re.search(r"<code[^>]*>", pre)
+            cc = re.search(r'\sclass="([^"]*)"', code_open.group(0)) if code_open else None
+            author = re.search(r"\blanguage-([A-Za-z0-9#+._-]+)", cc.group(1)) if cc else None
+            if ke:
+                ke_total += 1
+                ke_langs[ke.group(1)] += 1
+            if pc and pc.group(1).strip():
+                pre_class_total += 1
+                pre_classes[pc.group(1).strip()] += 1
+            if author:
+                author_total += 1
+                author_langs[author.group(1).lower()] += 1
+            # textContent 근사 — <br>은 줄바꿈, 나머지 태그는 제거, 엔티티 복원
+            text = html.unescape(re.sub(r"<[^>]+>", "", re.sub(r"<br\s*/?>", "\n", pre)))
+            text = text.rstrip()
+            if re.search(r"[가-힣]", text):
                 kor_blocks += 1
+            blocks.append({"post": p["url"], "keLanguage": ke.group(1) if ke else None,
+                           "preClass": pc.group(1).strip() if pc else None,
+                           "codeClass": cc.group(1) if cc else None, "text": text})
         if (i + 1) % 25 == 0:
             sys.stderr.write("  본문 %d/%d\n" % (i + 1, len(targets)))
         time.sleep(0.15)
     return dict(parsed=parsed, colors=colors, bgs=bgs, fonts=fonts,
-                langs=langs, pre_total=pre_total, lang_total=lang_total, kor_blocks=kor_blocks)
+                pre_total=pre_total, kor_blocks=kor_blocks, blocks=blocks,
+                ke_total=ke_total, ke_langs=ke_langs,
+                pre_class_total=pre_class_total, pre_classes=pre_classes,
+                author_total=author_total, author_langs=author_langs)
 
 
 def luminance(v):
@@ -206,11 +258,17 @@ def main():
     print("  background-color %d종 %d곳: %s" % (len(b["bgs"]), sum(b["bgs"].values()),
                                               ", ".join(c for c, _ in b["bgs"].most_common(12))))
     print("  font-family %d종" % len(b["fonts"]))
-    print("\n  코드블록 %d개 · 언어 지정 %d개(%.0f%%) · 한국어 혼재 %d개(%.0f%%)"
-          % (b["pre_total"], b["lang_total"],
-             b["lang_total"] / b["pre_total"] * 100 if b["pre_total"] else 0,
-             b["kor_blocks"], b["kor_blocks"] / b["pre_total"] * 100 if b["pre_total"] else 0))
-    print("  언어 분포: %s" % dict(b["langs"].most_common(10)))
+    def pct(n):
+        return n / b["pre_total"] * 100 if b["pre_total"] else 0
+    print("\n  코드블록 %d개 · 한국어 혼재 %d개(%.0f%%)" % (b["pre_total"], b["kor_blocks"], pct(b["kor_blocks"])))
+    print("  라벨 — 세 신호를 따로 센다(합치지 않는다):")
+    print("    data-ke-language (에디터)      %d개(%.0f%%)  %s" % (b["ke_total"], pct(b["ke_total"]), dict(b["ke_langs"].most_common(8))))
+    print("    <pre class>      (에디터 감지) %d개(%.0f%%)  %s" % (b["pre_class_total"], pct(b["pre_class_total"]), dict(b["pre_classes"].most_common(8))))
+    print("    <code class=language-*> (글쓴이) %d개(%.0f%%)  %s" % (b["author_total"], pct(b["author_total"]), dict(b["author_langs"].most_common(8))))
+    os.makedirs(os.path.join(ROOT, "_workspace"), exist_ok=True)
+    json.dump({"crawledAt": time.strftime("%Y-%m-%d"), "blocks": b["blocks"]},
+              open(os.path.join(ROOT, "_workspace", "code-blocks.json"), "w"), ensure_ascii=False, indent=1)
+    print("  → _workspace/code-blocks.json (블록 %d개 원문 — node scripts/probe-code-coverage.mjs 가 읽는다)" % len(b["blocks"]))
 
     json.dump({"crawledAt": time.strftime("%Y-%m-%d"), "parsedPosts": b["parsed"],
                "needsFix": [c for c, _ in sorted(dark, key=lambda x: -x[1])]
@@ -218,8 +276,10 @@ def main():
                            + list(b["bgs"].keys()),
                "color": dict(b["colors"]), "backgroundColor": dict(b["bgs"]),
                "fontFamily": dict(b["fonts"]),
-               "codeBlocks": {"total": b["pre_total"], "labeled": b["lang_total"],
-                              "korean": b["kor_blocks"], "languages": dict(b["langs"])}},
+               "codeBlocks": {"total": b["pre_total"], "korean": b["kor_blocks"],
+                              "keLanguage": {"count": b["ke_total"], "values": dict(b["ke_langs"])},
+                              "preClass": {"count": b["pre_class_total"], "values": dict(b["pre_classes"])},
+                              "authorLanguage": {"count": b["author_total"], "values": dict(b["author_langs"])}}},
               open(os.path.join(ROOT, "data", "inline-styles.json"), "w"),
               ensure_ascii=False, indent=1)
     print("\n→ data/inline-styles.json 갱신 (린트 INL001이 이 파일을 쓴다)")
