@@ -31,7 +31,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py   # TIS005 (
 python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py       # TOK007
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
-python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·BND004·test:codes (변형 8종)
+python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·BND004·BND011·DOC001·test:codes
 ```
 
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다
@@ -69,6 +69,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·
 | `BND008` | **치환자 하나만 담은 요소**에 `::before`/`::after` 장식이 있는데 `:empty`(또는 `:has()`) 가드가 없는가 (오류). 치환자는 값이 없으면 에러가 아니라 **빈 문자열**을 낸다 — 값만 사라지고 라벨·구분자는 남는다. 결정 35(태그 `,`)와 결정 42(`댓글`·`·`)가 같은 실패였고, 셋째(`list-count`의 `글 `)는 이 린트가 찾았다. **가드가 죽은 경우도 본다** — `skin.html`에서 치환자를 제 줄로 내리면 공백 텍스트 노드가 남아 `:empty`가 영영 거짓이 된다(`layout.css` 머리말 주석의 함정). 장식이 **자손**에 붙은 자리(`.entry-tags a::before`)는 대상이 아니다 |
 | `BND009` | **`skin.html`이 내보내는 클래스에 CSS 규칙이 있는가 (오류).** 마크업에서 이름을 바꾸고 CSS를 안 고치면 선택자가 매칭되지 않을 뿐 **에러가 없다** — 스타일 없는 날것이 뜬다. 2026-08-27까지 이 축이 통째로 비어 있었다: `BND004`는 JS가 *찾는* 이름만, `BND006`은 JS가 *만드는* 이름만 봐서 **가장 큰 표면(142종)이 어느 쪽에도 안 걸렸다.** 규칙이 없는 것이 정상인 이름(컨테이너·기본 층·예비 훅 22종)은 `hooks.md §7` 「CSS 규칙이 없는 것이 정상인 마크업 클래스」에 **이유와 함께** 등재한다. 클래스 자리가 통째로 치환자인 것과 주석 안의 `class`는 대상이 아니다 |
 | `BND010` | **두 곳에 적혀야 하는 상수가 같은가 (오류).** ① `skin.html`의 `no-toc` 인라인(첫 페인트 전 판정이라 번들에 못 넣는다)의 임계·선택자 ↔ `toc.js` `MIN_HEADINGS`·`util.headingsWithIds` ② 목차 접이식 경계 — `toc.js` `COLLAPSIBLE_MQ` ↔ `components.css`의 `.toc:not(.is-open)` max-width ↔ `.toc.is-ready` min-width(= max + 1) ↔ `layout.css` 3단 min-width. 어긋나면 목차 없는데 2칸이거나 CSS는 접는데 JS는 `aria-expanded`를 지우는데, 화면엔 신호가 없다. 1024/1400으로 갈려 1280px에서 목차가 본문 위에 고정됐던 것이 출생이다(결정 48). **어느 한쪽을 못 찾으면 통과가 아니라 오류다** |
+| `BND011` | **`<s_*_thumbnail>` 그룹 안에 `<img>` 하나만 있는가 (오류).** 티스토리는 대표이미지가 없으면 이 그룹을 **블록째** 지운다. 그룹 안에 상자(`.related-thumb`·`.side-thumb`·`.postnav-thumb`)까지 넣으면 상자도 사라져 그 줄의 제목이 상자 폭만큼 왼쪽으로 튄다 — 라이브 글 페이지 관련 글 4건 중 2건이 그랬다(2026-09-14 실측, 결정 57). 홈 카드만 `.thumb` 밖·`.thumb-img` 안이었고 나머지 셋은 반대였는데, 프리뷰가 그 조건을 그리고 있었는데도 본 사람이 없었다 — 구조 규칙이라 린트로 고정한다. 주석은 벗기고 본다. `test-syntax-checks.py`에 켜지는 케이스 1·기준선 1 |
 | `SYN001` | **CSS 구문 (오류).** `npm run test:css` — `scripts/check-css.mjs`가 `css-tree`로 `src/styles/*.css`와 `dist/style.css`를 파싱한다: 파싱 오류, 모르는 속성 이름(`colr:`), `var()`가 없는 값의 문법 오류(`display: flx`), 그리고 **괄호 균형**(EOF가 열린 블록을 닫아 주므로 파서만으로는 파일 끝의 `{` 누락을 못 본다 — 따로 센다). 2026-08-27 하네스 리뷰에서 괄호 하나·속성 오타가 린트 45종을 전부 통과했다. lint.py가 아니라 node가 내는 코드라 `test-lint-codes.py`의 `DOC_ONLY_OK`에 등재 |
 | `SYN002` | **`skin.html` 태그 균형 (오류).** 닫히지 않은 태그, 여는 태그 없는 닫는 태그, 엇갈린 중첩을 줄 번호로. `<s_*>` 그룹 치환자도 요소로 센다. 브라우저는 복구해 그리므로 에러가 없고, 복구된 트리는 CSS·레이아웃이 조용히 어긋난다 |
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |

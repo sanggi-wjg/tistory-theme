@@ -692,6 +692,37 @@ def media_blocks(css):
     return out
 
 
+# ────────── 3d. 썸네일 그룹 안에는 img만 (BND011) ──────────
+
+THUMB_GROUP_RE = re.compile(r"<(s_[a-z0-9_]*_thumbnail)>(.*?)</\1>", re.S)
+
+
+def lint_thumb_groups(skin):
+    """`<s_*_thumbnail>` 그룹 치환자 안에 `<img>` 하나만 있는가 — BND011 (결정 57).
+
+    티스토리는 대표이미지가 없으면 이 그룹을 **블록째** 지운다. 그룹 안에 상자
+    (`.related-thumb`·`.side-thumb`·`.postnav-thumb` 같은 span)까지 넣어 두면 상자도
+    같이 사라져 그 줄의 제목이 상자 폭만큼 왼쪽으로 튄다 — 라이브 글 페이지
+    「'기록'의 다른 글」 4건 중 2건이 그랬다(2026-09-14 실측). 홈 카드는 처음부터
+    `.thumb`가 밖, `.thumb-img`가 안이었는데(결정 5) 나머지 셋은 반대였고, 프리뷰가
+    그 조건을 그리고 있었는데도 본 사람이 없었다. 구조 규칙이라 린트로 고정한다.
+
+    주석은 벗기고 본다 — 상자를 밖으로 빼며 남긴 설명 주석이 그룹 안에 있을 수 있다.
+    """
+    if not skin:
+        return
+    bad = []
+    for m in THUMB_GROUP_RE.finditer(skin):
+        inner = re.sub(r"<!--.*?-->", "", m.group(2), flags=re.S).strip()
+        if not re.fullmatch(r"<img\b[^>]*>", inner):
+            bad.append(m.group(1))
+    if bad:
+        err("BND011", "썸네일 그룹 %d곳 안에 <img> 말고 다른 것이 있다: %s. 대표이미지가 없으면 "
+            "그룹이 블록째 사라지므로 상자(span)는 그룹 **밖**에, img만 안에 둔다 — 안 그러면 "
+            "그 줄이 상자 폭만큼 왼쪽으로 튄다(결정 57)." % (len(bad), ", ".join(bad)),
+            "src/skin.html")
+
+
 def lint_const_pairs(skin):
     """두 곳에 적혀야 하는 상수가 같은가 — BND010 (결정 48).
 
@@ -1476,6 +1507,7 @@ def main():
     lint_js_dom_classes(src_css, js)
     lint_markup_css(skin, src_css)
     lint_const_pairs(skin)
+    lint_thumb_groups(skin)
     lint_tokens(css)
     # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
     # var(--error)·var(--link) 참조가 dist에만 있다.

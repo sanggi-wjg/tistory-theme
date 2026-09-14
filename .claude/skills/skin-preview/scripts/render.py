@@ -478,7 +478,10 @@ def globals_for(page, posts, cats, skin_vars):
         # ⚠ 라이브는 이 값이 **비어 있다** — 블로그 관리에 메뉴를 설정하지 않았다.
         #   프리뷰가 늘 메뉴를 그려서 `.site-nav:empty` 경로(빈 줄이 헤더를 13px
         #   키우던 것, 결정 50)가 화면에 한 번도 안 나왔다. page_bare가 그 조건을 낸다.
-        "blog_menu": "" if page == "page_bare" else
+        #   "비어 있다"의 실물은 빈 문자열이 아니라 **빈 <ul></ul>**이다(2026-09-14 라이브
+        #   실측). 픽스처가 빈 문자열을 넣어 `:empty`가 참이 되는 바람에 라이브에서 한 번도
+        #   안 걸리던 가드가 프리뷰에서는 멀쩡해 보였다(결정 57, 결정 42 부류).
+        "blog_menu": "<ul></ul>" if page == "page_bare" else
                      '<ul class="blog-menu"><li><a href="/">홈</a></li>'
                      '<li><a href="/tag">태그</a></li><li><a href="/guestbook">방명록</a></li></ul>',
         # 두 치환자를 **다른 마크업**에 매핑한다. 같은 것에 매핑해 두었다가

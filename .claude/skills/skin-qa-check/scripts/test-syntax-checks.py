@@ -4,6 +4,7 @@
   SYN001  scripts/check-css.mjs   괄호(파일 끝·시작 `}`)·속성 오타·값 오타
   SYN002  lint.py                 닫는 태그 삭제·닫지 않는 <div>·자기 닫힘 <div/>
   BND004  lint.py                 마크업+CSS에서만 개명(접두 공유)
+  BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
@@ -130,6 +131,24 @@ def c_bnd004(root):
         edit(root, os.path.join("src", "styles", f),
              lambda s: re.sub(r"\.entry-body(?![\w-])", ".entry-body-v2", s)) if ".entry-body" in open(os.path.join(root, "src", "styles", f), encoding="utf-8").read() else None
     return any("entry-body" in m for m in lint_codes(root, "BND004"))
+
+
+# ── BND011 ──
+@case("BND011 기준선 — 썸네일 그룹 안에는 img만 있다", False)
+def c_thumb_base(root):
+    return bool(lint_codes(root, "BND011"))
+
+
+@case("BND011 썸네일 그룹 안으로 상자를 넣으면 잡는다", True)
+def c_thumb_hit(root):
+    # 안정된 앵커: 그룹 여는 태그 바로 안쪽에 span을 하나 열고 닫는 태그 앞에서 닫는다.
+    # 어느 그룹이든 하나면 된다 — 첫 번째만 변형한다.
+    def fn(s):
+        return re.sub(r"(<(s_[a-z0-9_]*_thumbnail)>)(.*?)(</\2>)",
+                      lambda m: m.group(1) + '<span class="x">' + m.group(3) + "</span>" + m.group(4),
+                      s, count=1, flags=re.S)
+    edit(root, "src/skin.html", fn)
+    return any("_thumbnail" in m for m in lint_codes(root, "BND011"))
 
 
 # ── DOC001 ──
