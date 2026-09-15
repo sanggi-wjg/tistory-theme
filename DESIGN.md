@@ -553,7 +553,8 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 - 접기/펼치기가 필요하면 JS로 DOM을 조작한다(`js/category.js`). 기본은 접힘이 아니라 **펼침**이고, JS가 토글을 만든 가지만 접힌 상태로 시작한다 — JS가 실패해도 하위 카테고리로 갈 길이 남는다.
 - **`index.xml`의 `<tree>` 설정은 리스트형에 닿지 않는다.** 폴더형 전용이다. 지우려면 `index.xml`을 다시 올려야 하고 그러면 스킨 설정이 초기화되므로(결정 1) 그대로 둔다. 색·글수 표시는 전부 CSS가 맡는다.
 - **상위 14종 / 하위 21종 → 트리 36줄** (`분류 전체보기` 1 + 14 + 21). 개편 전 48줄(1 + 11 + 36). 전체 목록과 순서는 `DECISIONS.md` §3, 정본은 `data/categories.json`.
-- `span.c_cnt`는 `--ink-mute`, `tabular-nums`. 제목이 두 줄이 될 때 배지가 마지막 줄에 붙지 않도록 앵커 정렬은 `baseline`이 아니라 `flex-start`다.
+- `span.c_cnt`는 `--ink-mute`, `tabular-nums`. 제목이 두 줄이 될 때 배지가 마지막 줄에 붙지 않도록 앵커 정렬은 `baseline`이 아니라 `flex-start`다. **오른쪽 끝은 `margin-left: auto`로 민다** — 아래 새 글 표시가 앵커 안에 끼어들어도 배지 자리가 움직이지 않는다(결정 58).
+- **새 글이 있는 카테고리의 앵커 끝에 티스토리가 `<img alt="N" src="…/category/new_ico_1.gif" style="vertical-align:middle;padding-left:2px;">`를 끼운다**(2026-09-15 라이브 실측, 이슈 #68). 글 수 span **뒤**다. 라이트 전용 GIF라 그리지 않고 **이미지 상자 자체를 `--link` 색 6px 점으로** 쓴다 — `border-box` 6×6에 테두리 3px이면 콘텐츠 영역이 0이라 GIF가 그려질 자리가 없다. `order`로 점을 이름 바로 뒤(gap 8px), 첫 줄 가운데에 세운다. 인라인 `padding-left`는 `!important`로만 눌린다. `alt`는 남아 보조기기에는 그대로 읽힌다(결정 58).
 - **1024px 이하에서는 같은 트리를 `cat-chips.js`가 한 번 더 읽어** 헤더 안 칩 한 줄(상위 14종 + 「전체」)을 만든다. 파서는 `category.js`와 **같은 함수**다 — 둘이 다른 목록을 내면 화면에 신호가 없다(결정 50, `docs/hooks.md` §5.9).
 - **240px 레일에서 상위·하위 35종이 전부 한 줄에 들어간다** (2026-08-25 프리뷰 계측). 가장 긴 이름 `성능과 동시성`·`Django·Flask`·`Kotlin·Java`도 줄바꿈되지 않는다. 이름이 더 길어지면 `overflow-wrap: break-word`로 흘린다.
 
