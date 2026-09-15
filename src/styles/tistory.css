@@ -438,8 +438,9 @@
    (CDN 시트가 아니라 HTML 본문이라 시트를 받아 대조할 수 없다).
    전부 `!important`다 — `.another_category_color_gray * { color:#909090 !important }`.
 
-   ⚠ 이 블록이 `!important`를 쓰는 **두 번째이자 마지막 예외**다.
-      원칙(components.css:6)은 "인라인 스타일 보정 전용"이지만, 상대가
+   ⚠ 이 블록은 `!important`의 세 예외 중 하나다(나머지: 빌드가 생성하는 인라인
+      보정, 위 `.tt_category a > img`의 padding — 결정 58). 원칙(components.css
+      머리말)은 "인라인 스타일 보정 전용"이지만, 상대가
       !important라 특이도만으로는 이길 수 없다. 대신 특이도도 함께 올려
       (0,2,0) > (0,1,0)으로 확실히 이긴다. 새 예외를 늘리지 말 것.
 
