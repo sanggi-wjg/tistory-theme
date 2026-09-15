@@ -366,6 +366,12 @@ def category_tree(cats):
     return tree
 
 
+# 라이브 원문 그대로 — 속성 순서·인라인 style까지. tistory.css가 이 인라인 padding을
+# !important로 눌러야 하므로 style을 빼면 프리뷰가 통과 신호를 위조한다.
+NEW_ICO = ('<img alt="N" src="https://tistory1.daumcdn.net/tistory_admin/blogs/image/'
+           'category/new_ico_1.gif" style="vertical-align:middle;padding-left:2px;"/>')
+
+
 def build_category_list_html(cats, posts, current=""):
     """[##_category_list_##](리스트형)의 출력을 그대로 재현한다.
 
@@ -373,19 +379,28 @@ def build_category_list_html(cats, posts, current=""):
     글 수 span, li class="" 까지 포함해서다. 현재 카테고리의 li에는 class="selected"가
     붙는다(같은 날 /category/Python 실측). 이 이름들이 tistory.css와 category.js의
     유일한 접점이므로, 여기서 한 글자라도 다르면 프리뷰가 통과 신호를 위조한다.
+
+    **새 글 표시** — 최근 글이 있는 카테고리의 앵커 끝, 글 수 span **뒤**에 티스토리가
+    NEW_ICO를 끼운다(2026-09-15 라이브 실측, 이슈 #68 · 결정 58). 라이브에서는 「분류
+    전체보기」와 가장 새 글의 상위 카테고리 두 곳이었다. 여기서도 그 둘에만 넣는다 —
+    하위 카테고리에도 붙는지는 실측이 없어(가장 새 글의 카테고리에 하위가 없다) 넣지 않는다.
+    2026-09-15까지 이 조건을 그리는 화면이 없어 flex 앵커의 세 번째 항목이 배지를 밀어내는
+    것을 로컬에서 볼 수 없었다(결정 42 부류).
     """
     tree = category_tree(cats)
+    newest_top = max(posts, key=lambda x: x["date"])["category"].split("/")[0]
 
     def li(cls):
         return '<li class="selected">' if cls else '<li class="">'
 
     out = ['<ul class="tt_category">%s<a href="/category" class="link_tit"> 분류 전체보기 '
-           '<span class="c_cnt">(%d)</span> </a>' % (li(False), len(posts)),
+           '<span class="c_cnt">(%d)</span> %s</a>' % (li(False), len(posts), NEW_ICO),
            '<ul class="category_list">']
     for top, v in sorted(tree.items(), key=lambda kv: -kv[1]["n"]):
         out.append('%s<a href="/category/%s" class="link_item"> %s '
-                   '<span class="c_cnt">(%d)</span> </a>' % (
-                       li(current == top), html.escape(top), html.escape(top), v["n"]))
+                   '<span class="c_cnt">(%d)</span> %s</a>' % (
+                       li(current == top), html.escape(top), html.escape(top), v["n"],
+                       NEW_ICO if top == newest_top else ""))
         if v["subs"]:
             out.append('<ul class="sub_category_list">')
             for s, n in sorted(v["subs"].items(), key=lambda kv: -kv[1]):

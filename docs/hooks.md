@@ -523,7 +523,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 | 모듈 클래스 | 내용 | 안쪽 훅 |
 |---|---|---|
-| `.side-category` | `[##_category_list_##]` 한 줄 — **폴더형 `[##_category_##]`이 아니다**(결정 31, 린트 `CAT001`) | **티스토리 고정 마크업.** `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.link_sub_item` `.c_cnt`, 현재 가지에 `li.selected` (DESIGN §5.3) |
+| `.side-category` | `[##_category_list_##]` 한 줄 — **폴더형 `[##_category_##]`이 아니다**(결정 31, 린트 `CAT001`) | **티스토리 고정 마크업.** `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.link_sub_item` `.c_cnt`, 현재 가지에 `li.selected`, 새 글이 있는 가지의 앵커 끝에 `img[alt="N"]`(결정 58) (DESIGN §5.3) |
 | `.side-notice` | 최근 공지 | `.side-list` `.side-item` `.side-link` |
 | `.side-recent` | 최근 글 | `.side-list` `.side-item` `.side-link` `.side-thumb` `.side-thumb-img` `.side-text` `.side-meta` `time.side-date` `.side-rp`. `.side-thumb` 상자는 **항상 있고** `.side-thumb-img`만 대표이미지가 있을 때 존재한다(결정 57) |
 | `.side-popular` | 인기글 | 위와 동일 |

@@ -1166,6 +1166,42 @@ eager로 바꾸는 쪽은 택하지 않았다 — `<s_list_rep>` 반복이라 13
 
 ---
 
+**결정 58 — 카테고리 새 글 아이콘은 그리지 않고 상자를 `--link` 점으로 쓴다. 글 수 배지는 auto 마진으로 오른쪽 끝에 세운다 (2026-09-15).**
+
+이슈 #68. 새 글이 있는 카테고리의 앵커 끝, 글 수 span **뒤**에 티스토리가 이미지를 끼운다(라이브 홈 실측, 2곳):
+
+```
+<a href="/category" class="link_tit"> 분류 전체보기 <span class="c_cnt">(277)</span> <img alt="N"
+  src="https://tistory1.daumcdn.net/tistory_admin/blogs/image/category/new_ico_1.gif"
+  style="vertical-align:middle;padding-left:2px;"/></a>
+```
+
+`.tt_category a`가 `display: flex; justify-content: space-between`이라 이 img가 **세 번째 flex 항목**이 되어
+오른쪽 끝으로 밀리고, 글 수 배지는 이름과 img 사이 가운데로 떴다. 「분류 전체보기」와 「기록」 두 줄만 배지 x가
+달랐고, 「기록」은 토글 없는 줄의 `padding-right: 28px`까지 받아 img 자리가 그 둘끼리도 달랐다. 공식 레퍼런스에는
+이 이미지가 없다 — `[##_category_list_##]` 출력에 대해 우리가 실측으로만 아는 것이 하나 늘었다.
+
+**배지 자리**: `.c_cnt`에 `order: 1; margin-left: auto`. `justify-content`는 항목 수에 따라 배분이 바뀌지만 auto
+마진은 남는 공간을 전부 먹으므로 앵커 안에 무엇이 끼어들어도 배지는 오른쪽 끝이다. 순서는 이름 → 점 → 배지 —
+티스토리는 점을 배지 뒤에 내지만, 점이 배지 뒤에 있으면 그 줄만 배지가 점 폭만큼 왼쪽으로 물러난다.
+
+**아이콘**: 라이트 전용 GIF에 인라인 style이 박혀 있어 다크에서 흰 상자다. 감추지 않는다 — 「새 글」은 정보다.
+대신 **이미지를 그리지 않고 상자를 점으로 쓴다**: `box-sizing: border-box; width: 6px; height: 6px; border: 3px solid
+var(--link); border-radius: 50%`. 콘텐츠 영역이 0이라 GIF가 그려질 자리가 없고, CDN이 죽어도 깨진 이미지 아이콘이
+나올 자리가 없다. 인라인 `padding-left: 2px`는 `!important`로 누른다(안 누르면 8×6 타원). `alt="N"`은 남아
+보조기기에는 여전히 읽힌다. `img[alt="N"]`로 좁히지 않는다 — 티스토리가 alt를 바꾸면 규칙이 조용히 풀려 원래
+GIF가 나오는데, 그쪽이 더 나쁘다. `:has()`나 `::after`로 다시 그리는 길은 필요 없어 택하지 않았다.
+
+**검사가 이 조건을 재현하지 않았다.** 프리뷰 픽스처(`render.py`의 `build_category_list_html`)가 앵커를 이름과
+글 수로만 그려 2026-09-15까지 세 번째 항목이 있는 앵커를 한 번도 그리지 않았다(결정 42 부류). 픽스처에 라이브
+원문 그대로의 `NEW_ICO`(인라인 style 포함)를 「분류 전체보기」와 가장 새 글의 상위 카테고리에 넣었다 — 이제
+`.c_cnt`의 auto 마진을 지우면 프리뷰 사이드바에서 그 두 줄의 배지가 다시 왼쪽으로 튄다. 눈으로만 잡힌다 —
+결정 57 ③과 같은 선택이다. `category.js`·`cat-chips.js`는 이름을 직속 텍스트 노드에서, 글 수를 `textContent`에서
+읽어 img가 있어도 같은 값을 낸다(프리뷰에서 확인). **하위 카테고리에도 붙는지는 모른다** — 가장 새 글의
+카테고리(「기록」)에 하위가 없어 실측이 없다. 규칙은 `.tt_category a > img`라 붙어도 같은 점이 된다.
+
+---
+
 ## 2. 플랫폼 제약 (사실)
 
 공식 문서: https://tistory.github.io/document-tistory-skin/ (24페이지 전체 통독)

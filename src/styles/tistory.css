@@ -83,12 +83,42 @@
 
 .tt_category .c_cnt {
   flex: none;
+  /* 항상 오른쪽 끝. 아래 새 글 점이 앵커 안에 끼어들어도(세 번째 flex 항목)
+     배지 자리가 움직이지 않도록 justify-content가 아니라 auto 마진으로 민다.
+     order는 점을 배지 앞에 세우기 위한 것이다 — 티스토리는 점을 배지 **뒤**에 낸다. */
+  order: 1;
+  margin-left: auto;
   color: var(--ink-mute);
   font-size: var(--fs-caption);
   font-variant-numeric: tabular-nums;
   /* 배지는 제목 첫 줄과 같은 선에 세운다. flex-start 정렬이라 그냥 두면
      대문자 높이 차이만큼 위로 뜬다. */
   line-height: var(--lh-body-sm);
+}
+
+/* ── 새 글 표시 ──────────────────────────────────────────────────
+   새 글이 있는 카테고리의 앵커 끝에 티스토리가 이미지를 끼운다 (2026-09-15 라이브 실측, 이슈 #68):
+     <a …> 기록 <span class="c_cnt">(8)</span> <img alt="N" src="…/category/new_ico_1.gif"
+       style="vertical-align:middle;padding-left:2px;"/></a>
+   앵커가 flex라 이 img가 세 번째 항목이 되어 오른쪽 끝으로 밀리고, 글 수 배지는 이름과 img
+   사이 가운데로 떠 있었다 — 그 두 줄만 배지 x가 달랐다. 위 .c_cnt의 order·margin-left가 그걸 고친다.
+
+   GIF는 라이트 전용이고 인라인 style이 박혀 있어 다크에서 흰 상자다. 이미지를 그리지 않고
+   **상자 자체를 점으로 쓴다**: border-box에 6px×6px, 테두리 3px → 콘텐츠 영역이 0이라
+   GIF가 그려질 자리가 없다. 인라인 padding-left:2px는 !important로만 눌린다(안 누르면 8×6 타원).
+   alt="N"은 그대로 남아 보조기기에는 여전히 읽힌다. `img[alt="N"]`으로 좁히지 않는 이유:
+   티스토리가 alt를 바꾸면 규칙이 조용히 풀려 원래 GIF가 그대로 나온다 — 그쪽이 더 나쁘다.
+   점은 이름 바로 뒤(gap 8px), 첫 줄 가운데. 이름이 두 줄이 돼도 첫 줄에 붙는다. */
+.tt_category a > img {
+  flex: none;
+  order: 0;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  padding: 0 !important;
+  border: 3px solid var(--link);
+  border-radius: 50%;
+  margin-top: calc((var(--lh-body-sm) * 1em - 6px) / 2);
 }
 
 /* ── 현재 보고 있는 카테고리 ────────────────────────────────────
