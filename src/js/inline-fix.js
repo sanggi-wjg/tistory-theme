@@ -1,6 +1,6 @@
 // 인라인색 JS 안전망 — DESIGN.md §5.2 끝줄
 //
-// 기존 글 275편에 박힌 인라인 색은 빌드가 data/inline-styles.json에서 만든 CSS가 덮는다.
+// 기존 글 전수에 박힌 인라인 색은 빌드가 data/inline-styles.json에서 만든 CSS가 덮는다.
 // 이 모듈은 그 열거 목록에 없는 색(앞으로 쓸 새 글)만 상대한다.
 //
 // 동작 원리: CSS 보정은 !important라 이미 계산된 색에 반영되어 있다.

@@ -162,7 +162,7 @@ TaskUpdate(taskId: <3번의 id>, addBlockedBy: [<1번의 id>])   ← 의존성�
 |---|---|
 | skin-markup | `src/skin.html`, `src/index.xml`, `docs/hooks.md` |
 | skin-style | `src/styles/*.css` |
-| skin-behavior | `src/js/*.js`, `_workspace/head-inline.js` |
+| skin-behavior | `src/js/*.js` (다크모드 초기화 스니펫은 `src/skin.html`의 `head-inline` 블록이 정본 — 바꿀 때 skin-markup에게 교체를 요청) |
 | skin-qa | `_workspace/qa-report.md` |
 
 ---
@@ -266,7 +266,7 @@ skin-qa (일괄 검증)
 | 린트 오류가 3회 반복해도 안 잡힘 | 사용자에게 보고하고 진행 여부 확인. 억지로 통과시키지 않는다 |
 | 리뷰 게이트가 차단 판정 | Phase 3으로 되돌려 고치고 **게이트를 다시 실행**한다. 마커를 손으로 찍지 않는다 — 찍는 순간 초록불이 거짓이 되고, 다음 사람이 그것을 믿는다 |
 | PR 생성이 훅에 막힘 | 리뷰를 안 했거나 리뷰 뒤 커밋이 쌓였다. 훅 메시지의 SHA 두 개를 비교하고 **새 커밋만** 리뷰한 뒤 다시 찍는다 |
-| 프리뷰가 렌더링 안 됨 | **스킨이 아니라 렌더러 문제일 수 있다.** 경고를 먼저 읽고, 렌더러 결함이면 `scripts/render.py` 수정 |
+| 프리뷰가 렌더링 안 됨 | **스킨이 아니라 렌더러 문제일 수 있다.** 경고를 먼저 읽고, 렌더러 결함이면 `.claude/skills/skin-preview/scripts/render.py` 수정 |
 | 치환자가 필요한데 없음 | 지어내지 않는다. `docs/tistory-skin-reference.txt` 확인 후, 없으면 JS 구현으로 우회하거나 사용자에게 보고 |
 | `DESIGN.md`에 없는 값 필요 | 임의 결정 금지. 문서를 먼저 갱신하고 사용자에게 알린다 |
 

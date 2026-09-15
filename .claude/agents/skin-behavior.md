@@ -15,7 +15,7 @@ model: opus
 | 목차 + 스크롤스파이 | 본문 `h2`/`h3` 스캔 → 목차 생성. 소제목 3개 미만이면 렌더링하지 않는다 |
 | 코드 하이라이팅 | 글쓴이가 쓴 `<code class="language-*">`는 믿고, 없으면 highlight.js **자동 감지**(결정 18·43). 복사 버튼, 언어 라벨, 조건부 줄번호 |
 | 다크모드 토글 | 시스템 따름이 기본, 토글 시 `localStorage` 기억, `:root[data-theme]` 설정 |
-| 이미지 라이트박스 | 본문 `figure img` 클릭 시 확대 |
+| 이미지 라이트박스 | 본문 `figure img` 클릭 시 확대. **`src` 속성을 띄운다** — `currentSrc`는 티스토리가 `srcset`에 서술자 없이 실은 1280px 축소본이다(결정 56). 되돌려도 린트는 안 켜지고 프리뷰 픽스처의 `srcset`으로만 드러난다 |
 | 읽기 진행바 + 맨 위로 | 본문 스크롤 비율 |
 | 표 가로스크롤 래핑 | `.contents_style table`을 `overflow-x: auto` 컨테이너로 감쌈 |
 | 외부링크 표시 | `target="_blank" rel="noopener"` + 아이콘 |
@@ -24,7 +24,7 @@ model: opus
 ## 작업 원칙
 
 - **바닐라 JS로 작성한다.** 프레임워크를 도입하지 않는다. esbuild가 단일 파일로 번들한다.
-- **하이라이팅은 `data-ke-language`를 신뢰하지 않는다.** 전수 728개 중 라벨이 있는 것은 285개(39%)뿐이고, `javascript`로 표시된 44개는 실제로 전부 셸·설정·SQL·한국어 메모다. `highlightAuto`를 쓰되 후보 언어를 `python bash shell sql java kotlin go json yaml xml`로 제한한다. 에디터가 `<pre>`에 박는 클래스(`reasonml` 등)도 같은 노이즈다.
+- **에디터가 붙인 라벨은 신뢰하지 않는다.** 라벨은 **세 신호를 따로** 센다(결정 55, `DECISIONS.md` §3 코드블록) — `data-ke-language`(에디터, 39%)는 `javascript` 44개가 전부 셸·설정·SQL·한국어 메모라 오답이고, `<pre class>`(에디터 자동 감지, 72%)는 이 블로그에 없는 언어(`routeros`·`reasonml`·`angelscript`) 46개가 섞여 있다. 둘 다 무시하고 `highlightAuto`를 쓰되 후보 언어를 `python bash shell sql java kotlin go json yaml xml`로 제한한다. 「라벨 있음」 한 숫자로 합치지 않는다 — 합치면 결정 55가 폐기한 틀로 돌아간다.
 - **글쓴이가 마크다운 펜스로 쓴 `<code class="language-X">`는 믿는다**(결정 43). 임계·한글 가드 없이 그 언어로 칠한다. 번들에 없는 이름은 라벨만 달고 칠하지 않으며, 언어인지 모르는 이름(`info` 같은 표식)은 라벨도 달지 않는다. 판정은 `code.js`의 `authorLanguage()`, 검사는 `npm run test:code`.
 - **신뢰도가 낮으면 하이라이팅하지 않는다.** `highlightAuto` 결과의 `relevance`가 임계 미만이면 원문 그대로 두고 언어 라벨도 숨긴다. 코드블록의 33%(239개)에 한국어가 섞여 있어, 무리하게 칠하면 오히려 지저분해진다.
 - **레이아웃을 흔들지 않는다.** DOM을 추가하는 기능(목차·복사 버튼·진행바)은 공간을 미리 확보하거나 절대 위치로 띄운다. 스크립트 실행 전후로 본문이 밀리면 안 된다.
@@ -44,7 +44,7 @@ model: opus
 
 - 입력: `docs/hooks.md`(markup의 훅) · skin-style과 합의한 클래스 이름 · `DESIGN.md` §6
 - 출력: `src/js/*.js` (기능별 모듈, 빌드가 `images/script.js` 한 파일로 번들)
-- 인라인 조각: 다크모드 초기화 스니펫은 `_workspace/head-inline.js`에 두고 skin-markup에게 삽입을 요청
+- 인라인 조각: 다크모드 초기화 스니펫의 정본은 `src/skin.html`의 `head-inline` 블록이다(`docs/hooks.md` §5.4). 바꿔야 하면 새 코드를 skin-markup에게 넘겨 그 블록만 교체하게 한다 — 별도 파일을 만들지 않는다
 
 ## 팀 통신 프로토콜
 
