@@ -209,7 +209,9 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 
 ```bash
 git switch main && git pull
-npm run build                      # 대조 기준을 이 HEAD의 산출물로 — 남아 있던 dist/는 다른 브랜치의 빌드일 수 있다
+npm ci && npm run build            # 대조 기준을 이 HEAD의 산출물로 — 남아 있던 dist/는 다른 브랜치의 빌드일 수 있고 node_modules는 lock과 다를 수 있다
+python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로그> --compare   # 다시 만든 dist/로 대조. V009는 style.css만 본다
+curl -sS <스킨루트>/images/script.js | cmp - dist/images/script.js   # script.js는 V009가 못 본다. 티스토리는 올린 파일을 바이트 그대로 낸다(2026-10-05 cmp 일치)
 git diff --stat <직전 릴리즈 태그> HEAD -- src data/inline-styles.json scripts/build.mjs package.json package-lock.json   # 빌드가 읽는 입력. 라이브에 올린 빌드가 이 HEAD인지. 차이가 있으면 그 커밋에 찍는다
 git tag -a v2026.08.27 -m "배포 2026-08-27 — 무엇을 올렸나(결정 번호) / 라이브 확인: verify.py --compare 결과, 눈으로 본 것"
 git push origin v2026.08.27
@@ -217,6 +219,8 @@ gh run watch                       # release 워크플로우 — npm run check �
 gh release view v2026.08.27
 ```
 
+- **둘 중 하나라도 어긋나면 찍지 않는다.** 이 HEAD가 라이브가 아니다. `skin.html`은 치환된 채 나가 기계 대조가 안 되므로
+  「배포 후 확인」 체크리스트에 기댄다
 - **주석 태그(`-a`)여야 한다.** 메시지가 릴리즈 노트 앞머리가 되고, 그 뒤에 직전 태그 이후 PR 제목이 자동으로 붙는다.
   가벼운 태그면 워크플로우가 경고를 내고 자동 노트만 남는다
 - 같은 날 다시 배포했으면 `v2026.08.27.2`
