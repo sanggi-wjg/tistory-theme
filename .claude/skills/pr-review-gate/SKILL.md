@@ -92,7 +92,8 @@ CLAUDE.md가 PR 본문에 요구하는 네 가지가 준비되어 있는가.
 git rev-parse HEAD > .claude/.pr-review-ok
 ```
 
-이 한 줄이 `gh pr create`를 열어 준다(`.claude/hooks/pr-review-gate.py`).
+이 한 줄이 `gh pr create`를 열어 준다(`.claude/hooks/pr-review-gate.py`). 찍을 때마다 `_workspace/pr-review.md` 맨 위의
+SHA도 같은 값으로 고친다 — 둘이 다르면 오작동 흐름 2번이 옛 기준으로 판정한다.
 
 **마커는 PR 생성과 다른 Bash 호출로 찍는다.** 훅은 PreToolUse라 명령을 **실행하기 전에** 마커 파일을 읽는다.
 `git rev-parse HEAD > .claude/.pr-review-ok && git push && gh pr create …`처럼 한 명령에 묶으면 검사 시점의
@@ -145,7 +146,8 @@ git rev-parse HEAD > .claude/.pr-review-ok
 1. `gh pr create`가 막혔는데 리뷰를 방금 끝냈다
 2. 훅 메시지의 SHA 두 개를 비교한다 — 리뷰 뒤에 커밋이 쌓였는지, 마커가 없는지.
    **막힌 명령 안에 마커 기록이 들어 있었다면** 그것만으로도 막힌다 — 그렇다고 커밋이 안 쌓였다는 뜻은 아니다.
-   `_workspace/pr-review.md`에 적은 SHA부터 지금 HEAD까지(`git log --oneline <리뷰한 SHA>..HEAD`)가 비어 있고
-   그 리뷰가 차단 0이었으면 마커만 따로 찍고 PR 명령을 다시 낸다. 비어 있지 않으면 3번으로 간다
+   `_workspace/pr-review.md`에 적은 SHA가 `git rev-parse HEAD`와 **같고** 그 리뷰가 차단 0이었으면 마커만 따로 찍고
+   PR 명령을 다시 낸다. 다르면 3번으로 간다(범위 비교 `<SHA>..HEAD`가 비었다는 것으로는 부족하다 — HEAD가
+   리뷰한 커밋보다 뒤로 물러나 있어도 비어 보인다)
 3. 커밋이 쌓였으면 **그 커밋만** 리뷰하고 마커를 다시 찍는다
 4. 마커가 아예 없는데 리뷰를 했다면 5단계를 빠뜨린 것이다
