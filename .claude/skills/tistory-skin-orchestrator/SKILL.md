@@ -7,22 +7,31 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 
 `sanggi-jayg.tistory.com` 커스텀 스킨을 만드는 팀을 조율한다.
 
-## 실행 모드: 환경을 먼저 확인한다
+## 실행 모드
 
-**`TeamCreate`가 있는 환경과 없는 환경이 둘 다 있다.** 있다고 전제하면 Phase 2·3이 통째로 실행 불가가 된다
-(2026-08-25 첫 실행에서 실제로 그랬다). **Phase 2 시작 전에 `ToolSearch`로 `TeamCreate`를 조회해 분기한다.**
+| Phase | 실행 모드 |
+|---|---|
+| Phase 1 (실측, 필요 시) | 서브 에이전트 — 결과만 한 번 받는다 |
+| Phase 3 (구현) | **이름 있는 팀원** — `Agent(name:)`로 띄우고 `SendMessage`로 다시 깨운다. 마크업↔CSS↔JS가 훅으로 얽혀 있어 고치고 다시 보는 왕복이 품질을 좌우한다 |
+| Phase 4 (빌드·검증) | 리더 직접 |
 
-**설정을 보고 판단하지 마라.** `.claude/settings.json`에 `teammateMode: "auto"`와
-`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이 **둘 다 켜져 있어도** `TeamCreate`가 없을 수 있다.
-팀은 팀원을 **터미널 페인으로 띄우는** 기능이라 붙일 터미널이 있어야 한다 — 백그라운드
-잡(`CLAUDE_JOB_DIR`이 잡히는 세션)에서는 플래그가 멀쩡해도 도구가 올라오지 않는다
-(2026-08-26 점검에서 확인). **설정이 아니라 도구 목록이 사실이다.**
+**`TeamCreate`·`TeamDelete`는 없다. 에이전트 팀은 형태가 바뀌어 남아 있다.** `Agent(name: "…")`로 띄운
+에이전트가 곧 팀원이고(`in_process_teammate`), 팀은 따로 만들지 않으며 리더는 `team-lead`로 잡힌다.
+이 동작을 켜는 것이 `.claude/settings.json`의 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`이다(공식 문서 agent-teams
+기준 — 꺼서 시험하지는 않았다). **지우면 Phase 3의 전제가 꺼진다.** 예전 판은 `TeamCreate` 유무로 갈라서, 팀원 기능이 있어도
+매번 한 번 돌고 끝나는 파이프라인으로 내려갔다.
 
-| Phase | `TeamCreate` 있음 | 없음 |
-|---|---|---|
-| Phase 1 (실측, 필요 시) | 서브 에이전트 | 서브 에이전트 |
-| Phase 3 (구현) | **에이전트 팀** — 마크업↔CSS↔JS가 훅으로 얽혀 실시간 조율이 품질을 좌우한다 | **서브 에이전트 파이프라인** (§Phase 3-B) |
-| Phase 4 (배포 준비) | 리더 직접 | 리더 직접 |
+2026-10-05 점검(Claude Code 2.1.289, 대화형 CLI)에서 실측한 것:
+
+- 유휴가 된 팀원을 `SendMessage`로 깨우면 **맥락을 유지한 채** 이어간다
+- 팀원끼리 직접 보낼 수 있고, 그 요약이 리더의 유휴 알림에 실려 온다. 단 팀원에게 `SendMessage`는
+  **지연 도구**라 `ToolSearch("select:SendMessage")`로 불러와야 보인다 — 모르면 "통보할 수단이 없다"고 결론 낸다
+- 공유 작업 목록(`TaskCreate`·`TaskUpdate`·`TaskGet`)은 **올라오지 않았다**(문서에는 있다). 작업표는 리더가 들고 간다
+- 팀원을 멈추는 것은 `TaskStop`(이름으로)
+
+**설정이 아니라 도구 목록이 사실이다.** 위는 그날의 실측이다. 플래그가 꺼졌거나 환경이 다르면 재개나
+팀원 간 메시지가 안 될 수 있다. 그래도 **분기 판정을 먼저 하지 않는다** — 경로는 하나고, 안 되는 자리에서
+§에러 핸들링의 대체 동작(새로 띄우기 · 리더 중계)으로 내려간다.
 
 ## 팀 구성
 
@@ -35,7 +44,8 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 | `blog-analyst` | 커스텀 (서브) | 실측 | `/blog-census` | `data/*.json` |
 | `seo-auditor` | 커스텀 (서브) | 검색엔진에 보이는 것 | `/seo-verify-live`, `/skin-qa-check` | `_workspace/seo-report.md`, `data/seo-baseline.json` |
 
-모든 Agent 호출에 **`model: "opus"`**를 명시한다.
+**모델은 각 에이전트 정의의 frontmatter(`model:`)가 정본이다. 호출에서 `model`을 넘기지 않는다.**
+호출 인자가 frontmatter보다 우선하므로, 넘기면 정의를 바꿔도 조용히 적용되지 않는다 — 두 곳에 적힌 값이 갈라지는 부류다.
 
 ---
 
@@ -65,48 +75,19 @@ description: "티스토리 커스텀 스킨 제작 팀을 조율하는 오케스
 - `data/inline-styles.json`이 없다 (린트 INL001이 검사를 건너뛴다)
 
 ```
-Agent(subagent_type: "blog-analyst", model: "opus", run_in_background: false,
+Agent(subagent_type: "blog-analyst", run_in_background: false,
       prompt: "/blog-census 스킬로 전수 실측하고, 이전 수치 대비 변화와
                설계 영향(인라인색 목록·카테고리 추가)을 _workspace/census-report.md에 정리하라.")
 ```
 
 ---
 
-## Phase 2: 실행 모드 분기
+## Phase 2: 작업표 — 리더가 들고 간다
 
-```
-ToolSearch(query: "select:TeamCreate", max_results: 1)
-```
+공유 작업 목록이 없으므로(§실행 모드) 리더가 작업표를 `_workspace/tasks.md`에 적고 상태를 갱신한다.
+대화가 요약돼도 남고, 사후에 무엇이 누구 몫이었는지 추적된다. 부분 재실행이면 해당 줄만 적는다.
 
-- **나오면** → Phase 2-A(팀 구성) → Phase 3-A
-- **안 나오면** → Phase 2-A를 건너뛰고 **Phase 3-B**로 간다. 사용자에게 한 줄로 알린다:
-  "`TeamCreate`가 없어 서브 에이전트 파이프라인으로 진행합니다 — 병렬성과 실시간 조율이 줄어듭니다."
-
----
-
-## Phase 2-A: 팀 구성 (`TeamCreate` 있을 때만)
-
-```
-TeamCreate(team_name: "tistory-skin", members: [
-  { name: "skin-markup",   agent_type: "skin-markup",   model: "opus",
-    prompt: "DECISIONS.md·DESIGN.md를 읽고 src/skin.html·src/index.xml을 작성하라.
-             훅 계약을 docs/hooks.md에 먼저 확정하고 팀에 공표한 뒤 시작하라." },
-  { name: "skin-style",    agent_type: "skin-style",    model: "opus",
-    prompt: "DESIGN.md를 규범으로 src/styles/*.css를 작성하라.
-             docs/hooks.md가 나올 때까지 토큰·리셋부터 작업하라." },
-  { name: "skin-behavior", agent_type: "skin-behavior", model: "opus",
-    prompt: "src/js/*.js를 작성하라. 생성하는 DOM의 클래스 이름은
-             skin-style과 반드시 사전 합의하라." },
-  { name: "skin-qa",       agent_type: "skin-qa",       model: "opus",
-    prompt: "각 모듈이 완성될 때마다 즉시 검증하라. 전체 완성을 기다리지 마라." }
-])
-```
-
-**작업 등록** — `TaskCreate`는 **한 번에 한 건**만 만든다. 배열도, `assignee`도, `depends_on`도 받지 않는다.
-담당과 의존성은 만든 뒤 `TaskUpdate`로 붙인다. (`TaskCreate` → `{subject, description, activeForm}`,
-반환된 `taskId`에 `TaskUpdate` → `{owner}` / `{addBlockedBy: [id…]}`.)
-
-| # | subject | owner | blockedBy |
+| # | 작업 | 담당 | 선행 |
 |---|---|---|---|
 | 1 | 훅 계약 확정 | skin-markup | — |
 | 2 | 토큰·리셋 CSS | skin-style | — |
@@ -124,37 +105,76 @@ TeamCreate(team_name: "tistory-skin", members: [
 | 14 | 중간 검증 2 (홈+목록) | skin-qa | 4, 6 |
 | 15 | 최종 검증 | skin-qa | — |
 
-**표의 `#`는 읽기용 번호지 `taskId`가 아니다.** 실제 id는 `TaskCreate`가 돌려주므로 받아서 쓴다.
-
-```
-TaskCreate(subject: "훅 계약 확정",
-           description: "docs/hooks.md에 클래스·data 속성 계약을 확정하고 팀에 공표한다",
-           activeForm: "훅 계약 확정 중")     → taskId 반환 (이 값을 보관한다)
-TaskUpdate(taskId: <1번의 id>, owner: "skin-markup")
-…
-TaskUpdate(taskId: <3번의 id>, addBlockedBy: [<1번의 id>])   ← 의존성은 만든 뒤에 건다
-```
-
 > 팀원당 4~6개가 적정. 작업을 더 잘게 쪼개면 조율 오버헤드가 커진다.
 
 ---
 
-## Phase 3-A: 구현 — 에이전트 팀
+## Phase 3: 구현 — 이름 있는 팀원
 
-**실행 모드:** 에이전트 팀. 팀원이 공유 작업 목록에서 작업을 요청해 자체 조율한다.
+**실행 모드:** 이름 있는 팀원(`Agent(name:)` + `SendMessage`). 리더가 허브다 — 팀원끼리 직접 보내도 되지만,
+처음 띄울 때의 지시와 결정은 리더가 쥔다.
+
+### 띄우는 순서
+
+```
+skin-markup (단독 선행) → docs/hooks.md 확정
+        ↓ 리더가 바뀐 훅 이름을 프롬프트에 직접 복사
+skin-style ∥ skin-behavior ∥ skin-qa (한 메시지에서 병렬로, 파일 담당을 겹치지 않게)
+        │  모듈 하나가 끝날 때마다 → skin-qa가 그 모듈만 검증
+        │  실패 항목 → 담당 팀원을 같은 이름으로 깨워 되돌린다
+        ↓
+skin-qa 최종 검증 → _workspace/qa-report.md
+```
+
+**훅 계약이 먼저인 이유** — 훅에 기대는 작업이 계약보다 먼저 시작되면 이름이 어긋난 채 굳는다.
+이번 요청에 훅을 건드리는 일이 없으면(토큰·다크모드 토글만 등) markup을 건너뛰고 바로 띄운다.
+
+```
+Agent(name: "skin-markup", subagent_type: "skin-markup",
+      prompt: "DECISIONS.md·DESIGN.md를 읽고 <요청 범위>를 src/skin.html·src/index.xml에 반영하라.
+               훅 계약(docs/hooks.md)을 먼저 확정하고, 새로 만들거나 바꾼 이름을 최종 보고 맨 앞에 목록으로 적어라.")
+```
+
+markup의 유휴 알림을 받은 뒤 나머지를 **한 메시지에서** 띄운다:
+
+```
+Agent(name: "skin-style", subagent_type: "skin-style",
+      prompt: "<markup이 보고한 훅 이름 목록을 그대로 붙인다> …
+               네가 건드릴 파일은 src/styles/*.css뿐이다. src/js/는 지금 skin-behavior가 고치고 있다.
+               모듈 하나를 끝낼 때마다 skin-qa에게 SendMessage로 검증을 요청하라 —
+               SendMessage는 지연 도구라 ToolSearch('select:SendMessage')로 불러온다. 못 쓰면 최종 보고에 적어라.")
+Agent(name: "skin-behavior", subagent_type: "skin-behavior", prompt: "… (같은 형식, 담당은 src/js/*.js)")
+Agent(name: "skin-qa", subagent_type: "skin-qa",
+      prompt: "검증 요청이 올 때까지 바로 끝내고 대기하라. 요청이 오면 그 모듈만 즉시 검증하고,
+               경계면 이슈는 생산자·소비자 양쪽에 SendMessage로 알려라.
+               다른 팀원이 아직 고치는 중인 파일에서 난 오류는 그 팀원 몫으로 적고 넘어간다. <아래 QA 필수 문구>")
+```
+
+기준선은 따로 잡지 않는다 — 시작 시점의 트리는 통과 상태다. `main`은 CI(`check`)가 머지 조건이고, 작업 브랜치의
+커밋은 `npm run check` 통과 뒤에만 쌓인다. 팀원들은 같은 작업 트리를 동시에
+고치므로, 중간 검증의 `npm run check`는 남의 미완성 파일까지 본다. 그래서 위 마지막 문장이 필요하다.
 
 ### 통신 규칙
 
-- **`skin-markup`이 가장 먼저 `docs/hooks.md`를 쓰고 `SendMessage`로 공표한다.** 나머지 둘은 이걸 받기 전엔 훅에 의존하지 않는 작업(토큰 CSS, 다크모드 토글)부터 한다
+- **팀원 간 통보는 `SendMessage`다.** 지연 도구라 불러오는 법을 프롬프트에 넣는다. 못 쓰면 최종 보고에 적고 리더가 중계한다
 - 훅 이름이 바뀌면 markup이 **style·behavior 양쪽에 동시 통보**한다
 - `skin-behavior`는 생성 DOM의 클래스를 `skin-style`과 합의한 뒤 구현한다
-- `skin-qa`는 모듈 완성 알림을 받으면 즉시 검증하고, 경계면 이슈는 **양쪽 모두에게** 알린다
+- `skin-qa`는 경계면 이슈를 **양쪽 모두에게** 알린다
+- 팀원끼리 보낸 메시지의 요약은 리더의 유휴 알림에 실려 온다 — 리더는 그것으로 작업표를 갱신한다
 
-### 리더 모니터링
+### 리더가 직접 지는 책임
 
-- 팀원 유휴 알림 수신 시 `TaskGet`으로 진행률 확인
-- 훅 계약이 지연되면 `skin-markup`에 우선순위 재지정
-- 같은 경계면 이슈가 2회 이상 반복되면 훅 계약 자체를 재검토하도록 지시
+1. **훅 중계.** markup이 정한 이름을 style·behavior 프롬프트에 **그대로 복사해 넣는다.** 링크만 주지 마라
+2. **파일 담당을 겹치지 않게 못박는다.** 팀원은 같은 작업 트리를 쓴다 — 두 명이 같은 파일을 동시에 고치면 한쪽이 덮인다.
+   프롬프트에 "네가 건드릴 파일은 X뿐이다. Y는 절대 건드리지 마라 — 지금 다른 팀원이 고치고 있다"를 **명시**한다
+3. **협상이 길어지면 리더가 정한다.** behavior가 만드는 DOM 클래스는 훅 계약에 미리 박혀 있는 것이 가장 좋다.
+   빠졌는데 합의가 한 번에 안 나면 리더가 정해서 양쪽에 같은 문장으로 전달한다
+4. **되돌릴 때는 같은 이름으로 깨운다.** `SendMessage({to: "skin-style"})` — 새로 띄우면 앞서 읽은 맥락을 잃는다
+5. **훅 계약이 지연되면** markup에 우선순위를 다시 준다. 같은 경계면 이슈가 2회 이상 반복되면 훅 계약 자체를 재검토시킨다
+
+**QA 프롬프트에 반드시 넣을 것** — `_workspace/qa-report.md`에 **통과 / 실패 / 미검증 3분류**로 쓰고,
+**"미검증을 통과로 적지 말 것"**. 이 도메인은 조용히 실패하므로 "아마 될 것"이 가장 위험한 문장이다.
+각 팀원이 "확인 못 했다"고 남긴 항목 목록도 함께 넘긴다.
 
 ### 산출물
 
@@ -164,36 +184,6 @@ TaskUpdate(taskId: <3번의 id>, addBlockedBy: [<1번의 id>])   ← 의존성�
 | skin-style | `src/styles/*.css` |
 | skin-behavior | `src/js/*.js` (다크모드 초기화 스니펫은 `src/skin.html`의 `head-inline` 블록이 정본 — 바꿀 때 skin-markup에게 교체를 요청) |
 | skin-qa | `_workspace/qa-report.md` |
-
----
-
-## Phase 3-B: 구현 — 서브 에이전트 파이프라인 (`TeamCreate` 없을 때)
-
-에이전트는 한 번 실행되고 끝난다. **"공표를 기다리며 다른 일을 한다"가 불가능하므로**
-훅 계약을 만드는 쪽을 완전히 끝낸 뒤 나머지를 띄운다.
-
-```
-skin-markup (단독 선행) → docs/hooks.md 확정
-        ↓ 리더가 hooks.md 내용을 프롬프트에 직접 넣어 전달
-skin-style · skin-behavior (병렬, 파일 담당을 겹치지 않게 나눠서)
-        ↓
-skin-qa (일괄 검증)
-        ↓ 실패 항목을 담당 에이전트에 되돌린다
-```
-
-**리더가 직접 져야 하는 책임 — 팀 모드에서는 팀원이 하던 일이다**
-
-1. **훅 중계.** markup이 정한 이름을 style·behavior 프롬프트에 **그대로 복사해 넣는다.** 링크만 주지 마라
-2. **파일 담당을 겹치지 않게 못박는다.** 두 에이전트가 같은 파일을 동시에 고치면 한쪽이 덮인다.
-   프롬프트에 "네가 건드릴 파일은 X뿐이다. Y는 절대 건드리지 마라 — 지금 다른 에이전트가 고치고 있다"를 **명시**한다
-3. **협상이 필요한 결정을 미리 내린다.** behavior가 만드는 DOM 클래스는 협상할 상대가 없으므로 훅 계약에 미리 박혀 있어야 한다.
-   빠졌으면 리더가 정해서 양쪽에 같은 문장으로 전달한다
-4. **incremental QA를 포기한 대가를 인정한다.** 검증이 끝에 몰리므로 경계면 어긋남이 팀 모드보다 많이 나온다.
-   `skin-qa` 프롬프트에 **"서브 에이전트 모드라 경계면이 어긋났을 가능성이 높다"**를 배경으로 넣고,
-   각 에이전트가 "확인 못 했다"고 남긴 항목 목록을 함께 넘긴다
-
-**QA 프롬프트에 반드시 넣을 것** — `_workspace/qa-report.md`에 **통과 / 실패 / 미검증 3분류**로 쓰고,
-**"미검증을 통과로 적지 말 것"**. 이 도메인은 조용히 실패하므로 "아마 될 것"이 가장 위험한 문장이다.
 
 ---
 
@@ -213,7 +203,7 @@ skin-qa (일괄 검증)
 
 ## Phase 5: 정리
 
-1. 팀 모드였으면 팀원 종료 요청(`SendMessage`) → `TeamDelete`. 파이프라인 모드였으면 할 일 없다
+1. 더 쓸 일이 없는 팀원은 `TaskStop`(이름)으로 멈춘다. 유휴로 두면 세션이 끝날 때까지 메시지를 받는다
 2. `_workspace/` **보존** (사후 추적용)
 3. `npm run check` 통과 확인 후 커밋. **린트 오류가 남은 채로 커밋하지 않는다**
 4. 사용자에게 보고: 완료 항목 · 미검증 항목 · 배포 절차(`/skin-deploy`)
@@ -237,22 +227,20 @@ skin-qa (일괄 검증)
 ```
 [리더] → (조건부) blog-analyst 서브 → data/*.json
           ↓
-    ToolSearch("select:TeamCreate")
+    작업표 → _workspace/tasks.md
           ↓
-  ┌───────┴────────────────────────────────┐
-  │ 있음: TeamCreate + TaskCreate          │ 없음: 파이프라인
-  │  skin-markup ─hooks.md→ skin-style     │  skin-markup 완료
-  │       │                    │           │      ↓ 리더가 hooks.md를 프롬프트에 복사
-  │       └→ skin-behavior ←합의┘          │  skin-style ∥ skin-behavior (파일 담당 분리)
-  └───────┬────────────────────────────────┘
-                    ↓
-                 src/**
-                    ↓
-              skin-qa (팀: 모듈 완성 즉시 반복 / 파이프라인: 끝에 일괄)
-                    ↓
-          빌드 → 프리뷰 → 린트
-                    ↓
-           _workspace/qa-report.md
+    skin-markup (이름 있는 팀원) → docs/hooks.md
+          ↓ 리더가 훅 이름을 프롬프트에 복사
+    skin-style ∥ skin-behavior ∥ skin-qa (한 메시지에서)
+          │   style·behavior ──모듈 완성──→ qa ──경계면 이슈──→ 양쪽
+          │   리더 ←── 유휴 알림(팀원 간 메시지 요약 포함)
+          │   실패 → 리더가 같은 이름으로 깨워 되돌림
+          ↓
+       src/**
+          ↓
+    빌드 → 프리뷰 → 린트
+          ↓
+    _workspace/qa-report.md
 ```
 
 ---
@@ -261,11 +249,13 @@ skin-qa (일괄 검증)
 
 | 상황 | 전략 |
 |---|---|
-| 팀원 1명 실패·중지 | `SendMessage`로 상태 확인 → 재시작. 재실패 시 해당 작업을 리더가 직접 수행하고 리포트에 명시 |
+| 팀원 1명 실패·중지 | `SendMessage`로 상태 확인 → 무응답이면 같은 정의를 **새 이름**(`skin-behavior-2`)으로 띄우고 이전 산출물 경로와 작업표의 해당 줄을 프롬프트에 넣는다. 재실패 시 해당 작업을 리더가 직접 수행하고 리포트에 명시 |
+| 같은 이름으로 깨워지지 않는다 (환경 차이) | 새로 띄우고 이전 산출물 경로를 넘긴다 — 맥락은 잃지만 산출물은 남아 있다. 이후 그 단계는 한 번 돌고 끝나는 서브 에이전트로 본다 |
+| 팀원이 "통보할 수단이 없다"고 보고 | `SendMessage`가 지연 도구라는 것을 몰랐다. 프롬프트에 불러오는 법을 넣었는지 확인한다. 정말 못 쓰는 환경이면 최종 보고 → **리더가 중계**한다. 훅 이름은 리더가 상대 프롬프트에 그대로 복사해 넣는다 |
 | 훅 계약 충돌 반복 | 리더가 개입해 이름을 확정하고 양쪽에 통보. 팀원 협상에 맡기지 않는다 |
 | 린트 오류가 3회 반복해도 안 잡힘 | 사용자에게 보고하고 진행 여부 확인. 억지로 통과시키지 않는다 |
 | 리뷰 게이트가 차단 판정 | Phase 3으로 되돌려 고치고 **게이트를 다시 실행**한다. 마커를 손으로 찍지 않는다 — 찍는 순간 초록불이 거짓이 되고, 다음 사람이 그것을 믿는다 |
-| PR 생성이 훅에 막힘 | 리뷰를 안 했거나 리뷰 뒤 커밋이 쌓였다. 훅 메시지의 SHA 두 개를 비교하고 **새 커밋만** 리뷰한 뒤 다시 찍는다 |
+| PR 생성이 훅에 막힘 | 리뷰를 안 했거나, 리뷰 뒤 커밋이 쌓였거나, **마커 기록과 PR 생성을 한 명령에 묶었다.** 훅 메시지의 SHA 두 개를 비교하고 **새 커밋만** 리뷰한 뒤 다시 찍는다. 묶었으면 마커만 따로 찍고 다시 연다(`/pr-review-gate` 5단계) |
 | 프리뷰가 렌더링 안 됨 | **스킨이 아니라 렌더러 문제일 수 있다.** 경고를 먼저 읽고, 렌더러 결함이면 `.claude/skills/skin-preview/scripts/render.py` 수정 |
 | 치환자가 필요한데 없음 | 지어내지 않는다. `docs/tistory-skin-reference.txt` 확인 후, 없으면 JS 구현으로 우회하거나 사용자에게 보고 |
 | `DESIGN.md`에 없는 값 필요 | 임의 결정 금지. 문서를 먼저 갱신하고 사용자에게 알린다 |
@@ -278,16 +268,18 @@ skin-qa (일괄 검증)
 1. 사용자: "홈 화면부터 만들어줘"
 2. Phase 0 — `_workspace/` 없음 → 초기 실행
 3. Phase 1 — `data/posts.json`이 최신이라 건너뜀
-4. Phase 2 — 팀 4명 + 작업 15개 등록
-5. Phase 3 — markup이 훅 계약 공표 → 셋이 병렬 작업, qa가 중간 검증 2회
-6. Phase 4 — 빌드 → 프리뷰 12페이지 → 린트 오류 2건 → Phase 3 복귀 → 재검증 통과
-7. Phase 5 — 팀 정리, 커밋 → `/pr-review-gate` 경고 1·차단 0 → 마커 → 푸시 → PR
+4. Phase 2 — 작업 15개를 `_workspace/tasks.md`에
+5. Phase 3 — markup이 훅 계약 확정 → 리더가 이름을 복사해 style·behavior·qa를 한 메시지에서 띄움 →
+   qa가 모듈마다 검증(중간 검증 2회), 경계면 이슈 1건은 qa가 style·behavior 양쪽에 직접 통보 →
+   리더는 유휴 알림으로 작업표 갱신
+6. Phase 4 — 빌드 → 프리뷰 12페이지 → 린트 오류 2건 → 담당 팀원을 **같은 이름으로** 깨워 되돌림 → 재검증 통과
+7. Phase 5 — 팀원 `TaskStop`, 커밋 → `/pr-review-gate` 경고 1·차단 0 → 마커 → (별도 명령으로) 푸시 → PR
 8. 예상 결과: `dist/skin.html` · `dist/style.css` · `dist/images/script.js` 생성, 프리뷰 12페이지 정상
 
 ### 에러 흐름
 1. Phase 3에서 `skin-behavior`가 응답 없음
-2. 리더가 유휴 알림 수신 → `SendMessage` 상태 확인 → 무응답
-3. 재시작 시도 → 실패
+2. 리더가 `SendMessage`로 상태 확인 → 무응답
+3. `skin-behavior-2`로 새로 띄우고 이전 산출물 경로를 넘김 → 실패
 4. 목차·하이라이팅 작업을 리더가 직접 수행
 5. Phase 4 진행, 린트 통과
 6. 최종 보고에 "라이트박스·진행바 미구현 — skin-behavior 실패" 명시
