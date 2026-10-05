@@ -71,10 +71,12 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 
 **확인하지 않은 것은 지우지 않는다.** `MERGED`가 아니면 그대로 둔다. 닫히기만 한 PR(`CLOSED`)의 브랜치에는 **아직 아무 데도 없는 작업**이 들어 있다.
 
-**스킨이 바뀐 머지는 릴리즈까지 이어간다 — 단 배포가 먼저다.** 릴리즈 태그는 "이 커밋이 지금 라이브다"라는
-표식이라(결정 47) 머지가 아니라 **배포**에 묶인다. `src`·`scripts`·`data`·`package.json`을 바꾼 PR이 머지되면
+**스킨이 바뀌었으면 릴리즈까지 이어간다 — 단 배포가 먼저다.** 릴리즈 태그는 "이 커밋이 지금 라이브다"라는
+표식이라(결정 47) 머지가 아니라 **배포**에 묶인다. 정리 뒤
+`git diff --stat <직전 릴리즈 태그> HEAD -- src scripts data package.json package-lock.json`이 비어 있지 않으면
 티스토리에 올렸는지 사용자에게 묻고, 올렸으면 라이브를 대조한 뒤 찍는다(`skin-deploy` 「릴리즈」).
-라이브가 아직 옛 빌드면 찍지 않는다. 하네스·문서만 바뀐 머지는 묻지 않는다.
+라이브가 아직 옛 빌드면 찍지 않는다. 기준이 이번 PR이 아니라 **직전 태그**인 것은, 스킨 PR이 배포 전에
+하네스 PR에 밀려도 배포되지 않은 변경을 놓치지 않기 위해서다. `package-lock.json`은 번들되는 `highlight.js`의 판을 정한다.
 
 ## 하네스: 티스토리 스킨 제작
 
@@ -106,7 +108,7 @@ git fetch --prune          # 원격은 머지 때 GitHub이 지운다(deleteBran
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
-| 2026-10-05 | **오케스트레이터를 이름 있는 팀원 방식으로** — `TeamCreate` 분기와 파이프라인 대체 경로를 걷고 Phase 2·3을 한 경로로(`Agent(name:)` + `SendMessage`, 작업표는 리더가 `_workspace/tasks.md`에). 호출마다 `model: "opus"`를 넘기던 규칙 제거(frontmatter가 정본). 로컬 메모리에만 있던 규칙 둘을 저장소로: 리뷰 마커는 PR 생성과 다른 Bash 호출로, 스킨이 바뀐 머지는 배포 확인 뒤 릴리즈 | `skills/tistory-skin-orchestrator/SKILL.md`, `skills/pr-review-gate/SKILL.md`, `CLAUDE.md` 「머지 후 정리」 | 2026-10-05 하네스 점검. `TeamCreate`는 없어졌지만 에이전트 팀은 남아 있었다 — `Agent(name:)`로 띄운 에이전트가 곧 팀원이다. 오케스트레이터가 없는 도구로 분기해 **팀원 기능이 있어도 매번 한 번 돌고 끝나는 파이프라인으로 내려갔고**, 그 탓에 모듈마다의 중간 QA를 포기하고 있었다. 실측(대화형 CLI, 2.1.289, 시험용 팀원 둘): 유휴 팀원을 깨우면 맥락 유지, 팀원 간 직접 메시지, 팀원에게 `SendMessage`는 지연 도구, 공유 작업 목록은 안 올라옴. 실험 플래그를 지우려던 첫 계획은 철회했다 — 문서상 그 플래그가 팀원 기능을 켠다. 호출 인자 `model`은 frontmatter보다 우선해, 정의를 바꿔도 조용히 무시되는 두 번째 자리였다. 리뷰 마커 규칙은 2026-09-15에 실제로 막힌 뒤 로컬 메모리에만 남아 다른 세션·팀원은 몰랐다 |
+| 2026-10-05 | **오케스트레이터를 이름 있는 팀원 방식으로** — `TeamCreate` 분기와 파이프라인 대체 경로를 걷고 Phase 2·3을 한 경로로(`Agent(name:)` + `SendMessage`, 작업표는 리더가 `_workspace/tasks.md`에). markup은 훅 계약만 먼저 끝내고 나머지는 병렬, 담당 파일 표(hooks.md §5.6·§8은 behavior, `DESIGN.md`는 style), `dist/`를 쓰는 명령은 skin-qa만, 팀원 정리는 PR을 연 뒤, 중간 QA가 실제로 돌았는지 리더가 확인. 팀원 넷의 통신 프로토콜에 `SendMessage` 불러오는 법. 호출마다 `model: "opus"`를 넘기던 규칙 제거(frontmatter가 정본). 로컬 메모리에만 있던 규칙 둘을 저장소로: 리뷰 마커는 PR 생성과 다른 Bash 호출로(리뷰 기록에 SHA), 릴리즈는 **직전 태그 이후** 스킨 diff가 있고 배포했을 때(`package-lock.json` 포함 — `skin-deploy`도) | `skills/tistory-skin-orchestrator/SKILL.md`, `skills/pr-review-gate/SKILL.md`, `skills/skin-deploy/SKILL.md`, `agents/` 4개(markup·style·behavior·qa), `CLAUDE.md` 「머지 후 정리」 | 2026-10-05 하네스 점검. `TeamCreate`는 없어졌지만 에이전트 팀은 남아 있었다 — `Agent(name:)`로 띄운 에이전트가 곧 팀원이다. 오케스트레이터가 없는 도구로 분기해 **팀원 기능이 있어도 매번 한 번 돌고 끝나는 파이프라인으로 내려갔고**, 그 탓에 모듈마다의 중간 QA를 포기하고 있었다. 실측(대화형 CLI, 2.1.289, 시험용 팀원 둘): 유휴 팀원을 깨우면 맥락 유지, 팀원 간 직접 메시지, 팀원에게 `SendMessage`는 지연 도구, 공유 작업 목록은 안 올라옴. 실험 플래그를 지우려던 첫 계획은 철회했다 — 문서상 그 플래그가 팀원 기능을 켠다. 호출 인자 `model`은 frontmatter보다 우선해, 정의를 바꿔도 조용히 무시되는 두 번째 자리였다. 리뷰 마커 규칙은 2026-09-15에 실제로 막힌 뒤 로컬 메모리에만 남아 다른 세션·팀원은 몰랐다. 첫 판을 `/code-review`가 15건 지적했다 — 팀원을 게이트 전에 멈춰 되돌릴 수 없음, 동시 빌드가 `dist/`를 지움, 「묶으면 커밋은 안 쌓였다」는 단정, PR 단위 릴리즈 판정이 배포 전 밀린 스킨 PR을 놓침 등. 문서만 바꾸는 하네스 변경도 리뷰가 실행 경로를 따라가야 잡힌다 |
 | 2026-09-15 | **하네스 문서 동기화** — 결정 52~58이 뒤집은 문장을 에이전트 정의·스킬에서 걷었다: 코드블록 라벨 한 신호 「39%」·라이트박스 `currentSrc`(skin-behavior), 배포 전 SEO 상태를 현재형으로 적은 둘(seo-auditor), 「`!important`는 두 곳」·「폰트 4종」(skin-style), 「파일:라인」 지시 4곳(결정 54가 예문만 고쳤다), 라벨 세 신호·산출물(blog-analyst), 없는 경로 `scripts/render.py`·`_workspace/head-inline.js`, 페이징 출력 모양·`text_type` 분기(substitutions 레퍼런스). 배포 체크리스트에 결정 52·57·58의 라이브 확인 항목. 「핵심 위험」 횟수를 다섯 → 아홉으로, 위성 문서의 횟수 사본은 걷고 참조만. 위성 문서의 실측 수치(275편·14장·609곳·49자·142종·12케이스)는 최신화 대신 `data/*.json`·CLAUDE.md 참조로. `TODO.md`에 결정 52·53·57·58이 「검사가 못 본다」고 적어 둔 것을 슬러그로 등재 | `.claude/agents/` 5개, `.claude/skills/` 8개, `docs/hooks.md`, `src/skin.html`·`tistory.css` 주석, `CLAUDE.md`, `DECISIONS.md` 미결 13, `TODO.md` | 2026-09-15 하네스 점검. 2026-08-27에 한 번 걷었던 부류(결정이 뒤집은 문장이 서브 에이전트 지시문에 살아남는다)가 결정 52~58 뒤에 다시 쌓였다. 린트·CI는 원리적으로 못 본다 — 결정을 뒤집으면 `.claude/`도 훑는다는 규범을 이번엔 주기 점검으로 집행했다 |
 | 2026-09-15 | 프리뷰 카테고리 픽스처에 티스토리의 **새 글 아이콘**(`NEW_ICO` — `<img alt="N" … style="…padding-left:2px">`, 인라인 style 포함)을 라이브와 같은 두 자리에 넣는다 | `skills/skin-preview/scripts/render.py`·`SKILL.md` | 결정 58(이슈 #68). 픽스처가 앵커를 이름과 글 수로만 그려 **세 번째 flex 항목이 배지를 밀어내는 조건을 한 번도 그리지 않았다** — 새 글을 발행한 뒤에만 나타나는 마크업이라 저장소 어디에도 그 이미지에 대한 언급이 없었다. 결정 42 부류 |
 | 2026-09-14 | 린트 `BND011` — `<s_*_thumbnail>` 그룹 안에는 `<img>` 하나만. `test-syntax-checks.py`에 켜지는 케이스 1·기준선 1. 프리뷰 `page_bare`의 빈 메뉴를 빈 문자열 → **빈 `<ul></ul>`**로 | `skills/skin-qa-check/scripts/lint.py`·`test-syntax-checks.py`·`SKILL.md`, `skills/skin-preview/scripts/render.py`·`SKILL.md` | 결정 57. 관련 글·사이드바·이전다음의 썸네일 상자가 그룹 **안**에 있어 대표이미지 없는 줄이 라이브에서 왼쪽으로 튀었는데, 프리뷰가 그 조건을 그리고 있었는데도 본 사람이 없었다. `.site-nav:empty`(결정 50)는 라이브가 `<ul></ul>`을 내서 한 번도 참이 된 적이 없었고, 픽스처가 빈 문자열을 넣어 프리뷰에서만 걸렸다 — 결정 42 부류 |

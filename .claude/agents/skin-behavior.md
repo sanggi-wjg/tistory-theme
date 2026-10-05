@@ -48,6 +48,8 @@ model: opus
 
 ## 팀 통신 프로토콜
 
+통보는 `SendMessage`로 받는 팀원의 이름 그대로 보낸다. 지연 도구라 처음에는 목록에 없다 — `ToolSearch`(query: `"select:SendMessage"`)로 불러온다. 받을 팀원이 아직 떠 있지 않거나 보낼 수 없으면 최종 보고에 적는다 — 리더가 중계한다.
+
 - **수신** ← skin-markup: 훅 계약 통보 → 셀렉터 갱신
 - **발신** → skin-markup: "이 요소를 쿼리할 수 없다", "head에 이 스니펫이 필요하다"
 - **발신** → skin-style: 생성 DOM의 클래스 이름 제안·합의. 합의 없이 진행하지 않는다

@@ -209,7 +209,7 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 
 ```bash
 git switch main && git pull
-git diff --stat <직전 릴리즈 태그> HEAD -- src scripts data package.json   # 라이브에 올린 빌드가 이 HEAD인지. 소스 차이가 있으면 그 커밋에 찍는다
+git diff --stat <직전 릴리즈 태그> HEAD -- src scripts data package.json package-lock.json   # 라이브에 올린 빌드가 이 HEAD인지. 소스 차이가 있으면 그 커밋에 찍는다
 git tag -a v2026.08.27 -m "배포 2026-08-27 — 무엇을 올렸나(결정 번호) / 라이브 확인: verify.py --compare 결과, 눈으로 본 것"
 git push origin v2026.08.27
 gh run watch                       # release 워크플로우 — npm run check → dist zip → 릴리즈
