@@ -8,6 +8,7 @@ import { entryRoot, headingsWithIds, onMediaChange, rafThrottle, reducedMotion }
 
 const MIN_HEADINGS = 3 // 이 미만이면 목차를 만들지 않는다
 const SPY_OFFSET = 120 // 화면 위쪽 이 높이를 지나면 "현재 위치"로 본다
+const FOLLOW_MARGIN = 48 // 목차 상자가 현재 항목을 따라갈 때 위·아래에 남길 여유(px)
 
 // 접이식이 살아 있는 구간. components.css의 @media (max-width: 1399px)와 같은 값이어야 한다.
 // 여기가 어긋나면 ARIA가 화면과 다른 말을 한다 — QA F2가 정확히 그 사고였다.
@@ -182,9 +183,44 @@ function build(toc, list) {
     if (window.innerHeight + y - SPY_OFFSET >= doc.scrollHeight - 4) idx = tops.length - 1
 
     if (idx === cur) return
-    if (links[cur]) links[cur].classList.remove('is-current')
-    if (links[idx]) links[idx].classList.add('is-current')
+    // 색(.is-current)과 aria-current를 같은 자리에서 옮긴다 — 색만으로는 스크린리더에 안 보인다.
+    if (links[cur]) {
+      links[cur].classList.remove('is-current')
+      links[cur].removeAttribute('aria-current')
+    }
+    if (links[idx]) {
+      links[idx].classList.add('is-current')
+      links[idx].setAttribute('aria-current', 'location')
+      follow(links[idx])
+    }
     cur = idx
+  }
+
+  /* 1400px~에서 목차는 max-height + overflow-y: auto 상자다(components.css). 항목이 많으면
+     현재 항목이 상자 밖으로 나가는데 상자는 따라오지 않았다(결정 63).
+     **상자의 scrollTop만** 옮긴다 — scrollIntoView는 페이지까지 움직인다(결정 59가 겪은 부류).
+     현재 항목이 바뀔 때만 부르므로, 사용자가 상자를 직접 굴리는 동안에는 싸우지 않는다.
+     접이식 구간(~1399px)에서는 상자가 스크롤되지 않아 첫 조건에서 물러난다. */
+  function follow(link) {
+    const box = toc
+    const view = box.clientHeight
+    if (box.scrollHeight <= view + 1) return
+    const margin = Math.min(FOLLOW_MARGIN, view / 4)
+    const top = link.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientTop + box.scrollTop
+    const bottom = top + link.offsetHeight
+    let next = box.scrollTop
+    if (top < box.scrollTop + margin) next = top - margin
+    else if (bottom > box.scrollTop + view - margin) next = bottom - view + margin
+    else return
+    next = Math.max(0, Math.min(next, box.scrollHeight - view))
+    if (Math.abs(next - box.scrollTop) < 1) return // 이미 끝에 붙어 있다
+    // 여기서 던지면 build() 안의 첫 spy()가 끊겨 스크롤 구독이 안 걸린다 — 옵션 객체를
+    // 모르는 구형 scrollTo는 scrollTop 대입으로 물러난다.
+    try {
+      box.scrollTo({ top: next, behavior: reducedMotion() ? 'auto' : 'smooth' })
+    } catch (e) {
+      box.scrollTop = next
+    }
   }
 
   const onScroll = rafThrottle(spy)

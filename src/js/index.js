@@ -13,6 +13,8 @@ import initToc from './toc.js'
 import initHeadingAnchor from './heading-anchor.js'
 import initCategory from './category.js'
 import initCatChips from './cat-chips.js'
+import initCards from './cards.js'
+import initPaging from './paging.js'
 import initProgress from './progress.js'
 import initInlineFix from './inline-fix.js'
 
@@ -42,6 +44,9 @@ function boot() {
   safe('category', initCategory)
   // 같은 트리를 읽어 헤더 안 칩을 채운다(결정 50). 헤더 높이를 바꾸므로 진행바보다 먼저
   safe('cat-chips', initCatChips)
+  // 목록 카드 링크 이름·현재 페이지 번호. 속성만 붙여 레이아웃을 안 바꾼다
+  safe('cards', initCards)
+  safe('paging', initPaging)
   // 진행바는 본문 DOM이 다 만들어진 뒤에 높이를 재야 한다
   safe('progress', initProgress)
   // 인라인색 안전망은 CSS 보정이 이미 적용된 계산값을 보므로 마지막이다

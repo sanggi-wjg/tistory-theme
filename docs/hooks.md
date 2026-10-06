@@ -171,6 +171,7 @@ html[data-theme]                       ← JS가 찍는다 (없으면 시스템 
 | `.post` | 카드 루트. **`data-cat`이 여기 붙는다** |
 | `.post[data-cat]` | 상위/하위 전체 경로 (`"IT"` 또는 `"IT/Clean Code"`). DESIGN §6.2의 기본이미지 선택자가 이 값에 붙는다 |
 | `.post-link` | 카드 전체를 덮는 단일 `<a>`. **안에 다른 `<a>`가 없다** (중첩 앵커 금지) |
+| `.post-link[aria-labelledby]` | **JS가 붙인다**(`cards.js`). 링크 이름을 안쪽 `.post-title`로 좁힌다 — 카드 전체가 링크라 이름이 카테고리·제목·발췌·날짜 약 500자였다. `.post-title`에 id가 없으면 `post-title-N`을 만든다(`util.uniqueId`로 문서 안에서 겹치지 않게). `.post-title`이 없거나 비면 건드리지 않는다 |
 | `.thumb` | 16:10 비율 상자. **기본이미지 배경은 여기에** |
 | `.thumb-img` | 대표이미지. **있을 때만 존재한다** — `.thumb:has(.thumb-img)` / `:not(:has())`로 분기 |
 | `.post-text` | 텍스트 묶음 |
@@ -310,7 +311,8 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 (자리 예약은 바로 아래 행) |
 | **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다. 임계·선택자가 같은지는 린트 `BND010`이 대조한다 |
 | **첫 페인트 자리** | **`html.js`이고 `body:not(.no-toc)`이면 1399px 이하에서 CSS가 `.entry-aside`에 목차 바 높이를 미리 잡는다** — `.toc`가 `.is-ready` 전까지 `display:none`이라 바가 페인트 뒤에 끼어들며 본문을 밀던 것을 막는다(결정 62). `.no-toc`는 인라인이 첫 페인트 전에 판정하므로 목차 없는 글은 예약하지 않는다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **toc.js가 `.is-ready`를 못 붙이고 끝나면 — 조기 반환이든 실행 중 예외든 — `markNoToc()`로 `no-toc`를 붙여 예약을 푼다**(`try…finally`로 한 곳에서). 실행 중 예외는 `html.js`가 못 보는 경로라 toc.js가 스스로 풀어야 빈 띠가 안 남는다 |
-| 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) |
+| 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) + **`aria-current="location"`**. 둘은 같은 자리에서 함께 옮긴다 — 이전 항목에서는 둘 다 지운다 |
+| 상자 따라가기 | 1400px~에서 `.toc.is-ready`는 `max-height` + `overflow-y: auto` 상자다. 현재 항목이 **바뀔 때만**, 상자가 실제로 스크롤될 때(`scrollHeight > clientHeight`)만 **`#toc`의 `scrollTop`만** 옮겨 현재 항목을 위아래 여유(최대 48px)를 두고 보이게 한다. `scrollIntoView`는 쓰지 않는다 — 페이지까지 움직인다. 사용자가 상자를 직접 굴리는 동안에는 항목이 안 바뀌므로 싸우지 않는다 |
 | 모바일 접이식 | 1399px 이하에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1399px 이하에서만 — 3단 경계 1400과 같다, 결정 48) |
 | id 앵커 | 본문 소제목에 id가 없으면 JS가 만든다. 형식 `toc-h-1`, `toc-h-2`… (한글 슬러그를 피한다 — URL 인코딩 문제) |
 
@@ -423,7 +425,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.toc-item` · `.toc-h2` · `.toc-h3` · `.toc-link` | 목차 항목. `<li class="toc-item toc-h2">` 안에 `<a class="toc-link">`. 계약 본문은 §5.1 | `#toc-list` 안 |
 | `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너. **첫 페인트 뒤 유휴 시간에** 블록 단위로 붙는다(결정 51) — 동기가 아니다. 20,000자 넘는 블록은 **자동 감지가 꺼져** 래퍼·복사 버튼만 받는다(글쓴이 `language-*`가 있으면 그대로 칠한다) | `.contents_style pre`를 감싼다 |
 | `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
-| `.code-copy` | 복사 버튼 (우상단, 호버 노출). 성공 시 `.is-copied` | `.code-wrap` 안 |
+| `.code-copy` | 복사 버튼 (우상단, 호버 노출). **성공**: 1.5초 동안 `.is-copied` + 아이콘이 체크로 바뀌고(같은 15px·viewBox 20·stroke 1.6 — 버튼 크기 불변) `aria-label`이 「복사됨」, 지나면 셋 다 되돌린다 — 색만으로 알리지 않는다. **실패**: 조용히 넘어가지 않는다 — 그 블록의 코드를 `Range`로 선택해 두고 알린다. **알림 영역**: 문서에 하나뿐인 `<div class="a11y-hidden" role="status">`를 처음 알릴 때 만들어 `<body>` 끝에 붙인다(새 클래스 없음 — §7 유틸). 같은 문구도 다시 읽히게 비웠다가 100ms 뒤 채운다. 문구는 「코드를 복사했습니다」 / 「복사하지 못했습니다. 코드를 선택해 두었으니 직접 복사하세요」 | `.code-wrap` 안 |
 | `.code-wrap.has-lines` | 줄번호를 켠 상태 | 일정 줄 수 이상 |
 | `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안. **DOM 순서는 `pre` 뒤**이지만 `position: absolute`라 화면에서는 왼쪽 거터다 |
 | `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
@@ -433,7 +435,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |
 | `.external-link` | 외부링크임을 표시하는 **상태 클래스**. JS가 `<a>`에 붙이고 `target="_blank" rel="noopener noreferrer"`를 함께 건다. **표시는 `.external-icon`이 담당하므로 이 클래스에 CSS 규칙이 없는 것이 정상이다** (중복 처리를 막는 표식 겸용) | `.contents_style a` |
 | `.external-icon` | 외부링크 아이콘 SVG. 실제 스타일은 여기에 | `.external-link` 끝 |
-| `.heading-anchor` | 소제목 퍼머링크. **글자 없는 `<a>`** — 보이는 `#`은 CSS `::before`가 그린다(소제목 `textContent`가 목차 라벨이자 색인 제목이라 오염시키면 안 된다). `aria-label`에 소제목 이름 + `" 링크"`. 계약은 §5.8 | 본문 `h2`·`h3` 안쪽 끝 |
+| `.heading-anchor` | 소제목 퍼머링크. **글자 없는 `<a>`** — 보이는 `#`은 CSS `::before`가 그린다(소제목 `textContent`가 목차 라벨이자 색인 제목이라 오염시키면 안 된다). `aria-label`에 소제목 이름 + `" 링크"`. 앵커가 소제목 안에 있어 그 라벨이 소제목 이름에 합쳐지므로 **소제목 자신에도 `aria-label`(소제목 텍스트)**을 준다. 계약은 §5.8 | 본문 `h2`·`h3` 안쪽 끝 |
 | `.cat-toggle` | 카테고리 하위목록 접기/펼치기 **버튼**. `<button type="button">`, `aria-expanded` + `aria-controls`, 안에 `.a11y-hidden` 이름("Python 하위 카테고리") + `.cat-toggle-icon` | 하위목록을 가진 `li` 안, 링크 뒤·하위 `ul` 앞 |
 | `.cat-toggle-icon` | 셰브런 SVG (`.icon`도 함께 붙는다). 펼침 상태에서 90° 회전 | `.cat-toggle` 안 |
 | `li.has-toggle` | 토글이 실제로 붙은 `li`. 링크·버튼·하위목록을 한 줄에 세우는 flex 훅 | 사이드바 카테고리 `li` |
@@ -491,6 +493,11 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 카테고리 페이지에만 붙기 때문이다. 글 페이지 URL(`/entry/…`)은 카테고리 경로와 겹치지 않아
 둘 다 안 걸리고, 그때는 트리가 접힌 채로 시작한다 — 의도한 동작이다.
 
+**현재 카테고리의 `aria-current="page"`** — 티스토리가 붙인 `li.selected` 중 **그 `li` 자신의 링크가
+지금 경로를 가리킬 때만**(`isHere()` — 끝 `/`를 뗀 디코딩 경로가 같을 때, 칩과 같은 함수) 그 링크에 붙인다. 하위 카테고리 페이지의
+상위 링크, URL 대조로 펼친 가지에는 붙이지 않는다 — 「이 가지 아래」이지 「이 페이지」가 아니다.
+토글을 다는 일과 무관하게 돈다(하위가 없는 카테고리도 현재일 수 있다).
+
 **라이트박스 — phocus가 먼저, `.lightbox`는 폴백** (결정 60, `src/js/lightbox.js`)
 
 티스토리 `static/pc/dist/index.js`가 DOMContentLoaded에 `span[data-phocus] > img`마다 click을
@@ -520,7 +527,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 ### 5.8 소제목 앵커 — `.heading-anchor`
 
 ```html
-<h2 id="toc-h-1">커넥션 유효성 검사<a class="heading-anchor" href="#toc-h-1" aria-label="… 링크"></a></h2>
+<h2 id="toc-h-1" aria-label="커넥션 유효성 검사">커넥션 유효성 검사<a class="heading-anchor" href="#toc-h-1" aria-label="커넥션 유효성 검사 링크"></a></h2>
 ```
 
 | 계약 | 내용 |
@@ -529,7 +536,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | 렌더 조건 | **없다.** 소제목이 하나라도 있으면 붙는다 — 목차의 3개 조건과 무관하다 |
 | id | `util.headingsWithIds()`가 만든다. **목차와 같은 함수다** (`toc-h-1`, `toc-h-2`…) |
 | `#` 글자 | **CSS `::before`가 그린다.** 텍스트 노드로 넣지 않는다 |
-| 이름 | `aria-label`에 소제목 텍스트 + `" 링크"`. 링크 목록으로 훑으면 `#`은 전부 같은 이름이 된다 |
+| 이름 | **앵커**: `aria-label`에 소제목 텍스트 + `" 링크"` — 링크 목록으로 훑으면 `#`은 전부 같은 이름이 된다. **소제목**: 앵커를 붙이기 전에 읽은 같은 텍스트를 소제목 자신의 `aria-label`로 준다(글쓴이가 `aria-label`·`aria-labelledby`를 이미 줬으면 그대로 둔다). 앵커가 소제목 **안**에 있어 그 라벨이 소제목 이름에 합쳐져 헤딩이 「개요 개요 링크」로 두 번 읽혔다(라이브 접근성 트리). `aria-label`은 `textContent`에 들지 않으므로 목차 라벨·색인 제목은 그대로다. **택하지 않은 것**: 앵커를 `aria-hidden`·`tabindex="-1"`로 숨기기(키보드 사용자가 소제목 링크를 잃는다), 소제목 밖 형제로 빼기(content.css의 `h2:hover .heading-anchor` 노출 규칙과 본문의 인접 선택자가 깨진다) |
 | CSS 기본값 | `opacity: 0` → 소제목 `:hover` · 앵커 `:focus-visible` · `@media (hover: none)`에서 1 |
 | 특이도 | `.contents_style .heading-anchor`(0,2,0)가 `.contents_style a`(0,1,1)를 이겨야 밑줄·`--link`가 벗겨진다 |
 
@@ -556,7 +563,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | 출처 | 사이드바 트리(`.side-category .side-body ul`) — **`category.js`와 같은 파서**(`pickList`·`ownAnchor`·`labelOf`). 둘이 각자 세면 레일과 칩이 다른 목록을 낼 수 있고 화면에 신호가 없다 |
 | 렌더 조건 | 트리를 못 찾으면(폴더형·구조 다름) **아무것도 넣지 않고 그릇에 `.is-off`를 붙인다**(결정 62). 칩을 하나도 못 넣고 끝나는 경로는 전부 같다 — 조기 반환이든 모듈 안 예외든(`try…finally`로 한 곳에서). 그릇은 비어 있고 CSS가 감춘다 |
 | CSS 기본값 | `.cat-chips { display: none }` → `@media (max-width: 1024px)`에서 `.cat-chips:not(:empty)`만 flex. **`html.js`이면 빈 그릇에도 칩 줄 높이를 미리 잡는다 — `.js .cat-chips:empty:not(.is-off)`**(결정 62). 빈 `<nav>`를 페인트 뒤에 채우며 헤더가 55px 늘던 것을 막는다. `.is-off`가 붙으면 예약을 풀어 다시 감춘다 — 그때 한 번 밀리는 것은 실패 경로뿐이다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **1025px~에서는 항상 감춤**(레일이 있다). DOM은 폭과 무관하게 항상 만든다 |
-| 현재 가지 | 티스토리 `li.selected`(카테고리 페이지) 또는 URL 대조 → `.is-current` + `aria-current="page"`. 하위 카테고리 페이지에서는 **그 상위 칩**이 켜진다. 글 페이지에서는 아무것도 안 켜진다(URL이 `/entry/…`) |
+| 현재 가지 | 티스토리 `li.selected`(카테고리 페이지) 또는 URL 대조 → `.is-current` + `aria-current`. 하위 카테고리 페이지에서는 **그 상위 칩**이 켜진다. `aria-current`는 칩 링크가 **지금 페이지 자체**면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`다 — 「이 페이지」 판정은 레일과 같은 `category.isHere()`(결정 63). 글 페이지에서는 아무것도 안 켜진다(URL이 `/entry/…`) |
 | 스크롤 | 현재 칩이 오른쪽 밖이면 `nav.scrollLeft`만 옮긴다. `scrollIntoView`는 쓰지 않는다 — 페이지를 세로로 움직일 수 있다 |
 | 왜 마크업에 그릇을 두나 | §5 원칙. JS가 `<nav>`째 만들면 CSS가 붙잡을 자리를 JS가 정하는 셈이고, 실패 시 흔적 없이 사라져 "원래 없던 것"과 구분이 안 된다 |
 
@@ -672,7 +679,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `.toc.is-ready` | `#toc` | toc.js |
 | `body.no-toc` | `<body>` | `skin.html` 인라인(첫 페인트 전, 결정 48) + toc.js 폴백 (**목차를 못 만들 때만**. 글 페이지가 아니면 붙이지 않는다) |
 | `.toc.is-open` | `#toc` | toc.js (**1399px 이하에서만**. 3단으로 넘어가면 지운다) |
-| `.toc-link.is-current` | 목차 링크 | toc.js 스크롤스파이 |
+| `.toc-link.is-current` | 목차 링크 | toc.js 스크롤스파이 (`aria-current="location"`도 같이 옮긴다) |
 | `.to-top.is-visible` | `#to-top` | progress.js |
 | `.code-copy.is-copied` | 복사 버튼 | code.js |
 | `.code-wrap.has-lines` | 코드 래퍼 | code.js |
@@ -681,10 +688,21 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `.heading-anchor` | 본문 `h2`/`h3` **안쪽 끝** | heading-anchor.js (**상태가 아니라 새 요소다.** 조건 없이 항상 붙는다) |
 | `li.has-toggle` · `li.is-collapsed` / `li.is-expanded` | 사이드바 카테고리 `li` | category.js |
 | `.cat-tree` | 상위 카테고리가 늘어선 `ul` | category.js |
-| `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조. `aria-current="page"`도 같이) |
+| `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조. `aria-current`도 같이 — 자기 링크가 지금 페이지면 `"page"`, 가지만 맞으면 `"true"`) |
 | `.cat-chips.is-off` | `#cat-chips` 그릇 | cat-chips.js (**칩을 하나도 못 넣고 끝날 때** — 트리를 못 읽었거나 모듈 안 예외. CSS 칩 줄 예약 `.js .cat-chips:empty:not(.is-off)`를 푸는 신호, §5.9·결정 62) |
 
 `body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
+
+**`aria-current` — 색으로만 보이던 「현재 위치」를 스크린리더에도 알리는 자리.** 클래스가 아니라 속성이라
+위 표에 넣지 않는다(표 첫 칸은 린트 `BND006`·`BND007`이 우리 JS가 만드는 **클래스**로 읽는다).
+**`"page"`는 그 링크가 지금 페이지 자체일 때만 쓴다**(레일·칩 공통, 판정은 `category.isHere()` — 디코딩하고 끝 `/`를 뗀
+경로가 같을 때). 지금 페이지를 품은 가지는 `"page"`가 아니다 — 칩은 하위가 없어 상위 칩이 가지를 대표하므로 `"true"`,
+레일은 하위 링크가 따로 있어 상위 링크에는 붙이지 않는다(결정 63).
+
+- 목차 — `.toc-link.is-current`와 같은 링크에 `aria-current="location"`. toc.js 스크롤스파이가 둘을 같은 자리에서 옮긴다(§5.1)
+- 사이드바 카테고리 — 티스토리 `li.selected` 중 **자기 링크가 지금 경로인 `li`의 그 링크**에 `aria-current="page"`. category.js(§5.6 「JS가 지키는 것」). URL 대조로 펼친 가지·하위 페이지의 상위 링크에는 붙이지 않는다
+- 목록 페이징 — 티스토리 `span.selected`(현재 페이지 표시, 결정 53)를 품은 `.paging` 안의 앵커에 `aria-current="page"`. paging.js
+- 모바일 카테고리 칩 — `.cat-chip.is-current`와 함께 `aria-current`. 칩 링크가 지금 페이지면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`. cat-chips.js(§5.9, 위 표)
 
 ### `.toc-toggle`의 `aria-expanded` — 뷰포트에 따라 존재 자체가 달라진다
 

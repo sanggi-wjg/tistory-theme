@@ -186,6 +186,9 @@ function copyText(text) {
 /** http·file 환경 폴백. 화면 밖 textarea → execCommand. */
 function legacyCopy(text) {
   return new Promise(function (resolve, reject) {
+    // select()가 포커스를 textarea로 가져가고, 지우면 포커스가 body로 떨어진다.
+    // 키보드로 누른 사용자가 버튼 자리를 잃지 않게 돌려준다.
+    const prev = document.activeElement
     const ta = document.createElement('textarea')
     ta.value = text
     ta.setAttribute('readonly', '')
@@ -199,8 +202,52 @@ function legacyCopy(text) {
       ok = false
     }
     document.body.removeChild(ta)
+    if (prev && prev !== document.body && typeof prev.focus === 'function') {
+      try {
+        prev.focus({ preventScroll: true })
+      } catch (e) {
+        /* preventScroll 미지원 — 포커스 복귀만 포기한다 */
+      }
+    }
     ok ? resolve() : reject(new Error('copy failed'))
   })
+}
+
+/* ── 상태 알림 ──
+ * 포커스된 버튼의 aria-label이 바뀌는 것은 스크린리더가 읽어 주지 않는 경우가 있다
+ * (결정 63). 화면 밖 role="status" 영역 하나를 처음 쓸 때 만들어 body 끝에 둔다.
+ * 클래스는 기존 유틸 .a11y-hidden이다(hooks.md §7) — 새 이름을 만들지 않는다.
+ * 먼저 비우고 잠시 뒤 채운다. 같은 문구가 연달아 와도 「바뀌었다」로 읽히게, 그리고 막 만든
+ * 영역이 접근성 트리에 오른 뒤에 내용이 오게 하려는 것이다. */
+let statusEl = null
+let statusTimer = null
+
+function announce(msg) {
+  // 한 문서에 하나. 누가 떼어 냈으면 다시 만든다(isConnected는 구형 Edge에 없어 contains로 본다).
+  if (!statusEl || !document.body.contains(statusEl)) {
+    statusEl = document.createElement('div')
+    statusEl.className = 'a11y-hidden'
+    statusEl.setAttribute('role', 'status')
+    document.body.appendChild(statusEl)
+  }
+  statusEl.textContent = ''
+  clearTimeout(statusTimer)
+  statusTimer = setTimeout(function () {
+    statusEl.textContent = msg
+  }, 100)
+}
+
+/** 복사가 막힌 환경에서 직접 복사할 수 있게 코드를 선택해 둔다. */
+function selectCode(el) {
+  try {
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    const sel = window.getSelection()
+    sel.removeAllRanges()
+    sel.addRange(range)
+  } catch (e) {
+    /* 선택 API가 없는 환경 — 알림만 남는다 */
+  }
 }
 
 const COPY_ICON =
@@ -209,7 +256,14 @@ const COPY_ICON =
   '<path d="M13 4.5A1.5 1.5 0 0 0 11.5 3h-7A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13"' +
   ' fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>'
 
-function makeCopyButton(getText) {
+// 복사 성공 표시. COPY_ICON과 같은 틀(15px · viewBox 20 · stroke 1.6 · .icon)이라 버튼 크기가 안 변한다.
+// 색(.is-copied)만으로 알리지 않으려고 모양을 바꾼다 — WCAG 1.4.1.
+const CHECK_ICON =
+  '<svg class="icon" width="15" height="15" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+  '<path d="M4.5 10.5 8 14l7.5-8" fill="none" stroke="currentColor" stroke-width="1.6"' +
+  ' stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+
+function makeCopyButton(codeEl) {
   const btn = document.createElement('button')
   btn.type = 'button'
   btn.className = 'code-copy'
@@ -217,19 +271,32 @@ function makeCopyButton(getText) {
   btn.innerHTML = COPY_ICON
 
   let timer = null
+
+  // 아이콘·클래스·이름을 한 함수에서만 바꾼다. 갈라지면 셋이 서로 다른 말을 한다.
+  function setCopied(on) {
+    btn.classList.toggle('is-copied', on)
+    btn.setAttribute('aria-label', on ? '복사됨' : '코드 복사')
+    btn.innerHTML = on ? CHECK_ICON : COPY_ICON
+  }
+
   btn.addEventListener('click', function () {
-    copyText(getText()).then(
+    copyText(codeEl.textContent || '').then(
       function () {
-        btn.classList.add('is-copied')
-        btn.setAttribute('aria-label', '복사됨')
+        setCopied(true)
+        announce('코드를 복사했습니다')
         clearTimeout(timer)
         timer = setTimeout(function () {
-          btn.classList.remove('is-copied')
-          btn.setAttribute('aria-label', '코드 복사')
+          setCopied(false)
         }, 1500)
       },
       function () {
-        /* 복사 실패 — 사용자가 직접 선택할 수 있으니 조용히 넘어간다 */
+        // 조용히 넘어가지 않는다 — 누른 사람은 복사됐는지 알 길이 없다.
+        // 코드를 선택해 두면 단축키 한 번으로 직접 복사할 수 있다.
+        // 순서: legacyCopy가 포커스를 버튼으로 되돌린 **뒤** reject하므로 선택은 그다음에 걸린다.
+        clearTimeout(timer)
+        setCopied(false)
+        selectCode(codeEl)
+        announce('복사하지 못했습니다. 코드를 선택해 두었으니 직접 복사하세요')
       }
     )
   })
@@ -307,11 +374,7 @@ function enhance(pre) {
   }
 
   // 3) 복사 버튼은 하이라이팅 여부와 무관하게 붙인다.
-  wrap.appendChild(
-    makeCopyButton(function () {
-      return codeEl.textContent || ''
-    })
-  )
+  wrap.appendChild(makeCopyButton(codeEl))
 
   // 4) 조건부 줄번호
   const lines = src.split('\n').length
