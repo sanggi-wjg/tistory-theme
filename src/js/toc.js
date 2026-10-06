@@ -114,6 +114,18 @@ export default function initToc() {
     if (!target) return // 앵커가 사라졌으면 기본 동작에 맡긴다
 
     e.preventDefault()
+
+    // 접이식이 살아 있는 구간에서만 접는다.
+    // (offsetParent로 판단하면 안 된다 — 데스크톱에서도 토글은 라벨로 보인다)
+    // 반드시 스크롤 **전에** 접는다. 부드러운 스크롤은 시작 시점의 좌표로 가고 레이아웃이
+    // 바뀌어도 다시 겨누지 않는다(Safari는 스크롤 앵커링도 없다). 뒤에서 접으면 펼친
+    // 목록 높이(약 350px)만큼 본문이 올라가 소제목을 그만큼 지나쳐 착지한다.
+    // scrollIntoView가 레이아웃을 강제로 다시 계산하므로 같은 프레임에서 접어도 된다.
+    if (toggle && collapsible()) {
+      toc.classList.remove('is-open')
+      syncToggle()
+    }
+
     target.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' })
 
     // 키보드 사용자가 이어서 읽을 수 있게 소제목으로 포커스를 옮긴다.
@@ -128,13 +140,6 @@ export default function initToc() {
       history.replaceState(null, '', '#' + id)
     } catch (err) {
       /* file:// 등에서 SecurityError — 주소만 안 바뀐다 */
-    }
-
-    // 접이식이 살아 있는 구간에서만 접는다.
-    // (offsetParent로 판단하면 안 된다 — 데스크톱에서도 토글은 라벨로 보인다)
-    if (toggle && collapsible()) {
-      toc.classList.remove('is-open')
-      syncToggle()
     }
   })
 
