@@ -1,5 +1,5 @@
 // 전수 코드블록에 code.js의 판정 경로를 그대로 돌려 **몇 %가 칠해지는지** 센다.
-// (TODO codeblock-readability ②) — 임계를 검증하는 probe-code-detect.mjs와 다르다:
+// (결정 55 — 옛 TODO codeblock-readability ②) — 임계를 검증하는 probe-code-detect.mjs와 다르다:
 // 그쪽은 픽스처로 «임계가 맞는가», 이쪽은 실물로 «그 임계의 대가가 얼마인가».
 //
 //   python3 .claude/skills/blog-census/scripts/census.py --posts --bodies   # → _workspace/code-blocks.json
