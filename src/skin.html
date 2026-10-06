@@ -223,6 +223,19 @@ gtag('config', 'G-PHQ5FKMZ37');
     </header>
 
     <div class="entry-layout">
+      <!-- DOM 순서 = 읽기 순서: 목차 → 본문. 1399px 이하에서는 화면 순서와 같고, 1400px 이상에서는
+           layout.css의 order로 목차가 오른쪽 열에 서지만 Tab·낭독은 목차를 먼저 지난다(결정 64). -->
+      <aside class="entry-aside">
+        <!-- 목차는 JS가 채운다. 소제목 3개 미만이면 .is-ready가 붙지 않는다 — hooks.md §5.1.
+             html.js이고 body.no-toc가 아니면 1399px 이하에서 CSS가 이 자리(목차 바)를 미리 잡는다(결정 62) -->
+        <nav class="toc" id="toc" aria-label="목차">
+          <button type="button" class="toc-toggle" aria-expanded="false" aria-controls="toc-list">
+            <span class="toc-title">목차</span>
+          </button>
+          <ol class="toc-list" id="toc-list"></ol>
+        </nav>
+      </aside>
+
       <div class="entry-main">
         <!-- 티스토리가 tt_article_useless_p_margin contents_style 래퍼째 넣는다 -->
         <div class="entry-body">[##_article_rep_desc_##]</div>
@@ -306,17 +319,6 @@ gtag('config', 'G-PHQ5FKMZ37');
         <div class="comments" id="comments">[##_comment_group_##]</div>
         </s_rp>
       </div>
-
-      <aside class="entry-aside">
-        <!-- 목차는 JS가 채운다. 소제목 3개 미만이면 .is-ready가 붙지 않는다 — hooks.md §5.1.
-             html.js이고 body.no-toc가 아니면 1399px 이하에서 CSS가 이 자리(목차 바)를 미리 잡는다(결정 62) -->
-        <nav class="toc" id="toc" aria-label="목차">
-          <button type="button" class="toc-toggle" aria-expanded="false" aria-controls="toc-list">
-            <span class="toc-title">목차</span>
-          </button>
-          <ol class="toc-list" id="toc-list"></ol>
-        </nav>
-      </aside>
     </div>
   </article>
   </s_permalink_article_rep>

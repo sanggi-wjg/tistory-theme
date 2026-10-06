@@ -97,7 +97,9 @@
 }
 
 /* ── 글 페이지 : 본문 + 목차 ─────────────────────────────────────
-   1399px 이하에서는 1칸이고 목차가 본문 위로 올라간다(접이식, components.css). */
+   1399px 이하에서는 1칸이고 목차가 본문 위에 접이식으로 선다(components.css).
+   DOM 순서 = 읽기 순서(목차 → 본문)라 이 폭에서는 order가 필요 없다 — 1칸일 때의
+   화면 순서를 DOM에 두는 것은 레일(.content → .sidebar)과 같은 원칙이다(결정 64). */
 .entry-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -115,10 +117,7 @@
 .entry-head,
 .entry-aside { max-width: var(--content-w); }
 
-.entry-aside {
-  order: -1;
-  min-width: 0;
-}
+.entry-aside { min-width: 0; }
 
 /* ── 목록 : 카드 세로 나열 ──────────────────────────────────────── */
 #tt-body-category .post-list,
@@ -193,7 +192,7 @@
 }
 
 /* ══ 1400px~ : 글 페이지 3단 — 레일 + 본문 + 목차 ═══════════════
-   1399px 이하에서는 목차가 본문 위 접이식으로 올라가고 레일은 그대로 남는다.
+   1399px 이하에서는 목차가 본문 위 접이식으로 서고 레일은 그대로 남는다.
    카테고리를 모든 데스크톱 폭에서 보이게 하는 것이 이 배치의 목적이다.
 
    ── 유동 거터 (2026-08-26) ───────────────────────────────────
@@ -218,8 +217,8 @@
    1280·1040은 리터럴이 아니라 --track-sum-*로 토큰에서 파생시킨다.
    --content-w를 바꾸면 둘 다 따라온다.
 
-   ⚠ column-gap만 덮는다. gap을 통째로 쓰면 1399px 이하에서 목차가 본문 위로
-      올라갈 때 쓰는 row-gap까지 같이 바뀐다. */
+   ⚠ column-gap만 덮는다. gap을 통째로 쓰면 1399px 이하에서 목차가 본문 위에
+      설 때 쓰는 row-gap까지 같이 바뀐다. */
 @media (min-width: 1400px) {
   #tt-body-index    .layout,
   #tt-body-page     .layout,
@@ -244,8 +243,12 @@
     align-items: start;
   }
 
+  /* DOM 순서 = 읽기 순서(목차 → 본문). 1400px 이상에서만 order로 오른쪽 열 —
+     키보드는 목차를 먼저 지나 본문으로 간다(결정 64).
+     grid-column: 2로 놓지 않는다. 아래 .no-toc·scripting:none의 1칸 그리드에서
+     암묵 열(과 column-gap)이 생긴다 — order면 1칸에서는 본문 아래로 간다. */
   .entry-aside {
-    order: 0;
+    order: 1;
     position: sticky;
     top: var(--sp-5);
     max-width: none;
