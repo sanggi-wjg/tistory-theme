@@ -27,6 +27,35 @@
   padding: var(--sp-4) var(--pad-x);
 }
 
+/* ── 티스토리 툴바 자리 (결정 59) ─────────────────────────────────
+   티스토리가 모든 방문자에게 `.menu_toolbar`(「구독하기」 알약 + ⋮ 메뉴, 폭 170px)를
+   `position: fixed; top: 20px; right: 20px; z-index: 9999`로 띄운다. 우리 마크업이 아니다.
+   예약 전에는 1280~1760px에서 테마 토글의 88%·검색의 최대 54%를 덮었다(2026-10-05
+   elementFromPoint 격자 실측) — 토글을 누르면 티스토리 관리 메뉴가 열려 다크를 못 켰다.
+
+   산수: 헤더 내용의 오른쪽 끝이 뷰포트 오른쪽에서 `--tt-toolbar-reserve`(212 = 티스토리
+   right 20 + 툴바 170 + 간격 22) 이상 떨어지면 된다. 그 거리는 래퍼 바깥 여백
+   `(100vw - --wrap) / 2`(음수면 0) + 우리 padding-right이므로, padding-right = 212 - 여백.
+   `--pad-x` 아래로는 내리지 않는다 — 1896px부터(여백 188 + `--pad-x` 24 = 212)는 지금과
+   같은 값이 된다. 1260px 이하에는 툴바가 없어 이 규칙도 걸지 않는다.
+
+   ⚠ `100vw`는 스크롤바를 포함한다(DESIGN §4 거터와 같은 함정). 여백을 스크롤바 폭의 절반만큼
+      크게 보므로, 래퍼가 뷰포트보다 좁아지는 1520px 이상에서 예약이 그만큼 덜 잡힌다 —
+      스크롤바 15px이면 7.5px(라이브 실측 간격 최소 14px), 윈도 고전 스크롤바 17px이면
+      8.5px(주입 실측 간격 13px). 둘 다 겹치지 않는다. 그 아래에서는 여백 항이 0이라 오차가 없다.
+   ⚠ **1261은 우리 숫자가 아니다.** 티스토리 `static/style/tistory.css`의
+      `@media only screen and (max-width:1260px){.menu_toolbar{display:none}}`의 짝이다 —
+      티스토리가 그 값을 바꾸면 여기도 바꿔야 하고, 어긋나도 화면에 신호가 없다.
+   툴바 자체(흰 알약 — 다크에서도 흰색)에는 스타일을 입히지 않는다. 인쇄에서는 지운다(맨 끝 블록).
+
+   라이브 주입 실측: 1261~1920px 전 구간 겹침 0%, 헤더 높이 81px 그대로(줄바꿈 없음),
+   툴바와 토글 사이 14~26px. 로그인한 블로그 주인 화면의 툴바 폭은 재지 못했다. */
+@media (min-width: 1261px) {
+  .header-inner {
+    padding-right: max(var(--pad-x), calc(var(--tt-toolbar-reserve) - max(0px, (100vw - var(--wrap)) / 2)));
+  }
+}
+
 .site-brand {
   margin-right: auto;
   min-width: 0;
@@ -1831,6 +1860,7 @@ body.is-lightbox-open { overflow: hidden; }
   .comments,
   .guestbook,
   .entry-main [data-tistory-react-app="Namecard"],
+  .menu_toolbar,
   .code-copy,
   .ad,
   .ad:not(:empty),
@@ -1844,7 +1874,12 @@ body.is-lightbox-open { overflow: hidden; }
      둘 다 지우면서 그 사이만 남기면 종이에 구독 버튼이 찍힌다. 여기서만은 tt_* 가 아니라
      **래퍼 div**를 잡는다: 카드의 `display:flex`는 안쪽 `.tt_box_namecard`에 걸려 있어
      래퍼를 지우면 특이도 싸움 없이 통째로 빠지고, index.css는 `[data-tistory-react-app]`
-     자체에 규칙이 하나도 없다(전 규칙 스캔). (0,2,0) — 상대가 없어 이길 것도 없다. */
+     자체에 규칙이 하나도 없다(전 규칙 스캔). (0,2,0) — 상대가 없어 이길 것도 없다.
+
+     티스토리 툴바(`.menu_toolbar`, 결정 59)는 `position: fixed`라 인쇄하면 **모든 쪽**에
+     알약이 찍힌다. 티스토리 `tistory.css`가 그 요소에 거는 `display`는 `only screen`
+     미디어쿼리 안의 `none` 하나뿐이라(2026-10-06 시트 전문 확인) 종이에서는 상대가 없다 —
+     클래스 하나로 충분하고 시트 순서와도 무관하다. */
 
   /* 레일이 사라졌으니 본문이 폭을 다 쓴다. 그리드 트랙을 지우지 않으면 빈 칸이 남는다. */
   .layout,
