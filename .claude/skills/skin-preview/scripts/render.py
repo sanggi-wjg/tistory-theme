@@ -222,10 +222,12 @@ def scan_orphan_areas(skin):
 # **순서가 곧 검사다.** 실제 <head>에서 content.css는 우리보다 앞, atom-one-light는
 # 우리보다 뒤에 온다. 뒤에 오는 쪽은 특이도가 같으면 이긴다 — 그 조건을 재현해야
 # `.hljs` 접두가 정말 필요한지 눈으로 확인된다. 여기 순서를 바꾸지 말 것.
-TISTORY_CONTENT_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
-                       "userblog-626ea1866044955da92690211f447663fdb36491/static/style/content.css")
+TISTORY_CONTENT_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
+                       "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/style/content.css")
 # ↑ 해시는 티스토리가 배포할 때마다 바뀐다. seo-verify-live의 V017이 라이브 홈과 대조해 알려 준다
-#   (2026-08-27: d748cfd5… → 626ea186…, 내용은 34,426B 동일).
+#   (2026-08-27: d748cfd5… → 626ea186…, 내용은 34,426B 동일. 2026-10-06: 호스트까지 바뀌어
+#   tistory1.daumcdn.net/tistory_admin/…626ea186… → edge.daumcdn.net/tistory/tistory-admin/…542bd84…,
+#   V017 바이트 대조로 내용 34,426B 동일 확인).
 TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/"
                     "styles/atom-one-light.min.css")
 # 티스토리 **React 앱**들의 시트다 — 댓글(Comment)과 프로필 카드(Namecard)가 같은
@@ -245,16 +247,15 @@ TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/
 #    atom-one-light을 뒤에 싣는 것과 같은 논리다(V017 주석).
 # 이 시트는 클래스 스코프 규칙뿐이다 — bare 요소 선택자 0개(2026-09-10 실측 59,563B)라
 # 실어도 다른 화면을 흔들지 않는다.
-TISTORY_INDEX_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
-                     "userblog-626ea1866044955da92690211f447663fdb36491/static/pc/dist/index.css")
+TISTORY_INDEX_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
+                     "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/pc/dist/index.css")
+# ↑ 2026-10-06 content.css와 같이 갱신했다(626ea186… → 542bd84…, V017 바이트 대조로 59,563B 동일).
 # 티스토리 **툴바** 시트 — 위 TOOLBAR_BOX의 위치(position:fixed)와 1260px 이하 숨김이 여기서 온다.
 # 라이브 <head>에서도 우리 style.css 뒤에 온다(2026-10-06 실측). 이 시트가 빠지면 툴바 픽스처는
 # 화면 맨 아래에 평범한 버튼 두 개로 떨어져 헤더와 겹치지 않는다 — 결정 59의 결함이 다시 숨는다.
 # 클래스 스코프 규칙뿐이다(244개 규칙, bare 요소 선택자 0개 — .tistorytoolbar·.menu_toolbar 등).
-# ⚠ 호스트가 위 두 상수(TISTORY_CONTENT_CSS·TISTORY_INDEX_CSS — tistory1.daumcdn.net/tistory_admin,
-#   userblog-626ea186…)와 다르다. 낡은 쪽은 **그 둘**이다: 2026-10-06 라이브 head는 content.css·index.css·
-#   tistory.css 셋 다 edge.daumcdn.net/tistory/tistory-admin/…/userblog-542bd84… 에서 받는다. 이 상수는
-#   라이브 값을 그대로 적었고, 그 둘의 갱신은 V017이 URL 불일치 → 바이트 대조로 알려 준다(결정 59 범위 밖).
+# 2026-10-06 라이브 head는 content.css·index.css·tistory.css 셋 다 같은 배포(edge.daumcdn.net/…/542bd84…)에서
+# 받는다 — 위 두 상수도 같은 날 그 값으로 갱신했다.
 TISTORY_TOOLBAR_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
                        "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/style/tistory.css")
 

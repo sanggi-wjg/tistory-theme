@@ -764,15 +764,15 @@ def verify_tistory_sheets(base, home_doc, post_doc):
     """
     def compare(const, path_fragment, label, doc, doc_url, codes):
         want = preview_sheet_url(const)
-        if not want:
-            unverified("V017", "render.py에서 %s를 읽지 못했다 — 상수 모양이 바뀌었나." % const, RENDER_PY)
-            return
         live = None
         for tag in re.findall(r"<link\b[^>]*>", head_of(doc or ""), re.I):
             h = href_of(tag)
             if h and path_fragment in h:
                 live = urllib.parse.urljoin(base + "/", h)
                 break
+        if not want:
+            unverified("V017", "render.py에서 %s를 읽지 못했다 — 상수 모양이 바뀌었나." % const, RENDER_PY)
+            return live
         if not doc:
             unverified("V017", "%s를 받지 못해 티스토리 %s를 대조하지 못했다." % (doc_url, label), doc_url)
         elif not live:
@@ -797,6 +797,7 @@ def verify_tistory_sheets(base, home_doc, post_doc):
                      "라이브: %s (HTTP %s). 프리뷰의 특이도 싸움이 낡은 상대와 벌어진다. 상수를 갱신하고 "
                      "data/tistory-hardcoded-colors.json을 새 시트와 다시 대조하라(%s)."
                      % (label, want, s2, live, s1, codes), RENDER_PY)
+        return live
 
     compare("TISTORY_CONTENT_CSS", "/static/style/content.css", "content.css",
             home_doc, base + "/", "TIS001~004")
@@ -804,8 +805,8 @@ def verify_tistory_sheets(base, home_doc, post_doc):
     # (2026-09-10 실측: 홈·방명록·글 페이지 각 1건). 그래서 content.css와 똑같이 홈에서
     # 찾는다 — 글 페이지를 못 받아도 대조가 선다. TIS003·TIS005의 상대가 이 파일이고,
     # 그 둘은 프리뷰로도 크롤로도 존재가 안 보이는 부류라 이 대조가 유일한 신호다.
-    compare("TISTORY_INDEX_CSS", "/static/pc/dist/index.css", "index.css",
-            home_doc, base + "/", "TIS003·TIS005")
+    home_idx = compare("TISTORY_INDEX_CSS", "/static/pc/dist/index.css", "index.css",
+                       home_doc, base + "/", "TIS003·TIS005")
     # 툴바 시트(.menu_toolbar — 1261px부터 오른쪽 위에 고정). 결정 59의 헤더 예약은 이 시트의
     # 숫자 셋(right 20px · max-width 1260px · 툴바 폭)에 맞춘 것이라, 티스토리가 바꾸면 예약이 조용히
     # 어긋난다. 프리뷰가 이 시트로 툴바 픽스처를 그리므로 URL이 낡으면 겹침이 다시 숨는다.
@@ -813,8 +814,11 @@ def verify_tistory_sheets(base, home_doc, post_doc):
             home_doc, base + "/", "결정 59 헤더 예약")
     # 글 페이지에도 같은 URL로 오는지는 덤이다. 다르면 두 페이지가 서로 다른 배포를
     # 받고 있다는 뜻이라, 프리뷰가 어느 쪽과 싸우는지부터 다시 정해야 한다.
+    # ⚠ 대조 상대는 **라이브 홈의** URL이다. 2026-10-06까지 render.py 상수와 비교해 놓고 메시지는
+    #    「홈과 글 페이지가 다르다」라고 냈다 — 상수가 낡기만 해도 두 페이지가 갈린 것처럼 경고했다.
+    #    홈 링크를 못 찾았을 때만 상수로 물러난다.
     if post_doc:
-        want_idx = preview_sheet_url("TISTORY_INDEX_CSS")
+        want_idx = home_idx or preview_sheet_url("TISTORY_INDEX_CSS")
         live_idx = None
         for tag in re.findall(r"<link\b[^>]*>", head_of(post_doc), re.I):
             h = href_of(tag)
