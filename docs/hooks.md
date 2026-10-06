@@ -249,6 +249,9 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
       <a class="entry-rp" href="#comments">댓글 3</a></div>
   </header>
   <div class="entry-layout">
+    <aside class="entry-aside">              <!-- DOM은 목차가 먼저 — 1400px~ CSS order로 오른쪽 열 -->
+      <nav class="toc" id="toc" aria-label="목차">…</nav>
+    </aside>
     <div class="entry-main">
       <div class="entry-body">
         <!-- 여기부터 티스토리 고정 마크업 -->
@@ -260,9 +263,6 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
       <nav class="postnav">…</nav>
       <div class="comments" id="comments">…</div>
     </div>
-    <aside class="entry-aside">
-      <nav class="toc" id="toc" aria-label="목차">…</nav>
-    </aside>
   </div>
 </article>
 ```
@@ -270,10 +270,10 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | 훅 | 메모 |
 |---|---|
 | `.entry-head` `.entry-cat` `.entry-title` `.entry-meta` `.entry-date` `.entry-rp` | display-lg 제목 |
-| `.entry-layout` | 본문 + 목차 2칸. 1399px 이하에서 1칸으로(목차는 본문 위 접이식) |
+| `.entry-layout` | 본문 + 목차 2칸. 1399px 이하에서 1칸으로(목차는 본문 위 접이식). **DOM은 목차(`.entry-aside`)가 먼저다** — 1399px 이하에서는 화면 순서와 같고, 1400px 이상에서는 CSS `order`로 목차가 오른쪽 열에 서지만 Tab·낭독은 목차를 먼저 지난다(결정 64). DOM 순서를 다시 뒤집지 않는다 |
 | `.entry-main` | 본문 칸. **`min-width: 0`을 반드시 준다** — 안 주면 1,777자짜리 코드 줄이 그리드를 밀어 페이지가 가로 스크롤한다 |
 | `.entry-body` | 본문 래퍼. **`.contents_style`은 이 안에 티스토리가 넣는다.** 실제 클래스는 `tt_article_useless_p_margin contents_style`이므로 **부분일치**로 잡을 것 (`.contents_style`, 절대 `[class="contents_style"]` 금지) |
-| `.entry-aside` | 목차 칸. `position: sticky`는 여기 또는 `.toc`에 |
+| `.entry-aside` | 목차 칸. **DOM에서 `.entry-main` 앞** — 1400px 이상에서 CSS `order`로 오른쪽 열(결정 64). `position: sticky`는 여기 또는 `.toc`에 |
 | `.entry-tags` | 안의 `<a>`는 티스토리가 만든다 (`[##_tag_label_rep_##]`). `.entry-tags a`로 스타일 |
 | `.entry-admin` | 관리자 전용 링크 줄. 조용히 작게 |
 | `.related` `.related-title` `.related-list` `.related-item` `.related-link` `.related-thumb` `.related-thumb-img` `.related-text` `.related-date` `.related-more` | 같은 카테고리 다른 글. `.related-item`에 티스토리가 주는 `text_type` / `thumb_type` 클래스가 **함께** 붙는다. `.related-thumb` 상자는 **항상 있고** `.related-thumb-img`만 대표이미지가 있을 때 존재한다 — 홈 카드 `.thumb`/`.thumb-img`와 같은 구조(결정 57) |
@@ -310,7 +310,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | 렌더 조건 | 본문 `h2`/`h3`가 **3개 이상**일 때만. 조건 충족 시 `#toc`에 **`.is-ready`**를 붙인다 |
 | CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 (자리 예약은 바로 아래 행) |
 | **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다. 임계·선택자가 같은지는 린트 `BND010`이 대조한다 |
-| **첫 페인트 자리** | **`html.js`이고 `body:not(.no-toc)`이면 1399px 이하에서 CSS가 `.entry-aside`에 목차 바 높이를 미리 잡는다** — `.toc`가 `.is-ready` 전까지 `display:none`이라 바가 페인트 뒤에 끼어들며 본문을 밀던 것을 막는다(결정 62). `.no-toc`는 인라인이 첫 페인트 전에 판정하므로 목차 없는 글은 예약하지 않는다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **toc.js가 `.is-ready`를 못 붙이고 끝나면 — 조기 반환이든 실행 중 예외든 — `markNoToc()`로 `no-toc`를 붙여 예약을 푼다**(`try…finally`로 한 곳에서). 실행 중 예외는 `html.js`가 못 보는 경로라 toc.js가 스스로 풀어야 빈 띠가 안 남는다 |
+| **첫 페인트 자리** | **`html.js`이고 `body:not(.no-toc)`이면 1399px 이하에서 CSS가 `.entry-aside`에 목차 바 높이를 미리 잡는다** — `.toc`가 `.is-ready` 전까지 `display:none`이라 바가 페인트 뒤에 끼어들며 본문을 밀던 것을 막는다(결정 62). `.no-toc`는 인라인이 첫 페인트 전에 판정하므로 목차 없는 글은 예약하지 않는다 — HTML을 다 받은 뒤 처음 그릴 때의 이야기다. `.entry-aside`가 인라인보다 먼저 파싱되므로(결정 64), 느린 망에서 본문 중간에 페인트가 나면 목차 없는 글은 예약이 먼저 그려졌다가 50.5px 접힌다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **toc.js가 `.is-ready`를 못 붙이고 끝나면 — 조기 반환이든 실행 중 예외든 — `markNoToc()`로 `no-toc`를 붙여 예약을 푼다**(`try…finally`로 한 곳에서). 실행 중 예외는 `html.js`가 못 보는 경로라 toc.js가 스스로 풀어야 빈 띠가 안 남는다 |
 | 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) + **`aria-current="location"`**. 둘은 같은 자리에서 함께 옮긴다 — 이전 항목에서는 둘 다 지운다 |
 | 상자 따라가기 | 1400px~에서 `.toc.is-ready`는 `max-height` + `overflow-y: auto` 상자다. 현재 항목이 **바뀔 때만**, 상자가 실제로 스크롤될 때(`scrollHeight > clientHeight`)만 **`#toc`의 `scrollTop`만** 옮겨 현재 항목을 위아래 여유(최대 48px)를 두고 보이게 한다. `scrollIntoView`는 쓰지 않는다 — 페이지까지 움직인다. 사용자가 상자를 직접 굴리는 동안에는 항목이 안 바뀌므로 싸우지 않는다 |
 | 모바일 접이식 | 1399px 이하에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1399px 이하에서만 — 3단 경계 1400과 같다, 결정 48) |

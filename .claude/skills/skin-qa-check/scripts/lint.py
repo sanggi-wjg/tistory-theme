@@ -734,6 +734,10 @@ def lint_const_pairs(skin):
        `components.css`의 `.toc:not(.is-open)` 블록 max-width, `.toc.is-ready` 블록
        min-width(= max + 1), `layout.css` 3단 블록 min-width. 어긋나면 CSS는 접는데
        JS는 `aria-expanded`를 지운다(QA F2). 1024/1400으로 갈려 있던 것이 이 규칙의 출생이다.
+    ③ 목차 DOM 순서와 3단 `order`(결정 64) — `skin.html`에서 `.entry-aside`가 `.entry-main` **앞**이고
+       (DOM 순서 = 읽기 순서), `layout.css` 기본 `.entry-aside`에는 `order`가 없으며, 3단 블록(②의 경계)의
+       `.entry-aside`가 `order: 1`이어야 한다. aside만 뒤로 되돌리면 Tab이 조용히 본문 뒤로 돌아가고,
+       `order: 1`만 지우면 목차가 본문 칸으로 간다 — 둘 다 `npm run check`가 통과했다(결정 64 체크포인트).
 
     어느 한쪽을 **못 찾으면 통과가 아니라 오류**다 — 검사가 꺼진 것과 통과는 다르다(결정 40).
     """
@@ -793,6 +797,25 @@ def lint_const_pairs(skin):
             problems.append("목차 접이식 경계가 어긋난다: toc.js %d ↔ components.css max %s / min %s "
                             "↔ layout.css 3단 min %s (max = toc.js, min = max + 1이어야 한다)"
                             % (want, css_max, css_min, lay_min))
+
+    # ③ 목차 DOM 순서 ↔ 3단 order (결정 64)
+    i_aside = body.find('<aside class="entry-aside"')
+    i_main = body.find('<div class="entry-main"')
+    if need(i_aside >= 0 and i_main >= 0, "skin.html의 `aside.entry-aside`·`div.entry-main`") and i_aside > i_main:
+        problems.append("skin.html에서 `.entry-aside`가 `.entry-main` 뒤에 있다 — DOM 순서가 읽기 순서다"
+                        "(목차 → 본문, 결정 64). 3단의 오른쪽 열은 layout.css의 order가 만든다")
+    top = layout
+    for _q, blk in media_blocks(layout):
+        top = top.replace(blk, "")
+    if any(re.search(r"\border\s*:", m.group(1)) for m in re.finditer(r"\.entry-aside\s*\{([^}]*)\}", top)):
+        problems.append("layout.css 기본 `.entry-aside`에 order가 있다 — 1399px 이하 화면 순서는 DOM 순서"
+                        "(목차 → 본문)여야 Tab·낭독과 같다(결정 64)")
+    bp = (int(js_mq.group(1)) + 1) if js_mq else 1400
+    wide = [blk for q, blk in media_blocks(layout) if re.search(r"min-width:\s*%dpx" % bp, q)]
+    if need(wide, "layout.css의 3단(min-width %dpx) 블록" % bp) and not any(
+            re.search(r"\.entry-aside\s*\{[^}]*\border\s*:\s*1\s*;", blk) for blk in wide):
+        problems.append("layout.css 3단 블록의 `.entry-aside`에 `order: 1`이 없다 — DOM에서 목차가 먼저라 "
+                        "order 없이는 %dpx 이상에서 목차가 본문 칸(1열)으로 간다(결정 64)" % bp)
 
     for p in problems:
         err("BND010", p + ". 두 곳에 적히는 상수는 같이 옮긴다 — 어긋나도 화면에 신호가 없다(결정 48).",

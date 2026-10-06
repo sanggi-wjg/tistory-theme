@@ -5,6 +5,7 @@
   SYN002  lint.py                 닫는 태그 삭제·닫지 않는 <div>·자기 닫힘 <div/>
   BND004  lint.py                 마크업+CSS에서만 개명(접두 공유)
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
+  BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
@@ -131,6 +132,41 @@ def c_bnd004(root):
         edit(root, os.path.join("src", "styles", f),
              lambda s: re.sub(r"\.entry-body(?![\w-])", ".entry-body-v2", s)) if ".entry-body" in open(os.path.join(root, "src", "styles", f), encoding="utf-8").read() else None
     return any("entry-body" in m for m in lint_codes(root, "BND004"))
+
+
+# ── BND010 ③ 목차 DOM 순서 ↔ 3단 order (결정 64) ──
+# 앵커는 훅 계약의 클래스(`<aside class="entry-aside">`·`<div class="entry-main">`)와 3단 경계 블록뿐이다.
+def toc_order_hits(root):
+    return [m for m in lint_codes(root, "BND010") if "결정 64" in m]
+
+
+@case("BND010③ 기준선 — 목차가 본문 앞, 3단에서만 order: 1", False)
+def c_toc_order_base(root):
+    return bool(toc_order_hits(root))
+
+
+@case("BND010③ aside를 main 뒤로 되돌리면 잡는다", True)
+def c_toc_order_dom(root):
+    def back(s):
+        i = s.index('<aside class="entry-aside">')
+        j = s.index("</aside>", i) + len("</aside>")
+        blk, rest = s[i:j], s[:i] + s[j:]
+        k = rest.index("</div>", rest.index('<div class="entry-main">'))  # 자리만 바뀌면 된다 — 첫 닫는 div 뒤
+        return rest[:k + 6] + blk + rest[k + 6:]
+    edit(root, os.path.join("src", "skin.html"), back)
+    return any("뒤에 있다" in m for m in toc_order_hits(root))
+
+
+@case("BND010③ 3단 블록의 order: 1을 지우면 잡는다", True)
+def c_toc_order_css(root):
+    edit(root, os.path.join("src", "styles", "layout.css"), lambda s: re.sub(r"(\.entry-aside\s*\{[^}]*?)order:\s*1;", r"\1", s, count=1))
+    return any("order: 1`이 없다" in m for m in toc_order_hits(root))
+
+
+@case("BND010③ 기본 .entry-aside에 order를 다시 넣으면 잡는다", True)
+def c_toc_order_base_css(root):
+    edit(root, os.path.join("src", "styles", "layout.css"), lambda s: s + "\n.entry-aside { order: -1; }\n")
+    return any("기본 `.entry-aside`에 order" in m for m in toc_order_hits(root))
 
 
 # ── BND011 ──
