@@ -16,7 +16,7 @@
 //   상위 카테고리 링크도 실제로 이동하는 링크다(/category/IT). 클릭을 가로채면
 //   "상위 카테고리 글 전체 보기"로 가는 길이 사라진다. 접기/펼치기는 별도의 버튼이다.
 //
-// 아래 파서(childrenByTag · pickList · ownAnchor · labelOf · decodePath · onPath)는
+// 아래 파서(childrenByTag · pickList · ownAnchor · labelOf · decodePath · onPath · isHere)는
 // cat-chips.js도 쓴다(결정 50). 트리를 읽는 규칙이 한 벌이어야 레일과 칩이 같은 목록을 낸다.
 
 import { uniqueId } from './util.js'
@@ -110,6 +110,39 @@ export function onPath(here, path) {
   return here === path || here.indexOf(path + '/') === 0
 }
 
+/** 끝 '/'를 뗀 경로. /category/IT/ 와 /category/IT 를 같게 본다. */
+function bare(p) {
+  return p.length > 1 ? p.replace(/\/+$/, '') : p
+}
+
+/**
+ * 이 링크가 **지금 페이지 자체**인가 — aria-current="page"의 기준(결정 63).
+ * 디코딩하고 끝 '/'를 뗀 경로가 같을 때만 참이다. 지금 페이지를 품은 가지(onPath)는 아니다.
+ * cat-chips.js도 이 함수를 쓴다 — 레일과 칩이 「이 페이지」를 같은 규칙으로 판정해야 한다.
+ */
+export function isHere(a) {
+  if (!a || !a.getAttribute('href')) return false
+  return bare(decodePath(a.pathname)) === bare(decodePath(window.location.pathname))
+}
+
+/**
+ * 「지금 이 카테고리 페이지에 있다」를 색 말고 aria-current로도 알린다(결정 63).
+ *
+ * 티스토리가 붙인 li.selected 중 **그 li 자신의 링크가 지금 경로를 가리킬 때만** 붙인다.
+ * 하위 카테고리 페이지에서는 상위 li에도 selected가 붙을 수 있는데, 상위 링크는 이 페이지가
+ * 아니다. URL 대조(onPath)로 가지를 펼치는 경로에서는 붙이지 않는다 — 펼치는 것은 「이 가지 아래」이지
+ * 「이 페이지」가 아니다. 토글을 다는 일과 무관하게 돈다(하위가 없는 카테고리도 현재일 수 있다).
+ */
+function markCurrent(rootUl) {
+  const lis = rootUl.querySelectorAll('li.selected')
+  for (let i = 0; i < lis.length; i++) {
+    const li = lis[i]
+    const sub = childrenByTag(li, 'UL')[0]
+    const a = sub ? ownAnchor(li, sub) : childrenByTag(li, 'A')[0]
+    if (isHere(a)) a.setAttribute('aria-current', 'page')
+  }
+}
+
 export default function initCategory() {
   // .side-category · .side-body는 skin.html이 보장하는 우리 훅이다(hooks.md §6).
   const box = document.querySelector('.side-category .side-body')
@@ -120,6 +153,12 @@ export default function initCategory() {
   // 티스토리가 자체 toggleFolder()를 붙여 두므로 접기 기능 자체는 남는다.
   const rootUl = box.querySelector('ul')
   if (!rootUl) return
+
+  try {
+    markCurrent(rootUl)
+  } catch (e) {
+    /* 현재 표시가 실패해도 접기는 단다 */
+  }
 
   const list = pickList(rootUl)
   const items = childrenByTag(list, 'LI')
