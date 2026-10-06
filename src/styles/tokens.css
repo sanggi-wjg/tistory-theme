@@ -199,6 +199,23 @@
      좁은 페이지(글·방명록)에서 layout.css가 body_id로 재정의한다. */
   --page-w:     var(--wrap);
 
+  /* ── 첫 페인트 자리 : JS가 채울 줄의 높이 (결정 62) ─────────────
+     JS가 페인트 뒤에 끼워 넣는 줄은 `html.js`일 때 CSS가 그 높이만큼 미리 자리를 잡는다.
+     **예약하는 쪽과 실물 쪽이 이 토큰을 둘 다 `min-height`로 건다** — 손으로 맞춘 두 숫자는
+     갈라진다(결정 48의 상수 짝과 같은 부류). 실물이 이 값보다 작아지면 min-height가 받쳐
+     둘이 같고, 커지면 그만큼 다시 밀린다. 그래서 식은 실물 선언의 항을 그대로 옮겼다 —
+     아래 항이 가리키는 선언을 바꾸면 여기도 같이 바꾼다.
+
+     목차 바(1399px 이하 접이식 토글, components.css `.toc-toggle`)
+       padding --sp-3 × 2 + 글자 --fs-body-sm × --lh-body + border 1px × 2
+       = 24 + 24.5 + 2 = 50.5px
+     칩 줄(1024px 이하, components.css `.cat-chips` · `.cat-chip`)
+       줄 padding --sp-3 × 2 + 칩(padding 5px × 2 + border 1px × 2 + --fs-caption × --lh-caption)
+       + 줄 border-top 1px
+       = 24 + (10 + 2 + 18) + 1 = 55px */
+  --toc-bar-h:  calc(var(--sp-3) * 2 + var(--fs-body-sm) * var(--lh-body) + 1px * 2);
+  --chip-row-h: calc(var(--sp-3) * 2 + (5px * 2 + 1px * 2 + var(--fs-caption) * var(--lh-caption)) + 1px);
+
   /* ── 모션 : 상태 변화에만, 150ms 이내 (DESIGN.md §7) ───────────── */
   --dur:  150ms;
   --ease: cubic-bezier(0.2, 0.6, 0.3, 1);

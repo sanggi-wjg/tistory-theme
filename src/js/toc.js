@@ -23,7 +23,8 @@ const COLLAPSIBLE_MQ = '(max-width: 1399px)'
  * 바뀐다 — 1400px에서 본문이 144px 밀리는 것을 실측했다. 다수를 밀지 않는 쪽을 기본으로 둔다.
  *
  * 첫 판정은 skin.html의 인라인 스크립트가 .entry-body 직후, 첫 페인트 전에 한다(결정 48).
- * 여기는 폴백이다 — 본문을 못 찾았거나 인라인이 실패한 경로. **조건은 인라인과 같아야 한다**
+ * 여기는 폴백이다 — 본문을 못 찾았거나 인라인이 실패한 경로, 그리고 인라인은 목차가 생긴다고
+ * 봤는데 여기서 예외로 죽은 경로. **조건은 인라인과 같아야 한다**
  * (h2·h3, 빈 소제목 제외, MIN_HEADINGS 미만). classList.add라 두 번 붙여도 같다.
  */
 function markNoToc() {
@@ -35,12 +36,26 @@ export default function initToc() {
   const list = document.getElementById('toc-list')
   if (!toc || !list) return // 글 페이지가 아니다 — 레이아웃도 건드리지 않는다
 
+  // 왜 finally인가 — 결정 62의 목차 바 예약을 푼다. html.js이고 body.no-toc가 아니면
+  // 1399px 이하에서 CSS가 .entry-aside에 목차 바 자리를 미리 잡는다. .is-ready를 못 붙이고
+  // 끝나면 — 조기 반환이든 실행 중 예외든 — 빈 띠가 남으므로 no-toc로 푼다. 예외는
+  // html.js가 못 보는 경로라(hooks.md §5.4) 여기서 풀어야 한다. .is-ready를 붙인 뒤의 예외
+  // (접이식·스크롤스파이)는 목차가 이미 자리를 채웠으니 건드리지 않는다 — 거기서 no-toc를
+  // 붙이면 목차는 보이는데 1단이 된다. 예외는 삼키지 않는다. index.js의 safe()가 남긴다.
+  try {
+    build(toc, list)
+  } finally {
+    if (!toc.classList.contains('is-ready')) markNoToc()
+  }
+}
+
+function build(toc, list) {
   const root = entryRoot()
-  if (!root) return markNoToc() // 본문을 못 찾았다 = 목차도 못 만든다
+  if (!root) return // 본문을 못 찾았다 = 목차도 못 만든다 (finally가 markNoToc)
 
   // 목록과 id는 util이 만든다. heading-anchor.js가 같은 것을 쓴다 — hooks.md §5.8
   const headings = headingsWithIds(root)
-  if (headings.length < MIN_HEADINGS) return markNoToc()
+  if (headings.length < MIN_HEADINGS) return // finally가 markNoToc
 
   const frag = document.createDocumentFragment()
   const links = []

@@ -190,15 +190,26 @@
    결정 50. 1024px 이하에서는 레일이 본문 아래로 내려가 카테고리가 사실상 안 보였다
    (390px 라이브 실측: 홈 5,800px·글 15,300px 아래). 헤더 안 빈 <nav>를 cat-chips.js가
    상위 카테고리 14종 + 「전체」로 채우고, 여기서는 그 줄을 **1024px 이하에서만** 편다.
-   못 채우면(폴더형·JS 실패) :empty라 아무것도 안 그린다 — 오늘 화면 그대로다.
-   1025px~는 레일이 있으므로 감춘다. hooks.md §5.9 */
+   1025px~는 레일이 있으므로 감춘다. hooks.md §5.9
+
+   ── 첫 페인트 자리 (결정 62) ──────────────────────────────────
+   빈 <nav>를 cat-chips.js가 페인트 **뒤에** 채워 1024px 이하 모든 페이지가 55px 밀렸다.
+   그래서 `html.js`이면 빈 그릇도 **채워진 줄과 같은 규칙**으로 그린다 — 선택자 목록 하나에
+   두 상태를 같이 적어 상자(padding·border-top·max-width·margin)가 갈라질 수 없게 했고,
+   높이는 --chip-row-h를 양쪽에 min-height로 건다(tokens.css).
+   예약이 풀리는 길은 둘이다 — cat-chips.js가 칩을 하나도 못 넣고 끝나면 .is-off를 붙이고,
+   script.js 로드가 실패하면 head-inline이 html.js를 지운다(hooks.md §5.4). JS가 꺼져 있으면
+   처음부터 html.js가 없다. 어느 쪽이든 빈 그릇은 위 `display: none` 그대로라 칩 없는 화면으로
+   물러난다(결정 50의 그 화면). 한 번 밀리는 것은 늦게 오는 실패 경로뿐이다. */
 .cat-chips { display: none; }
 
 @media (max-width: 1024px) {
-  .cat-chips:not(:empty) {
+  .cat-chips:not(:empty),
+  .js .cat-chips:empty:not(.is-off) {
     display: flex;
     gap: var(--sp-2);
     overflow-x: auto;
+    min-height: var(--chip-row-h);
     max-width: var(--wrap);
     margin: 0 auto;
     padding: var(--sp-3) var(--pad-x);
@@ -211,7 +222,8 @@
 }
 
 /* 마지막 칩이 오른쪽 끝에서 잘려 보이는 것이 "뒤에 더 있다"는 유일한 힌트다.
-   페이드·그림자는 두지 않는다(DESIGN §7). 높이 28px(5+18+5) — 터치 하한 24 위. */
+   페이드·그림자는 두지 않는다(DESIGN §7). 높이 30px(5+18+5 + 테두리 2) — 터치 하한 24 위.
+   이 높이가 칩 줄 예약 --chip-row-h의 식에 들어 있다 — padding·border·글자를 바꾸면 그 식도. */
 .cat-chip {
   flex: none;
   display: inline-flex;
@@ -957,7 +969,8 @@
 
 /* ══════════ 목차 ══════════════════════════════════════════════
    기본은 감춰 둔다. 소제목이 3개 이상일 때만 JS가 .is-ready를 붙인다
-   (hooks.md §5.1). 조건 미달이거나 JS가 죽어도 빈 상자가 남지 않는다. */
+   (hooks.md §5.1). 조건 미달이거나 JS가 죽어도 빈 상자가 남지 않는다.
+   1399px 이하에서 바 자리를 미리 잡는 예약(결정 62)은 아래 접이식 블록에 있고, 풀리는 길도 거기 적었다. */
 
 .toc {
   display: none;
@@ -977,6 +990,9 @@
   border-radius: var(--radius-md);
   color: var(--ink);
   font-size: var(--fs-body-sm);
+  /* 상속값(body)과 같다. 목차 바 예약 --toc-bar-h가 이 행간으로 계산되므로 여기 못박는다 —
+     조상 어딘가에서 행간이 바뀌어도 바 높이와 예약이 갈라지지 않게. */
+  line-height: var(--lh-body);
   font-weight: 600;
   text-align: left;
 }
@@ -1026,9 +1042,24 @@
    목차가 옆 칸(3단)에 서는 1400px(layout.css)부터만 펼친다 — 그 아래에서 펼쳐 두면
    목차가 본문 **위**에 1칸으로 서서 첫 화면을 밀어낸다. 예전에는 이 경계가 1024였고
    1025~1399px(1280 노트북)에서 382px짜리 목차가 본문 위에 고정된 채 누를 수도 없었다
-   (라이브 실측 2026-08-27, 결정 48). */
+   (라이브 실측 2026-08-27, 결정 48).
+
+   ── 첫 페인트 자리 (결정 62) ──────────────────────────────────
+   .toc는 .is-ready 전까지 display:none이라, toc.js가 페인트 뒤에 바를 띄우면 본문이 50.5px
+   밀렸다. `html.js`이고 body.no-toc가 아니면 .entry-aside가 바 높이만큼 미리 자리를 갖는다.
+   no-toc는 skin.html 인라인이 첫 페인트 전에 판정하므로(결정 48) 목차가 생길 글에만 잡힌다.
+   바와 예약이 같은 토큰 --toc-bar-h를 min-height로 건다(tokens.css) — 접힌 바는 정확히 그
+   높이고, 펼치면(.is-open) aside가 알아서 자란다.
+   풀리는 길: toc.js가 .is-ready를 못 붙이고 끝나면 no-toc를 붙이고(조기 반환·예외 모두,
+   hooks.md §5.1), script.js 로드가 실패하면 html.js가 지워진다(§5.4).
+   1400px~에서는 목차가 옆 칸이라 본문을 밀지 않는다 — 이 블록 밖이다.
+   종이에서는 .entry-aside를 지운다(아래 「인쇄」) — 목차가 없으니 예약이 빈칸으로 남는다. */
 @media (max-width: 1399px) {
   .toc:not(.is-open) .toc-list { display: none; }
+
+  .toc-toggle { min-height: var(--toc-bar-h); }
+
+  .js body:not(.no-toc) .entry-aside { min-height: var(--toc-bar-h); }
 }
 
 /* 1400px 이상 : 항상 펼친 상태(3단, 옆 칸). 토글 버튼은 제목 라벨로만 남긴다.
@@ -1804,7 +1835,11 @@ body.is-lightbox-open { overflow: hidden; }
   /* ⚠ 특이도를 상대와 맞춰 쓴다. `!important`는 인라인 보정 전용이라 여기서 쓰지 않는다.
      `.toc.is-ready`·`.to-top.is-visible`·`.ad:not(:empty)`·`.cat-chips:not(:empty)`는
      (0,2,0)이라 클래스 하나로는 못 이긴다 — 같은 모양을 그대로 적고 순서로 이긴다
-     (이 블록이 CSS_ORDER의 맨 뒤 파일, 그 안에서도 맨 뒤다).
+     (이 블록이 CSS_ORDER의 맨 뒤 파일, 그 안에서도 맨 뒤다). 칩 줄 예약
+     `.js .cat-chips:empty:not(.is-off)`(0,4,0)도 같다.
+     `.entry-aside`는 목차 하나만 담는다. 목차를 지우는 종이에서 화면용 목차 바 예약
+     (min-height, 결정 62)이 빈칸으로 남지 않게 그릇째 지운다 — 인쇄의 .entry-layout은
+     block이라 지워도 다른 자리가 움직이지 않는다.
      레일은 상대가 ID 스코프(1,1,0)라 순서로도 못 이긴다 — 켜는 쪽을 layout.css에서
      `@media not print`로 좁혀 두었다. */
   .skip-link,
@@ -1812,8 +1847,10 @@ body.is-lightbox-open { overflow: hidden; }
   .header-util,
   .cat-chips,
   .cat-chips:not(:empty),
+  .js .cat-chips:empty:not(.is-off),
   .toc,
   .toc.is-ready,
+  .entry-aside,
   .reading-progress,
   .to-top,
   .to-top.is-visible,

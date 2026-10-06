@@ -307,8 +307,9 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 |---|---|
 | JS가 만드는 것 | `.toc-list` 안에 `<li class="toc-item toc-h2">` 또는 `toc-h3` → `<a class="toc-link" href="#…">` |
 | 렌더 조건 | 본문 `h2`/`h3`가 **3개 이상**일 때만. 조건 충족 시 `#toc`에 **`.is-ready`**를 붙인다 |
-| CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 |
+| CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 (자리 예약은 바로 아래 행) |
 | **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다. 임계·선택자가 같은지는 린트 `BND010`이 대조한다 |
+| **첫 페인트 자리** | **`html.js`이고 `body:not(.no-toc)`이면 1399px 이하에서 CSS가 `.entry-aside`에 목차 바 높이를 미리 잡는다** — `.toc`가 `.is-ready` 전까지 `display:none`이라 바가 페인트 뒤에 끼어들며 본문을 밀던 것을 막는다(결정 62). `.no-toc`는 인라인이 첫 페인트 전에 판정하므로 목차 없는 글은 예약하지 않는다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **toc.js가 `.is-ready`를 못 붙이고 끝나면 — 조기 반환이든 실행 중 예외든 — `markNoToc()`로 `no-toc`를 붙여 예약을 푼다**(`try…finally`로 한 곳에서). 실행 중 예외는 `html.js`가 못 보는 경로라 toc.js가 스스로 풀어야 빈 띠가 안 남는다 |
 | 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) |
 | 모바일 접이식 | 1399px 이하에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1399px 이하에서만 — 3단 경계 1400과 같다, 결정 48) |
 | id 앵커 | 본문 소제목에 id가 없으면 JS가 만든다. 형식 `toc-h-1`, `toc-h-2`… (한글 슬러그를 피한다 — URL 인코딩 문제) |
@@ -365,13 +366,39 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 - 이 `<script>`가 스니펫의 **정본**이다. 바꿔야 하면 skin-behavior가 새 코드를 skin-markup에게 넘기고, skin-markup이 **이 블록만 교체**한다. 별도 파일에 두지 않는다.
   (빌드는 skin.html을 그대로 복사할 뿐 주입하지 않는다 — `scripts/build.mjs` 확인함.)
 - **동기 스크립트여야 하고, `./style.css` 링크보다 먼저 있어야 한다.** 지금 자리가 그렇다.
-- 해야 할 일 두 가지:
+- 해야 할 일 세 가지:
   1. `try { localStorage.getItem('theme') } catch {}` → `'dark'`/`'light'`면
      `document.documentElement.setAttribute('data-theme', v)`. 값이 없으면 **아무것도 찍지 않는다**
      (= 시스템 따름. 세 번째 상태다).
-  2. `document.documentElement.classList.add('js')` — JS 없는 환경과 구분할 훅.
-- 되도록 3줄을 넘기지 않는다. 여기서 실패하면 페이지 전체가 흰 화면에서 시작한다.
+  2. `document.documentElement.classList.add('js')` — 아래 「`html.js`의 뜻」.
+  3. **`script.js` 로드 실패 감지** — `window`에 **capture 단계** `error` 리스너를 걸고, 대상이
+     `<script>`이고 `src`에 **`/images/script.js`**가 들어 있으면 `classList.remove('js')`.
+     ```js
+     window.addEventListener('error',function(e){var s=e.target;if(s&&s.tagName==='SCRIPT'&&s.src.indexOf('/images/script.js')!==-1)document.documentElement.classList.remove('js')},true);
+     ```
+     - **capture인 이유**: 리소스 로드 오류는 버블되지 않는다. 요소에서 난 `error`는 `window`의
+       capture 단계에서만 잡힌다. 런타임 예외의 `error`는 대상이 `window`라 `tagName`이 없어 걸러진다.
+     - **`/images/script.js`인 이유**: 라이브 `src`는
+       `https://tistory1.daumcdn.net/tistory/3356137/skin/images/script.js?_version_=…`, 프리뷰는
+       `../../dist/images/script.js`다. `s.src`는 해석된 절대 URL이라 둘 다 이 조각을 품는다.
+       GA(`gtag/js`) 같은 다른 스크립트의 실패는 건드리지 않는다.
+     - **head-inline에 두는 이유**: `<body>` 끝 `<script src="./images/script.js">`보다 먼저 걸려야 하고,
+       `js`를 붙이는 쪽과 한자리에 있어야 그 뜻이 한 곳에서 정해진다.
+- 되도록 3줄을 넘기지 않는다(지금 정확히 3줄). 여기서 실패하면 페이지 전체가 흰 화면에서 시작한다.
 - `localStorage` 키 이름은 **`theme`**, 값은 **`dark` | `light`** 로 고정한다. (`images/script.js`의 토글도 같은 키를 쓴다.)
+
+**`html.js`의 뜻 — 「스크립트가 실제로 도는 중」** (결정 62)
+
+「브라우저가 JS를 켰다」가 아니다. CSS가 **JS가 만들 결과의 자리를 미리 잡는** 규칙 —
+카테고리 미리 접기(§5.6 「카테고리 접기」), 목차 바(§5.1 「첫 페인트 자리」), 칩 줄(§5.9) — 은
+전부 `.js` 아래에만 쓴다. 그 자리를 채울 스크립트가 안 오면 예약이 거짓말이 되기 때문이다.
+
+| 경로 | `html.js` | 화면 |
+|---|---|---|
+| 정상 | 있다 | 예약된 자리에 JS가 결과를 채운다. 페인트 뒤 밀림 없음 |
+| `script.js` 로드 실패(404·네트워크·차단) | **head-inline이 지운다** | 예약이 풀려 펼친 트리·칩 없음·목차 자리 없음으로 물러난다. 실패가 늦게 오면 그때 한 번 밀린다 — 실패 경로뿐이다 |
+| JS 꺼짐 | 처음부터 없다 | 위와 같다. 레이아웃은 `@media (scripting: none)`이 받는다(§5.1) |
+| 받았는데 **실행 중 예외** | **남는다 — 못 잡는다** | 모듈마다 `safe()`가 감싸 다른 모듈은 돈다. 목차는 `markNoToc()`(§5.1), 칩은 `.is-off`(§5.9)로 모듈이 스스로 예약을 푼다. **카테고리 트리만 접힌 채 토글 없이 남는다** — 하위 카테고리는 상위 카테고리 페이지에서 선택된 가지로 펼쳐져(§5.6 「카테고리 접기」 3번) 한 번 더 누르면 닿는다 |
 
 ### 5.5 다크모드 토글 버튼 — `#theme-toggle`
 
@@ -438,9 +465,24 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
    이 선택은 값을 이미 한 번 했다. 스킨이 폴더형을 내보내던 동안 JS는 `ul`을 못 찾아
    조용히 물러났고, **잘못된 DOM에 토글을 억지로 심지 않았다** (DECISIONS.md 결정 31).
 2. **대상도 이름이 아니라 자식 `ul` 전체다.** `> .sub_category_list`가 아니라 `> ul`.
-3. **기본값을 "접힘"으로 두지 않는다.** JS가 없거나 실패하면 아무 클래스도 붙지 않아
-   트리는 전부 펼쳐진 채로 남는다 — 읽을 수는 있다. CSS로 미리 접어 두면
-   JS 실패 시 하위 카테고리로 갈 길이 영영 사라진다.
+3. **미리 접기는 `html.js` 아래에서만 한다**(결정 62). 펼친 채 그려졌다가 category.js가
+   접으면 데스크톱 모든 페이지에서 레일이 페인트 뒤 줄어든다 — 그래서 CSS가 첫 페인트부터
+   접어 둔다. 단 `.js` 없이 접으면 JS가 안 도는 독자도 토글 없는 접힌 트리를 받는다.
+   `html.js`는 「스크립트가 실제로 도는 중」이고 `script.js` 로드가 실패하면 head-inline이
+   지우므로(§5.4), 그때는 **펼친 트리**(category.js가 손대기 전 모양)로 물러난다. 미리 접는 대상은
+   **category.js가 토글을 달 `li`와 같은 집합**이어야 한다:
+   - **래퍼 `li`(「분류 전체보기」)는 접지 않는다.** `pickList()`가 한 단계 내려가는 바로 그 층이다 —
+     여기를 접으면 첫 페인트에 트리 전체가 사라지고, JS는 그 `li`에 토글을 안 다므로 영영 안 펴진다.
+   - **현재 가지(`li.selected` 또는 `.selected`를 품은 `li`)는 접지 않는다.** JS가 펼친 채 시작하는
+     가지라, 접어 두면 카테고리 페이지에서 반대 방향으로 한 번 밀린다.
+   - **`li.is-expanded`가 붙으면 풀린다.** 그 뒤로는 1번의 `li.is-collapsed > ul` 규칙이 맡는다.
+   - **어긋나면 펼친 채로 남는 선택자여야 한다** — 1번과 방향이 반대다. 접기 규칙은 안 먹으면 버튼이
+     고장 나지만, 미리 접기는 안 먹으면 페인트 뒤 한 번 밀릴 뿐 트리는 읽힌다. 그래서 래퍼를 건너뛴
+     층을 좁게 짚고, `.side-category li:not(.is-expanded) > ul`처럼 넓게 잡지 않는다 — 그건 래퍼까지 접는다.
+
+   category.js가 **실행 중 예외**로 죽으면 `html.js`가 남아 트리가 접힌 채 토글 없이 남는다 —
+   `html.js`가 못 보는 경로다(§5.4 표). 그래도 길이 끊기지는 않는다: 상위 카테고리 페이지에서는
+   그 가지가 `li.selected`라 위 둘째 예외로 펼쳐져 있다.
 
 **JS가 지키는 것** — 클래스 이름에 의존하지 않고 "중첩 `ul`을 가진 `li`"라는 구조로 고른다.
 구조가 예상과 다르면 아무것도 하지 않고 조용히 물러난다. 상위 카테고리 링크는 가로채지 않는다
@@ -512,8 +554,8 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 |---|---|
 | JS가 만드는 것 | `<a class="cat-chip" href="/category/인프라">인프라<span class="cat-chip-count">42</span></a>` × 상위 카테고리 수. 맨 앞에 「전체」(`.is-all`, `/category`) |
 | 출처 | 사이드바 트리(`.side-category .side-body ul`) — **`category.js`와 같은 파서**(`pickList`·`ownAnchor`·`labelOf`). 둘이 각자 세면 레일과 칩이 다른 목록을 낼 수 있고 화면에 신호가 없다 |
-| 렌더 조건 | 트리를 못 찾으면(폴더형·구조 다름) **아무것도 넣지 않는다.** 그릇은 비어 있고 CSS가 `:empty`로 감춘다 |
-| CSS 기본값 | `.cat-chips { display: none }` → `@media (max-width: 1024px)`에서 `.cat-chips:not(:empty)`만 flex. **1025px~에서는 항상 감춤**(레일이 있다). DOM은 폭과 무관하게 항상 만든다 |
+| 렌더 조건 | 트리를 못 찾으면(폴더형·구조 다름) **아무것도 넣지 않고 그릇에 `.is-off`를 붙인다**(결정 62). 칩을 하나도 못 넣고 끝나는 경로는 전부 같다 — 조기 반환이든 모듈 안 예외든(`try…finally`로 한 곳에서). 그릇은 비어 있고 CSS가 감춘다 |
+| CSS 기본값 | `.cat-chips { display: none }` → `@media (max-width: 1024px)`에서 `.cat-chips:not(:empty)`만 flex. **`html.js`이면 빈 그릇에도 칩 줄 높이를 미리 잡는다 — `.js .cat-chips:empty:not(.is-off)`**(결정 62). 빈 `<nav>`를 페인트 뒤에 채우며 헤더가 55px 늘던 것을 막는다. `.is-off`가 붙으면 예약을 풀어 다시 감춘다 — 그때 한 번 밀리는 것은 실패 경로뿐이다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **1025px~에서는 항상 감춤**(레일이 있다). DOM은 폭과 무관하게 항상 만든다 |
 | 현재 가지 | 티스토리 `li.selected`(카테고리 페이지) 또는 URL 대조 → `.is-current` + `aria-current="page"`. 하위 카테고리 페이지에서는 **그 상위 칩**이 켜진다. 글 페이지에서는 아무것도 안 켜진다(URL이 `/entry/…`) |
 | 스크롤 | 현재 칩이 오른쪽 밖이면 `nav.scrollLeft`만 옮긴다. `scrollIntoView`는 쓰지 않는다 — 페이지를 세로로 움직일 수 있다 |
 | 왜 마크업에 그릇을 두나 | §5 원칙. JS가 `<nav>`째 만들면 CSS가 붙잡을 자리를 JS가 정하는 셈이고, 실패 시 흔적 없이 사라져 "원래 없던 것"과 구분이 안 된다 |
@@ -546,6 +588,9 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `.side-comments` | 최근 댓글 | `.sidecmt-list` `.sidecmt-item` `.sidecmt-link` `.sidecmt-name` `.sidecmt-date` |
 | `.side-tags` | 태그 클라우드 | `.tagcloud-list` `.tagcloud-item` `.tagcloud-link` + 티스토리가 주는 `cloud1`~`cloud5` |
 | `.side-count` | 방문자 수 | `.count-list` `.count-item` `.count-label` `.count-num` (`tabular-nums`) |
+
+**`.side-category`의 트리는 `html.js`이면 CSS가 첫 페인트부터 미리 접어 둔다**(결정 62) — 래퍼 `li`와
+현재 가지는 빼고, `script.js` 로드가 실패하면 펼친 트리로 물러난다. 대상·예외는 §5.6 「카테고리 접기」 3번.
 
 `.tagcloud-link`은 `/tag` 페이지(`section.tagcloud`)와 **같은 클래스를 공유한다.** 한 번만 쓰면 된다.
 
@@ -623,7 +668,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | 클래스 | 붙는 곳 | 붙이는 주체 |
 |---|---|---|
 | `html[data-theme="dark"|"light"]` | `<html>` | head 인라인 + `#theme-toggle` |
-| `html.js` | `<html>` | head 인라인 |
+| `html.js` | `<html>` | head 인라인 — 붙이고, **`script.js` 로드가 실패하면 지운다**. 뜻은 「스크립트가 실제로 도는 중」(§5.4, 결정 62) |
 | `.toc.is-ready` | `#toc` | toc.js |
 | `body.no-toc` | `<body>` | `skin.html` 인라인(첫 페인트 전, 결정 48) + toc.js 폴백 (**목차를 못 만들 때만**. 글 페이지가 아니면 붙이지 않는다) |
 | `.toc.is-open` | `#toc` | toc.js (**1399px 이하에서만**. 3단으로 넘어가면 지운다) |
@@ -637,6 +682,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `li.has-toggle` · `li.is-collapsed` / `li.is-expanded` | 사이드바 카테고리 `li` | category.js |
 | `.cat-tree` | 상위 카테고리가 늘어선 `ul` | category.js |
 | `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조. `aria-current="page"`도 같이) |
+| `.cat-chips.is-off` | `#cat-chips` 그릇 | cat-chips.js (**칩을 하나도 못 넣고 끝날 때** — 트리를 못 읽었거나 모듈 안 예외. CSS 칩 줄 예약 `.js .cat-chips:empty:not(.is-off)`를 푸는 신호, §5.9·결정 62) |
 
 `body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
 
