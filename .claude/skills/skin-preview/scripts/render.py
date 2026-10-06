@@ -68,6 +68,29 @@ NAMECARD_BOX = (
     '</a>'
     '</div></div>')
 
+# 티스토리 툴바(Menubar). 티스토리가 **모든 페이지**의 우리 script.js 태그 뒤에 서버 HTML로 넣는다
+# (2026-10-06 라이브 실측) — 「구독하기」 알약은 서버 HTML에 있고 ⋮ 버튼은 React가 채운다.
+# 규칙은 TISTORY_TOOLBAR_CSS(static/style/tistory.css)에서 온다: position:fixed; top:20px;
+# right:20px; z-index:9999, 그리고 max-width:1260px에서 display:none.
+# 2026-10-05까지 프리뷰가 이것을 그리지 않아, 1261~1868px에서 툴바가 헤더의 테마 토글을 88%
+# 덮는 것을 **로컬에서 한 번도 볼 수 없었다**(결정 59). 사용자 본인 화면(약 2126px)에서도
+# 안 겹쳐서 라이브 실측으로만 드러났다 — 결정 42 부류.
+#
+# 마크업은 방문자(비로그인) 기준 실측 그대로다. 폭(약 170px)이 블로그 이름 길이에 달려 있으므로
+# 이름 문자열도 바꾸지 않는다. 숨은 레이어(.header_layer, display:none)는 화면에 닿지 않아 뺐다.
+# 재현하지 못하는 것: 로그인한 블로그 주인 화면의 툴바(버튼 구성과 폭이 다를 수 있다), 구독 중 상태.
+TOOLBAR_BOX = (
+    '<!-- 티스토리가 서버 HTML로 넣는다: 툴바 (⋮ 버튼만 React가 채운다) -->'
+    '<div class="#menubar menu_toolbar ">'
+    '<h2 class="screen_out">티스토리툴바</h2>'
+    '<div class="btn_tool btn_tool_type1" id="menubar_wrapper" data-tistory-react-app="Menubar">'
+    '<button class="btn_menu_toolbar btn_menu_type2">'
+    '<span class="img_common_tistory ico_tistory_sign">관리메뉴열기</span></button></div>'
+    '<div class="btn_tool"><button class="btn_menu_toolbar btn_subscription  #subscribe" '
+    'data-blog-id="3356137" data-url="https://sanggi-jayg.tistory.com" data-device="web_pc">'
+    '<strong class="txt_tool_id">상쾌한기분</strong><em class="txt_state">구독하기</em>'
+    '<span class="img_common_tistory ico_check_type1"></span></button></div></div>')
+
 # ── 페이징 ────────────────────────────────────────────────────────
 # 2026-09-10 라이브 실측(이슈 #58). 세 가지가 프리뷰에 없었다:
 #   1. [##_paging_rep_link_num_##]은 숫자가 아니라 **<span class="selected">N</span> /
@@ -224,8 +247,18 @@ TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/
 # 실어도 다른 화면을 흔들지 않는다.
 TISTORY_INDEX_CSS = ("https://tistory1.daumcdn.net/tistory_admin/userblog/"
                      "userblog-626ea1866044955da92690211f447663fdb36491/static/pc/dist/index.css")
+# 티스토리 **툴바** 시트 — 위 TOOLBAR_BOX의 위치(position:fixed)와 1260px 이하 숨김이 여기서 온다.
+# 라이브 <head>에서도 우리 style.css 뒤에 온다(2026-10-06 실측). 이 시트가 빠지면 툴바 픽스처는
+# 화면 맨 아래에 평범한 버튼 두 개로 떨어져 헤더와 겹치지 않는다 — 결정 59의 결함이 다시 숨는다.
+# 클래스 스코프 규칙뿐이다(244개 규칙, bare 요소 선택자 0개 — .tistorytoolbar·.menu_toolbar 등).
+# ⚠ 호스트가 위 두 상수(TISTORY_CONTENT_CSS·TISTORY_INDEX_CSS — tistory1.daumcdn.net/tistory_admin,
+#   userblog-626ea186…)와 다르다. 낡은 쪽은 **그 둘**이다: 2026-10-06 라이브 head는 content.css·index.css·
+#   tistory.css 셋 다 edge.daumcdn.net/tistory/tistory-admin/…/userblog-542bd84… 에서 받는다. 이 상수는
+#   라이브 값을 그대로 적었고, 그 둘의 갱신은 V017이 URL 불일치 → 바이트 대조로 알려 준다(결정 59 범위 밖).
+TISTORY_TOOLBAR_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
+                       "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/style/tistory.css")
 
-# 네트워크가 없으면 위 세 시트(content.css · atom-one-light · index.css)가 조용히
+# 네트워크가 없으면 위 네 시트(content.css · atom-one-light · index.css · tistory.css)가 조용히
 # 빠지고 프리뷰는 다시 거짓말을 한다.
 # ⚠ 기대 개수(__NEED__)를 손으로 적지 않는다 — 아래 stack 조립이 원격 시트를 세어 넣는다.
 #   시트를 더하고 이 숫자를 잊으면 **가드가 먼저 낡는다**: 하나가 빠져도 띠가 안 뜬다.
@@ -932,7 +965,7 @@ def main():
         # index.css(React 앱 시트)는 우리 뒤. 뒤에 오는 쪽은 특이도가 같으면 이긴다.
         # 가드의 기대 개수는 여기서 **세어서** 낸다(우리 시트는 로컬이라 빼고).
         ours = "../../dist/style.css"
-        sheets = [TISTORY_CONTENT_CSS, ours, TISTORY_HLJS_CSS, TISTORY_INDEX_CSS]
+        sheets = [TISTORY_CONTENT_CSS, ours, TISTORY_HLJS_CSS, TISTORY_INDEX_CSS, TISTORY_TOOLBAR_CSS]
         remote = [s for s in sheets if s != ours]
         stack = "\n".join(
             [TISTORY_CSS_GUARD.replace("__NEED__", str(len(remote)))]
@@ -949,6 +982,12 @@ def main():
             out = out.replace('href="./style.css"', 'href="../../dist/style.css"')
         out = out.replace('src="./images/', 'src="../../dist/images/')
         out = out.replace('url(./images/', 'url(../../dist/images/')
+        # 툴바는 라이브처럼 본문 끝(우리 script.js 뒤)에 붙인다. </body>를 못 찾으면 조용히 빠지므로 알린다.
+        if "</body>" in out:
+            out = out.replace("</body>", TOOLBAR_BOX + "\n</body>", 1)
+        else:
+            sys.stderr.write("  ⚠ </body>를 찾지 못해 티스토리 툴바 픽스처를 넣지 못했다 "
+                             "— 1261px 이상에서 헤더와 겹치는지 프리뷰가 재현하지 않는다(결정 59)\n")
         os.makedirs(os.path.join(OUT, "pages"), exist_ok=True)
         path = os.path.join(OUT, "pages", page + ".html")
         open(path, "w", encoding="utf-8").write(out)
