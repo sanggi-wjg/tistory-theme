@@ -383,9 +383,21 @@ TOC_EXTRA = """
 <tbody><tr><td>maxLifetime</td><td>240000</td><td>DB wait_timeout보다 짧게</td><td>1800000</td></tr></tbody></table>
 """
 
+# ── Google 번역 확장의 잔재 ─────────────────────────────────────────
+# 글쓴이 Chrome의 번역 확장이 텍스트 선택 때 띄운 아이콘이 저장 때 본문에 같이
+# 들어갔다. 라이브 278편 중 13편(2026-10-06 전수). 본문의 **마지막 자식**으로,
+# 데스크톱 편집 화면의 좌표가 인라인 absolute로 박혀 있다. 위치 지정 조상이 없어
+# body 기준으로 놓이므로 left: 538px이면 390px 화면에서 문서 폭이 543px가 된다
+# (결정 61). 아래는 「cmux 터미널 폰트 설정 방법」의 원문 그대로다 — 숨김 규칙을
+# 지우면 프리뷰 글 페이지가 모바일 폭에서 다시 가로로 밀린다.
+GTX_TRANS = """
+<div id="gtx-trans" style="position: absolute; left: 538px; top: 874.688px;">
+<div class="gtx-trans-icon">&nbsp;</div>
+</div>"""
+
 _OPEN = '<div class="tt_article_useless_p_margin contents_style">'
-ARTICLE_BODY = _OPEN + ARTICLE_BODY_INNER + EDITOR_COMPONENTS + "</div>"
-ARTICLE_BODY_TOC = _OPEN + ARTICLE_BODY_INNER + TOC_EXTRA + EDITOR_COMPONENTS + "</div>"
+ARTICLE_BODY = _OPEN + ARTICLE_BODY_INNER + EDITOR_COMPONENTS + GTX_TRANS + "</div>"
+ARTICLE_BODY_TOC = _OPEN + ARTICLE_BODY_INNER + TOC_EXTRA + EDITOR_COMPONENTS + GTX_TRANS + "</div>"
 
 
 def load_fixtures():
