@@ -536,7 +536,7 @@ def lint_js_dom_classes(src_css, js):
     스타일 없는 날것 DOM이 뜨고 끝이다 (DECISIONS.md 결정 40).
 
     두 축을 같이 본다. CSS 축만 보면 **문서가 JS에서 떨어져 나간 순간 검사가
-    죽은 이름을 보고 통과한다** — 위조된 통과 신호(CLAUDE.md)의 네 번째 판이다.
+    죽은 이름을 보고 통과한다** — 위조된 통과 신호(docs/HARNESS.md 「핵심 위험」)의 네 번째 판이다.
 
     CSS는 **src만** 본다. dist는 src의 사본이라, src에서 규칙을 지워도 낡은
     dist에 남아 있으면 통과해 버린다 (TIS00x가 src만 보는 것과 같은 이유).
@@ -805,7 +805,7 @@ def strip_comments(css):
     주석 안의 hex는 색 지정이 아니라 **설명**이다. tistory.css는 티스토리가 박아 둔
     리터럴(#333 · #909090 …)을 주석에 적어 두는데, 걷어내지 않으면 TOK001이
     그것을 매번 경고한다. 상시 경고는 린트를 통째로 무시하게 만든다 —
-    같은 오탐으로 이미 한 번 데었다(CLAUDE.md 2026-08-25 TOK002 항목)."""
+    같은 오탐으로 이미 한 번 데었다(`TOK002` 전례 — DECISIONS.md 결정 40)."""
     return re.sub(r"/\*.*?\*/", "", css, flags=re.S)
 
 
