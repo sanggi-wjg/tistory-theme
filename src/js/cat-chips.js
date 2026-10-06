@@ -4,9 +4,10 @@
 // (390px 라이브 실측: 홈에서 5,800px, 글에서 15,300px 아래). 사이드바 트리에서
 // **상위 카테고리만** 읽어 헤더 안 한 줄 칩으로 낸다.
 //
-// 마크업의 빈 <nav class="cat-chips">를 **채우기만** 한다(hooks.md §5 원칙). 못 채우면
-// 빈 채로 남고 CSS가 :empty로 감춘다 — 폴더형 트리, 구조가 다른 트리, JS 실패 전부
-// 오늘과 같은 화면(칩 없음)으로 물러난다. 데스크톱(1025px~)에서는 CSS가 감춘다.
+// 마크업의 빈 <nav class="cat-chips">를 **채우기만** 한다(hooks.md §5 원칙). html.js이면
+// CSS가 빈 그릇에도 칩 줄 자리를 미리 잡아 두므로(결정 62), 못 채우면 그릇에 .is-off를
+// 붙여 그 예약을 푼다 — 폴더형 트리, 구조가 다른 트리, 모듈 안 예외 전부 칩 없는 화면으로
+// 물러난다. 데스크톱(1025px~)에서는 CSS가 감춘다.
 // DOM은 폭과 무관하게 항상 만든다 — 창 크기에 따라 만들었다 지웠다 하지 않는다.
 //
 // 트리를 읽는 규칙은 category.js와 **같은 함수**다(구조로 고르고 이름에 기능을 걸지 않는다).
@@ -45,12 +46,24 @@ function chip(href, label, count, extraClass) {
 
 export default function initCatChips() {
   const nav = document.getElementById('cat-chips')
-  if (!nav || nav.firstChild) return // 그릇이 없거나 이미 채웠다
+  if (!nav || nav.firstChild) return // 그릇이 없거나 이미 채웠다 — 예약도 건드리지 않는다
 
+  // 왜 finally인가 — 결정 62의 칩 줄 예약을 푼다. 예약은 「JS가 이 자리를 채운다」는
+  // 약속이라, 칩을 하나도 못 넣고 끝나면 빈 띠가 남는다. 조기 반환과 실행 중 예외를
+  // 한 곳에서 받는다 — 예외는 html.js가 못 보는 경로라(hooks.md §5.4) 여기서 풀어야 한다.
+  // 예외는 삼키지 않는다. index.js의 safe()가 콘솔에 남긴다.
+  try {
+    fill(nav)
+  } finally {
+    if (!nav.firstChild) nav.classList.add('is-off')
+  }
+}
+
+function fill(nav) {
   // .side-category · .side-body는 skin.html이 보장하는 우리 훅이다(hooks.md §6).
   const box = document.querySelector('.side-category .side-body')
   const rootUl = box && box.querySelector('ul')
-  if (!rootUl) return // 폴더형이거나 트리가 없다 — 빈 채로 두면 CSS가 감춘다
+  if (!rootUl) return // 폴더형이거나 트리가 없다 — 그릇이 빈 채라 finally가 is-off를 붙인다
 
   const list = pickList(rootUl)
   const items = childrenByTag(list, 'LI')

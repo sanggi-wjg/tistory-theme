@@ -12,11 +12,17 @@
      아래 script가 스니펫의 정본이다. skin-behavior가 새 코드를 넘기면 skin-markup이 이 블록만 교체한다.
      빌드는 skin.html을 그대로 복사할 뿐 주입하지 않는다(scripts/build.mjs).
 
-     하는 일 (두 줄이면 된다):
+     하는 일 (세 줄):
        1. localStorage의 'theme' 값이 'dark' | 'light' 이면 html에 data-theme를 즉시 찍는다.
           값이 없으면 아무것도 찍지 않는다 = 시스템 따름(세 번째 상태).
           반드시 try/catch — 시크릿 모드·사이트데이터 차단에서 예외가 난다.
-       2. html에 class 'js'를 더한다.
+       2. html에 class 'js'를 더한다. 뜻은 「스크립트가 실제로 도는 중」이다(결정 62).
+          CSS는 이 클래스 아래에서만 JS가 만들 자리를 미리 잡는다(트리 접기·목차 바·칩 줄).
+       3. images/script.js 로드가 실패하면 'js'를 도로 지운다 — 미리 잡은 자리가 풀려
+          펼친 트리·칩 없음으로 물러난다. 리소스 로드 오류는 버블되지 않아 window의
+          capture 단계에서 잡는다. 받은 뒤 실행 중 예외는 못 잡는다(hooks.md §5.4).
+          여기 두는 이유: body 끝 script 태그보다 먼저 걸려야 하고, 'js'를 붙이는 쪽과
+          한자리에 있어야 그 뜻이 한 곳에서 정해진다.
 
      동기 스크립트여야 하고, style.css 링크보다 위에 있어야 한다.
      여기서 실패하면 다크 사용자가 흰 화면 번쩍임을 본다.
@@ -25,6 +31,7 @@
 <script>/* head-inline — hooks.md §5.4. 키 'theme', 값 'dark'|'light'. 없으면 아무것도 찍지 않는다(시스템 따름). */
 try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}
 document.documentElement.classList.add('js');
+window.addEventListener('error',function(e){var s=e.target;if(s&&s.tagName==='SCRIPT'&&s.src.indexOf('/images/script.js')!==-1)document.documentElement.classList.remove('js')},true);
 </script>
 <!-- head-inline:end -->
 
@@ -107,7 +114,8 @@ gtag('config', 'G-PHQ5FKMZ37');
 
   <!-- 모바일 카테고리 칩 — DECISIONS.md 결정 50. 레일이 본문 아래로 내려가는 1024px 이하에서만
        CSS가 편다. 빈 그릇이다: cat-chips.js가 사이드바 트리의 상위 카테고리로 채운다(hooks.md §5.9).
-       못 채우면 빈 채로 남고 :empty로 감춰진다 — 여는 태그와 닫는 태그를 붙여 둔다
+       html.js이면 CSS가 빈 그릇에도 칩 줄 자리를 미리 잡고(결정 62), 못 채우면 cat-chips.js가
+       is-off를 붙여 그 예약을 풀며 :empty로 감춰진다 — 여는 태그와 닫는 태그를 붙여 둔다
        (사이에 줄바꿈이 들어가면 공백 노드 때문에 :empty가 영영 거짓이다). -->
   <nav class="cat-chips" id="cat-chips" aria-label="카테고리"></nav>
 </header>
@@ -300,7 +308,8 @@ gtag('config', 'G-PHQ5FKMZ37');
       </div>
 
       <aside class="entry-aside">
-        <!-- 목차는 JS가 채운다. 소제목 3개 미만이면 .is-ready가 붙지 않는다 — hooks.md §5.1 -->
+        <!-- 목차는 JS가 채운다. 소제목 3개 미만이면 .is-ready가 붙지 않는다 — hooks.md §5.1.
+             html.js이고 body.no-toc가 아니면 1399px 이하에서 CSS가 이 자리(목차 바)를 미리 잡는다(결정 62) -->
         <nav class="toc" id="toc" aria-label="목차">
           <button type="button" class="toc-toggle" aria-expanded="false" aria-controls="toc-list">
             <span class="toc-title">목차</span>

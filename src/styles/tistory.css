@@ -160,9 +160,9 @@
    .has-toggle · .is-collapsed / .is-expanded를 붙인다 (hooks.md §5.6).
    목록 자체에는 .cat-tree가 붙는다 — 토글이 하나라도 생겼을 때만.
 
-   JS가 없거나 실패하면 아무 클래스도 붙지 않는다. 그러면 이 블록의 규칙이
+   첫 페인트부터 접힌 모양을 내는 것은 아래 「미리 접기」다 — `html.js`일 때만(결정 62).
+   `html.js`가 없으면(JS 꺼짐, script.js 로드 실패 — hooks.md §5.4) 이 블록의 규칙이
    하나도 매칭되지 않아 트리는 전부 펼쳐진 채로 남는다 — 읽을 수는 있다.
-   "기본을 접힘으로 두고 JS가 펴는" 방식을 쓰지 않는 이유가 이것이다.
 
    ⚠ 이 블록은 .tt_category가 아니라 .side-category로 스코프한다.
    .tt_category · .sub_category_list는 **2026-08-25 실측으로 확정된 이름이다**(이 파일 머리말) —
@@ -174,6 +174,31 @@
    훅(.side-category, hooks.md §6)에 건다.** 대상도 이름이 아니라 자식 ul 전체다. */
 
 .side-category li.is-collapsed > ul { display: none; }
+
+/* ── 미리 접기 (결정 62) ─────────────────────────────────────────
+   펼친 채 그려졌다가 category.js가 접으면 1025px~ 모든 페이지에서 레일이 페인트 뒤
+   약 180px 줄어 「최근 글」이 위로 튀었다. 그래서 `html.js`이면 category.js가 접을 하위
+   목록을 CSS가 **첫 페인트부터** 접어 둔다. `.is-expanded`가 붙으면 풀리고, 그 뒤로는
+   위 `.is-collapsed` 규칙이 맡는다.
+
+   대상은 category.js가 토글을 다는 li와 **같은 집합**이어야 한다 (hooks.md §5.6 「카테고리 접기」 3번).
+     · 래퍼 li(「분류 전체보기」)는 접지 않는다. `.side-body > ul > li:only-child > ul:only-of-type`이
+       pickList()를 그대로 옮긴 것이다 — 루트 ul의 li가 하나뿐이고 그 안의 ul이 하나일 때만
+       한 단계 내려간다. 래퍼를 접으면 트리 전체가 사라지고, JS는 거기 토글을 안 달아 영영 안 펴진다.
+     · 현재 가지(li.selected, 또는 .selected를 품은 li)는 접지 않는다 — category.js가 펼친 채
+       시작하는 가지다. 접어 두면 카테고리 페이지에서 반대로 한 번 밀린다.
+
+   ⚠ 위 접기 규칙과 실패 방향이 반대다. 접기 규칙은 안 먹으면 버튼이 고장 나지만, 미리 접기는
+   안 먹으면 페인트 뒤에 한 번 밀릴 뿐 트리는 읽힌다. 그래서 **어긋나면 펼친 채로 남게** 좁게
+   짚는다 — 구조가 다르면(래퍼가 없다·둘이다) 이 선택자가 아무것도 못 잡는다.
+   `.side-category li:not(.is-expanded) > ul`처럼 넓게 잡으면 래퍼까지 접힌다.
+   :has()를 모르는 브라우저는 규칙째 버려 오늘처럼 펼친 채 그려진다 — 안전한 쪽이다.
+
+   category.js가 실행 중 예외로 죽으면 html.js가 남아 접힌 채 토글이 없다(html.js가 못 보는
+   경로, hooks.md §5.4). 그래도 상위 카테고리 페이지에서는 그 가지가 li.selected라 펼쳐져 있어
+   하위 카테고리로 가는 길은 끊기지 않는다. */
+.js .side-category .side-body > ul > li:only-child > ul:only-of-type
+  > li:not(.selected):not(:has(.selected)):not(.is-expanded) > ul { display: none; }
 
 /* 링크 · 버튼 · 하위목록이 한 li 안에 있다.
    버튼은 링크 오른쪽 끝, 하위 목록은 다음 줄로 흘린다. */
