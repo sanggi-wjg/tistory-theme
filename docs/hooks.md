@@ -400,7 +400,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `.code-lines` | 줄번호 거터. **JS는 줄 수만큼 빈 `<span>`만 놓는다 — 숫자는 CSS가 `counter`로 그린다.** `aria-hidden="true"` | `.code-wrap` 안. **DOM 순서는 `pre` 뒤**이지만 `position: absolute`라 화면에서는 왼쪽 거터다 |
 | `.hljs` · `.hljs-*` | highlight.js 출력. `<code>`에 `.hljs`가 붙고(자동 감지일 때는 `.language-<감지결과>`도 함께 — **글쓴이가 쓴 경우엔 그 클래스가 이미 있으므로 더하지 않는다**), 안쪽 토큰이 `.hljs-keyword` 류를 받는다. **팔레트는 `tokens.css` 기존 변수만 쓴다.** 신뢰도 미달이면 아무것도 붙지 않는다. ⚠ **CSS 쪽 규칙은 반드시 `.hljs ` 접두를 단다** — 티스토리가 `atom-one-light`을 우리 `style.css` 뒤에 실어서, 접두가 없으면 특이도가 같아(0,1,0) 순서로 밀린다. `code.js`가 `.hljs`를 직접 붙이므로 항상 참인 구조다. 린트 `HLJS001` | `.contents_style pre > code` |
 | `.table-scroll` | `overflow-x:auto` 래퍼 | `.contents_style table`을 감싼다 |
-| `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대. `.lightbox-img`의 `src`는 **본문 `<img>`의 `src` 속성**이다 — 티스토리가 `srcset`에 1280px 축소본을 싣어 `currentSrc`는 축소본이 된다(결정 56) | `<body>` 끝에 1개 |
+| `.lightbox` `.lightbox-img` `.lightbox-close` `.lightbox-backdrop` | 이미지 확대 **폴백**. 티스토리 phocus 뷰어가 그 클릭을 받았으면(`body.with-phocus`) 만들지 않는다 — 아래 「라이트박스 — phocus가 먼저」(결정 60). `.lightbox-img`의 `src`는 **본문 `<img>`의 `src` 속성**이다 — 티스토리가 `srcset`에 1280px 축소본을 싣어 `currentSrc`는 축소본이 된다(결정 56) | `<body>` 끝에 1개. phocus가 받지 않은 클릭에서만 |
 | `.cat-chip` · `.cat-chip-count` · `.cat-chip.is-all` | 모바일 카테고리 칩. `<a class="cat-chip">인프라<span class="cat-chip-count">42</span></a>`. 「전체」는 `.is-all`. 계약 본문은 §5.9 | `#cat-chips` 안 |
 | `body.is-lightbox-open` | 배경 스크롤 잠금 | |
 | `.external-link` | 외부링크임을 표시하는 **상태 클래스**. JS가 `<a>`에 붙이고 `target="_blank" rel="noopener noreferrer"`를 함께 건다. **표시는 `.external-icon`이 담당하므로 이 클래스에 CSS 규칙이 없는 것이 정상이다** (중복 처리를 막는 표식 겸용) | `.contents_style a` |
@@ -447,6 +447,21 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 없으면 `location.pathname`과 링크 `href`를 대조한다. 둘 다 두는 이유는 `selected`가
 카테고리 페이지에만 붙기 때문이다. 글 페이지 URL(`/entry/…`)은 카테고리 경로와 겹치지 않아
 둘 다 안 걸리고, 그때는 트리가 접힌 채로 시작한다 — 의도한 동작이다.
+
+**라이트박스 — phocus가 먼저, `.lightbox`는 폴백** (결정 60, `src/js/lightbox.js`)
+
+티스토리 `static/pc/dist/index.js`가 DOMContentLoaded에 `span[data-phocus] > img`마다 click을
+img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019~2026년 글 전부 `data-phocus`를 단다.
+둘 다 뜨면 phocus가 위에 겹치고, phocus를 닫으면 우리 것이 아래에 남아 스크롤이 잠긴 채가 된다.
+
+| 계약 | 내용 |
+|---|---|
+| phocus 열림 표시 | `body.with-phocus`. **티스토리가 붙이는 상태다. 우리는 읽기만 한다** — 우리 JS가 만드는 이름이 아니라 위 표와 §8 표에 넣지 않는다. `BND006`·`BND007`은 §5.6·§8 표의 **첫 칸**을 우리 JS 생성 이름으로 읽으므로, 이 이름을 어느 표의 첫 칸에도 적지 않는다. phocus는 이 클래스를 자기 click 핸들러 안이 아니라 **그 직후 마이크로태스크**에서 붙인다(2026-10-06 라이브 이벤트 추적) |
+| 물러나는 조건 | `lightbox.js`는 `.contents_style` 루트의 click에서 `preventDefault`만 바로 하고, `body.with-phocus` 판정은 **`setTimeout(0)`으로 미룬** 자리에서 본다. 참이면 `.lightbox`를 만들지 않는다. 바로 읽으면 답이 클릭의 출처에 따라 갈린다 — 신뢰된 클릭은 브라우저가 리스너 사이마다 마이크로태스크를 돌려 참이지만, 키보드 경로의 합성 `img.click()`은 우리 keydown이 끝날 때까지 마이크로태스크가 미뤄져 거짓이다(라이브에서 두 겹이 실제로 떴다). 매크로태스크는 phocus의 마이크로태스크가 다 돈 뒤라 둘이 같은 답을 낸다. **판정을 동기로 되돌리면 키보드에서 두 겹이 돌아온다** |
+| 폴백이 도는 때 | phocus가 그 클릭을 받지 않았을 때 — `data-phocus` 없는 이미지, phocus가 아직 안 걸린 시점, 티스토리가 phocus를 꺼 둔 환경 |
+| 키보드 | Enter(keydown, 반복 무시)·Space(keyup)는 **`img.click()`**을 부른다 — 무엇을 띄울지는 click 경로 하나가 정한다. phocus는 click만 받는다. phocus가 이미 열려 있으면 아무것도 하지 않는다 |
+| 포커스 복귀 | phocus는 닫힐 때 포커스를 돌려주지 않는다. phocus로 열렸으면 그 img를 기억하고 `<body>`의 class를 `MutationObserver`로 보다가 `with-phocus`가 빠지면 `img.focus({ preventScroll: true })`. `preventScroll`은 phocus가 막 되돌린 스크롤을 덮지 않으려는 것이다 |
+| 못 고치는 것 | phocus 뷰어에 `role="dialog"`·`aria-modal`이 없고, 모바일 레이아웃에서 포커스가 뒤 페이지로 샌다(트랩 없음). 티스토리 소관이다 |
 
 ---
 
@@ -621,6 +636,8 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | `li.has-toggle` · `li.is-collapsed` / `li.is-expanded` | 사이드바 카테고리 `li` | category.js |
 | `.cat-tree` | 상위 카테고리가 늘어선 `ul` | category.js |
 | `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조. `aria-current="page"`도 같이) |
+
+`body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
 
 ### `.toc-toggle`의 `aria-expanded` — 뷰포트에 따라 존재 자체가 달라진다
 

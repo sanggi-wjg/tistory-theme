@@ -63,7 +63,7 @@ open _preview/index.html
 - **12줄짜리 코드블록** — `code.js`의 `LINES_FOR_NUMBERS`(8)를 넘겨 줄번호 거터를
   켠다. 2026-08-27까지 픽스처 최대가 5줄이라 `.code-wrap.has-lines`와
   `.code-lines`의 CSS `counter` 번호가 **로컬에서 한 번도 그려진 적이 없었다**
-- `<figure class="imageblock">` — 라이브와 같이 **`src`에 원본, `srcset`에 서술자 없는 축소본 하나**(라이브는 `R1280x0`). 브라우저는 srcset을 고르므로 본문에는 축소본(`srcset thumb 400`)이, 라이트박스에는 원본(`original 800`)이 보여야 맞다(결정 56). 둘이 같은 그림이면 라이트박스가 `currentSrc`를 쓰고 있는 것이다 · 4열 `<table>` · `<blockquote data-ke-style>` · 인라인 `<code>` · 외부링크
+- `<figure class="imageblock">` — 라이브와 같이 **`src`에 원본, `srcset`에 서술자 없는 축소본 하나**(라이브는 `R1280x0`). 브라우저는 srcset을 고르므로 본문에는 축소본(`srcset thumb 400`)이, 라이트박스에는 원본(`original 800`)이 보여야 맞다(결정 56). 둘이 같은 그림이면 라이트박스가 `currentSrc`를 쓰고 있는 것이다. span에는 라이브처럼 `data-phocus`가 붙어 있어 **누르면 티스토리 phocus 뷰어의 흉내(`PHOCUS_STUB`)가 뜬다** — 우리 라이트박스가 함께 뜨면(두 겹) `lightbox.js`의 phocus 가드가 깨진 것이고, 흉내를 닫을 때 페이지가 위에서부터 굴러 내려오면 전역 `scroll-behavior: smooth`가 되살아난 것이다(결정 60). 흉내에는 확대·이전/다음이 없다 · 4열 `<table>` · `<blockquote data-ke-style>` · 인라인 `<code>` · 외부링크
 - **티스토리 에디터 컴포넌트 6종** (`EDITOR_COMPONENTS`) — 오픈그래프 링크 카드, 인용 `style1`+`cite`,
   인용 `box`, 첨부 파일 블록, 표 `style12`, `.another_category`. 전부 티스토리가 **라이트 전용 색을
   박아 둔** 것들이라 다크에서 사라졌던 요소다 (DESIGN.md §5.2b). `.another_category`는 티스토리가
@@ -148,6 +148,7 @@ static/pc/dist/index.css      ← 우리보다 뒤 (아래 단서를 읽어라)
 | 댓글·방명록 UI | 티스토리 React가 클라이언트에서 렌더링한다. 프리뷰는 빈 자리만 표시 |
 | **프로필 카드(Namecard)의 일부** | 카드 자체는 글 페이지 3종(`page`·`page_toc`·`page_bare`)에 **실측 DOM 그대로** 심어 두었다(`NAMECARD_BOX`) — 상대 규칙이 `index.css`에서 오므로 특이도 싸움이 재현된다. 다만 구독 중 상태 `.tt_btn_subscribe.type2`는 로그인 상태에서만 나오는 클래스라 픽스처에 없다(`+` 아이콘은 `index.css`가 CDN 스프라이트를 가져와 프리뷰에도 뜬다). `protected`에도 없다 — 그 페이지는 `<s_rp>` 자체가 렌더되지 않는데, 라이브 보호글에 카드가 뜨는지는 **재지 않았다** |
 | 카테고리 트리의 실제 마크업 | 재현하지만 티스토리가 클래스를 바꾸면 어긋난다. 새 글 아이콘(`NEW_ICO`, 결정 58)은 「분류 전체보기」와 가장 새 글의 상위 카테고리 두 곳에 넣는다 — 라이브에서 본 자리다. **하위 카테고리에도 붙는지는 실측이 없다** |
+| **phocus 이미지 뷰어의 실제 동작** | `PHOCUS_STUB`은 두 겹·스크롤 복귀를 만드는 동작(타깃 단계 click, **핸들러 직후 마이크로태스크**에 붙는 `with-phocus`, body 고정·`scrollTo`)만 흉내 낸다. 클래스를 동기로 붙이면 키보드(`img.click()`) 경로의 두 겹을 재현하지 못한다 — 첫 판이 그랬다. 확대·이전/다음·썸네일·phocus 자신의 키보드·포커스 처리는 라이브에서만 본다(결정 60) |
 | 광고 삽입 위치 | 티스토리 수익 설정이 런타임에 주입한다 |
 | `<s_t3>`가 넣는 공통 JS | 자리만 표시 |
 | 페이징 실제 동작 | 링크는 있으나 이동하지 않는다 |
