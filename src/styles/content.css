@@ -297,3 +297,16 @@
   padding: 0 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ── 번역 확장 잔재 (결정 61) ─────────────────────────────────────
+   Chrome Google 번역 확장이 텍스트 선택 때 띄우는 아이콘이 글 저장 때 본문에
+   같이 들어갔다 — <div id="gtx-trans" style="position:absolute; left:…">.
+   본문 의미는 없다. 위치 지정 조상이 없어 body 기준으로 놓이고, left가 큰 글은
+   모바일에서 문서 폭을 밀어 가로 스크롤이 생긴다(390px → 543px).
+
+   요소를 지운다. `html, body { overflow-x: clip }` 같은 전역 차단은 택하지 않는다 —
+   다음에 무엇이 넘쳐도 화면에 신호가 안 남는다.
+   .contents_style로 좁히는 것은 확장을 쓰는 독자의 진짜 아이콘(body 직속)을 건드리지
+   않기 위해서다. (1,1,0)이고 인라인 style은 position·left만 주므로 display와 겹치지 않는다.
+   티스토리 content.css·index.css는 이 id를 언급하지 않는다(2026-10-06 실측). */
+.contents_style #gtx-trans { display: none; }
