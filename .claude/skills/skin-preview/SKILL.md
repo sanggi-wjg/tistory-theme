@@ -68,6 +68,10 @@ open _preview/index.html
   인용 `box`, 첨부 파일 블록, 표 `style12`, `.another_category`. 전부 티스토리가 **라이트 전용 색을
   박아 둔** 것들이라 다크에서 사라졌던 요소다 (DESIGN.md §5.2b). `.another_category`는 티스토리가
   페이지 안 `<style>`로 넣는 `!important` 규칙까지 픽스처에 함께 들어 있다
+- **Google 번역 확장의 잔재** (`GTX_TRANS`) — 본문 마지막 자식 `<div id="gtx-trans" style="position: absolute;
+  left: 538px; …">`. 글쓴이 브라우저의 확장이 저장 때 끼운 것으로 라이브 13편에 있다. body 기준으로 놓여
+  모바일 폭에서 문서를 오른쪽으로 넓힌다(결정 61). 2026-10-06까지 픽스처에 없어 **가로 넘침이 라이브에서만
+  보였다.** 숨김 규칙이 살아 있으면 390px에서 `document.documentElement.scrollWidth`가 화면 폭과 같아야 한다
 
 **픽스처는 "열기 + 알맹이 + 닫기"로 조립한다.** 예전에는 `ARTICLE_BODY.replace("</div>", …, 1)`로
 목차용 변형을 만들었는데, 알맹이에 `<div>`가 하나라도 생기면 **첫 `</div>`가 안쪽 것**이 되어
