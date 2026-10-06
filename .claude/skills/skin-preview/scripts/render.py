@@ -68,6 +68,60 @@ NAMECARD_BOX = (
     '</a>'
     '</div></div>')
 
+# 티스토리 **phocus 이미지 뷰어**의 흉내(프리뷰 전용). 라이브는 티스토리 `static/pc/dist/index.js`가
+# DOMContentLoaded에 `span[data-phocus] > img`마다 click을 **직접** 걸고(타깃 단계), `body.with-phocus`는
+# 그 핸들러가 끝난 **직후의 마이크로태스크**에서 붙인다(2026-10-06 이벤트 추적). 신뢰된(마우스) 클릭은
+# 브라우저가 리스너 사이마다 마이크로태스크를 돌려 뒤 리스너가 이미 참을 보지만, JS가 부른 `img.click()`은
+# 바깥 스택이 끝날 때까지 미뤄져 같은 디스패치 안의 뒤 리스너는 거짓을 본다. **흉내도 반드시 마이크로태스크로
+# 붙인다** — 첫 판은 동기로 붙여, 키보드(img.click())로 열면 두 겹이 뜨는 라이브 결함을 프리뷰가 통과시켰다. 열 때 body를 `position:fixed; top:-Ypx`로 고정하고 닫을 때
+# `window.scrollTo(0, Y)`로 되돌린다(2026-10-06 라이브 실측). 2026-10-05까지 프리뷰가 이것을 싣지 않아
+# ① 이미지를 누르면 phocus와 우리 라이트박스가 **두 겹**으로 뜨는 것, ② 전역 `scroll-behavior: smooth`가
+# phocus의 스크롤 복귀를 페이지 맨 위부터 1.5초 굴러가게 만드는 것을 **로컬에서 볼 수 없었다**(결정 60).
+#
+# 흉내 내는 것은 그 두 조건을 만드는 동작뿐이다 — 타깃 단계 click, 마이크로태스크 `with-phocus`, body 고정과
+# scrollTo 복귀, Esc·✕로 닫기. 실제 뷰어의 확대·이전/다음·썸네일·키보드 처리는 없다(재현하지 못하는 것).
+# 이 흉내가 없으면 lightbox.js의 「phocus가 있으면 물러난다」 가드는 프리뷰에서 늘 거짓이라 폴백만 보인다.
+PHOCUS_STUB = """
+<script>/* 프리뷰 전용 — 티스토리 phocus 뷰어 흉내 (render.py PHOCUS_STUB, 결정 60) */
+document.addEventListener('DOMContentLoaded', function () {
+  var imgs = document.querySelectorAll('span[data-phocus] > img');
+  for (var i = 0; i < imgs.length; i++) imgs[i].addEventListener('click', open);
+  function open(e) {
+    var img = e.currentTarget;
+    if (document.body.classList.contains('with-phocus')) return;
+    var y = window.scrollY, prev = document.body.getAttribute('style');
+    // 라이브 phocus처럼 클래스는 핸들러 직후 마이크로태스크에서 붙인다(위 render.py 주석).
+    Promise.resolve().then(function () { document.body.classList.add('with-phocus'); });
+    document.body.style.cssText = (prev || '') + ';overflow:hidden;position:fixed;top:' + (-y) + 'px;width:100%';
+    var el = document.createElement('div');
+    el.className = 'phocus-stub';
+    el.setAttribute('data-preview', '티스토리 phocus 뷰어 흉내 — 확대·이전/다음은 없다');
+    el.style.cssText = 'position:fixed;inset:0;z-index:940109;background:rgba(20,20,20,.92);display:flex;align-items:center;justify-content:center';
+    var big = document.createElement('img');
+    big.src = img.getAttribute('src');
+    big.style.cssText = 'max-width:80vw;max-height:80vh';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'phocus-stub-close';
+    btn.setAttribute('aria-label', '닫기');
+    btn.textContent = '\u00d7';
+    btn.style.cssText = 'position:absolute;top:16px;right:16px;color:#fff;background:none;border:0;font-size:28px;cursor:pointer';
+    el.appendChild(big); el.appendChild(btn); document.body.appendChild(el);
+    function onKey(ev) { if (ev.key === 'Escape') close(); }
+    function close() {
+      document.removeEventListener('keydown', onKey);
+      el.remove();
+      document.body.classList.remove('with-phocus');
+      if (prev === null) document.body.removeAttribute('style'); else document.body.setAttribute('style', prev);
+      window.scrollTo(0, y);
+    }
+    btn.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+  }
+});
+</script>
+"""
+
 # 티스토리 툴바(Menubar). 티스토리가 **모든 페이지**의 우리 script.js 태그 뒤에 서버 HTML로 넣는다
 # (2026-10-06 라이브 실측) — 「구독하기」 알약은 서버 HTML에 있고 ⋮ 버튼은 React가 채운다.
 # 규칙은 TISTORY_TOOLBAR_CSS(static/style/tistory.css)에서 온다: position:fixed; top:20px;
@@ -298,7 +352,7 @@ ARTICLE_BODY_INNER = """
 Total: reserved=2841MB, committed=1974MB
 -  Internal (reserved=612MB, committed=612MB)
 -      Thread (reserved=318MB, committed=318MB)</code></pre>
-<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="800" data-origin-height="450"><span data-url="https://placehold.co/800x450/eeeeee/999999?text=original+800"><img src="https://placehold.co/800x450/eeeeee/999999?text=original+800" srcset="https://placehold.co/400x225/eeeeee/999999?text=srcset+thumb+400" alt="" loading="lazy" width="800" height="450" data-origin-width="800" data-origin-height="450"></span><figcaption>논힙 메모리 추이</figcaption></figure></p>
+<p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="800" data-origin-height="450"><span data-url="https://placehold.co/800x450/eeeeee/999999?text=original+800" data-phocus="https://placehold.co/800x450/eeeeee/999999?text=original+800"><img src="https://placehold.co/800x450/eeeeee/999999?text=original+800" srcset="https://placehold.co/400x225/eeeeee/999999?text=srcset+thumb+400" alt="" loading="lazy" width="800" height="450" data-origin-width="800" data-origin-height="450"></span><figcaption>논힙 메모리 추이</figcaption></figure></p>
 <h2 data-ke-size="size26"><span style="color: #252525;">maxLifetime 조정과 검증</span></h2>
 <p data-ke-size="size16" style="background-color: #f8f8f8;">설정을 바꾼 뒤 24시간 동안 RSS 추이를 관찰했다. 증가 곡선이 사라졌다.</p>
 <table><thead><tr><th>항목</th><th>변경 전</th><th>변경 후</th><th>비고</th></tr></thead>
@@ -1001,6 +1055,12 @@ def main():
         else:
             sys.stderr.write("  ⚠ </body>를 찾지 못해 티스토리 툴바 픽스처를 넣지 못했다 "
                              "— 1261px 이상에서 헤더와 겹치는지 프리뷰가 재현하지 않는다(결정 59)\n")
+        # phocus 흉내는 라이브처럼 본문 끝에 둔다. </body>를 못 찾으면 조용히 빠지므로 알린다.
+        if "</body>" in out:
+            out = out.replace("</body>", PHOCUS_STUB + "</body>", 1)
+        else:
+            sys.stderr.write("  ⚠ </body>를 찾지 못해 phocus 흉내를 넣지 못했다 — 이미지 뷰어가 두 겹 뜨는지·"
+                             "스크롤 복귀가 굴러가는지 프리뷰가 재현하지 않는다(결정 60)\n")
         os.makedirs(os.path.join(OUT, "pages"), exist_ok=True)
         path = os.path.join(OUT, "pages", page + ".html")
         open(path, "w", encoding="utf-8").write(out)

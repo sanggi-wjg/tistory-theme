@@ -12,7 +12,11 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth는 일부러 두지 않는다 (결정 60). 티스토리 이미지 뷰어(phocus)는
+     body를 position: fixed로 잡았다가 닫을 때 window.scrollTo(0, Y)로 자리를 되돌리는데,
+     전역 smooth면 그 복귀가 맨 위에서 원래 자리까지 1.5초 넘게 굴러 내려간다.
+     부드러운 스크롤이 필요한 곳(목차 클릭·맨 위로)은 JS가 behavior를 직접 넘긴다 —
+     모션 축소면 'auto'(util.reducedMotion). # 앵커 링크는 즉시 이동한다. */
 }
 
 /* 목차 링크로 점프할 때 소제목이 상단 진행바에 물리지 않게 */
@@ -134,9 +138,4 @@ table { border-collapse: collapse; }
 .icon {
   display: block;
   flex: none;
-}
-
-/* 모션 축소 — 전환 시간은 tokens.css가 0으로 내린다. 여기서는 스크롤만 끈다. */
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
 }

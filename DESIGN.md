@@ -807,6 +807,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 - **모서리를 12px 넘게 굴리지 않는다.**
 - **아이콘 폰트를 도입하지 않는다.** 인라인 SVG를 쓴다.
 - **애니메이션을 장식으로 쓰지 않는다.** 상태 변화(호버·포커스·토글)에만, 150ms 이내로. `prefers-reduced-motion`을 존중한다.
+- **전역 `scroll-behavior: smooth`를 두지 않는다** (결정 60). 티스토리 이미지 뷰어(phocus)는 `body`를 `position: fixed`로 잡았다가 닫을 때 `window.scrollTo(0, Y)`로 자리를 되돌리는데, 전역 smooth면 그 복귀가 맨 위에서 원래 자리까지 1.5초 넘게 굴러 내려간다. 부드러운 스크롤이 필요한 곳(목차 클릭·맨 위로)은 JS가 `behavior`를 직접 넘긴다 — 모션 축소면 `'auto'`. `#` 앵커 링크(소제목 앵커·「댓글 N」·스킵 링크)는 즉시 이동한다.
 
 ---
 
