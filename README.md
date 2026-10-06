@@ -58,3 +58,4 @@ JS 셀렉터는 `null`을 반환하고 끝난다. 셋 다 조용히 실패한다
 | [DECISIONS.md](./DECISIONS.md) | 확정 결정과 근거, 플랫폼 제약, 실측 수치 |
 | [DESIGN.md](./DESIGN.md) | 디자인 토큰·타이포·컴포넌트 |
 | [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 규칙 (브랜치·PR) |
+| [docs/HARNESS.md](./docs/HARNESS.md) | 하네스 구성 · 검증 도구가 통과 신호를 위조한 사고 · 하네스 변경 이력 |
