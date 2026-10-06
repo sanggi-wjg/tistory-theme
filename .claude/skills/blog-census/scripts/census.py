@@ -101,7 +101,7 @@ def crawl_bodies(base, posts, limit=None):
     #   <pre class>       : 에디터 자동 감지. 믿지 않는다(이 블로그에 없는 언어가 46개 섞여 있다)
     #   <code class="language-*"> : 글쓴이가 펜스로 쓴 것. 이것만 믿는다
     # 2026-08-26까지 첫째만 세어 「라벨 39%」가 나왔는데 셋째·둘째가 통째로 빠져 있었다
-    # (TODO census-pre-class). 합치지 않는다 — 합치면 다시 «라벨 있음» 한 숫자가 된다.
+    # (결정 55 — 옛 TODO census-pre-class). 합치지 않는다 — 합치면 다시 «라벨 있음» 한 숫자가 된다.
     ke_langs, pre_classes, author_langs = collections.Counter(), collections.Counter(), collections.Counter()
     pre_total = ke_total = pre_class_total = author_total = kor_blocks = 0
     blocks = []   # 블록별 원문 — 감지 커버리지(scripts/probe-code-coverage.mjs)가 읽는다
