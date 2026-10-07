@@ -348,16 +348,29 @@ gtag('config', 'G-PHQ5FKMZ37');
   </s_guest>
 
   <!-- ────────── 페이징 (홈·목록 공용) ──────────
-       주의: 페이징 치환자는 href를 포함한 속성 문자열째 삽입된다. href="…"로 감싸면 깨진다. -->
+       주의: 페이징 치환자는 href를 포함한 속성 문자열째 삽입된다. href="…"로 감싸면 깨진다.
+       글자는 767px 이하에서 화면에서만 숨기고 이름으로 남긴다(결정 66) — 아이콘은 그때만 보인다. -->
   <s_paging>
   <nav class="paging" aria-label="페이지 이동">
-    <a class="paging-prev [##_no_more_prev_##]" [##_prev_page_##]>이전</a>
+    <a class="paging-prev [##_no_more_prev_##]" [##_prev_page_##]>
+      <svg class="icon paging-icon" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+        <path d="M12.5 5 7.5 10l5 5" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span class="paging-label">이전</span>
+    </a>
     <span class="paging-nums">
       <s_paging_rep>
       <a class="paging-num" [##_paging_rep_link_##]>[##_paging_rep_link_num_##]</a>
       </s_paging_rep>
     </span>
-    <a class="paging-next [##_no_more_next_##]" [##_next_page_##]>다음</a>
+    <a class="paging-next [##_no_more_next_##]" [##_next_page_##]>
+      <span class="paging-label">다음</span>
+      <svg class="icon paging-icon" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+        <path d="M7.5 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </a>
   </nav>
   </s_paging>
 

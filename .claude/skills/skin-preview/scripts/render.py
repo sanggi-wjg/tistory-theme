@@ -156,14 +156,17 @@ TOOLBAR_BOX = (
 PAGING_TOTAL = 22           # 라이브 홈의 실제 페이지 수(2026-09-15 실측: 21쪽 × 13편 + 4편)
 
 # 페이지 타입별 «지금 몇 페이지인가». 한 벌만 그리면 조건 하나만 재현된다 —
-# 세 모양이 서로 다른 것을 켠다.
+# 다섯 모양이 서로 다른 것을 켠다.
 #   index    1페이지  → selected가 첫 칸, 이전 비활성(no-more-prev + href 없음)
 #   category 9페이지  → 양끝 생략 부호 두 개, 이전·다음 둘 다 활성 (라이브 /?page=9 그대로)
 #   archive  마지막   → 다음 비활성(no-more-next, href 없음) + `1 ··· 19 20 21 22`
 #                      (라이브 /?page=22 실측 — paging_items(22)와 같다). CSS가 두 클래스를
 #                      같이 다루므로 한쪽만 그리면 나머지 절반이 다시 안 보이는 채로 남는다.
-# 나머지 목록 페이지(search·tag)는 category와 같은 중간 모양이다.
-PAGING_CURRENT = {"index": 1, "category": 9, "archive": PAGING_TOTAL}
+#   search   5페이지  → 생략 부호가 **오른쪽 하나뿐** `1 2 3 4 5 6 7 8 ··· 22`
+#   tag      18페이지 → 생략 부호가 **왼쪽 하나뿐** `1 ··· 15 16 17 18 19 20 21 22`
+#                      (결정 66 — 767px 이하에서 「생략 부호와 현재 ±1 사이」의 번호만 숨긴다. 첫·끝·현재 ±1만
+#                      남기는 단순 규칙은 이 두 모양에서 ··· 없는 구멍을 낸다. 1·9·22만 그리면 그 차이가 안 보인다)
+PAGING_CURRENT = {"index": 1, "category": 9, "search": 5, "tag": 18, "archive": PAGING_TOTAL}
 PAGING_DEFAULT = 9          # 목록에 없는 페이지 — 중간 모양
 
 

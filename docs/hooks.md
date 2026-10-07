@@ -640,7 +640,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | 영역 | 훅 |
 |---|---|
 | 태그 클라우드 페이지 | `section.tagcloud` `.tagcloud-title` `.tagcloud-list` `.tagcloud-item` `.tagcloud-link` |
-| 페이징 | `nav.paging` `.paging-prev` `.paging-next` `.paging-nums` `.paging-num` — 티스토리가 내보내는 것 셋(2026-09-10 라이브 실측, 결정 53): ① `[##_paging_rep_link_num_##]`은 숫자가 아니라 **`<span class="selected">N</span>`**(현재 페이지) / `<span class="">N</span>`이다 — 현재 위치 신호는 이 `span.selected`뿐이다 ② 생략 부호 `···`도 `a.paging-num`인데 **href가 없다** ③ 더 갈 곳이 없을 때 붙는 클래스는 **`no-more-prev` / `no-more-next`(하이픈)** 이고 그 앵커에도 href가 없다. 2026-09-10까지 CSS·이 문서가 `no_more_prev`(밑줄)로 적혀 있어 라이브에서 한 번도 매칭된 적이 없었다. href 없는 앵커는 `.paging a:not([href])`가 한 번에 잡는다 |
+| 페이징 | `nav.paging` `.paging-prev` `.paging-next` `.paging-nums` `.paging-num` `.paging-icon` `.paging-label` — 이전·다음 앵커 안은 우리 마크업이다: `svg.icon.paging-icon`(꺾쇠, `aria-hidden`)과 `span.paging-label`(「이전」·「다음」), 순서는 이전이 아이콘→글자, 다음이 글자→아이콘. **글자는 767px 이하에서 화면에서만 숨기고 앵커의 이름으로 남긴다 — 아이콘은 그때만 보인다**(결정 66). 그 밖은 티스토리가 내보내는 것 셋(2026-09-10 라이브 실측, 결정 53): ① `[##_paging_rep_link_num_##]`은 숫자가 아니라 **`<span class="selected">N</span>`**(현재 페이지) / `<span class="">N</span>`이다 — 현재 위치 신호는 이 `span.selected`뿐이다 ② 생략 부호 `···`도 `a.paging-num`인데 **href가 없다** ③ 더 갈 곳이 없을 때 붙는 클래스는 **`no-more-prev` / `no-more-next`(하이픈)** 이고 그 앵커에도 href가 없다. 2026-09-10까지 CSS·이 문서가 `no_more_prev`(밑줄)로 적혀 있어 라이브에서 한 번도 매칭된 적이 없었다. href 없는 앵커는 `.paging a:not([href])`가 한 번에 잡는다 |
 | 공지 | `article.notice` `.notice-head` `.notice-badge` `.notice-title` `.notice-date` `.notice-body`(안이 `.contents_style`) |
 | 보호글 | `section.protected` `.protected-title` `.protected-desc` `.protected-form` `.protected-label` `.protected-input` `.protected-submit` |
 | 방명록 | `section.guestbook` `.guestbook-title` — 본체는 `[##_guestbook_group_##]`, 안은 `tt-*` |
@@ -677,9 +677,10 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
   `.side-link`·`.related-link`·`.tagcloud-link`가 맡는다.
 - `.entry-date` · `.post-date` · `.side-date` — 색·크기·정렬을 `.entry-meta`·
   `.post-meta`·`.side-meta`가 한 번에 정한다. 날짜만 다르게 할 이유가 아직 없다.
-- `.paging-prev` · `.paging-next` · `.paging-num` — `.paging a`가 셋을 같은 알약으로
-  그린다. "더 갈 곳 없음" 상태는 티스토리가 붙이는 `.no-more-prev`/`.no-more-next`(하이픈)와
-  **href 부재**가 가르고, 현재 페이지는 안쪽 `span.selected`가 가른다(§7 페이징 행).
+- `.paging-prev` · `.paging-next` — `.paging a`가 번호와 같은 알약으로 그린다.
+  "더 갈 곳 없음" 상태는 티스토리가 붙이는 `.no-more-prev`/`.no-more-next`(하이픈)와
+  **href 부재**가 가른다(§7 페이징 행). `.paging-num`은 이 목록에 없다 — 생략 부호·현재
+  페이지(결정 53)와 767px 이하의 번호 줄이기(결정 66)가 그 이름에 직접 규칙을 건다.
 - `.side-body` — 안이 `[##_category_list_##]`의 **티스토리 고정 마크업**이라
   `tistory.css`가 `.tt_category` 쪽 이름으로 잡는다.
 - `.toc-title` — `.toc-toggle`이 flex 배치와 글자를 정한다. 라벨 자체에 줄 것이 없다.
