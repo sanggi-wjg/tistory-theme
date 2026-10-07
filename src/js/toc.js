@@ -4,7 +4,8 @@
 // 소제목이 3개 미만이면 .is-ready를 붙이지 않는다 → CSS가 .toc를 display:none으로 둔 채로 남긴다.
 // (실측: 소제목 3개 이상인 글 68%, 최대 25개)
 
-import { entryRoot, headingsWithIds, onMediaChange, rafThrottle, reducedMotion } from './util.js'
+import initTocSheet from './toc-sheet.js'
+import { entryRoot, headingsWithIds, onMediaChange, rafThrottle, reducedMotion, revealInBox } from './util.js'
 
 const MIN_HEADINGS = 3 // 이 미만이면 목차를 만들지 않는다
 const SPY_OFFSET = 120 // 화면 위쪽 이 높이를 지나면 "현재 위치"로 본다
@@ -121,7 +122,9 @@ function build(toc, list) {
     onMediaChange(collapsibleMq, syncToggle)
   }
 
-  /* ── 목차 링크 ── */
+  /* ── 목차 링크 ──
+     떠 있는 목차 시트(toc-sheet.js, 결정 65)도 이 핸들러로 착지한다 — 시트가 닫히고 같은 자리의
+     이 목록 링크를 click()한다. 착지 규칙(접기 → 스크롤 → 소제목 포커스)이 한 벌이다. */
   list.addEventListener('click', function (e) {
     const a = e.target.closest ? e.target.closest('.toc-link') : null
     if (!a) return
@@ -159,9 +162,22 @@ function build(toc, list) {
     }
   })
 
+  /* ── 떠 있는 목차 (결정 65) ──
+     1399px 이하에서 글 머리 목차가 화면 위로 지나가면 뜨는 버튼과 시트. 항목은 위 목록의 복제라
+     순서가 같고, 시트 링크를 누르면 같은 자리의 글 머리 링크를 click()해 위 핸들러 하나로 착지한다.
+     실패해도 글 머리 목차와 스크롤스파이는 살아야 한다 — 여기서 던지면 아래 구독이 안 걸린다. */
+  let sheetLinks = null
+  try {
+    sheetLinks = initTocSheet(toc, list, collapsibleMq)
+  } catch (err) {
+    if (window.console && console.warn) console.warn('[skin] toc-sheet 실패:', err)
+  }
+
   /* ── 스크롤스파이 ── */
   let tops = []
   let cur = -1
+  // 현재 표시를 같은 자리에서 옮길 목록들. 시트는 글 머리 목록의 복제라 번호가 같다.
+  const linkSets = sheetLinks ? [links, sheetLinks] : [links]
 
   function measure() {
     const y = window.pageYOffset || document.documentElement.scrollTop || 0
@@ -184,43 +200,28 @@ function build(toc, list) {
 
     if (idx === cur) return
     // 색(.is-current)과 aria-current를 같은 자리에서 옮긴다 — 색만으로는 스크린리더에 안 보인다.
-    if (links[cur]) {
-      links[cur].classList.remove('is-current')
-      links[cur].removeAttribute('aria-current')
-    }
-    if (links[idx]) {
-      links[idx].classList.add('is-current')
-      links[idx].setAttribute('aria-current', 'location')
-      follow(links[idx])
-    }
+    // 글 머리 목차와 시트가 같이 옮겨 간다. 둘이 따로 세면 서로 다른 항목을 「지금」이라 한다.
+    linkSets.forEach(function (set) {
+      if (set[cur]) {
+        set[cur].classList.remove('is-current')
+        set[cur].removeAttribute('aria-current')
+      }
+      if (set[idx]) {
+        set[idx].classList.add('is-current')
+        set[idx].setAttribute('aria-current', 'location')
+      }
+    })
+    if (links[idx]) follow(links[idx])
     cur = idx
   }
 
   /* 1400px~에서 목차는 max-height + overflow-y: auto 상자다(components.css). 항목이 많으면
      현재 항목이 상자 밖으로 나가는데 상자는 따라오지 않았다(결정 63).
-     **상자의 scrollTop만** 옮긴다 — scrollIntoView는 페이지까지 움직인다(결정 59가 겪은 부류).
+     **상자의 scrollTop만** 옮긴다(util.revealInBox — 떠 있는 목차 시트와 같은 함수).
      현재 항목이 바뀔 때만 부르므로, 사용자가 상자를 직접 굴리는 동안에는 싸우지 않는다.
      접이식 구간(~1399px)에서는 상자가 스크롤되지 않아 첫 조건에서 물러난다. */
   function follow(link) {
-    const box = toc
-    const view = box.clientHeight
-    if (box.scrollHeight <= view + 1) return
-    const margin = Math.min(FOLLOW_MARGIN, view / 4)
-    const top = link.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientTop + box.scrollTop
-    const bottom = top + link.offsetHeight
-    let next = box.scrollTop
-    if (top < box.scrollTop + margin) next = top - margin
-    else if (bottom > box.scrollTop + view - margin) next = bottom - view + margin
-    else return
-    next = Math.max(0, Math.min(next, box.scrollHeight - view))
-    if (Math.abs(next - box.scrollTop) < 1) return // 이미 끝에 붙어 있다
-    // 여기서 던지면 build() 안의 첫 spy()가 끊겨 스크롤 구독이 안 걸린다 — 옵션 객체를
-    // 모르는 구형 scrollTo는 scrollTop 대입으로 물러난다.
-    try {
-      box.scrollTo({ top: next, behavior: reducedMotion() ? 'auto' : 'smooth' })
-    } catch (e) {
-      box.scrollTop = next
-    }
+    revealInBox(toc, link, FOLLOW_MARGIN)
   }
 
   const onScroll = rafThrottle(spy)
