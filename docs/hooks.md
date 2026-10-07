@@ -311,7 +311,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 | CSS 기본값 | **`.toc { display: none }` · `.toc.is-ready { display: block }`** — 조건 미달·JS 실패 시 빈 상자가 남지 않는다 (자리 예약은 바로 아래 행) |
 | **레이아웃 신호** | 목차를 **못 만들었을 때만** `<body>`에 **`.no-toc`**를 붙인다. `.is-ready`의 반대이며 붙는 곳도 다르다(`body`). **붙이는 곳은 둘이고 조건은 같아야 한다** — `skin.html`의 `.entry-body` 직후 인라인 스크립트가 첫 페인트 전에 판정하고(결정 48), `toc.js`의 `markNoToc()`가 폴백이다. 임계·선택자가 같은지는 린트 `BND010`이 대조한다 |
 | **첫 페인트 자리** | **`html.js`이고 `body:not(.no-toc)`이면 1399px 이하에서 CSS가 `.entry-aside`에 목차 바 높이를 미리 잡는다** — `.toc`가 `.is-ready` 전까지 `display:none`이라 바가 페인트 뒤에 끼어들며 본문을 밀던 것을 막는다(결정 62). `.no-toc`는 인라인이 첫 페인트 전에 판정하므로 목차 없는 글은 예약하지 않는다 — HTML을 다 받은 뒤 처음 그릴 때의 이야기다. `.entry-aside`가 인라인보다 먼저 파싱되므로(결정 64), 느린 망에서 본문 중간에 페인트가 나면 목차 없는 글은 예약이 먼저 그려졌다가 50.5px 접힌다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **toc.js가 `.is-ready`를 못 붙이고 끝나면 — 조기 반환이든 실행 중 예외든 — `markNoToc()`로 `no-toc`를 붙여 예약을 푼다**(`try…finally`로 한 곳에서). 실행 중 예외는 `html.js`가 못 보는 경로라 toc.js가 스스로 풀어야 빈 띠가 안 남는다 |
-| 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) + **`aria-current="location"`**. 둘은 같은 자리에서 함께 옮긴다 — 이전 항목에서는 둘 다 지운다 |
+| 스크롤스파이 | 현재 위치 링크에 **`.is-current`** (`--link` + 좌측 2px 바) + **`aria-current="location"`**. 둘은 같은 자리에서 함께 옮긴다 — 이전 항목에서는 둘 다 지운다. 떠 있는 목차 시트(§5.1b)가 있으면 **그 목록의 같은 번호 링크에도 같은 자리에서** 옮긴다 |
 | 상자 따라가기 | 1400px~에서 `.toc.is-ready`는 `max-height` + `overflow-y: auto` 상자다. 현재 항목이 **바뀔 때만**, 상자가 실제로 스크롤될 때(`scrollHeight > clientHeight`)만 **`#toc`의 `scrollTop`만** 옮겨 현재 항목을 위아래 여유(최대 48px)를 두고 보이게 한다. `scrollIntoView`는 쓰지 않는다 — 페이지까지 움직인다. 사용자가 상자를 직접 굴리는 동안에는 항목이 안 바뀌므로 싸우지 않는다 |
 | 모바일 접이식 | 1399px 이하에서 `.toc-toggle`이 보이고, JS가 `aria-expanded`를 토글하며 `#toc`에 **`.is-open`**을 붙인다. CSS는 `.toc:not(.is-open) .toc-list { display: none }` (1399px 이하에서만 — 3단 경계 1400과 같다, 결정 48) |
 | id 앵커 | 본문 소제목에 id가 없으면 JS가 만든다. 형식 `toc-h-1`, `toc-h-2`… (한글 슬러그를 피한다 — URL 인코딩 문제) |
@@ -330,6 +330,37 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 ⚠ **두 클래스는 반대말이고 붙는 곳도 다르다.** `.is-ready`는 `#toc`에, `.no-toc`는 `<body>`에
 붙는다. 한쪽만 고치면 목차는 나오는데 폭이 안 맞거나 그 반대가 된다.
+
+### 5.1b 떠 있는 목차 — `.toc-fab` · `#toc-sheet`
+
+1399px 이하에서 목차는 글 머리 접이식뿐이라, 긴 글을 읽는 도중에는 목차로 돌아갈 길이 없었다(결정 65 —
+390px 「타이밍 어택」 문서 16,412px, 1,500px만 내려가도 목차가 화면 밖). 마크업에 자리가 없다 — JS가 만든다(`src/js/toc-sheet.js`, toc.js가 부른다).
+
+```html
+<!-- <body> 끝. 버튼 다음에 시트 -->
+<button type="button" class="toc-fab" aria-haspopup="dialog" aria-controls="toc-sheet" aria-expanded="false">
+  <svg class="icon" …></svg><span class="toc-fab-label">목차</span>
+</button>
+<dialog id="toc-sheet" class="toc-sheet" aria-labelledby="toc-sheet-title">
+  <div class="toc-sheet-head">
+    <h2 class="toc-sheet-title" id="toc-sheet-title">목차</h2>
+    <button type="button" class="toc-sheet-close" aria-label="목차 닫기"><svg class="icon" …></svg></button>
+  </div>
+  <ol class="toc-sheet-list"><li class="toc-item toc-h2"><a class="toc-link" href="#toc-h-1">…</a></li>…</ol>
+</dialog>
+```
+
+| 계약 | 내용 |
+|---|---|
+| 만드는 조건 | toc.js가 목차를 **실제로 만들었을 때만**(`#toc.is-ready` — 소제목 3개 이상). `body.no-toc`인 글, 글 페이지가 아닌 곳에는 버튼도 시트도 없다. `HTMLDialogElement.showModal`이 없는 브라우저에서도 만들지 않는다 — 글 머리 목차는 그대로다 |
+| 항목 | 글 머리 `#toc-list`의 `li`를 **복제**한다 — 같은 목록·같은 순서·같은 클래스(`.toc-item` · `.toc-h2`/`.toc-h3` · `.toc-link`). 소제목을 따로 세지 않는다(결정 38의 「같은 목록」). CSS는 `.toc-sheet .toc-link`로 따로 칠한다 |
+| 보이는 조건 | **`.toc-fab.is-visible`만 토글한다**(§5.3 맨 위로와 같은 방식 — CSS 기본값은 보이지 않게, `display`로 감추지 않는다). 붙는 때: 접이식 구간(toc.js `COLLAPSIBLE_MQ`, ≤1399px)이고 글 머리 `#toc`가 화면 **위로** 완전히 지나갔을 때 — **`#toc.getBoundingClientRect().bottom <= 0`**. 아직 아래에 있어 안 보이는 것과 가른다. **재는 때**: 스크롤(rAF로 프레임당 한 번, toc.js 스크롤스파이와 같은 `rafThrottle`) · `resize` · `load` · `COLLAPSIBLE_MQ` 변화 · 만든 직후 한 번(해시 착지·새로고침 복원). **교차 변화(`IntersectionObserver`)에 기대지 않는다** — 목차가 첫 화면 아래인 글(폰은 거의 늘)에서 아래 → 위로 한 번에 넘어가는 스크롤(「댓글」 링크·페이지 안 찾기·모션 축소의 「맨 위로」)은 「교차 안 함 → 교차 안 함」이라 알림이 없어, 버튼이 안 뜨거나 맨 위에 남았다(1차 체크포인트). 1400px 이상으로 넘어가면 지운다. **폭 경계를 새로 적지 않는다** — 판정은 JS 몫이고 린트 `BND010`은 toc.js의 그 상수와 CSS 블록 셋(components 둘·layout 하나)만 대조한다. CSS가 그 폭에서 따로 감추려면 새 숫자를 쓰지 말고 기존 3단 블록(`.toc.is-ready`의 min-width 블록) 안에 둔다 |
+| 열기 | 버튼 click → 버튼에 포커스(닫을 때 브라우저가 돌려줄 곳을 고정한다 — Safari·iOS는 눌러도 버튼에 포커스를 안 준다) → **`showModal()`**. 포커스 가두기·Esc·뒤 페이지 inert는 브라우저가 한다. `aria-expanded="true"`. **열림 상태 클래스는 없다** — CSS는 `[open]`·`::backdrop`을 본다. 포커스는 **현재 항목 링크**(없으면 첫 링크)로, 그 항목이 보이게 **`.toc-sheet-list`의 `scrollTop`만** 즉시 옮긴다(`util.revealInBox`). 굴러가는 상자는 목록이고 머리는 서 있다 — CSS가 목록에 `overflow-y: auto`를 건다. 시트 자신을 굴리게 바꾸면 이 줄도 같이 바꾼다 |
+| 닫기 | 닫기 버튼 · Esc · 배경 클릭 · 시트 링크 · 1400px 이상으로 넘어감. 배경 클릭은 **dialog 사각형 밖 좌표**일 때만이다 — `::backdrop` 클릭과 dialog 안쪽 여백 클릭은 둘 다 target이 dialog라 좌표로 가른다. `close` 이벤트에서 `aria-expanded="false"`, 포커스는 **버튼으로** 돌아온다. 버튼이 안 보이면(visibility hidden은 포커스를 못 받는다) 그 자리에 보이는 목차로 — 3단이면 옆 칸 목차의 현재 항목, 접이식이면 `.toc-toggle` |
+| 착지 | 시트 링크를 누르면 시트를 닫고 **같은 번호의 글 머리 링크를 `click()`**한다 — toc.js 목록 핸들러 하나가 착지를 정한다(접기 → 스크롤 → 소제목 포커스, 모션 축소면 즉시 — 결정 59). 두 벌로 만들지 않는다. 먼저 닫는 이유는 열린 동안 뒤 페이지가 inert라 소제목이 포커스를 못 받아서다. `close` 이벤트는 그 뒤 태스크에 오므로 거기서 포커스를 버튼으로 도로 뺏지 않는다 |
+| 현재 위치 | toc.js 스크롤스파이가 글 머리 목록과 시트 목록의 **같은 번호 링크**에 `.is-current` + `aria-current="location"`을 함께 옮긴다(결정 63) |
+| 배경 스크롤 | 잠그지 않는다. 시트 안 스크롤이 배경으로 새는 것은 CSS가 굴러가는 상자(`.toc-sheet-list`)에 `overscroll-behavior: contain`으로 막는다 |
+| 탭 순서 | 버튼은 `<body>` 끝이라 Tab으로는 페이지 끝(맨 위로 다음)에서 닿는다. 키보드 사용자의 목차 길은 본문 앞의 글 머리 목차다(결정 64). 이 버튼은 그 목차가 화면 밖일 때 손가락·마우스로 돌아오는 길이다 |
 
 ### 5.2 읽기 진행바 — `#reading-progress`
 
@@ -422,7 +453,8 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 
 | 클래스 | 무엇 | 어디에 |
 |---|---|---|
-| `.toc-item` · `.toc-h2` · `.toc-h3` · `.toc-link` | 목차 항목. `<li class="toc-item toc-h2">` 안에 `<a class="toc-link">`. 계약 본문은 §5.1 | `#toc-list` 안 |
+| `.toc-item` · `.toc-h2` · `.toc-h3` · `.toc-link` | 목차 항목. `<li class="toc-item toc-h2">` 안에 `<a class="toc-link">`. 계약 본문은 §5.1 | `#toc-list` 안. 떠 있는 목차 시트의 `.toc-sheet-list` 안에도 같은 이름으로(복제, §5.1b) |
+| `.toc-fab` · `.toc-fab-label` · `.toc-sheet` · `.toc-sheet-head` · `.toc-sheet-title` · `.toc-sheet-close` · `.toc-sheet-list` | 떠 있는 목차 — 버튼(`button.toc-fab` > `svg.icon` + `span.toc-fab-label`)과 시트(`dialog#toc-sheet.toc-sheet` > `.toc-sheet-head`(`h2#toc-sheet-title.toc-sheet-title` + `button.toc-sheet-close` > `svg.icon`) + `ol.toc-sheet-list`). 계약 본문은 §5.1b(결정 65) | `<body>` 끝에 버튼, 그 뒤 시트. 목차가 생긴 글(`#toc.is-ready`)에만 |
 | `.code-wrap` | 코드블록 감싸는 상대위치 컨테이너. **첫 페인트 뒤 유휴 시간에** 블록 단위로 붙는다(결정 51) — 동기가 아니다. 20,000자 넘는 블록은 **자동 감지가 꺼져** 래퍼·복사 버튼만 받는다(글쓴이 `language-*`가 있으면 그대로 칠한다) | `.contents_style pre`를 감싼다 |
 | `.code-lang` | 언어 라벨 (우상단). 값의 출처는 **글쓴이가 쓴 `<code class="language-X">` 우선, 없으면 자동 감지**다 (결정 43). **자동 감지가 신뢰도 미달이거나, 글쓴이가 쓴 이름이 언어인지 모를 때는 만들지 않는다** | `.code-wrap` 안 |
 | `.code-copy` | 복사 버튼 (우상단, 호버 노출). **성공**: 1.5초 동안 `.is-copied` + 아이콘이 체크로 바뀌고(같은 15px·viewBox 20·stroke 1.6 — 버튼 크기 불변) `aria-label`이 「복사됨」, 지나면 셋 다 되돌린다 — 색만으로 알리지 않는다. **실패**: 조용히 넘어가지 않는다 — 그 블록의 코드를 `Range`로 선택해 두고 알린다. **알림 영역**: 문서에 하나뿐인 `<div class="a11y-hidden" role="status">`를 처음 알릴 때 만들어 `<body>` 끝에 붙인다(새 클래스 없음 — §7 유틸). 같은 문구도 다시 읽히게 비웠다가 100ms 뒤 채운다. 문구는 「코드를 복사했습니다」 / 「복사하지 못했습니다. 코드를 선택해 두었으니 직접 복사하세요」 | `.code-wrap` 안 |
@@ -679,8 +711,9 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `.toc.is-ready` | `#toc` | toc.js |
 | `body.no-toc` | `<body>` | `skin.html` 인라인(첫 페인트 전, 결정 48) + toc.js 폴백 (**목차를 못 만들 때만**. 글 페이지가 아니면 붙이지 않는다) |
 | `.toc.is-open` | `#toc` | toc.js (**1399px 이하에서만**. 3단으로 넘어가면 지운다) |
-| `.toc-link.is-current` | 목차 링크 | toc.js 스크롤스파이 (`aria-current="location"`도 같이 옮긴다) |
+| `.toc-link.is-current` | 목차 링크 | toc.js 스크롤스파이 (`aria-current="location"`도 같이 옮긴다. 글 머리 목차와 떠 있는 목차 시트의 같은 번호 링크에 함께) |
 | `.to-top.is-visible` | `#to-top` | progress.js |
+| `.toc-fab.is-visible` | 떠 있는 목차 버튼 | toc-sheet.js (**1399px 이하이고 글 머리 `#toc`가 화면 위로 지나갔을 때만**. 3단으로 넘어가면 지운다, §5.1b) |
 | `.code-copy.is-copied` | 복사 버튼 | code.js |
 | `.code-wrap.has-lines` | 코드 래퍼 | code.js |
 | `body.is-lightbox-open` | `<body>` | lightbox.js |
@@ -699,7 +732,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 경로가 같을 때). 지금 페이지를 품은 가지는 `"page"`가 아니다 — 칩은 하위가 없어 상위 칩이 가지를 대표하므로 `"true"`,
 레일은 하위 링크가 따로 있어 상위 링크에는 붙이지 않는다(결정 63).
 
-- 목차 — `.toc-link.is-current`와 같은 링크에 `aria-current="location"`. toc.js 스크롤스파이가 둘을 같은 자리에서 옮긴다(§5.1)
+- 목차 — `.toc-link.is-current`와 같은 링크에 `aria-current="location"`. toc.js 스크롤스파이가 둘을 같은 자리에서 옮긴다(§5.1). 떠 있는 목차 시트의 같은 번호 링크도 함께(§5.1b)
 - 사이드바 카테고리 — 티스토리 `li.selected` 중 **자기 링크가 지금 경로인 `li`의 그 링크**에 `aria-current="page"`. category.js(§5.6 「JS가 지키는 것」). URL 대조로 펼친 가지·하위 페이지의 상위 링크에는 붙이지 않는다
 - 목록 페이징 — 티스토리 `span.selected`(현재 페이지 표시, 결정 53)를 품은 `.paging` 안의 앵커에 `aria-current="page"`. paging.js
 - 모바일 카테고리 칩 — `.cat-chip.is-current`와 함께 `aria-current`. 칩 링크가 지금 페이지면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`. cat-chips.js(§5.9, 위 표)

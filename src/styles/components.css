@@ -1087,6 +1087,14 @@
 
   .toc-toggle::after { display: none; }
   .toc-list { margin-top: 0; }
+
+  /* 떠 있는 목차 버튼(결정 65)은 목차가 옆 칸에 서는 폭에서 쓸 일이 없다. JS도 이 폭에서는
+     .is-visible을 붙이지 않지만, 창을 넓히는 순간 JS가 늦어도 버튼이 남지 않게 여기서도 지운다.
+     **이 블록 안에 둔 것은 일부러다** — 경계 1400을 따로 적으면 BND010이 대조하지 못하는 다섯째
+     자리가 된다. (0,2,0)이라 뒤에 오는 `.toc-fab`(0,1,0)의 display를 순서와 무관하게 이긴다.
+     .is-visible이 없는 버튼은 원래 visibility: hidden이라 지울 것이 없다.
+     ⚠ 시트(dialog)는 여기서 지우지 않는다 — 아래 「떠 있는 목차」 머리말. */
+  .toc-fab.is-visible { display: none; }
 }
 
 /* ══════════ 읽기 진행바 ═══════════════════════════════════════
@@ -1503,8 +1511,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  /* 떠 있는 목차 버튼이 이 지름을 기준으로 바로 위에 선다(--toc-fab-bottom, 결정 65) */
+  width: var(--fab-size);
+  height: var(--fab-size);
   background: var(--surface);
   color: var(--ink-mute);
   border: 1px solid var(--hairline);
@@ -1827,6 +1836,227 @@
 
 body.is-lightbox-open { overflow: hidden; }
 
+/* ── 떠 있는 목차 (결정 65) ─────────────────────────────────────
+   1399px 이하에서 목차는 글 머리의 접이식 바 하나뿐이라, 글을 내려 읽다가 목차로 가려면 맨 위까지
+   올라가야 했다. 글 머리 목차가 화면 위로 지나가면 JS가 오른쪽 아래에 버튼을 띄우고
+   (.toc-fab.is-visible), 누르면 같은 항목을 담은 dialog를 showModal()로 연다(hooks.md §5.6).
+     767px 이하   아래 시트 — 폭 전체, 아래에 붙고, 위 모서리만 둥글다. 높이 70%까지
+     768px 이상   버튼 위로 여는 팝오버 — 320px, 오른쪽을 버튼에 맞춘다. 높이 60%까지
+     1400px 이상  목차가 옆 칸에 서므로 쓰지 않는다 — 버튼은 위 목차 3단 블록이 지운다
+   767px은 이 절만 쓰는 경계다(코드에는 max-width: 767px 하나 — 768px 이상은 기본값). JS는 이 폭을 모른다 —
+   알게 되면 손으로 맞추는 상수 짝이 된다(결정 48).
+
+   그림자를 쓰지 않는다(DESIGN §2). 목업은 버튼과 시트에 그림자를 깔았지만 여기서 깊이는
+   --surface 면 · --hairline 테두리 · ::backdrop의 --scrim(tokens.css) 셋이 만든다. 그림자는 강제 색상
+   모드에서 통째로 지워지므로, 테두리로 그려 두면 그 모드에서도 가장자리가 남는다.
+
+   겹 순서
+     티스토리 툴바 .menu_toolbar  9999  오른쪽 **위**(1261px~, 결정 59) — 버튼(오른쪽 아래)과 겹칠 자리가 없다
+     .skip-link                    200
+     .lightbox                     100  라이트박스가 뜨면 버튼을 덮는다
+     .reading-progress              60
+     .to-top · .toc-fab             55  같은 층의 이웃. 세로로 쌓여 서로 겹치지 않는다
+     .toc-sheet                    top layer — showModal()로 열려 **z-index와 무관하게** 맨 위다
+                                   (툴바 9999도 덮는다). ::backdrop은 그 바로 아래 top layer에 깔린다
+   phocus 이미지 뷰어(결정 60)는 자기 z-index로 뜬다 — 버튼과의 순서는 재지 않았다.
+
+   ⚠ **시트를 CSS로 지우지 않는다**(인쇄 빼고). showModal() 상태의 dialog에 display: none을 주면 화면에서는
+      사라지지만 문서의 나머지는 inert로 남아 **아무것도 누를 수 없다.** 1400px 이상으로 넘어가면 JS가
+      close()한다. 그 사이에 열린 채 남아도 팝오버 모양(기본값, 폭 상한 없음)으로 그대로 그려진다.
+   ⚠ dialog의 UA 기본값을 **전부** 명시로 덮는다 — margin: auto(가운데 정렬) · padding 1em · border ·
+      Canvas/CanvasText · :modal의 max-width/max-height/inset · overflow: auto. 하나라도 남으면 시트가
+      가운데에 떠오르거나 시스템 색으로 칠해진다(다크에서 흰 상자). 저자 출처는 특이도와 무관하게 UA를 이긴다.
+   ⚠ display는 [open]에만 준다. `.toc-sheet { display: flex }`로 주면 UA의 `dialog:not([open]) { display: none }`을
+      저자 출처가 이겨 **닫힌 시트가 페이지 끝에 보인다.** */
+
+.toc-fab {
+  position: fixed;
+  right: var(--sp-5);
+  bottom: var(--toc-fab-bottom);
+  z-index: 55;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--fab-size);
+  /* 아이콘 쪽을 4px 좁힌다 — 목록 아이콘은 viewBox 안에 여백이 있어 같은 값이면 왼쪽이 넓어 보인다 */
+  padding: 0 var(--sp-4) 0 var(--sp-3);
+  background: var(--surface);
+  color: var(--ink-body);
+  border: 1px solid var(--hairline);
+  /* 알약 — 반지름은 사다리 값이 아니라 높이의 절반이다(DESIGN §4 모서리, 「맨 위로」의 50%와 같은 예외) */
+  border-radius: calc(var(--fab-size) / 2);
+  font-size: var(--fs-body-sm);
+  /* 「맨 위로」와 같은 이유로 display로 감추지 않는다 — 전환이 죽고, JS가 안 돌아도 튀어나오지 않아야 한다 */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease),
+              visibility var(--dur) var(--ease),
+              color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+
+.toc-fab.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.toc-fab:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+.toc-fab-label {
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 기본이 768px 이상의 팝오버이고, 아래 767px 블록이 아래 시트로 바꾼다. 두 블록(max 767 / min 768)으로
+   나누지 않은 것은 확대 배율에서 뷰포트가 767.5px처럼 **소수 폭**이 되면 둘 다 안 걸려 UA 기본값(가운데
+   정렬)이 드러나기 때문이다. 오른쪽은 버튼과 같은 --sp-5, 아래는 버튼 윗변에서 --sp-2 위다. */
+.toc-sheet {
+  position: fixed;
+  inset: auto var(--sp-5) calc(var(--toc-fab-bottom) + var(--fab-size) + var(--sp-2)) auto;
+  margin: 0;
+  padding: 0;
+  width: 320px;
+  height: auto;
+  max-width: calc(100% - var(--sp-5) * 2);
+  max-height: 60vh;
+  background: var(--surface);
+  color: var(--ink-body);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  /* 머리는 고정, 목록만 스크롤한다 — 시트 전체가 스크롤 컨테이너가 되지 않게 */
+  overflow: hidden;
+}
+
+.toc-sheet[open] {
+  display: flex;
+  flex-direction: column;
+  /* 모션 축소에서는 --dur가 0ms라 그대로 꺼진다(tokens.css) */
+  animation: toc-sheet-in var(--dur) var(--ease);
+}
+
+.toc-sheet::backdrop { background: var(--scrim); }
+
+.toc-sheet[open]::backdrop { animation: toc-scrim-in var(--dur) var(--ease); }
+
+@keyframes toc-sheet-in {
+  from { opacity: 0; transform: translateY(var(--sp-3)); }
+}
+
+@keyframes toc-scrim-in {
+  from { opacity: 0; }
+}
+
+.toc-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-5);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.toc-sheet-title {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* 라이트박스 닫기와 같은 36px. 테두리는 없다 — 떠 있는 버튼이 아니라 시트 안의 버튼이다 */
+.toc-sheet-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--sp-2);
+  color: var(--ink-mute);
+  border-radius: var(--radius-md);
+  transition: color var(--dur) var(--ease);
+}
+
+.toc-sheet-close:hover { color: var(--ink); }
+
+.toc-sheet-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: var(--sp-2) 0;
+  overflow-y: auto;
+  /* 목록 끝에서 손가락을 더 밀어도 뒤의 페이지가 따라 구르지 않게 */
+  overscroll-behavior: contain;
+}
+
+/* ── 시트 항목 ──
+   항목은 글 머리 목차와 **같은 클래스**다(.toc-item · .toc-h2|.toc-h3 · .toc-link · .is-current).
+   글 머리 규칙은 범위 없이 `.toc-link` 등으로 걸려 있어 시트에도 닿는다 — 그래서 여기서 그 규칙이
+   만지는 속성을 **전부 다시 적는다**(같은 특이도 (0,2,0)이면 뒤인 이쪽이, 층·상태는 (0,3,0)으로 이긴다).
+   글 머리 .toc-link에 속성을 더하면 여기에도 적어야 시트로 새지 않는다. 반대로 이쪽은 전부 .toc-sheet
+   아래라 글 머리 목차를 건드리지 않는다.
+   현재 위치는 DESIGN §6.4 그대로 --link + 왼쪽 2px 바다(목업의 배경 칠은 따르지 않았다 — §2 「색은 포인트에만」).
+   글자는 머리(.toc-sheet-title)와 같은 --sp-5에서 시작한다 — 바 2px만큼 padding을 덜어 낸다. */
+.toc-sheet .toc-link {
+  display: block;
+  padding: var(--sp-2) var(--sp-5) var(--sp-2) calc(var(--sp-5) - 2px);
+  border-left: 2px solid transparent;
+  color: var(--ink-body);
+  font-size: var(--fs-body-sm);
+  font-weight: 400;
+  line-height: var(--lh-body-sm);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.toc-sheet .toc-h3 .toc-link {
+  padding-left: calc(var(--sp-5) + var(--sp-4) - 2px);
+  font-size: var(--fs-caption);
+}
+
+.toc-sheet .toc-link:hover { color: var(--ink); }
+
+.toc-sheet .toc-link.is-current {
+  color: var(--link);
+  border-left-color: var(--link);
+}
+
+/* 목록이 스크롤 컨테이너라 바깥으로 그린 포커스 링(base.css, offset 2px)은 양옆이 잘린다 — 안으로 그린다 */
+.toc-sheet .toc-link:focus-visible { outline-offset: -2px; }
+
+/* 767px 이하 : 아래 시트. 위 팝오버 기본값의 자리·폭·높이·모서리를 전부 바꾼다 */
+@media (max-width: 767px) {
+  .toc-sheet {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: 70vh;
+    max-height: 70dvh;   /* 주소창이 접히고 펴지는 모바일에서 보이는 높이 기준. 모르는 브라우저는 앞줄 */
+    border-bottom: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+
+  /* skin.html이 viewport-fit=cover라 아이폰 홈 표시줄 밑까지 그린다 — 마지막 항목이 그 밑에 깔리지 않게 */
+  .toc-sheet-list { padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* 강제 색상 모드는 글자색을 시스템 색 하나로 덮어 --link가 사라지고, 투명한 바도 시스템 색으로 칠해질 수
+   있다(확인 못 함) — 색과 바만으로는 현재 항목이 안 갈린다. 색이 아닌 표시(밑줄)를 더한다.
+   버튼·시트의 가장자리는 테두리라 이 모드에서도 남는다(그림자였다면 지워졌다). */
+@media (forced-colors: active) {
+  .toc-sheet .toc-link.is-current {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
 /* ══════════ 인쇄 ══════════════════════════════════════════════
    결정 52. 종이에는 스크롤도 호버도 없다 — 탐색·상태 표시는 잉크만 쓴다.
    토큰을 라이트로 되돌리는 것은 tokens.css가 맡는다(테마 분기는 토큰에서만 — DESIGN §7).
@@ -1835,9 +2065,11 @@ body.is-lightbox-open { overflow: hidden; }
    없애야 한다 — 감추기만 하면 빈 칸이 페이지를 넘긴다. */
 @media print {
   /* ⚠ 특이도를 상대와 맞춰 쓴다. `!important`는 인라인 보정 전용이라 여기서 쓰지 않는다.
-     `.toc.is-ready`·`.to-top.is-visible`·`.ad:not(:empty)`·`.cat-chips:not(:empty)`는
-     (0,2,0)이라 클래스 하나로는 못 이긴다 — 같은 모양을 그대로 적고 순서로 이긴다
-     (이 블록이 CSS_ORDER의 맨 뒤 파일, 그 안에서도 맨 뒤다). 칩 줄 예약
+     `.toc.is-ready`·`.to-top.is-visible`·`.toc-fab.is-visible`·`.toc-sheet[open]`·`.ad:not(:empty)`·
+     `.cat-chips:not(:empty)`는 (0,2,0)이라 클래스 하나로는 못 이긴다 — 같은 모양을 그대로 적고 순서로 이긴다
+     (이 블록이 CSS_ORDER의 맨 뒤 파일, 그 안에서도 맨 뒤다). 떠 있는 목차 시트(결정 65)는 화면에서는
+     CSS로 지우지 않는 유일한 크롬이다(열린 채 지우면 페이지가 inert로 남는다) — 종이에는 누를 것이 없어
+     여기서는 지운다. 칩 줄 예약
      `.js .cat-chips:empty:not(.is-off)`(0,4,0)도 같다.
      `.entry-aside`는 목차 하나만 담는다. 목차를 지우는 종이에서 화면용 목차 바 예약
      (min-height, 결정 62)이 빈칸으로 남지 않게 그릇째 지운다 — 인쇄의 .entry-layout은
@@ -1856,6 +2088,10 @@ body.is-lightbox-open { overflow: hidden; }
   .reading-progress,
   .to-top,
   .to-top.is-visible,
+  .toc-fab,
+  .toc-fab.is-visible,
+  .toc-sheet,
+  .toc-sheet[open],
   .paging,
   .postnav,
   .related,
