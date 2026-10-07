@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """일반 부류 검사 3종 + test:codes가 실제로 켜지는가 — 저장소 사본을 망가뜨려 확인한다.
 
-  SYN001  scripts/check-css.mjs   괄호(파일 끝·시작 `}`)·속성 오타·값 오타
+  SYN001  scripts/check-css.mjs   괄호(파일 끝·시작 `}`)·속성 오타·값 오타·@font-face 서술자(오탐 방지·오타)
   SYN002  lint.py                 닫는 태그 삭제·닫지 않는 <div>·자기 닫힘 <div/>
   BND004  lint.py                 마크업+CSS에서만 개명(접두 공유)
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
@@ -103,6 +103,23 @@ def c_css_ok(root):
     edit(root, "src/styles/base.css",
          lambda s: s + '\n.z::before { content: "a\\\nb"; background: url(data:image/svg+xml,%3Csvg%3E{); }\n')
     return css_check(root)[0] != 0
+
+
+
+@case("SYN001 오탐 방지 — @font-face 서술자(src·size-adjust·*-override·unicode-range)는 서술자로 대조한다", False)
+def c_css_fontface_ok(root):
+    edit(root, "src/styles/tokens.css", lambda s: s + (
+        '\n@font-face { font-family: "X Fallback"; src: local("Apple SD Gothic Neo"); font-weight: 400;'
+        ' size-adjust: 104%; ascent-override: 95%; descent-override: 27%; line-gap-override: 0%;'
+        ' unicode-range: U+AC00-D7A3; }\n'))
+    return css_check(root)[0] != 0
+
+
+@case("SYN001 @font-face 서술자 이름 오타(size-ajust)는 잡는다", True)
+def c_css_fontface_typo(root):
+    edit(root, "src/styles/tokens.css", lambda s: s + '\n@font-face { font-family: "X Fallback"; src: local("A"); size-ajust: 104%; }\n')
+    rc, out = css_check(root)
+    return rc != 0 and "size-ajust" in out
 
 
 # ── SYN002 ──

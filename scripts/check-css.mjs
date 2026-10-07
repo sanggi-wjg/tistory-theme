@@ -8,7 +8,8 @@
 //
 // 보는 것:
 //   ① 파싱 오류(css-tree onParseError) — 괄호·세미콜론·따옴표
-//   ② 모르는 속성 이름(`colr:`) — css-tree 어휘에 없는 표준/벤더 속성
+//   ② 모르는 속성 이름(`colr:`) — css-tree 어휘에 없는 표준/벤더 속성. @font-face 안은 속성이 아니라
+//      서술자 어휘(`src`·`size-adjust`·`ascent-override`…)로 대조한다
 //   ③ `var()`가 **없는** 값의 문법 오류(`display: flx`) — var()가 섞이면 css-tree가
 //      대조를 못 하므로 건너뛴다(이 저장소는 대부분 var()라 ③이 보는 범위는 좁다)
 //
@@ -90,11 +91,17 @@ for (const file of files) {
       const prop = node.property
       if (prop.startsWith('--')) return
       const value = csstree.generate(node.value)
-      const r = csstree.lexer.matchProperty(prop, node.value)
+      // @font-face 안의 `src`·`size-adjust`·`ascent-override` 같은 것은 속성이 아니라 **서술자**다 —
+      // 속성 어휘로 대조하면 전부 「모르는 속성」이 된다(결정 67이 대체 글꼴을 들이며 처음 탔다).
+      // this.atrule은 가장 가까운 @규칙 조상이다. @media 안 선언은 name이 media라 지금처럼 속성으로 본다.
+      const fontFace = this.atrule && this.atrule.name === 'font-face'
+      const r = fontFace
+        ? csstree.lexer.matchAtruleDescriptor('font-face', prop, node.value)
+        : csstree.lexer.matchProperty(prop, node.value)
       if (!r.error) return
       const where = `${file}:${node.loc.start.line}:${node.loc.start.column}`
       if (r.error.name === 'SyntaxReferenceError') {
-        errors.push(`${where} — 모르는 속성 \`${prop}\` (${r.error.message})`)
+        errors.push(`${where} — 모르는 ${fontFace ? '@font-face 서술자' : '속성'} \`${prop}\` (${r.error.message})`)
       } else if (!/var\(/.test(value)) {
         errors.push(`${where} — \`${prop}: ${value.slice(0, 60)}\` 값이 문법에 안 맞는다: ${r.error.message.split('\n')[0]}`)
       }

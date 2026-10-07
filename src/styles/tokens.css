@@ -15,6 +15,50 @@
    (해/달 아이콘 표시 여부) 그래야 컴포넌트 CSS에 테마 분기가 새지 않는다.
    ══════════════════════════════════════════════════════════════════════ */
 
+/* ── 대체 글꼴 : Pretendard가 오기 전의 화면 (결정 67, DESIGN.md §3) ──────────
+   Pretendard는 외부 시트(jsDelivr dynamic subset, font-display: swap)라 늦게 오면 그사이
+   맥에서는 Apple SD Gothic Neo로 그려졌다가 바뀐다. 한글 폭은 둘이 사실상 같은데
+   (100px당 86.43 ↔ 86.5) 라틴은 Pretendard가 7~11% 넓고 공백은 5~12% 좁아, 도착하는 순간
+   줄바꿈이 다시 일어났다 — /tag 390px 클라우드 +258px, 「타이밍 어택」 390px 본문 +86px
+   (2026-10-07 라이브, 헤드리스 Chrome 맥, woff2를 붙잡았다가 풀어 기하 비교).
+
+   그래서 Apple SD Gothic Neo를 local()로 들여와 Pretendard의 폭과 세로 메트릭에 맞춘 얼굴을
+   --font-sans에서 Pretendard 바로 뒤에 둔다. 범위가 셋인 것은 폭 비가 범위마다 달라서다.
+       한글 음절  U+AC00-D7A3   size-adjust 99.91%  (네 무게 같다)
+       ASCII      U+21-7E       107.70 · 111.00 · 109.98 · 107.72%   (400 · 500 · 600 · 700)
+       공백       U+20, U+A0    95.43 · 92.81 · 90.38 · 87.83%       (NBSP는 두 글꼴 모두 공백과 같은 폭)
+   값은 라이브 표본(태그 이름 520개 + 「타이밍 어택」 본문 7,394자)의 글자 빈도로 가중한 폭 비다.
+   override는 Pretendard 세로 메트릭(ascent 1950 · descent 494 / upm 2048 = 95.21% · 24.12%)을
+   size-adjust로 나눈 값이다 — size-adjust는 override에도 배율을 건다. override가 없으면 크기가 다른
+   글자가 한 줄에 서는 곳(태그 클라우드의 li 줄 상자)에서 줄 높이가 달라 클라우드가 여전히
+   32~106px 밀렸다. line-gap-override는 두 글꼴 다 lineGap이 0이라 적지 않는다.
+
+   ⚠ 범위에는 **잰 글자만** 넣는다. Pretendard에 없고 Apple SD Gothic Neo에만 있는 글자(옛 자모
+     U+1100-11FF, 수학 기호·도형·괘선 등 약 550자)를 넣으면 Pretendard가 온 **뒤에도** 그 글자가
+     이 얼굴(배율 적용)로 그려져 지금과 달라진다. 지금 세 범위는 Pretendard가 전부 가진 글자라
+     도착한 뒤에는 이 얼굴이 쓰이지 않는다 — 라이브 27경우(글 8편·태그 × 390·768·1440)에서
+     Pretendard 위에 끼워도 0px였다. 범위 밖 글자(가운뎃점·따옴표·그리스 문자…)는 스왑 중에도
+     지금처럼 아래 목록(-apple-system 이하)으로 간다.
+   ⚠ **맥 글꼴만 보정한다.** 윈도(맑은 고딕)·안드로이드(Noto Sans CJK)는 이 환경에 그 글꼴이 없어
+     재지 못했다 — 근거 없이 숫자를 넣지 않는다. 그 기기에는 아래 local() 이름이 없어 얼굴이 실패하고
+     지금과 같은 목록으로 넘어간다. Safari·Firefox는 재지 않았다.
+   ⚠ local()은 **얼굴 이름**이어야 한다. PostScript 이름·전체 이름은 둘 다 잡히고 가족 이름
+     ("Apple SD Gothic Neo")만 쓰면 실패한다(Chrome 실측). 무게마다 얼굴을 따로 두는 것은 한 얼굴에
+     무게 범위를 주면 굵은 글자가 Regular로 그려지기 때문이다 — 쓰는 무게는 400·500·600·700뿐이다.
+   이 얼굴들은 색이 아니라 규칙 1과 무관하고, 테마와도 무관해 다크 블록에 다시 적지 않는다. */
+@font-face { font-family: "Pretendard Fallback"; font-weight: 400; src: local("AppleSDGothicNeo-Regular"), local("Apple SD Gothic Neo Regular"); size-adjust: 99.91%; ascent-override: 95.3%; descent-override: 24.14%; unicode-range: U+AC00-D7A3; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 400; src: local("AppleSDGothicNeo-Regular"), local("Apple SD Gothic Neo Regular"); size-adjust: 107.7%; ascent-override: 88.41%; descent-override: 22.4%; unicode-range: U+21-7E; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 400; src: local("AppleSDGothicNeo-Regular"), local("Apple SD Gothic Neo Regular"); size-adjust: 95.43%; ascent-override: 99.77%; descent-override: 25.28%; unicode-range: U+20, U+A0; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 500; src: local("AppleSDGothicNeo-Medium"), local("Apple SD Gothic Neo Medium"); size-adjust: 99.91%; ascent-override: 95.3%; descent-override: 24.14%; unicode-range: U+AC00-D7A3; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 500; src: local("AppleSDGothicNeo-Medium"), local("Apple SD Gothic Neo Medium"); size-adjust: 111%; ascent-override: 85.78%; descent-override: 21.73%; unicode-range: U+21-7E; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 500; src: local("AppleSDGothicNeo-Medium"), local("Apple SD Gothic Neo Medium"); size-adjust: 92.81%; ascent-override: 102.59%; descent-override: 25.99%; unicode-range: U+20, U+A0; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 600; src: local("AppleSDGothicNeo-SemiBold"), local("Apple SD Gothic Neo SemiBold"); size-adjust: 99.91%; ascent-override: 95.3%; descent-override: 24.14%; unicode-range: U+AC00-D7A3; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 600; src: local("AppleSDGothicNeo-SemiBold"), local("Apple SD Gothic Neo SemiBold"); size-adjust: 109.98%; ascent-override: 86.57%; descent-override: 21.93%; unicode-range: U+21-7E; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 600; src: local("AppleSDGothicNeo-SemiBold"), local("Apple SD Gothic Neo SemiBold"); size-adjust: 90.38%; ascent-override: 105.35%; descent-override: 26.69%; unicode-range: U+20, U+A0; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 700; src: local("AppleSDGothicNeo-Bold"), local("Apple SD Gothic Neo Bold"); size-adjust: 99.91%; ascent-override: 95.3%; descent-override: 24.14%; unicode-range: U+AC00-D7A3; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 700; src: local("AppleSDGothicNeo-Bold"), local("Apple SD Gothic Neo Bold"); size-adjust: 107.72%; ascent-override: 88.39%; descent-override: 22.39%; unicode-range: U+21-7E; }
+@font-face { font-family: "Pretendard Fallback"; font-weight: 700; src: local("AppleSDGothicNeo-Bold"), local("Apple SD Gothic Neo Bold"); size-adjust: 87.83%; ascent-override: 108.41%; descent-override: 27.46%; unicode-range: U+20, U+A0; }
+
 :root {
   color-scheme: light;
 
@@ -116,7 +160,10 @@
   --font-smooth-moz: grayscale;
 
   /* ── 폰트 (DESIGN.md §3) ─────────────────────────────────────── */
-  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+  /* "Pretendard Fallback"은 파일 머리의 @font-face다(결정 67) — Pretendard가 오기 전의 맥 화면을
+     Pretendard 폭에 맞춘다. Pretendard **바로 뒤**여야 한다: -apple-system보다 뒤면 시스템 글꼴이 먼저
+     잡혀 보정이 안 걸리고, Pretendard보다 앞이면 Pretendard가 와도 세 범위의 글자를 이것이 가로챈다. */
+  --font-sans: "Pretendard Variable", Pretendard, "Pretendard Fallback", -apple-system,
                "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-mono: "JetBrains Mono", "D2Coding", ui-monospace,
                SFMono-Regular, Consolas, monospace;
@@ -217,6 +264,21 @@
        = 24 + (10 + 2 + 18) + 1 = 55px */
   --toc-bar-h:  calc(var(--sp-3) * 2 + var(--fs-body-sm) * var(--lh-body) + 1px * 2);
   --chip-row-h: calc(var(--sp-3) * 2 + (5px * 2 + 1px * 2 + var(--fs-caption) * var(--lh-caption)) + 1px);
+
+  /* 댓글 앱 그릇(tistory.css 「댓글 · 방명록」 — .comments·.guestbook 안 [data-tistory-react-app="Comment"])
+     — 결정 67. 위 둘과 달리 **식이 아니라 실측값**이고, 예약은 빈 그릇(:empty)에만 건다. 실물이 티스토리
+     React 앱이라 같은 토큰을 실물 쪽에 걸 수 없다(결정 62의 「양쪽에 같은 토큰」을 못 지키는 자리).
+     서버 HTML의 그릇은 비어 있고 앱이 나중에 채운다 — 예약 전에는 방명록 1440px에서 푸터가 306 → 575px.
+     238.98px = 앱이 **처음 그리는** 모양(머리 「방명록 0」 38.59 + 입력 폼 200.39). 곧이어 빈 목록 자리
+     (.tt-area-reply의 margin-bottom 30px)가 붙어 268.98px이 된다 — 그 첫 모양이 1~3프레임 그려지므로
+     268.98을 잡으면 30px 위로 갔다가 다시 내려온다. 238.98이면 아래로 한 번만 간다(2026-10-07 라이브,
+     비로그인 헤드리스 Chrome: 방명록 320~1440px 일곱 폭 × 3회 같음, 댓글 0인 글도 같음, Pretendard를
+     막아도 같음). 댓글이 있으면 그만큼 더 내려가고 위로는 안 튄다.
+     ⚠ 로그인한 방문자는 이름·비밀번호 줄이 없어 폼이 더 낮을 텐데 재지 못했다 — 그 경우 앱이 그리는
+       순간 그 차이만큼 위로 온다.
+     ⚠ 이 높이에는 우리 선언(tistory.css 댓글 절의 글자 크기·행간·입력 padding·등록 버튼)과 티스토리
+       index.css가 함께 들어 있다. 그 절을 바꾸면 다시 잰다 — 어긋나도 화면에 신호가 없다. */
+  --comment-app-h: 238.98px;
 
   /* ── 떠 있는 버튼 : 오른쪽 아래에 쌓는 둘 (결정 65) ─────────────
      「맨 위로」(지름)와 떠 있는 목차 버튼(알약 높이)이 같은 값을 쓴다. 목차 버튼은 맨 위로

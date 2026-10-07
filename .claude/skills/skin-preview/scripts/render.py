@@ -36,6 +36,10 @@ WRAP_WARN = ('<div style="border:2px dashed #d60000;color:#d60000;padding:12px;'
 # 알맹이는 티스토리 React가 나중에 채운다 (레퍼런스 1240행).
 REACT_BOX = ('<div data-tistory-react-app="Comment">'
              '<div class="tt-comment-cont">[%s: 티스토리 React가 렌더링]</div></div>')
+# 앱이 **아직 안 그린** 그릇 — 서버 HTML 그대로(공백도 없이 비어 있다, 2026-10-07 라이브 방명록·글 실측).
+# 결정 67이 이 빈 그릇에 첫 페인트 자리(`:empty` min-height)를 잡는데, 위 REACT_BOX가 늘 자리표를 넣어
+# `:empty`가 프리뷰에서 한 번도 참이 되지 않았다(결정 42 부류). page_bare(부속이 빈 글)가 이 상태를 그린다.
+REACT_BOX_EMPTY = '<div data-tistory-react-app="Comment"></div>'
 
 # 프로필 카드. 티스토리가 **글 페이지에서만** <s_rp> 출력 앞에 주입한다
 # (2026-09-10 라이브 실측 — 홈·방명록에는 0건). 소스에는 클래스도 없는 빈 div뿐이고
@@ -835,7 +839,8 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             # 둘 다 우리 마크업이 아니라 서버가 끼우는 것이라, 재현하지 않으면
             # .entry-main의 마지막 자식이 무엇인지도 실물과 달라진다.
             return (NAMECARD_BOX + '<div id="entry179Comment">'
-                    + R(inner, {**ctx, "comment_group": REACT_BOX % "댓글"}) + '</div>')
+                    + R(inner, {**ctx, "comment_group": REACT_BOX_EMPTY if page == "page_bare"
+                                else REACT_BOX % "댓글"}) + '</div>')
         return R(inner)
     if name == "s_article_related_rep":
         return repeat(inner, posts[3:8], "article_related_rep", ctx, page, posts)
