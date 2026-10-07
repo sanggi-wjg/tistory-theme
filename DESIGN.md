@@ -43,7 +43,7 @@ colors:
 
 typography:
   families:
-    sans: 'Pretendard Variable, Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif'
+    sans: 'Pretendard Variable, Pretendard, "Pretendard Fallback", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif'
     mono: '"JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Consolas, monospace'
   scale:
     display-xl: { fontSize: 48px, lineHeight: 1.05, letterSpacing: -0.028em, fontWeight: 700 }
@@ -241,7 +241,7 @@ CSS에 `@media`나 `[data-theme]` 분기가 새는 것을 막는 것이 목적�
 ### 폰트
 
 ```css
---font-sans: "Pretendard Variable", Pretendard, -apple-system,
+--font-sans: "Pretendard Variable", Pretendard, "Pretendard Fallback", -apple-system,
              "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 --font-mono: "JetBrains Mono", "D2Coding", ui-monospace,
              SFMono-Regular, Consolas, monospace;
@@ -250,6 +250,60 @@ CSS에 `@media`나 `[data-theme]` 분기가 새는 것을 막는 것이 목적�
 - **Pretendard는 dynamic subset으로 로드한다** (jsDelivr). 전체 변수폰트는 2.0MB이지만 dynamic subset은 페이지에 실제로 쓰인 글자가 든 조각만 받는다.
 - **코드 폰트에서 `D2Coding`이 `JetBrains Mono` 뒤에 오는 이유**: 라틴은 JetBrains Mono가 처리하고, 한글은 로컬에 D2Coding이 설치된 방문자에게 고정폭으로 렌더된다. 코드블록의 33%(239개)에 한국어가 섞여 있다.
 - **Font Awesome을 쓰지 않는다.** CSS 102KB + 웹폰트 258KB = 최대 360KB를 아이콘 몇 개에 쓸 이유가 없다. 필요한 아이콘은 인라인 SVG로 넣는다.
+
+### 대체 글꼴 — Pretendard가 오기 전 (결정 67)
+
+Pretendard는 외부 시트(jsDelivr, `font-display: swap`)라 늦게 오면 그사이 시스템 글꼴로 그렸다가 바뀐다.
+맥에서 그 글꼴은 **Apple SD Gothic Neo**다 — 라틴까지 전부 그것으로 그린다(헤드리스 Chrome
+`CSS.getPlatformFontsForNode` 실측). 한글 폭은 둘이 사실상 같은데(100px당 86.43 ↔ 86.5) 라틴은
+Pretendard가 7~11% 넓고 공백은 5~12% 좁아, 도착하는 순간 줄바꿈이 다시 일어났다. 외부 시트의
+`font-display`는 우리가 못 바꾸고, `@font-face`를 통째로 들여오면 `style.css` 용량 예산(결정 51)을 넘는다.
+
+그래서 Apple SD Gothic Neo를 `local()`로 들여와 Pretendard 폭에 맞춘 얼굴 `"Pretendard Fallback"`을
+`--font-sans`의 Pretendard **바로 뒤**에 둔다(`tokens.css` 머리). 폭 비가 범위마다 달라 범위를 셋으로
+나누고, 쓰는 무게(400·500·600·700)마다 얼굴을 따로 둔다 — 12개, 약 3KB.
+
+| 범위 | `size-adjust` (400 · 500 · 600 · 700) |
+|---|---|
+| 한글 음절 `U+AC00-D7A3` | 99.91% (네 무게 같다) |
+| ASCII `U+21-7E` | 107.70 · 111.00 · 109.98 · 107.72% |
+| 공백 `U+20, U+A0` | 95.43 · 92.81 · 90.38 · 87.83% |
+
+- **값은 실측 폭 비다.** 라이브 표본(태그 이름 520개 + 「타이밍 어택」 본문, 7,394자)의 글자마다 두 글꼴
+  폭을 재 빈도로 가중했다. 배율 격자(ASCII ×0.99~1.01 · 공백 ×0.98~1.02)를 라이브 글 12편 × 390·768·1440에
+  끼워 봤는데 격자 사이의 차는 잡음 안(한두 줄)이라 실측값을 그대로 뒀다. 공백을 따로 떼지 않고 라틴과 한
+  배율로 묶은 안은 본문에서 줄이 두 배 가까이 더 바뀌었다(글 4편 8경우, 블록 높이차 합 224 ↔ 116px) —
+  이 블로그는 `keep-all`이라 공백 폭이 줄바꿈을 정한다.
+- **세로 메트릭도 맞춘다.** `ascent-override`·`descent-override` = Pretendard(95.21% · 24.12%) ÷ `size-adjust`
+  (`size-adjust`는 override에도 배율을 건다). 빼면 크기가 다른 글자가 한 줄에 서는 태그 클라우드에서 줄
+  높이가 달라 클라우드가 여전히 32~106px 밀렸다. 두 글꼴 다 lineGap이 0이라 `line-gap-override`는 없다.
+- **범위에는 Pretendard가 가진 글자만 넣는다.** Apple SD Gothic Neo에만 있는 글자(옛 자모 `U+1100-11FF`,
+  수학 기호·괘선·도형 등 약 550자)를 넣으면 Pretendard가 온 **뒤에도** 그 글자가 배율 걸린 얼굴로 그려진다.
+  지금 범위는 도착 뒤 한 번도 안 쓰인다 — 라이브 27경우에서 Pretendard 위에 끼워도 0px. 범위 밖 글자
+  (가운뎃점·굽은 따옴표·그리스 문자…)는 스왑 중에도 전처럼 `-apple-system` 이하로 간다 — 재지 않은 글자에
+  라틴 배율을 빌려 쓰지 않는다.
+- **`local()`은 얼굴 이름이다.** PostScript 이름·전체 이름은 Chrome에서 잡히고 가족 이름만 쓰면 실패한다.
+  한 얼굴에 무게 범위를 주면 굵은 글자가 Regular로 그려지므로 무게마다 얼굴을 둔다.
+
+결과 — 라이브에서 woff2를 붙잡은 채 찍고 풀어 준 뒤 다시 찍었다(2026-10-07, 헤드리스 Chrome 맥, 광고 틀 제외).
+
+| 페이지 | 폭 | 지금 | 대체 글꼴 보정 뒤 |
+|---|---|---|---|
+| `/tag` 클라우드 높이 | 1440 | +69px · 태그 426/520개 자리 바뀜 | **0** · 64/520 |
+| | 390 | +258px · 452/520 | **0** · 28/520 |
+| 「타이밍 어택」 본문 | 1440 | −30px | **0** |
+| | 390 | +86px | +28px (한 줄) |
+| 「K8s … OOMKilled 3편」 본문 | 1440 | +45px | **0** |
+| | 390 | +23px (블록 높이차 합 88px) | **0** |
+
+Pretendard를 막은 상태 기준으로 넓게 보면(글 8편·태그 × 390·768·1440 = 27경우) 줄이 바뀐 블록 높이차
+합이 1,126 → 258px, 27경우 중 19경우가 0이다. 남은 것은 경계에 걸린 한두 줄과, 태그 클라우드 안에서
+줄 끝 태그가 다음 줄로 넘어가는 자리 바뀜이다(클라우드 높이는 0).
+
+⚠ **맥 글꼴만 보정한다.** 윈도(맑은 고딕)·안드로이드(Noto Sans CJK)는 이 환경에 그 글꼴이 없어 재지
+못했다 — 근거 없이 숫자를 넣지 않는다. 그 기기에는 `local()` 이름이 없어 얼굴이 실패하고 지금 목록으로
+넘어가므로 화면은 전과 같다. Safari·Firefox도 재지 않았다(같은 글꼴 파일이라 폭 비는 같아야 하지만
+`local()` 이름 매칭과 override 지원은 엔진 몫이다 — §8).
 
 ### 스케일
 
@@ -475,6 +529,27 @@ Vercel docs는 `max-width` 래퍼가 없다. 레일을 뷰포트 왼쪽, 목차�
   모듈이 스스로 푼다 — toc.js는 `no-toc`, cat-chips.js는 `.is-off`. category.js만 풀 길이 없다(§5.3).
 - 종이에는 예약이 없다 — 인쇄 블록이 빈 칩 그릇과 `.entry-aside`를 지운다.
 
+**넷째 자리는 결이 다르다 — 티스토리 댓글 앱 그릇(결정 67).** 그릇을 채우는 것이 우리 JS가 아니라 티스토리
+React 앱이다. 서버 HTML에는 `<div data-tistory-react-app="Comment"></div>`가 비어 있고(공백도 없다) 앱이 나중에
+채워, 짧은 방명록에서는 화면 안의 푸터가 통째로 밀렸다(1440px 306 → 575px).
+
+| 무엇 | 폭 | 예약 | 높이 |
+|---|---|---|---|
+| 댓글 앱 그릇 | 모든 폭(320~1440px 같다) | 빈 그릇(`:empty`)이 앱이 **처음 그리는** 높이를 갖는다 — `.comments`·`.guestbook` 짝(§5.4) | `--comment-app-h` 238.98px (실측) |
+
+- **식이 아니라 실측값이고 예약은 빈 그릇에만 건다.** 실물이 티스토리 앱이라 같은 토큰을 실물 쪽에 걸 수 없다.
+  앱이 그리면 `:empty`가 풀려 실물 높이가 된다.
+- **238.98px은 첫 모양이다** — 머리(「방명록 0」) 38.59 + 입력 폼 200.39. 곧이어 빈 목록 자리(`.tt-area-reply`의
+  margin-bottom 30px)가 붙어 268.98px이 된다. 첫 모양이 1~3프레임 그려지므로 268.98을 잡으면 30px 위로 갔다가
+  다시 내려온다. 238.98이면 아래로 한 번만 간다 — 방명록 푸터 이동이 390·1440px 모두 [+239, +30] → [+30]
+  (라이브 주입, 2026-10-07). 비로그인 헤드리스 Chrome에서 320~1440px 일곱 폭 × 3회, 댓글 0인 글, Pretendard를
+  막은 상태가 모두 같았다. 글이 있으면 그만큼 더 내려가고 위로는 안 튄다.
+- **`html.js`로 거르지 않는다.** `html.js`는 우리 `script.js`의 성패라 티스토리 앱이 오는지와 무관하다. 앱이 끝내
+  안 오면 이 높이의 빈칸이 남는다.
+- 이 높이에는 우리 댓글 절 선언(글자 크기·행간·입력 padding·등록 버튼, `tistory.css`)과 티스토리 `index.css`가
+  같이 들어 있다. 그 절을 바꾸면 다시 잰다 — 어긋나도 화면에 신호가 없다. 로그인한 방문자의 폼(이름·비밀번호 줄이
+  없을 것이다)은 재지 못했다(§8).
+
 ---
 
 ## 5. 티스토리 고정 마크업 다루기
@@ -625,6 +700,9 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 주요 훅: `.tt-comment-cont` · `.tt-box-total` · `.tt-area-reply` · `.tt-list-reply` · `.tt-item-reply` · `.tt-box-thumb` · `.tt-thumbnail` · `.tt-link-user` · `.tt_desc` · `.tt_date` · `.tt-cmt` · `.tt-btn_register`
 
 **직접 마크업을 짜지 않는다.** `<s_rp>` 계열 치환자는 구형이라 핀 고정·프로필 레이어·더보기를 잃는다.
+
+앱이 그리기 전의 빈 그릇(`[data-tistory-react-app="Comment"]:empty`)은 앱이 처음 그리는 높이(`--comment-app-h`)를
+미리 갖는다 — §4 「첫 페인트 자리」, 결정 67.
 
 #### Namecard (블로그 프로필 카드)
 
@@ -949,6 +1027,14 @@ nav.paging
   팝오버 쪽이다). 맨 위로부터 있던 빈틈이고, 고치려면 둘이 같은 식(`max(--sp-5, env(safe-area-inset-right))`)을 같이 써야
   세로 줄이 안 어긋난다 — 시트 자체는 아래 inset만 본다. 실기기로 재지 않았다. 티스토리 모바일 하단 고정 광고가 붙는 글이 있으면
   그것과의 겹침도 재지 않았다.
+- **대체 글꼴 보정(결정 67, §3)은 맥 Chrome에서만 쟀다.** 윈도(맑은 고딕)·안드로이드(Noto Sans CJK)는 이 환경에
+  글꼴이 없어 보정하지 않았다 — 그 기기에서는 폰트 교체 밀림이 전과 같다. Safari(iOS 포함)·Firefox는 같은 맥 글꼴이지만
+  `local()` 이름 매칭과 `ascent-override`·`descent-override` 지원을 재지 않았다. 보정 뒤에도 경계에 걸린 한두 줄은 남는다
+  (27경우 중 8경우). 재려면 그 기기에서 woff2를 붙잡은 채 같은 문장을 두 글꼴로 그려 폭 비를 내고(`size-adjust`),
+  `local()` 이름을 그 글꼴의 PostScript·전체 이름으로 단 얼굴을 범위·무게별로 더한다.
+- **댓글 앱 그릇 예약(`--comment-app-h`, §4)은 비로그인 화면 실측이다.** 로그인한 방문자는 이름·비밀번호 줄이 없어 폼이
+  낮을 텐데 재지 못했다 — 그렇다면 앱이 그리는 순간 그 차이만큼 위로 온다. 티스토리가 폼 구성이나 `index.css`를 바꿔도
+  예약이 **조용히** 어긋난다(`V017`은 시트가 바뀐 것까지만 알린다). 방명록을 캐시 없이 열어 푸터가 위로 튀면 다시 잰다.
 - **인라인 색 열거 목록은 2026-08-24 기준 275편 전수 조사 결과다.** 새 글이 쌓이면 다시 세야 하며, 그때까지는 JS 안전망이 막는다.
 - **인라인 보정 CSS의 스코프는 여섯 상태를 모두 덮어야 한다.** `scripts/build.mjs`가 다크·라이트 각각을 **명시 스코프 + 시스템 스코프** 두 벌로 낸다(§8.1 참조). 새 색이 실측에 추가되면 자동으로 따라가지만, **스코프 구조를 손대면 여섯 상태를 다시 재야 한다** — 명시 다크/라이트 × OS 다크/라이트 4가지 + stamp 없음 × OS 2가지.
 - **`--accent-cyan`·`--warning`은 라이트 캔버스 위 본문 크기 글자로 쓸 수 없다.** `#29bc9b` on `#fafafa` = **2.30:1**, `#f5a623` on `#fafafa` = **1.94:1**로 WCAG AA(4.5:1)에 크게 못 미친다. 다크에서는 각각 12.4:1 · 11.3:1로 충분하다. 현재 CSS는 이 둘을 텍스트 색으로 쓰지 않는다. **2026-08-27 기준 어디에도 쓰지 않는다** — 예정 소비자였던 콜아웃이 취소되면서(TODO 닫힌 항목) 남은 사용처가 0이 됐고, 린트 `TOK006`의 「참조 없는 토큰」 목록에 뜬다. 팔레트에는 남겨 두되 **실제 사용처가 생기기 전에는 조정하지 않는다.** 그때의 조정안은 라이트 전용으로 한 단 어둡게 파생한 값을 넣고 다크에서 현재 값으로 되돌리는 것이다.

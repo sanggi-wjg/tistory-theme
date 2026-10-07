@@ -669,6 +669,18 @@
   color: var(--ink-body);
 }
 
+/* ── 앱이 그리기 전 자리 (결정 67) ─────────────────────────────────
+   서버 HTML의 그릇은 `<div data-tistory-react-app="Comment"></div>`로 **비어 있고**(공백 없음 — 라이브
+   방명록·글 확인) 앱이 나중에 채운다. 짧은 방명록에서는 그 사이 푸터가 화면 안에 있어 통째로 밀렸다
+   (1440px 306 → 575px). 빈 동안만 앱이 처음 그리는 높이를 잡고, 앱이 그리면 :empty가 풀려 실물 높이다.
+   값과 근거는 tokens.css --comment-app-h. 결정 62의 예약과 달리 실물 쪽에 같은 토큰을 걸 수 없다 —
+   실물은 티스토리 앱이다. `html.js`로 거르지 않는다: 그릇을 채우는 것은 우리 script.js가 아니라
+   티스토리 스크립트라 html.js가 그 성패를 모른다. 티스토리 앱이 끝내 안 오면 이 높이의 빈칸이 남는다.
+   (0,3,0)이고 index.css는 [data-tistory-react-app] 자체에 규칙이 없어 부딪힐 상대가 없다. 종이에서는
+   .comments·.guestbook이 통째로 지워져 같이 사라진다. */
+.comments [data-tistory-react-app="Comment"]:empty,
+.guestbook [data-tistory-react-app="Comment"]:empty { min-height: var(--comment-app-h); }
+
 /* 앱 전체 색. 상대에 짝이 없어 (0,1,0)으로도 이긴다 — 여기서 올릴 이유가 없다. */
 .tt-comment-cont,
 .tt-area-reply,
