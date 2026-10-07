@@ -751,7 +751,7 @@ def verify_tistory_sheets(base, home_doc, post_doc):
 
     시트는 셋이다 — content.css, `static/pc/dist/index.css`(**댓글·프로필 카드 React 앱의
     시트**), `static/style/tistory.css`(**티스토리 툴바** — 결정 59의 헤더 예약이 이 시트의
-    `right`·`max-width:1260px`에 맞춰져 있다). 셋 다 **홈 head**에서 찾는다 — 2026-09-10 재실측에서
+    `right`·`max-width:1260px`에 맞춰져 있고, 결정 68이 이 시트의 라이트 전용 색을 다크에서 덮는다). 셋 다 **홈 head**에서 찾는다 — 2026-09-10 재실측에서
     index.css 링크는 홈·방명록·글 페이지 셋 다 각 1건이었다. 한때 "글 페이지에만 온다"고 적고 `post_doc`에서만 찾았는데
     틀렸다 — 글 페이지를 못 받은 실행에서 대조가 통째로 미검증이 됐다. 글 페이지 전용인 것은
     시트가 아니라 **Namecard div**다. index.css는 TIS003·TIS005의 상대인데, 그 둘은 소스에
@@ -811,7 +811,7 @@ def verify_tistory_sheets(base, home_doc, post_doc):
     # 숫자 셋(right 20px · max-width 1260px · 툴바 폭)에 맞춘 것이라, 티스토리가 바꾸면 예약이 조용히
     # 어긋난다. 프리뷰가 이 시트로 툴바 픽스처를 그리므로 URL이 낡으면 겹침이 다시 숨는다.
     compare("TISTORY_TOOLBAR_CSS", "/static/style/tistory.css", "tistory.css",
-            home_doc, base + "/", "결정 59 헤더 예약")
+            home_doc, base + "/", "결정 59 헤더 예약 · 결정 68 다크 덮어쓰기(TIS001)")
     # 글 페이지에도 같은 URL로 오는지는 덤이다. 다르면 두 페이지가 서로 다른 배포를
     # 받고 있다는 뜻이라, 프리뷰가 어느 쪽과 싸우는지부터 다시 정해야 한다.
     # ⚠ 대조 상대는 **라이브 홈의** URL이다. 2026-10-06까지 render.py 상수와 비교해 놓고 메시지는

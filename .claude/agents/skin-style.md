@@ -42,7 +42,7 @@ model: opus
 | 카테고리 | `.tt_category` `.link_tit` `.category_list` `.link_item` `.sub_category_list` `.c_cnt` | 마크업 수정 불가 |
 | 댓글·방명록 | `.tt-comment-cont` `.tt-area-reply` `.tt-item-reply` `.tt_desc` `.tt_date` `.tt-btn_register` 등 | React가 렌더링. 클래스가 바뀔 수 있으므로 과도하게 깊은 선택자를 피한다 |
 
-**티스토리 시트가 박은 색은 인라인 보정과 별개다.** §5.2는 글 본문의 `style` 속성을 상대하고, §5.2b는 티스토리 **스타일시트**를 상대한다. 후자는 속성 선택자로 원리적으로 닿지 않는다 — `src/styles/tistory.css`에서 토큰으로 덮는다. **테마 분기는 하지 않는다**(리터럴 → 토큰이면 다크는 따라온다).
+**티스토리 시트가 박은 색은 인라인 보정과 별개다.** §5.2는 글 본문의 `style` 속성을 상대하고, §5.2b는 티스토리 **스타일시트**를 상대한다. 후자는 속성 선택자로 원리적으로 닿지 않는다 — `src/styles/tistory.css`에서 토큰으로 덮는다. **테마 분기는 하지 않는다**(리터럴 → 토큰이면 다크는 따라온다). 유일한 예외는 티스토리 툴바 시트(결정 68 — 볼 수 없는 로그인 주인 레이어 때문에 다크만 덮는다)이고 선례로 쓰지 않는다.
 
 **인라인 스타일 보정** — `DESIGN.md` §5.2의 규칙을 그대로 구현한다. 색 17종 + 배경 11종은 빌드가 `data/inline-styles.json`에서 생성하고(곳수도 거기가 정본), 폰트는 13종을 규칙 하나(`[style*="font-family"]` → `inherit`)로 지운다. 목록에 없는 색은 skin-behavior의 JS 안전망이 처리한다.
 
