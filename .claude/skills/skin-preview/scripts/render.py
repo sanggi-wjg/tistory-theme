@@ -143,7 +143,15 @@ TOOLBAR_BOX = (
     '<h2 class="screen_out">티스토리툴바</h2>'
     '<div class="btn_tool btn_tool_type1" id="menubar_wrapper" data-tistory-react-app="Menubar">'
     '<button class="btn_menu_toolbar btn_menu_type2">'
-    '<span class="img_common_tistory ico_tistory_sign">관리메뉴열기</span></button></div>'
+    '<span class="img_common_tistory ico_tistory_sign">관리메뉴열기</span></button>'
+    # ⋮을 누르면 여는 방문자 목록 — 라이브는 처음부터 이 자리에 display:none으로 있다(2026-10-07 비로그인 실측).
+    # 빼 두면 결정 68의 다크 덮어쓰기(목록 배경·글자·캐럿)가 프리뷰에서 한 번도 그려지지 않는다(결정 42 부류).
+    # 체크포인트는 style을 지워 연 모양을 본다.
+    '<div class="header_layer layer_tool" style="display: none;"><div class="inner_header_layer">'
+    '<h2 class="screen_out">개인정보</h2><ul class="list_toolbar">'
+    '<li><a class="link_list" href="https://www.tistory.com">티스토리 홈</a></li>'
+    '<li><a class="link_list" href="https://www.tistory.com/forum">포럼</a></li>'
+    '<li><a class="link_list" href="#">로그인</a></li></ul></div></div></div>'
     '<div class="btn_tool"><button class="btn_menu_toolbar btn_subscription  #subscribe" '
     'data-blog-id="3356137" data-url="https://sanggi-jayg.tistory.com" data-device="web_pc">'
     '<strong class="txt_tool_id">상쾌한기분</strong><em class="txt_state">구독하기</em>'

@@ -5,6 +5,8 @@
      [##_category_##]       → ul.tt_category 트리 (DESIGN.md §5.3)
      [##_comment_group_##]  → 티스토리 React 댓글 앱 (DESIGN.md §5.4)
      [##_guestbook_group_##] → 같은 앱
+   치환자 없이 티스토리가 자기 시트로 칠하는 것도 여기서 덮는다 — 에디터 컴포넌트(content.css),
+   Namecard 프로필 카드, 오른쪽 위 툴바(.menu_toolbar, 다크에서만 — 결정 68).
 
    댓글 쪽은 React가 나중에 렌더링하고 클래스 이름이 예고 없이 바뀔 수 있다.
    그래서 **얕고 넓게** 잡는다 — 깊은 자손 선택자와 구조 의존을 피하고,
@@ -820,6 +822,115 @@
   background: var(--ink-body);
   border-color: var(--ink-body);
 }
+
+/* ══════════ 티스토리 툴바 (결정 68) ══════════════════════════════
+   1261px부터 오른쪽 위에 뜨는 「상쾌한기분 구독하기」 알약 + ⋮ 메뉴(.menu_toolbar). 우리 마크업이
+   아니다 — 티스토리가 서버 HTML로 넣고 ⋮ 쪽(#menubar_wrapper)은 React가 채운다. 자리는 결정 59가
+   헤더에 비워 두었고(components.css), 여기서는 **다크의 외관**만 덮는다. 전에는 다크에서도 흰
+   알약이 떠 있었다.
+
+   상대 시트는 static/style/tistory.css이고 라이브·프리뷰 모두 우리 style.css **뒤**에 실린다
+   (라이브 head 12번, 2026-10-07 실측) — 같은 특이도면 진다.
+
+   ── 이 블록만 테마 분기를 한다 (§5.2b 원칙 1의 예외) ──────────────
+   위 블록들은 리터럴을 토큰으로 바꾸고 라이트도 팔레트로 옮겼다. 여기서는 **라이트를 한 픽셀도
+   건드리지 않고** 다크에서만 덮는다. **예외는 이 툴바 시트에 한정된다** — 이 파일의 다른 블록
+   (content.css · index.css · 페이지 안 <style>)은 원칙 1 그대로이고, 새 상대를 덮을 때 이것을
+   선례로 쓰지 않는다. 이유 둘:
+     · 상대를 다 볼 수 없다. ⋮ 메뉴는 로그인한 블로그 주인에게 다른 레이어(.layer_profile — 프로필·
+       블로그 목록·쓰기/관리 아이콘·첫 안내 말풍선)를 그리는데 비로그인으로는 열어 볼 수 없다. 그
+       마크업은 Menubar 번들(static/pc/dist/index.js @542bd84)에서 읽었다. 실수의 반경을 **이미
+       깨져 있던 테마**에 묶는다.
+     · 분기 없이 라이트를 그대로 두려면 티스토리 리터럴(#fff·#777·그림자)을 우리 라이트 토큰으로
+       옮겨 적어야 한다. 그러면 티스토리가 시트를 바꿔도 라이트가 옛 값에 **조용히** 묶인다.
+   대가: 라이트의 AA 미달 둘이 그대로 남는다 — 알약 블로그 이름(.txt_tool_id) #777 on #fff 4.48,
+   ⋮ 메뉴 마지막 줄 #909090 on #fff 3.19 (DESIGN.md §8). 분기 없는 토큰 경로는 이것을 고치지만
+   (--ink-mute 4.95) 위 첫째 이유로 택하지 않았다.
+
+   값은 여전히 토큰만 쓴다(TOK002). 범위는 tokens.css 다크 두 벌과 같은 표기 — 시스템 다크
+   (:not([data-theme="light"])) + 명시 다크 — 이고 `@media not print` 안이다(결정 52. 종이에서는
+   components.css 인쇄 블록이 툴바를 통째로 지운다).
+   ⚠ **두 벌은 같은 선언을 담는다.** 한쪽만 고치면 그 상태(stamp 없는 시스템 다크 / 명시 다크)에서만
+     흰 알약이 돌아온다. 린트 TIS001은 선택자가 **있는지만** 보고 두 벌이 다 있는지는 못 본다.
+
+   ── 특이도 ─────────────────────────────────────────────────
+   §5.2b 원칙 2·3대로 상대 선택자를 그대로 베끼고 앞에만 붙인다. 다크 범위가 (0,2,0)을 더한다.
+   상대가 .menu_toolbar로 시작하지 않으면(.header_layer · .inner_header_layer …) .menu_toolbar도
+   앞에 붙인다 — 툴바 밖의 같은 이름(시트가 전역으로 쓴다)을 건드리지 않는다.
+     .menu_toolbar .btn_menu_toolbar                        상대 (0,2,0) → 우리 (0,4,0)
+     .menu_toolbar .btn_menu_toolbar:hover                  상대 (0,3,0) → 우리 (0,5,0)
+     .menu_toolbar .list_toolbar li:last-child .link_list   상대 (0,4,1) → 우리 (0,6,1)
+     .menu_toolbar .header_layer.tooltip .desc_tooltip      상대 (0,4,0) → 우리 (0,6,0)
+   상대의 hover 그림자(0,3,0)는 우리 기본 규칙(0,4,0)에도 진다 — 그래서 hover를 따로 준다.
+
+   ── 면 ───────────────────────────────────────────────────────
+   헤더 컨트롤(.theme-toggle)과 같은 말투다: --surface 판 + --hairline 테두리, 호버에 --hairline-strong.
+   테두리는 border가 아니라 **번짐 0인 1px box-shadow 링**으로 그린다 — 티스토리 링(0 0 0 1px)과
+   같은 자리라 상자 크기가 한 픽셀도 안 바뀐다. border를 쓰면 폭이 auto인 구독 알약이 2px 넓어져
+   결정 59의 툴바 예약(170px)을 민다. 티스토리의 아래 그림자(0 2px 5px)는 지운다(§2 그림자 금지).
+   ⋮ 메뉴 위 말꼬리(:after의 layer_edge1.png)는 흰 삼각형 이미지라 다크에서 지운다 — 색 토큰이
+   못 닿고, 반전하면 #000이 되어 --surface 판과 이음매가 생긴다. */
+@media not print {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .menu_toolbar .btn_menu_toolbar {
+      background-color: var(--surface);
+      box-shadow: 0 0 0 1px var(--hairline);
+    }
+    :root:not([data-theme="light"]) .menu_toolbar .btn_menu_toolbar:hover { box-shadow: 0 0 0 1px var(--hairline-strong); }
+    :root:not([data-theme="light"]) .menu_toolbar .txt_tool_id { color: var(--ink-mute); }
+    :root:not([data-theme="light"]) .menu_toolbar .txt_state { color: var(--ink); }
+
+    :root:not([data-theme="light"]) .menu_toolbar .header_layer {
+      background-color: var(--surface);
+      box-shadow: 0 0 0 1px var(--hairline);
+    }
+    :root:not([data-theme="light"]) .menu_toolbar .header_layer:after { display: none; }
+    :root:not([data-theme="light"]) .menu_toolbar .list_toolbar .link_list { color: var(--ink); }
+    :root:not([data-theme="light"]) .menu_toolbar .list_toolbar li:last-child .link_list { color: var(--ink-mute); }
+    :root:not([data-theme="light"]) .menu_toolbar .header_layer.tooltip .desc_tooltip { color: var(--ink); }
+
+    :root:not([data-theme="light"]) .menu_toolbar .inner_header_layer .txt_id { color: var(--ink); }
+    :root:not([data-theme="light"]) .menu_toolbar .inner_header_layer .txt_email,
+    :root:not([data-theme="light"]) .menu_toolbar .inner_header_layer .link_setting_type2,
+    :root:not([data-theme="light"]) .menu_toolbar .inner_header_layer .tit_list_type { color: var(--ink-mute); }
+    :root:not([data-theme="light"]) .menu_toolbar .inner_header_layer .info_profile { border-bottom-color: var(--hairline); }
+    :root:not([data-theme="light"]) .menu_toolbar .inner_header_layer .wrap_list + .wrap_toolbar { border-top-color: var(--hairline); }
+  }
+
+  /* ↓ 위 블록과 **같은 선언**이다. 하나를 고치면 둘 다 고친다. */
+  :root[data-theme="dark"] .menu_toolbar .btn_menu_toolbar {
+    background-color: var(--surface);
+    box-shadow: 0 0 0 1px var(--hairline);
+  }
+  :root[data-theme="dark"] .menu_toolbar .btn_menu_toolbar:hover { box-shadow: 0 0 0 1px var(--hairline-strong); }
+  :root[data-theme="dark"] .menu_toolbar .txt_tool_id { color: var(--ink-mute); }
+  :root[data-theme="dark"] .menu_toolbar .txt_state { color: var(--ink); }
+
+  :root[data-theme="dark"] .menu_toolbar .header_layer {
+    background-color: var(--surface);
+    box-shadow: 0 0 0 1px var(--hairline);
+  }
+  :root[data-theme="dark"] .menu_toolbar .header_layer:after { display: none; }
+  :root[data-theme="dark"] .menu_toolbar .list_toolbar .link_list { color: var(--ink); }
+  :root[data-theme="dark"] .menu_toolbar .list_toolbar li:last-child .link_list { color: var(--ink-mute); }
+  :root[data-theme="dark"] .menu_toolbar .header_layer.tooltip .desc_tooltip { color: var(--ink); }
+
+  :root[data-theme="dark"] .menu_toolbar .inner_header_layer .txt_id { color: var(--ink); }
+  :root[data-theme="dark"] .menu_toolbar .inner_header_layer .txt_email,
+  :root[data-theme="dark"] .menu_toolbar .inner_header_layer .link_setting_type2,
+  :root[data-theme="dark"] .menu_toolbar .inner_header_layer .tit_list_type { color: var(--ink-mute); }
+  :root[data-theme="dark"] .menu_toolbar .inner_header_layer .info_profile { border-bottom-color: var(--hairline); }
+  :root[data-theme="dark"] .menu_toolbar .inner_header_layer .wrap_list + .wrap_toolbar { border-top-color: var(--hairline); }
+}
+
+/* 검은 스프라이트 아이콘 둘 — ⋮(.ico_tistory_sign)과 구독 중 체크(.ico_check_type1, 비로그인 화면에는
+   display:none). 이미지라 색 토큰이 못 닿는다. Namecard 구독 아이콘과 같은 --sprite-invert(라이트 0 ·
+   다크 1)로 뒤집는다 — 토큰이 테마를 고르므로 **분기 밖에** 둔다. 라이트에서는 invert(0)이라 그대로다.
+   주인 메뉴의 쓰기·관리 아이콘(.link_edit · .link_setting)은 **뒤집지 않는다** — 스프라이트에서 #b9b9b9라
+   --surface(다크) 위 9.55인데, 뒤집으면 #464646 = 1.98로 사라진다(⋮은 #202020 → 반전 14.06, 그대로면 1.15).
+   그래서 .img_common_tistory 전체로 넓히지 않는다. 주인 메뉴는 로그인 화면이라 라이브로는 못 봤다. */
+.menu_toolbar .ico_tistory_sign,
+.menu_toolbar .ico_check_type1 { filter: invert(var(--sprite-invert)); }
 
 /* ══════════ 블로그 메뉴 ════════════════════════════════════════
    [##_blog_menu_##]가 만든다. 항목에 붙는 클래스는 티스토리 설정에 따라
