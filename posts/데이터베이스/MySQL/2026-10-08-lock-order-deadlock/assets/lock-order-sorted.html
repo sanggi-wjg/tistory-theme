@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>정렬된 락 순서</title>
+<style>
+  /* 바탕·글자 회색은 DESIGN.md 토큰이다. --a·--b·--err·--ok와 옅은 면(-soft)은 이 그림용으로 따로 정했다 —
+     라이트에서 각 색 글자가 자기 옅은 면 위 4.5:1을 넘도록 토큰보다 어둡게 잡았다(SKILL.md 「그리기 규칙」) */
+  :root {
+    --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
+    --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  :root[data-theme="dark"] {
+    --page: #0a0a0a; --bg: #121212; --surface: #1a1a1a;
+    --hair: #2e2e2e; --hair-strong: #454545;
+    --ink: #ededed; --ink-body: #b0b0b0; --mute: #8f8f8f;
+    --a: #3291ff; --a-soft: #10233f;
+    --b: #f7b955; --b-soft: #3a2a0e;
+    --err: #ff6166; --err-soft: #3d1416;
+    --ok: #50e3c2; --ok-soft: #0f2e27;
+  }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; padding: 16px; }
+  .stage { max-width: 760px; margin: 0 auto; }
+  svg { display: block; width: 100%; height: auto; }
+  .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .controls { display: flex; gap: 12px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--ink-body); }
+  .controls input[type=range] { flex: 1; }
+  .controls button, .controls select { font: inherit; padding: 4px 10px; }
+  /* 캡처 모드: 조작 막대를 숨기고 장면만 남긴다 (render-gif.mjs가 body.capture를 확인한다) */
+  /* 캡처 모드에서는 판 폭 제한을 푼다 — W를 바꿔도 .stage가 760에 묶여 작게 찍히지 않게 */
+  body.capture { padding: 0; }
+  body.capture .stage { max-width: none; }
+  body.capture .controls { display: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- aria-label에는 장면 전체를 한 문장으로. GIF로 구우면 사라지지만 HTML로 볼 때를 위해 둔다 -->
+  <svg id="scene" viewBox="0 0 760 400" role="img" aria-label="트랜잭션 A와 B가 user 1~10을 둘 다 id 오름차순으로 잠근다. A가 user 1을 먼저 잡자 B는 user 1에서 아무것도 쥐지 않은 채 기다리고, A가 나머지를 잠그고 커밋한 뒤 B가 이어서 잠그고 커밋한다. 데드락은 나지 않는다."></svg>
+  <div class="controls">
+    <button id="play" type="button">일시정지</button>
+    <input id="scrub" type="range" min="0" step="0.01">
+    <span id="clock" class="mono">0.0s</span>
+    <select id="theme"><option value="light">라이트</option><option value="dark">다크</option></select>
+  </div>
+</div>
+<script>
+(function () {
+  var W = 760, H = 400;   // viewBox와 같아야 한다
+
+  // ════════════════════════════════════════════════════════════
+  // 장면 — 여기부터 바꾼다
+  // ════════════════════════════════════════════════════════════
+
+  function initial() {
+    return {
+      locks: {}, deadlock: false, released: [],
+      A: { done: 0, wait: null, status: '진행 중' },
+      B: { done: 0, wait: null, status: '진행 중' },
+      fresh: null
+    };
+  }
+  // 「이 단계에서 막 생긴 것」과 「이 단계에서 막 풀린 칸」은 단계가 바뀌면 지운다
+  function eachStep(s) { s.fresh = null; s.released = []; }
+
+  function lock(who) {
+    return function (s) {
+      var id = ORDER[who][s[who].done];
+      s.locks[id] = who;
+      s[who].done++;
+      s[who].wait = null;
+      s[who].status = '진행 중';
+      s.fresh = { kind: 'lock', who: who, id: id };
+    };
+  }
+  function wait(who) {
+    return function (s) {
+      var id = ORDER[who][s[who].done];
+      s[who].wait = id;
+      s[who].status = '대기 중';
+      s.fresh = { kind: 'wait', who: who, id: id };
+    };
+  }
+  function commit(who) {
+    return function (s) {
+      s[who].status = '커밋'; s[who].committed = true;
+      Object.keys(s.locks).forEach(function (id) { if (s.locks[id] === who) delete s.locks[id]; });
+      s.fresh = { kind: 'commit' };
+    };
+  }
+  function rest(who, n, cap) {
+    var out = [];
+    for (var i = 0; i < n; i++) out.push({ d: 0.35, cap: cap, fn: lock(who) });
+    return out;
+  }
+
+  var TITLE = '같은 user 1~10을, 같은 순서(정렬)로 잠그면';
+  // 두 트랜잭션이 잠그려는 user id 순서. 정렬했으니 둘 다 같다.
+  var ORDER = {
+    A: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    B: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  };
+
+  var STEPS = [].concat(
+    [
+      { d: 1.8, cap: 'A와 B 모두 user 1~10을 잠근다 — 이번엔 id 오름차순으로 정렬해서', fn: function () {} },
+      { d: 0.7, cap: 'A: user 1 잠금', fn: lock('A') },
+      { d: 1.6, cap: 'B: user 1 요청 → A가 쥐고 있어 대기', fn: wait('B') },
+      { d: 2.4, cap: 'B는 첫 행에서 멈춰 아무것도 쥐지 않았다 → A를 막을 것이 없다', fn: function () {} }
+    ],
+    rest('A', 9, 'A: 나머지 잠금 — B는 줄 서서 기다리는 중'),
+    [
+      { d: 1.8, cap: 'A 커밋 → 잠금 해제', tone: 'ok', fn: commit('A') },
+      { d: 0.8, cap: 'B: 기다리던 user 1 획득, 이어서 진행', fn: lock('B') }
+    ],
+    rest('B', 9, 'B: 나머지 잠금'),
+    [
+      { d: 2.6, cap: 'B 커밋. 둘 다 성공 — 기다렸을 뿐 데드락은 없다', tone: 'ok', fn: commit('B') }
+    ]
+  );
+
+  // ── 좌표: 위 레인(A)·가운데 행 10칸·아래 레인(B)
+  var CHIP = { x0: 150, w: 50, gap: 8, h: 26 };
+  var LANE = { A: 62, B: 296 };
+  var CELL = { x0: 25, w: 62, gap: 10, y: 170, h: 56 };
+  function chipX(i) { return CHIP.x0 + i * (CHIP.w + CHIP.gap); }
+  function cellX(id) { return CELL.x0 + (id - 1) * (CELL.w + CELL.gap); }
+
+  function draw(r, t) {
+    var s = r.s, p = r.p, f = s.fresh;
+    var appear = ease(p * 3);
+    var out = [];
+    out.push(title(TITLE));
+
+    // ── 레인(트랜잭션)
+    ['A', 'B'].forEach(function (who) {
+      var y = LANE[who], L = s[who], col = who === 'A' ? '--a' : '--b', soft = who === 'A' ? '--a-soft' : '--b-soft';
+      var labelStroke = (s.deadlock && L.wait) ? '--err' : (L.committed ? '--ok' : col);
+      out.push('<rect x="20" y="' + (y - 6) + '" width="118" height="38" rx="8" style="fill:var(--surface);stroke:var(' + labelStroke + ');stroke-width:1.5;opacity:' + (L.rolled ? 0.6 : 1) + '"/>');
+      out.push(text(79, y + 9, '트랜잭션 ' + who, 'fill:var(' + col + ');font-size:13px;font-weight:700;text-anchor:middle'));
+      var stCol = L.rolled ? '--err' : L.committed ? '--ok' : (L.wait && s.deadlock) ? '--err' : '--mute';
+      out.push(text(79, y + 25, L.status, 'fill:var(' + stCol + ');font-size:11px;text-anchor:middle'));
+
+      ORDER[who].forEach(function (id, i) {
+        var x = chipX(i), fill = '--surface', stroke = '--hair', tc = '--mute', o = 1, dash = '';
+        if (i < L.done) { fill = soft; stroke = col; tc = col; }
+        if (L.wait && i === L.done) { stroke = s.deadlock ? '--err' : col; tc = stroke; dash = ' stroke-dasharray="4 3"'; }
+        if (L.rolled) { fill = '--surface'; stroke = '--hair'; tc = '--mute'; o = 0.55; }   // 일부러 흐리게 — 무효가 된 잠금
+        if (f && f.kind === 'lock' && f.who === who && i === L.done - 1) o = 0.4 + 0.6 * appear;
+        out.push('<rect x="' + x + '" y="' + y + '" width="' + CHIP.w + '" height="' + CHIP.h + '" rx="6"' + dash +
+          ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:1.5;opacity:' + o + '"/>');
+        out.push(text(x + CHIP.w / 2, y + 17, String(id), 'fill:var(' + tc + ');font-size:13px;font-weight:600;text-anchor:middle;opacity:' + o, 'mono'));
+      });
+      if (L.rolled) {
+        out.push('<line x1="' + (chipX(0) - 4) + '" y1="' + (y + 13) + '" x2="' + (chipX(9) + CHIP.w + 4) + '" y2="' + (y + 13) +
+          '" style="stroke:var(--err);stroke-width:1.5;opacity:' + (f && f.kind === 'rollback' ? appear : 1) + '"/>');
+      }
+    });
+    out.push(text(chipX(0), LANE.A - 12, '잠그는 순서 →', 'fill:var(--mute);font-size:11px'));
+    out.push(text(chipX(0), LANE.B + CHIP.h + 18, '잠그는 순서 →', 'fill:var(--mute);font-size:11px'));
+
+    // ── 행(user 1~10)
+    var cyc = s.deadlock ? [s.A.wait, s.B.wait] : [];
+    for (var id = 1; id <= 10; id++) {
+      var x = cellX(id), owner = s.locks[id];
+      var fill = '--surface', stroke = '--hair-strong', tc = '--ink-body', o = 1;
+      if (owner === 'A') { fill = '--a-soft'; stroke = '--a'; tc = '--a'; }
+      if (owner === 'B') { fill = '--b-soft'; stroke = '--b'; tc = '--b'; }
+      if (cyc.indexOf(id) >= 0) stroke = '--err';
+      if (f && f.kind === 'lock' && f.id === id) o = appear;
+      // 바탕은 항상 그리고, 잠금 색만 겹쳐 페이드
+      out.push('<rect x="' + x + '" y="' + CELL.y + '" width="' + CELL.w + '" height="' + CELL.h + '" rx="8" style="fill:var(--surface);stroke:var(--hair-strong);stroke-width:1"/>');
+      if (owner) {
+        out.push('<rect x="' + x + '" y="' + CELL.y + '" width="' + CELL.w + '" height="' + CELL.h + '" rx="8" style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + (cyc.indexOf(id) >= 0 ? 2.5 : 1.5) + ';opacity:' + o + '"/>');
+        out.push(text(x + CELL.w / 2, CELL.y + 16, owner + ' 잠금', 'fill:var(' + tc + ');font-size:10px;font-weight:700;text-anchor:middle;opacity:' + o));
+      }
+      if (s.released.indexOf(id) >= 0) {
+        out.push('<rect x="' + x + '" y="' + CELL.y + '" width="' + CELL.w + '" height="' + CELL.h + '" rx="8" style="fill:var(--b-soft);stroke:var(--b);stroke-width:1.5;opacity:' + (1 - appear) + '"/>');
+        out.push(text(x + CELL.w / 2, CELL.y + 16, '해제', 'fill:var(--err);font-size:10px;font-weight:700;text-anchor:middle;opacity:' + (0.4 + 0.6 * (1 - Math.abs(appear - 0.5) * 2))));
+      }
+      out.push(text(x + CELL.w / 2, CELL.y + 38, 'user ' + id, 'fill:var(' + (owner ? tc : '--ink-body') + ');font-size:12px;font-weight:600;text-anchor:middle', 'mono'));
+    }
+
+    // ── 화살표: 대기
+    ['A', 'B'].forEach(function (who) {
+      var L = s[who];
+      if (!L.wait) return;
+      var cx = chipX(L.done) + CHIP.w / 2, tx = cellX(L.wait) + CELL.w / 2;
+      var col = s.deadlock ? '--err' : (who === 'A' ? '--a' : '--b');
+      var o = (f && f.kind === 'wait' && f.who === who) ? appear : 1;
+      if (who === 'A') out.push(arrow(cx, LANE.A + CHIP.h + 2, tx, CELL.y - 4, col, { dash: true, t: t, o: o }));
+      else out.push(arrow(cx, LANE.B - 2, tx, CELL.y + CELL.h + 4, col, { dash: true, t: t, o: o }));
+      var mx = (cx + tx) / 2, my = who === 'A' ? (LANE.A + CHIP.h + CELL.y) / 2 : (LANE.B + CELL.y + CELL.h) / 2;
+      out.push('<rect x="' + (mx - 18) + '" y="' + (my - 10) + '" width="36" height="18" rx="9" style="fill:var(--bg);opacity:' + o + '"/>');
+      out.push(text(mx, my + 3, '대기', 'fill:var(' + col + ');font-size:11px;font-weight:700;text-anchor:middle;opacity:' + o));
+    });
+
+    // ── 데드락 때 「누가 쥐고 있나」를 이어 고리를 닫는다
+    if (s.deadlock) {
+      var o2 = f && f.kind === 'deadlock' ? appear : 1;
+      var heldByB = ORDER.B.indexOf(s.A.wait), heldByA = ORDER.A.indexOf(s.B.wait);
+      out.push(arrow(cellX(s.A.wait) + CELL.w / 2, CELL.y + CELL.h + 4, chipX(heldByB) + CHIP.w / 2, LANE.B - 2, '--err', { o: o2 }));
+      out.push(arrow(cellX(s.B.wait) + CELL.w / 2, CELL.y - 4, chipX(heldByA) + CHIP.w / 2, LANE.A + CHIP.h + 2, '--err', { o: o2 }));
+    }
+
+    // ── 획득 순간의 실선
+    if (f && f.kind === 'lock') {
+      var cx2 = chipX(s[f.who].done - 1) + CHIP.w / 2, tx2 = cellX(f.id) + CELL.w / 2;
+      var col2 = f.who === 'A' ? '--a' : '--b';
+      var lo = p < 0.6 ? 1 : 1 - ease((p - 0.6) / 0.4);
+      if (f.who === 'A') out.push(arrow(cx2, LANE.A + CHIP.h + 2, tx2, CELL.y - 4, col2, { o: lo }));
+      else out.push(arrow(cx2, LANE.B - 2, tx2, CELL.y + CELL.h + 4, col2, { o: lo }));
+    }
+
+    out.push(caption(r.step));
+    return out;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 엔진 — 보통은 손대지 않는다
+  // ════════════════════════════════════════════════════════════
+
+  // 실제 재생은 기준 박자의 SLOW배. 처음 컷은 사용자가 "빠르다"고 해 1.5로 맞췄다(2026-10-08)
+  var SLOW = 1.5;
+  STEPS.forEach(function (st) { st.d *= SLOW; });
+  var TOTAL = STEPS.reduce(function (n, st) { return n + st.d; }, 0);
+
+  function stateAt(t) {
+    var s = initial(), acc = 0;
+    for (var i = 0; i < STEPS.length; i++) {
+      eachStep(s);
+      STEPS[i].fn(s);
+      if (t < acc + STEPS[i].d || i === STEPS.length - 1) {
+        return { s: s, step: STEPS[i], p: Math.max(0, Math.min(1, (t - acc) / STEPS[i].d)) };
+      }
+      acc += STEPS[i].d;
+    }
+  }
+
+  function ease(p) { p = Math.max(0, Math.min(1, p)); return p * p * (3 - 2 * p); }
+  // 글자는 innerHTML로 들어가므로 이스케이프한다 — 'WHERE id < 10' 같은 캡션이 태그로 읽혀 조용히 잘린다
+  function esc(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function text(x, y, str, style, cls) {
+    return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(str) + '</text>';
+  }
+  function box(x, y, w, h, fill, stroke, o) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" style="fill:' + fill +
+      ';stroke:' + stroke + ';stroke-width:1.5;opacity:' + (o == null ? 1 : o) + '"/>';
+  }
+  // 점선의 흐름도 t로 민다 — CSS 애니메이션을 쓰면 GIF에 안 찍힌다
+  function arrow(x1, y1, x2, y2, color, opts) {
+    opts = opts || {};
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+      ' style="stroke:var(' + color + ');stroke-width:' + (opts.w || 2) + ';opacity:' + (opts.o == null ? 1 : opts.o) + '"' +
+      (opts.dash ? ' stroke-dasharray="6 5" stroke-dashoffset="' + (-(opts.t || 0) * 18 / SLOW).toFixed(1) + '"' : '') +
+      ' marker-end="url(#m' + color.slice(2) + ')"/>';
+  }
+  function title(str) {
+    return text(W / 2, 30, str, 'fill:var(--ink);font-size:15px;font-weight:700;text-anchor:middle');
+  }
+  function caption(step) {
+    var tone = step.tone;
+    var f = tone === 'err' ? '--err-soft' : tone === 'ok' ? '--ok-soft' : '--surface';
+    var c = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--hair';
+    var tc = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--ink';
+    return '<rect x="20" y="' + (H - 50) + '" width="' + (W - 40) + '" height="36" rx="8" style="fill:var(' + f + ');stroke:var(' + c + ')"/>' +
+      text(W / 2, H - 27, step.cap, 'fill:var(' + tc + ');font-size:14px;font-weight:' + (tone ? 700 : 500) + ';text-anchor:middle');
+  }
+  function defs() {
+    return '<defs>' + ['--a', '--b', '--err', '--ok', '--mute'].map(function (c) {
+      return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+        '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+    }).join('') + '</defs>';
+  }
+
+  function render(t) {
+    var r = stateAt(t);
+    var bg = '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="12" style="fill:var(--bg);stroke:var(--hair)"/>';
+    document.getElementById('scene').innerHTML = defs() + bg + draw(r, t).join('');
+  }
+
+  // ── 캡처 계약: render-gif.mjs가 이 셋과 body.capture를 확인한다
+  window.__total = TOTAL;
+  window.__render = render;
+  window.__size = [W, H];
+
+  var q = new URLSearchParams(location.search);
+  var root = document.documentElement, themeSel = document.getElementById('theme');
+  root.dataset.theme = q.get('theme') || 'light';   // 라이트가 기본 (사용자 결정 2026-10-08)
+  themeSel.value = root.dataset.theme;
+  themeSel.onchange = function () { root.dataset.theme = themeSel.value; };
+
+  if (q.has('capture')) {
+    document.body.classList.add('capture');
+    render(parseFloat(q.get('t') || '0'));
+    return;
+  }
+
+  var scrub = document.getElementById('scrub'), clock = document.getElementById('clock'), btn = document.getElementById('play');
+  scrub.max = TOTAL.toFixed(2);
+  var playing = true, t = 0, last = null;
+  btn.onclick = function () { playing = !playing; btn.textContent = playing ? '일시정지' : '재생'; last = null; };
+  scrub.oninput = function () { t = parseFloat(scrub.value); render(t); clock.textContent = t.toFixed(1) + 's'; };
+  function tick(now) {
+    if (playing) {
+      if (last != null) t = (t + (now - last) / 1000) % TOTAL;
+      last = now;
+      render(t);
+      scrub.value = t; clock.textContent = t.toFixed(1) + 's';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
