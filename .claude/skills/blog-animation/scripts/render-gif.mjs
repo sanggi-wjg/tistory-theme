@@ -12,6 +12,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, rmSync, statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, basename, extname } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
 const html = args.find((a) => !a.startsWith('--') && !isFlagValue(a));
@@ -28,6 +29,12 @@ const FPS = Number(opt('--fps', 12));
 const THEME = opt('--theme', 'light');
 const SCALE = Number(opt('--scale', 1.5));
 const STILLS = opt('--stills', null);
+// 잘못 친 값은 조용히 틀린 결과가 된다 — 'drak'은 어느 규칙에도 안 맞아 라이트로 굽히고, '9.5x'는 NaN 장면이 된다
+if (!['light', 'dark'].includes(THEME)) fail(`--theme은 light 또는 dark: ${THEME}`);
+if (!(FPS > 0 && FPS <= 50)) fail(`--fps는 0보다 크고 50 이하: ${opt('--fps')}`);
+if (!(SCALE > 0 && SCALE <= 4)) fail(`--scale은 0보다 크고 4 이하: ${opt('--scale')}`);
+const STILL_TS = STILLS ? STILLS.split(',').map((x) => (/^\s*\d+(\.\d+)?\s*$/.test(x) ? Number(x) : NaN)) : [];
+if (STILL_TS.some(Number.isNaN)) fail(`--stills는 쉼표로 구분한 초: ${STILLS}`);
 const CHECK_ONLY = args.includes('--check');
 const OUT = resolve(opt('--out', join(dirname(HTML), basename(HTML, extname(HTML)) + '.gif')));
 
@@ -44,10 +51,12 @@ const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--hide-scrollbars', '--remote-debugging-port=0',
   `--user-data-dir=${profile}`, 'about:blank',
 ], { stdio: ['ignore', 'ignore', 'pipe'] });
-// Chrome은 죽는 중에도 프로필에 쓴다 — 지우기는 재시도하고, 그래도 남으면 임시 폴더라 둔다
+// Chrome은 죽는 중에도 프로필에 쓴다 — 지우기는 재시도하고, 그래도 남으면 임시 폴더라 둔다.
+// 프레임 폴더도 여기서 지운다 — ffmpeg가 실패해 fail()로 나가도 수십 MB가 남지 않게
+let work = null;
 const cleanup = () => {
   try { chrome.kill('SIGKILL'); } catch {}
-  try { rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); } catch {}
+  for (const d of [profile, work]) if (d) try { rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); } catch {}
 };
 process.on('exit', cleanup);
 
@@ -88,7 +97,10 @@ await s('Runtime.enable');
 const loaded = new Promise((r) => ws.addEventListener('message', function on(e) {
   if (JSON.parse(e.data).method === 'Page.loadEventFired') { ws.removeEventListener('message', on); r(); }
 }));
-await s('Page.navigate', { url: `file://${HTML}?capture=1&theme=${THEME}&t=0` });
+// pathToFileURL — 경로의 #·?·공백이 조각·쿼리로 잘리지 않게
+const pageUrl = pathToFileURL(HTML);
+pageUrl.search = `?capture=1&theme=${THEME}&t=0`;
+await s('Page.navigate', { url: pageUrl.href });
 await loaded;
 await ev('document.fonts.ready.then(() => true)');
 
@@ -98,28 +110,38 @@ const contract = await ev(`(() => {
     && Array.isArray(window.__size) && window.__size.length === 2;
   if (!ok) return { ok };
   const snap = () => document.body.innerHTML;
-  // 순수성은 여러 시점에서 본다 — t=0 한 점만 보면 단계 안의 효과(나타나기 등)에 섞인 난수를 못 잡는다
-  const ts = Array.from({ length: 24 }, (_, i) => window.__total * (i + 0.37) / 24);
-  const fwd = ts.map((t) => (window.__render(t), snap()));
+  // 검사는 **실제로 찍을 프레임 시각 전부**에서 한다. 처음엔 t=0 한 점, 다음엔 24점만 봤다 —
+  // 둘 다 짧은 단계·나타나기 구간에만 섞인 난수나 늦게 생기는 애니메이션을 놓쳤다(코드 리뷰 2026-10-08)
+  const ts = Array.from({ length: Math.floor(window.__total * ${FPS}) }, (_, i) => i / ${FPS});
+  // 움직임을 CSS나 SMIL에 맡기면 프레임을 t로 찍어도 그 움직임은 안 따라온다
+  const timedAt = () => {
+    let n = document.querySelectorAll('animate, animateTransform, animateMotion, set').length;
+    for (const el of document.body.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+      if (cs.animationName !== 'none' || cs.transitionDuration.split(',').some((d) => parseFloat(d) > 0)) n++;
+    }
+    return n;
+  };
+  let timed = 0, timedT = null;
+  const fwd = ts.map((t) => {
+    window.__render(t);
+    const n = timedAt();
+    if (n > timed) { timed = n; timedT = t; }
+    return snap();
+  });
   const back = ts.slice().reverse().map((t) => (window.__render(t), snap())).reverse();
   const impure = ts.filter((_, i) => fwd[i] !== back[i]).map((t) => +t.toFixed(2));
-  // 움직임을 CSS나 SMIL에 맡기면 프레임을 t로 찍어도 그 움직임은 안 따라온다
-  let timed = 0;
-  for (const el of document.body.querySelectorAll('*')) {
-    const cs = getComputedStyle(el);
-    if (cs.animationName !== 'none' || cs.transitionDuration.split(',').some((d) => parseFloat(d) > 0)) timed++;
-  }
-  timed += document.querySelectorAll('animate, animateTransform, animateMotion, set').length;
   return { ok, total: window.__total, size: window.__size,
+    frames: ts.length,
     moves: new Set(fwd).size > 1, // t에 따라 그림이 바뀌는가
     impure,                       // 같은 t인데 그림이 다른 시점 (Date·Math.random·누적 상태)
-    timed,
+    timed, timedT,
     controlsHidden: document.body.classList.contains('capture') };
 })()`);
 if (!contract.ok) fail('계약 위반: window.__render(t)·window.__total(초)·window.__size([w,h])가 모두 있어야 한다');
-if (!contract.moves) fail('계약 위반: 24개 시점의 그림이 전부 같다 — __render가 t를 읽지 않는다');
+if (!contract.moves) fail(`계약 위반: 프레임 ${contract.frames}장의 그림이 전부 같다 — __render가 t를 읽지 않는다`);
 if (contract.impure.length) fail(`계약 위반: 같은 t인데 그림이 다르다 (t=${contract.impure.slice(0, 5).join(', ')}…) — Date·Math.random·이전 프레임 상태를 쓰지 않는다`);
-if (contract.timed) fail(`계약 위반: CSS animation/transition·SMIL이 걸린 요소 ${contract.timed}개 — 움직임은 전부 t의 함수로 그린다`);
+if (contract.timed) fail(`계약 위반: CSS animation/transition·SMIL이 걸린 요소 ${contract.timed}개 (t=${contract.timedT.toFixed(2)}) — 움직임은 전부 t의 함수로 그린다`);
 if (!contract.controlsHidden) fail('계약 위반: ?capture=1에서 body.capture가 없다 — 조작 막대가 GIF에 찍힌다');
 const [W, H] = contract.size;
 console.log(`✓ 계약: ${contract.total.toFixed(2)}초, ${W}×${H}`);
@@ -136,7 +158,7 @@ async function shot(t, file) {
 // ── 정지 장면
 if (STILLS) {
   const base = join(dirname(OUT), basename(OUT, '.gif'));
-  for (const t of STILLS.split(',').map(Number)) {
+  for (const t of STILL_TS) {
     const f = `${base}.still-${t}.png`;
     await shot(t, f);
     console.log(f);
@@ -145,15 +167,15 @@ if (STILLS) {
 }
 
 // ── 프레임 → GIF
-const work = mkdtempSync(join(tmpdir(), 'anim-frames-'));
+work = mkdtempSync(join(tmpdir(), 'anim-frames-'));
 const n = Math.floor(contract.total * FPS);
 for (let i = 0; i < n; i++) await shot(i / FPS, join(work, `${String(i).padStart(5, '0')}.png`));
 
-// 평면 도형이라 128색이면 충분하고, 디더링을 끄면 면이 깨끗하고 파일도 작다
-const ff = (a) => { const r = spawnSync('ffmpeg', ['-loglevel', 'error', '-y', ...a], { stdio: 'inherit' }); if (r.status !== 0) fail('ffmpeg 실패'); };
-ff(['-framerate', String(FPS), '-i', join(work, '%05d.png'), '-vf', 'palettegen=max_colors=128:stats_mode=full', join(work, 'pal.png')]);
-ff(['-framerate', String(FPS), '-i', join(work, '%05d.png'), '-i', join(work, 'pal.png'), '-lavfi', 'paletteuse=dither=none', '-loop', '0', OUT]);
-rmSync(work, { recursive: true, force: true });
+// 평면 도형이라 128색이면 충분하고, 디더링을 끄면 면이 깨끗하고 파일도 작다. 팔레트 생성과 적용을 한 번의 디코드로
+const r = spawnSync('ffmpeg', ['-loglevel', 'error', '-y', '-framerate', String(FPS), '-i', join(work, '%05d.png'),
+  '-filter_complex', 'split[a][b];[a]palettegen=max_colors=128:stats_mode=full[p];[b][p]paletteuse=dither=none',
+  '-loop', '0', OUT], { stdio: 'inherit' });
+if (r.status !== 0) fail('ffmpeg 실패');
 
 const kb = Math.round(statSync(OUT).size / 1024);
 console.log(`✓ ${OUT}\n  ${n}프레임 · ${FPS}fps · ${contract.total.toFixed(1)}초 · ${Math.round(W * SCALE)}×${Math.round(H * SCALE)} · ${kb}KB`);
