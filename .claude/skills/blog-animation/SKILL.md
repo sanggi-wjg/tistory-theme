@@ -30,8 +30,13 @@ description: "블로그 글에 넣을 설명용 애니메이션을 HTML(SVG + t�
 
 ### 2. 템플릿을 복사해 장면만 바꾼다
 
+원본 HTML과 GIF는 **글 폴더의 `assets/`**에 둔다 — 나중에 캡션·속도를 고쳐 다시 구울 원본이다. 글 폴더는 블로그 카테고리를
+그대로 따른다: 올린 글은 `posts/<카테고리>/<하위 카테고리>/<YYYY-MM-DD>-<영문 슬러그>/`, 올리기 전 초안은 같은 카테고리의
+`_drafts/<영문 슬러그>/`. 아래 명령의 `<글>`이 그 폴더다(예: `posts/데이터베이스/MySQL/2026-10-08-lock-order-deadlock`).
+**`posts/`는 `.gitignore`에 있다** — 저장소가 공개인데 원고에는 회사 코드 이야기가 들어간다. 원본은 이 컴퓨터에만 있다.
+
 ```bash
-cp .claude/skills/blog-animation/assets/template.html posts/assets/<슬러그>.html
+cp .claude/skills/blog-animation/assets/template.html <글>/assets/<슬러그>.html
 ```
 
 파일은 「장면」과 「엔진」 두 칸이다. **장면 칸만 고친다** — `initial()`(처음 상태), `STEPS`(단계), `draw(r, t)`(그리기).
@@ -41,13 +46,11 @@ cp .claude/skills/blog-animation/assets/template.html posts/assets/<슬러그>.h
 
 단계마다 지워야 하는 값(그 단계에서만 보이는 것 — 막 생긴 칸, 막 풀린 칸)은 `eachStep(s)`에서 지운다. 엔진이 각 단계 직전에 부른다.
 
-원본 HTML과 GIF는 글 초안 옆 `posts/assets/`에 둔다 — 나중에 캡션·속도를 고쳐 다시 구울 원본이다.
-
 ### 3. 계약 검사 → 정지 장면으로 직접 본다
 
 ```bash
-node .claude/skills/blog-animation/scripts/render-gif.mjs posts/assets/<슬러그>.html --check
-node .claude/skills/blog-animation/scripts/render-gif.mjs posts/assets/<슬러그>.html --stills 3,9.5,18
+node .claude/skills/blog-animation/scripts/render-gif.mjs <글>/assets/<슬러그>.html --check
+node .claude/skills/blog-animation/scripts/render-gif.mjs <글>/assets/<슬러그>.html --stills 3,9.5,18
 ```
 
 `--stills`는 `<슬러그>.still-<t>.png`를 남긴다. **핵심 장면마다 Read로 열어 본다** — 글자 잘림·겹침, 화살표가 맞는 칸을
@@ -57,7 +60,7 @@ node .claude/skills/blog-animation/scripts/render-gif.mjs posts/assets/<슬러�
 ### 4. 사용자에게 속도를 보여 준다 — 굽기 전에
 
 ```bash
-open -a "Google Chrome" posts/assets/<슬러그>.html
+open -a "Google Chrome" <글>/assets/<슬러그>.html
 ```
 
 **나는 움직임의 속도감을 판단하지 못한다** — 프레임을 낱장으로 볼 뿐이다. 처음 컷은 사용자가 「빠르다」고 했고 절반 → 1.5배로
@@ -67,8 +70,8 @@ open -a "Google Chrome" posts/assets/<슬러그>.html
 ### 5. 굽는다
 
 ```bash
-node .claude/skills/blog-animation/scripts/render-gif.mjs posts/assets/<슬러그>.html
-# → posts/assets/<슬러그>.gif   (옵션: --fps 12 --theme light --scale 1.5 --out 경로)
+node .claude/skills/blog-animation/scripts/render-gif.mjs <글>/assets/<슬러그>.html
+# → <글>/assets/<슬러그>.gif   (옵션: --fps 12 --theme light --scale 1.5 --out 경로)
 ```
 
 기본값은 사용자가 정한 것과 실측에서 나왔다.
