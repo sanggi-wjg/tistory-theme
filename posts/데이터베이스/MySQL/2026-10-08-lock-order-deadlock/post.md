@@ -39,6 +39,23 @@ ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting trans
 ![데드락 미발생](assets/lock-order-sorted.gif)
 *데드락 미발생*
 
+**실제 적용 사례**
+
+```kotlin
+// 엑셀로 받은 포인트 지급 요청을 userId로 정렬한 뒤 청크로 나눠 발행한다
+rows.sortedBy { it.userId }            // userId 오름차순 정렬
+    .chunked(CHUNK_SIZE)               // 정렬된 순서 그대로 청크로 나눔
+    .forEachIndexed { index, chunk ->
+        kafkaProducer.publish(
+            topic = POINT_PROCESS_CHUNK,
+            key = null,                // 청크는 여러 컨슈머가 동시에 처리한다
+            message = PointChunkMessage(requestId, index, chunk),
+        )
+    }
+```
+
+정렬해 두었기 때문에 청크마다 userId 범위가 겹치지 않고, 겹치더라도 모든 컨슈머가 userId 오름차순으로 정렬하여 데드락이 생기지 않는다. 엑셀 원본 순서 그대로 나눴다면 같은 사용자가 여러 청크에 흩어져, 청크마다 다른 순서로 락을 잡을 수 있고 데드락이 발생할 수 있다.
+
 다만 **일관된 순서를 보장한다고 해도 문제가 없는 건 아니다**. 잠긴 행을 기다리는 시간이 innodb_lock_wait_timeout(기본 50초)을 넘기면 아래 오류가 발생한다.
 
 ```
