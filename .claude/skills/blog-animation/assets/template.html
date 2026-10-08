@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>장면 이름</title>
 <style>
-  /* 색은 DESIGN.md 토큰에서 왔다. 트랜잭션·주체 둘은 --a(파랑)·--b(호박), 실패는 --err, 성공은 --ok */
+  /* 바탕·글자 회색은 DESIGN.md 토큰이다. --a·--b·--err·--ok와 옅은 면(-soft)은 이 그림용으로 따로 정했다 —
+     라이트에서 각 색 글자가 자기 옅은 면 위 4.5:1을 넘도록 토큰보다 어둡게 잡았다(SKILL.md 「그리기 규칙」) */
   :root {
     --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
     --hair: #ebebeb; --hair-strong: #a1a1a1;
     --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
-    --a: #0064da; --a-soft: #d3e5ff;
-    --b: #b26b00; --b-soft: #fdebc8;
-    --err: #d60000; --err-soft: #ffe1e1;
-    --ok: #12805c; --ok-soft: #d6f5ea;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
   }
   :root[data-theme="dark"] {
     --page: #0a0a0a; --bg: #121212; --surface: #1a1a1a;
