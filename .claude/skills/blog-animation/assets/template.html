@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>장면 이름</title>
+<style>
+  /* 색은 DESIGN.md 토큰에서 왔다. 트랜잭션·주체 둘은 --a(파랑)·--b(호박), 실패는 --err, 성공은 --ok */
+  :root {
+    --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
+    --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0064da; --a-soft: #d3e5ff;
+    --b: #b26b00; --b-soft: #fdebc8;
+    --err: #d60000; --err-soft: #ffe1e1;
+    --ok: #12805c; --ok-soft: #d6f5ea;
+  }
+  :root[data-theme="dark"] {
+    --page: #0a0a0a; --bg: #121212; --surface: #1a1a1a;
+    --hair: #2e2e2e; --hair-strong: #454545;
+    --ink: #ededed; --ink-body: #b0b0b0; --mute: #8f8f8f;
+    --a: #3291ff; --a-soft: #10233f;
+    --b: #f7b955; --b-soft: #3a2a0e;
+    --err: #ff6166; --err-soft: #3d1416;
+    --ok: #50e3c2; --ok-soft: #0f2e27;
+  }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; padding: 16px; }
+  .stage { max-width: 760px; margin: 0 auto; }
+  svg { display: block; width: 100%; height: auto; }
+  .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .controls { display: flex; gap: 12px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--ink-body); }
+  .controls input[type=range] { flex: 1; }
+  .controls button, .controls select { font: inherit; padding: 4px 10px; }
+  /* 캡처 모드: 조작 막대를 숨기고 장면만 남긴다 (render-gif.mjs가 body.capture를 확인한다) */
+  body.capture { padding: 0; }
+  body.capture .controls { display: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- aria-label에는 장면 전체를 한 문장으로. GIF로 구우면 사라지지만 HTML로 볼 때를 위해 둔다 -->
+  <svg id="scene" viewBox="0 0 760 400" role="img" aria-label="장면 설명"></svg>
+  <div class="controls">
+    <button id="play" type="button">일시정지</button>
+    <input id="scrub" type="range" min="0" step="0.01">
+    <span id="clock" class="mono">0.0s</span>
+    <select id="theme"><option value="light">라이트</option><option value="dark">다크</option></select>
+  </div>
+</div>
+<script>
+(function () {
+  var W = 760, H = 400;   // viewBox와 같아야 한다
+
+  // ════════════════════════════════════════════════════════════
+  // 장면 — 여기부터 바꾼다
+  // ════════════════════════════════════════════════════════════
+
+  // 처음 상태. 매 프레임 여기서 출발해 단계를 다시 쌓는다 (그래서 render(t)가 t만의 함수가 된다)
+  function initial() {
+    return { owner: null, A: '대기 전', B: '대기 전', waitB: false, fresh: null };
+  }
+
+  // 단계: d = 기준 박자(초), cap = 아래 캡션, tone = 'err' | 'ok' | 생략, fn = 상태를 바꾼다.
+  // fn에서 s.fresh를 세우면 그 단계 동안 draw()가 p(0→1)로 나타나기 효과를 줄 수 있다.
+  var STEPS = [
+    { d: 1.6, cap: 'A와 B가 같은 행을 잠그려 한다', fn: function () {} },
+    { d: 0.8, cap: 'A: 행 잠금', fn: function (s) { s.owner = 'A'; s.A = '잠금 보유'; s.fresh = 'lockA'; } },
+    { d: 1.6, cap: 'B: 같은 행 요청 → A가 쥐고 있어 대기', fn: function (s) { s.waitB = true; s.B = '대기 중'; s.fresh = 'waitB'; } },
+    { d: 1.6, cap: 'A 커밋 → 잠금 해제', tone: 'ok', fn: function (s) { s.owner = null; s.A = '커밋'; } },
+    { d: 2.0, cap: 'B: 행 획득', fn: function (s) { s.owner = 'B'; s.waitB = false; s.B = '잠금 보유'; s.fresh = 'lockB'; } }
+  ];
+
+  function draw(r, t) {
+    var s = r.s, p = r.p, out = [];
+    var appear = ease(p * 3);
+    out.push(title('같은 행을 두 트랜잭션이 잠그면'));
+
+    // 주체 두 개
+    out.push(box(60, 80, 160, 50, 'var(--surface)', 'var(--a)'));
+    out.push(text(140, 102, '트랜잭션 A', 'fill:var(--a);font-size:14px;font-weight:700;text-anchor:middle'));
+    out.push(text(140, 120, s.A, 'fill:var(--mute);font-size:11px;text-anchor:middle'));
+    out.push(box(60, 250, 160, 50, 'var(--surface)', 'var(--b)'));
+    out.push(text(140, 272, '트랜잭션 B', 'fill:var(--b);font-size:14px;font-weight:700;text-anchor:middle'));
+    out.push(text(140, 290, s.B, 'fill:var(--mute);font-size:11px;text-anchor:middle'));
+
+    // 행
+    var fill = s.owner === 'A' ? 'var(--a-soft)' : s.owner === 'B' ? 'var(--b-soft)' : 'var(--surface)';
+    var stroke = s.owner === 'A' ? 'var(--a)' : s.owner === 'B' ? 'var(--b)' : 'var(--hair-strong)';
+    var o = (s.fresh === 'lockA' || s.fresh === 'lockB') ? appear : 1;
+    out.push(box(480, 160, 160, 60, 'var(--surface)', 'var(--hair-strong)'));
+    if (s.owner) out.push(box(480, 160, 160, 60, fill, stroke, o));
+    out.push(text(560, 196, 'user 1', 'fill:var(--ink);font-size:14px;font-weight:600;text-anchor:middle', 'mono'));
+
+    if (s.waitB) {
+      out.push(arrow(220, 270, 476, 210, '--b', { dash: true, t: t, o: s.fresh === 'waitB' ? appear : 1 }));
+      out.push(text(350, 256, '대기', 'fill:var(--b);font-size:11px;font-weight:700;text-anchor:middle'));
+    }
+    out.push(caption(r.step));
+    return out;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 엔진 — 보통은 손대지 않는다
+  // ════════════════════════════════════════════════════════════
+
+  // 실제 재생은 기준 박자의 SLOW배. 처음 컷은 사용자가 "빠르다"고 해 1.5로 맞췄다(2026-10-08)
+  var SLOW = 1.5;
+  STEPS.forEach(function (st) { st.d *= SLOW; });
+  var TOTAL = STEPS.reduce(function (n, st) { return n + st.d; }, 0);
+
+  function stateAt(t) {
+    var s = initial(), acc = 0;
+    for (var i = 0; i < STEPS.length; i++) {
+      s.fresh = null;
+      STEPS[i].fn(s);
+      if (t < acc + STEPS[i].d || i === STEPS.length - 1) {
+        return { s: s, step: STEPS[i], p: Math.max(0, Math.min(1, (t - acc) / STEPS[i].d)) };
+      }
+      acc += STEPS[i].d;
+    }
+  }
+
+  function ease(p) { p = Math.max(0, Math.min(1, p)); return p * p * (3 - 2 * p); }
+  function text(x, y, str, style, cls) {
+    return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + str + '</text>';
+  }
+  function box(x, y, w, h, fill, stroke, o) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" style="fill:' + fill +
+      ';stroke:' + stroke + ';stroke-width:1.5;opacity:' + (o == null ? 1 : o) + '"/>';
+  }
+  // 점선의 흐름도 t로 민다 — CSS 애니메이션을 쓰면 GIF에 안 찍힌다
+  function arrow(x1, y1, x2, y2, color, opts) {
+    opts = opts || {};
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+      ' style="stroke:var(' + color + ');stroke-width:' + (opts.w || 2) + ';opacity:' + (opts.o == null ? 1 : opts.o) + '"' +
+      (opts.dash ? ' stroke-dasharray="6 5" stroke-dashoffset="' + (-(opts.t || 0) * 18 / SLOW).toFixed(1) + '"' : '') +
+      ' marker-end="url(#m' + color.slice(2) + ')"/>';
+  }
+  function title(str) {
+    return text(W / 2, 30, str, 'fill:var(--ink);font-size:15px;font-weight:700;text-anchor:middle');
+  }
+  function caption(step) {
+    var tone = step.tone;
+    var f = tone === 'err' ? '--err-soft' : tone === 'ok' ? '--ok-soft' : '--surface';
+    var c = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--hair';
+    var tc = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--ink';
+    return '<rect x="20" y="' + (H - 50) + '" width="' + (W - 40) + '" height="36" rx="8" style="fill:var(' + f + ');stroke:var(' + c + ')"/>' +
+      text(W / 2, H - 27, step.cap, 'fill:var(' + tc + ');font-size:14px;font-weight:' + (tone ? 700 : 500) + ';text-anchor:middle');
+  }
+  function defs() {
+    return '<defs>' + ['--a', '--b', '--err', '--ok', '--mute'].map(function (c) {
+      return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+        '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+    }).join('') + '</defs>';
+  }
+
+  function render(t) {
+    var r = stateAt(t);
+    var bg = '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="12" style="fill:var(--bg);stroke:var(--hair)"/>';
+    document.getElementById('scene').innerHTML = defs() + bg + draw(r, t).join('');
+  }
+
+  // ── 캡처 계약: render-gif.mjs가 이 셋과 body.capture를 확인한다
+  window.__total = TOTAL;
+  window.__render = render;
+  window.__size = [W, H];
+
+  var q = new URLSearchParams(location.search);
+  var root = document.documentElement, themeSel = document.getElementById('theme');
+  root.dataset.theme = q.get('theme') || 'light';   // 라이트가 기본 (사용자 결정 2026-10-08)
+  themeSel.value = root.dataset.theme;
+  themeSel.onchange = function () { root.dataset.theme = themeSel.value; };
+
+  if (q.has('capture')) {
+    document.body.classList.add('capture');
+    render(parseFloat(q.get('t') || '0'));
+    return;
+  }
+
+  var scrub = document.getElementById('scrub'), clock = document.getElementById('clock'), btn = document.getElementById('play');
+  scrub.max = TOTAL.toFixed(2);
+  var playing = true, t = 0, last = null;
+  btn.onclick = function () { playing = !playing; btn.textContent = playing ? '일시정지' : '재생'; last = null; };
+  scrub.oninput = function () { t = parseFloat(scrub.value); render(t); clock.textContent = t.toFixed(1) + 's'; };
+  function tick(now) {
+    if (playing) {
+      if (last != null) t = (t + (now - last) / 1000) % TOTAL;
+      last = now;
+      render(t);
+      scrub.value = t; clock.textContent = t.toFixed(1) + 's';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

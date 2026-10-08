@@ -14,7 +14,7 @@ CLAUDE.md는 세션마다 통째로 맥락에 실리므로 기록이 아니라 �
 | 종류 | 위치 | 들어 있는 것 |
 |---|---|---|
 | 에이전트 | `.claude/agents/` | 제작 팀 `skin-markup`·`skin-style`·`skin-behavior`·`skin-qa`, 별도 축 `seo-auditor`·`blog-analyst` |
-| 스킬 | `.claude/skills/` | 조율 `tistory-skin-orchestrator` · 만들고 보기 `skin-build`·`skin-preview`·`skin-qa-check` · PR 앞 `pr-review-gate` · 배포 `skin-deploy`·`seo-verify-live` · 실측 `blog-census` · 레퍼런스 `tistory-substitutions` |
+| 스킬 | `.claude/skills/` | 조율 `tistory-skin-orchestrator` · 만들고 보기 `skin-build`·`skin-preview`·`skin-qa-check` · PR 앞 `pr-review-gate` · 배포 `skin-deploy`·`seo-verify-live` · 실측 `blog-census` · 레퍼런스 `tistory-substitutions` · 글 도식 `blog-animation` |
 | Claude Code 훅 | `.claude/hooks/`, `.claude/settings.json` | `pr-review-gate.py` — PR 생성 명령을 리뷰 마커(`.claude/.pr-review-ok`)의 SHA가 HEAD와 같을 때만 통과시킨다. `test-detect.py`가 그 탐지기를 지킨다(`npm run test:hooks`) |
 | 검사 사슬 | `package.json`의 `check` | 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰. 커밋 전 필수(CLAUDE.md 「작업 방식」 4번) |
 | CI | `.github/workflows/` | `check.yml` — PR·`main` 푸시마다 `npm run check`, `main` 보호 규칙의 필수 검사 · `release.yml` — `v*` 태그에서 `dist/` zip 릴리즈(결정 47) |
@@ -46,6 +46,7 @@ CLAUDE.md는 세션마다 통째로 맥락에 실리므로 기록이 아니라 �
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
+| 2026-10-08 | 스킬 **`blog-animation`** 추가 — 글에 넣을 설명 애니메이션을 HTML(SVG, 그림이 t만의 함수)로 그리고 Chrome 하나를 CDP로 붙잡아 프레임을 찍어 ffmpeg로 GIF를 굽는다. 템플릿(장면/엔진 두 칸, `SLOW` 1.5, 라이트 기본)·예시 둘(락 순서 데드락/정렬)·`render-gif.mjs`(계약 검사 `--check`, 정지 장면 `--stills`)·`test-contract.mjs`(계약을 하나씩 깬 변이 5개가 전부 실패해야 한다). 에이전트는 두지 않았다 — 속도·캡션을 사용자와 주고받는 대화형 작업이라 메인 세션이 스킬로 한다. `DECISIONS.md` §2에 본문 `<script>` 제약 행 | `skills/blog-animation/`, `CLAUDE.md`, `DECISIONS.md` | 사용자 요청(2026-10-08) — 「앞으로도 생성할 것 같다」. 처음 짠 계약 검사가 `Math.random`과 CSS transition을 **통과시켰다**(t=0 한 점만 보고 `getAnimations()`만 셌다) — 변이 테스트로 드러나 24개 시점 순·역 대조와 계산 스타일 검사로 고쳤다. 결정 42 부류 |
 | 2026-10-08 | **문제·할 일은 찾은 자리에서 이슈로** — CLAUDE.md 「작업 방식」에 절을 따로 세웠다: 결함·개선거리·검사 공백·사용자 지적·머지 뒤에 남는 일을 묻지 않고 이슈로 등록(지속 승인), 공개 저장소라 비밀·개인정보 금지, 중복은 댓글로, 시작할 때 관련 이슈부터, 사용자 판단을 기다리는 미결은 `DECISIONS.md` §4에 그대로. 리뷰 게이트 「경고」와 축 4 점검표에 「머지 뒤에도 남는 일 → 이슈」 | `CLAUDE.md`, `TODO.md`, `skills/pr-review-gate/SKILL.md`·`references/review-axes.md` | 사용자 지시(2026-10-08) — 「앞으로도 이슈나 진행할 항목 등은 GitHub 이슈에 등록」 |
 | 2026-10-08 | **남은 일은 GitHub 이슈로** — `TODO.md` 「검사·측정의 공백」 14개를 이슈 #88~#101(제목 머리 `[검사 공백]`)로 옮기고 파일에는 안내와 이슈 규칙(재현 경로·실측·원인 추정 금지·슬러그·`Closes #N`)만 남겼다. CLAUDE.md 「작업 방식」과 리뷰 축 4 점검표가 `TODO.md` 대신 이슈를 가리킨다. `DECISIONS.md`의 열린 항목 참조 여섯 곳을 「이슈 #N `슬러그`」로 | `CLAUDE.md`, `TODO.md`, `skills/pr-review-gate/SKILL.md`·`references/review-axes.md`, `DECISIONS.md` | 사용자 요청(2026-10-08). 이미 닫힌 TODO 항목을 가리키는 참조(결정문의 「TODO `슬러그`」, 주석의 「옛 TODO」)는 이력이라 그대로 둔다 |
 | 2026-10-07 | 프리뷰 `TOOLBAR_BOX`에 ⋮ 방문자 목록 `.header_layer.layer_tool`(라이브처럼 `display:none`)을 넣는다. `verify.py` V017의 툴바 시트 문구에 결정 68. skin-style 에이전트 정의의 「테마 분기는 하지 않는다」에 결정 68 예외 | `skills/skin-preview/scripts/render.py`·`SKILL.md`, `skills/seo-verify-live/scripts/verify.py`, `agents/skin-style.md` | 결정 68. 픽스처가 숨은 목록을 빼 두어 다크 덮어쓰기(목록 배경·글자·캐럿)가 프리뷰에서 한 번도 그려질 수 없었다 — skin-style이 라이브 비로그인 마크업을 열어 보고 찾았다. 결정 42 부류 |
