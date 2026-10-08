@@ -53,7 +53,7 @@ ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
 왼쪽 세션이 id=100을 잠근 상태에서, 오른쪽 세션은 id=99를 수정한 뒤 id=100을 기다리다 1205를 받았다.
 그런데도 id=99의 변경은 그대로 남아 있다. 이대로 commit하면 id=99만 반영된다.
 
-**데드락과는 달리 InnoDB가 트랜잭션을 정리해 주지는 않는다.** InnoDB 엔진이 어떻게 데이터 변경되는지 생각해보면 당연하다.
+**데드락과는 달리 InnoDB가 트랜잭션을 정리해 주지는 않는다.** InnoDB 엔진이 어떻게 데이터 변경되는지 생각해보면 이해할 수 있다.
 InnoDB는 데이터 변경을 즉시 반영하고 이전 값을 undo log에 남기니 실패한 부분만 골라 롤백할 수 있으니까.
 
 ## 실무에서는?
@@ -64,8 +64,11 @@ InnoDB는 데이터 변경을 즉시 반영하고 이전 값을 undo log에 남�
 - **UPDATE, DELETE 등 잠금이 발생하는 쿼리 사용시 인덱스 타지 않는 WHERE 조건은 사용하지 않는다**. 테이블 전체 행이 잠길수도 있다. 필요한 경우 PK 등을 사용해 범위를 지정하여 작은 범위를 나누어서 진행이 필요하다.
 - 트랜잭션을 **일정 청크 단위로 나누어 동작 시키거나 API 등의 외부 통신등은 트랜잭션 안에 포함되지 않도록 해야 한다.**
 - 청크로 나누는 경우 **청크 중 부분 실패가 날 수 있기 때문에 이 점을 염두에 두고 설계와 구현**이 되어야 한다.
+- 프로젝트에서 **Kafka를 쓰고 있다면 메시지 키로 순서를 보장하는 특성을 이용해 락 충돌을 줄일 수** 있다.
+  - 키를 대상 ID로 지정하여 같은 대상의 메시지는 항상 같은 파티션으로 가고, 한 컨슈머 쓰레드가 순서대로 처리한다. 파티션과 컨슈머 스레드를 여러 개로 병렬 구성했을 경우 사용할 수 있는 방법이다.
+  - 트래픽이 적은 토픽이라 파티션 1개, 컨슈머 스레드 1개로 구성했다면, 따로 키를 신경 쓰지 않아도 모든 메시지가 순서대로 처리된다.
 
-### 스프링에서는?
+## 스프링에서는?
 
 *(다소 억지 코드루다가)*
 
@@ -107,6 +110,32 @@ Caused by: com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException: Lock 
 java.lang.RuntimeException: rollback
 	at com.raynor.demo.boiler.service.lab.RollbackOnTimeoutService.transactionA(RollbackOnTimeoutService.kt:26) ~[main/:na]
 ```
+
+### 오류시 재시도
+
+**@Retryable을 붙인 Facade가 @Transactional 서비스를 호출하도록 빈을 나눴다**. 재시도할 때마다 새 트랜잭션이 열린다.
+이 경우뿐만 아니라 **Retryable 어노테이션 사용시 반드시 트랜잭션 바깥에서 해야 한다.** 그렇지 않고 같은 트랜잭션 안에서 다시 시도하면 이미 깨진 트랜잭션을 이어 쓰게 된다.
+
+- 대상은 **CannotAcquireLockException**(1205, 1213)으로 좁힌다.
+- 1205 오류는 매번 락을 기다린 뒤에 실패하므로 재시도해도 응답이 오래 걸린다. 상황에 따라서 innodb_lock_wait_timeout를 짧게 잡아도 좋다.
+
+```kotlin
+@Service
+class RollbackOnTimeoutFacadeService(
+    private val rollbackOnTimeoutService: RollbackOnTimeoutService,
+) {
+    @Retryable(
+        includes = [CannotAcquireLockException::class],
+        maxRetries = 3,
+        delay = 50L,
+    )
+    fun transactionB(): Map<String, String?> {
+        return rollbackOnTimeoutService.transactionB()
+    }
+}
+```
+
+### hibernate 설정
 
 **hibernate.order_updates(기본 false): true** 설정으로 Hibernate가 flush할 때 UPDATE를 엔티티 타입과 PK순으로 정렬 하도록 설정할 수도 있다.
 
