@@ -19,7 +19,7 @@ __pycache__/
 backup/
 
 # 블로그 글 원고 — 저장소가 공개이고 원고에는 회사 코드 이야기가 들어간다
-posts/
+/posts/
 
 .DS_Store
 *.log
