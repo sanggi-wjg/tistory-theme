@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+import time
 from urllib.parse import quote
 
 ROOT = os.getcwd()
@@ -1047,7 +1048,93 @@ def values(text, ctx):
     return VALUE_RE.sub(sub, text)
 
 
+# ── 동시 실행 (이슈 #100) ──────────────────────────────────────────────
+# 예전에는 각 페이지를 `open(path, "w")`로 그 자리에 다시 썼다 — 렌더 둘이 겹치거나 렌더 중에 다른 쪽(test:notice·
+# gen-preview·브라우저)이 읽으면 **잘린 파일**을 봤다(겹친 5회에 18번). 막는 것이 산문 규칙뿐이었다. 지금은 잠금
+# `.preview.lock`(pid)으로 줄을 세우고, 파일마다 임시 파일에 쓴 뒤 os.replace로 원자 교체한다. scripts/build.mjs와
+# 같은 방식이다. `--page`로 일부만 그릴 수 있어 _preview/를 통째로 바꾸지 않는다.
+# scripts/test-build-lock.mjs(npm run check)가 실제로 겹쳐 돌려 본다.
+LOCK = os.path.join(ROOT, ".preview.lock")
+
+
+def _alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+
+
+def acquire_lock():
+    """`.preview.lock`을 쥔다. pid를 다 쓴 파일을 link로 만든다 — 빈 잠금을 죽은 잠금으로 오인하지 않게.
+    알려진 한계: 죽은 잠금을 둘이 동시에 치우면 늦은 쪽이 새 잠금을 지울 수 있다(크래시 뒤에만 생긴다)."""
+    timeout = float(os.environ.get("LOCK_TIMEOUT_MS") or 120000) / 1000
+    start, mine = time.time(), "%s.%d" % (LOCK, os.getpid())
+    with open(mine, "w") as f:
+        f.write(str(os.getpid()))
+    try:
+        while True:
+            try:
+                os.link(mine, LOCK)
+                return
+            except FileExistsError:
+                pass
+            try:
+                pid = int(open(LOCK).read().strip())
+            except FileNotFoundError:
+                continue  # 그 사이 풀렸다
+            except ValueError:
+                pid = 0
+            if pid <= 0 or not _alive(pid):
+                sys.stderr.write("  [잠금] 죽은 프로세스(pid %d)의 .preview.lock을 치운다\n" % pid)
+                try:
+                    os.unlink(LOCK)
+                except FileNotFoundError:
+                    pass
+                continue
+            if time.time() - start > timeout:
+                sys.stderr.write("❌ 다른 프리뷰 렌더(pid %d)가 _preview/를 쓰는 중이다 — %g초 기다렸다.\n"
+                                 "   그 프로세스가 없는데도 이렇다면 .preview.lock을 지운다\n" % (pid, timeout))
+                sys.exit(1)
+            time.sleep(0.1)
+    finally:
+        try:
+            os.unlink(mine)
+        except FileNotFoundError:
+            pass
+
+
+def release_lock():
+    try:
+        if open(LOCK).read().strip() == str(os.getpid()):
+            os.unlink(LOCK)
+    except OSError:
+        pass
+
+
+def write_atomic(path, text):
+    """임시 파일에 다 쓴 뒤 os.replace — 읽는 쪽은 옛 파일 아니면 새 파일을 온전히 본다."""
+    tmp = "%s.tmp-%d" % (path, os.getpid())
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
 def main():
+    acquire_lock()
+    try:
+        render_all()
+    finally:
+        release_lock()
+
+
+def render_all():
     ap = argparse.ArgumentParser()
     ap.add_argument("--page", default=",".join(PAGE_TYPES), help="쉼표 구분 페이지 타입")
     ap.add_argument("--src", default=os.path.join(SRC, "skin.html"))
@@ -1123,7 +1210,7 @@ def main():
                              "스크롤 복귀가 굴러가는지 프리뷰가 재현하지 않는다(결정 60)\n")
         os.makedirs(os.path.join(OUT, "pages"), exist_ok=True)
         path = os.path.join(OUT, "pages", page + ".html")
-        open(path, "w", encoding="utf-8").write(out)
+        write_atomic(path, out)
         made.append(path)
 
     idx = ["<title>프리뷰</title><style>body{font:15px/1.7 system-ui;padding:40px;max-width:640px;"
@@ -1136,7 +1223,7 @@ def main():
     for p in made:
         n = os.path.basename(p)[:-5]
         idx.append('<a href="pages/%s.html">%s <small>(%s)</small></a>' % (n, n, PAGE_TYPES[n]))
-    open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write("\n".join(idx))
+    write_atomic(os.path.join(OUT, "index.html"), "\n".join(idx))
 
     print("\n%d개 페이지 생성 → _preview/" % len(made))
     print("열기: open _preview/index.html")

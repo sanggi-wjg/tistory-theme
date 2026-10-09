@@ -51,6 +51,7 @@ src/
 3. **JS 번들** — esbuild로 `js/index.js`부터 단일 파일로 묶는다. highlight.js는 필요한 언어만 담는다 (`python bash shell sql java kotlin go json yaml xml`)
 4. **인라인 보정 CSS 생성** — `data/inline-styles.json`에서 색 17종 + 배경 11종을 읽어 **공백 유/무 두 형태**의 선택자를 만든다. 실제 마크업이 `style="color: #000000;"`(공백 있음)이라 무공백형만 쓰면 609곳 중 1곳에만 걸린다. 손으로 쓰지 않는다
 5. **skin.html 복사** — 치환자가 있으므로 어떤 변환도 하지 않는다. HTML 최소화도 하지 않는다 (치환자가 깨질 수 있다)
+6. **dist/로 옮긴다(이슈 #100)** — 위 산출물은 임시 폴더 `.dist.tmp-<pid>`에 만든 뒤 `dist/`로 **파일마다 rename**하고, 새 빌드에 없는 옛 파일을 지운다. 빌드 동안 `.dist.lock`을 쥔다 — 다른 빌드가 쥐고 있으면 기다리고(`LOCK_TIMEOUT_MS`, 기본 120초), 그 pid가 죽었으면 치운다. 그래서 빌드가 겹쳐도 서로 지우지 않고, 읽는 쪽(린트·프리뷰)은 `dist/` 파일이 없거나 잘린 순간을 만나지 않는다. **빌드가 실패하면 `dist/`를 지운다** — 옛 산출물이 남으면 다음 린트·프리뷰가 그것을 읽고 통과한다. `npm run test:build-lock`이 실제로 겹쳐 돌려 본다
 
 ## 명령
 
