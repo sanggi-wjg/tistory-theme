@@ -383,6 +383,9 @@ MSG_CASES = [
     (">> 덧붙이기", "reviewed", "git rev-parse HEAD >> " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
     ("tee로 기록", "reviewed", "git rev-parse HEAD | tee " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
     ("cd && 마커 기록 && PR", "reviewed", "cd . && " + MARK + " && " + G, [BUNDLED], [REVIEW_FIRST]),
+    # PR 출력으로 마커를 덮는다 — 전에는 `| tee`가 sink라 열렸다. 다음 판정을 망가뜨리는 모양이라 막는다
+    ("PR 출력을 | tee 마커", "reviewed", G + " --fill | tee " + MARKER, [BUNDLED], [REVIEW_FIRST]),
+    ("PR 출력을 > 마커", "reviewed", G + " --fill > " + MARKER, [BUNDLED], [REVIEW_FIRST]),
     # 마커 기록이 아니다 — 원래 안내가 그대로 나가야 한다
     ("push && PR(마커 없음)", "none", "git push && " + G + " --fill", [REVIEW_FIRST], [BUNDLED]),
     ("마커를 읽기만 한다", "reviewed", "cat " + MARKER + " && " + G, [REVIEW_FIRST], [BUNDLED]),
