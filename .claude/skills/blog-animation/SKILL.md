@@ -109,8 +109,10 @@ HTML과 같은 그림인지 본다.
 
 엔진이 매 프레임 `initial()`에서 단계를 다시 쌓는 것이 순수성을 지키는 방식이다 — 상태를 프레임 사이에 들고 가지 않는다.
 
-**`render-gif.mjs`의 검사나 엔진을 고치면 `scripts/test-contract.mjs`를 돌린다.** 템플릿에서 계약을 하나씩 깬 사본 여덟 개가 전부
-실패하고, 원본·예시가 전부 통과하고, 예시의 엔진이 템플릿과 같아야 한다. `npm run check`에는 없다 — 맥 Chrome과 ffmpeg가 필요하다(이슈 #105 `anim-contract-test-unwired`).
+**`scripts/test-contract.mjs`가 이 계약 검사를 지킨다 — `npm run test:anim`, `npm run check`와 CI가 돈다**(이슈 #105).
+템플릿에서 계약을 하나씩 깬 사본 여덟 개가 전부 **계약 위반으로** 실패하고, 원본·예시가 전부 통과하고, 예시의 엔진이 템플릿과
+같아야 한다. `--check`는 Chrome만 쓰고 ffmpeg는 안 쓴다. Chrome이 없으면 기준선이 실패해 **빨갛게** 끝난다 — 건너뛰지 않는다.
+변이가 「잡혔다」는 것은 종료 코드가 아니라 실패 이유(`계약 위반`)로 센다. 종료 코드만 보면 Chrome이 안 떠도 여덟 개가 전부 잡힌다.
 검사는 두 번 위조됐다. 처음 판은 t=0 한 점만 보고 `getAnimations()`만 세어 `Math.random`과 CSS transition을 **통과시켰고**, 고친 판은
 24개 시점을 봤지만 CSS·SMIL은 마지막 그림 하나에서만 세어 **늦은 단계에만 생기는 애니메이션을 통과시켰다**(PR #104 코드 리뷰).
 
@@ -125,8 +127,9 @@ HTML과 같은 그림인지 본다.
 - **새로 생긴 것만 나타나게** — 단계 `fn`에서 `s.fresh`를 세우고 `draw`에서 `ease(p * 3)`으로 페이드. 전부 움직이면 어디를 볼지 모른다.
 - 판은 760×400(viewBox). 바꾸면 `W`·`H`·viewBox를 같이 바꾼다 — 캡처 크기는 `__size`에서 온다. 캡처 모드는 `.stage`의 폭 제한을
   풀므로 판이 넓어도 작게 찍히지 않는다. HTML로 볼 때만 760에 묶인다.
-- **모바일에서는 글자가 읽히지 않는다 — 아직 풀지 않았다.** 390 폭의 본문 칸이 285px(프리뷰 실측)라 판이 0.375배로 줄고
-  11px 라벨이 약 4px가 된다(이슈 #103 `anim-mobile-legibility`). 정하기 전까지는 GIF를 넘길 때 이 사실을 사용자에게 알린다.
+- **모바일 글자 크기는 지금 판·글자 크기로 둔다**(결정 69). 390 폭에서 판이 0.46배(본문 칸 350px, 라이브 실측)로 줄어
+  11px 라벨이 CSS 5px쯤 되지만, 사용자가 실기기로 보고 문제없다고 판단했다. GIF를 넘길 때 경고하지 않는다 — 다시 권하지 않는다.
+  글자를 더 줄이거나 요소를 더 빽빽하게 넣을 때는 이 판단의 범위 밖이니 실기기 확인을 부탁한다.
 
 ## 하지 않는 것
 
@@ -136,5 +139,5 @@ HTML과 같은 그림인지 본다.
 
 ## 필요한 것
 
-Chrome(`/Applications/Google Chrome.app`, 다른 경로는 환경변수 `CHROME`), Node 22 이상(내장 WebSocket), ffmpeg(`brew install ffmpeg`).
+Chrome(환경변수 `CHROME` → `/Applications/Google Chrome.app` → PATH의 `google-chrome`·`chromium`), Node 22 이상(내장 WebSocket), ffmpeg(`brew install ffmpeg`).
 없으면 스크립트가 무엇이 없는지 말하고 멈춘다.

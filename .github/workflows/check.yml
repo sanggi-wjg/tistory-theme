@@ -46,6 +46,7 @@ jobs:
       - run: npm ci
 
       # 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰 렌더 → 프리뷰를 읽는 검사(test:notice). package.json의 check 스크립트가 정본이다.
+      # test:anim(blog-animation 계약 테스트)은 러너에 깔린 google-chrome을 PATH에서 찾아 헤드리스로 띄운다(이슈 #105).
       - run: npm run check
 
       # 프리뷰 HTML을 남겨 PR에서 렌더 결과를 받아볼 수 있게 한다 (실패해도 남긴다).
