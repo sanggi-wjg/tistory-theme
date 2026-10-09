@@ -10,13 +10,16 @@
   `npm run check`의 결과가 게이트 상태에 따라 달라지는 검사는 검사가 아니다.
   그래서 마커 세 상태(없음 · HEAD와 같음 · 다름)를 각각 만들어 본다.
 
-⚠ 워크트리 케이스(`WT_CASES`, 이슈 #111) — 세션 cwd는 메인 체크아웃에 두고 명령의 `cd`·`--head`가
-  워크트리 브랜치를 PR로 여는 경우다. 훅이 cwd의 HEAD·마커만 읽던 판에서 A·B·H·I·L·M·Q·R·T·U는 **리뷰하지
-  않은 쪽을 통과시켰고**(메인 마커가 메인 HEAD와 같다는 이유로), C~G·K·N·P·S는 리뷰를 마쳤는데도 막혔다.
-  M은 고친 첫 판에서도 열렸다 — `--head`를 찾는 범위를 괄호에서 끊어 `$(…)` 뒤의 값을 못 봤다(리뷰에서 찾음).
-  O도 고친 첫 판에서 열렸다 — 닫힌 서브셸의 `cd`를 계속 따라가 리뷰된 워크트리의 마커로 판정했다(리뷰에서 찾음).
-  Q·R(조건·`eval` 안의 `cd`를 무시)과 T(`$( … )` 안의 `;`에서 PR 명령을 끊음)도 같다.
-  워크트리 경로에 공백을 넣어 따옴표 친 `cd` 경로도 함께 본다.
+⚠ 이슈 #111에서 더한 셋 — 전부 **옛 훅에 돌려 새는 것을 확인한** 케이스다(41건 실패, 30건이 열리는 방향).
+  - `BLOCK` 뒤쪽 9개: 탐지 구멍. 주석 속 `don't`·`\\"`가 PR 명령까지 가렸고, `<<<`를 heredoc으로 봤고,
+    `then`·`command`·경로 gh·`gh pr new`·`pr`과 동사 사이 플래그를 명령으로 못 봤다.
+  - `REVIEWED_CASES`: 마커 == HEAD인 저장소. 같은 명령 안에서 HEAD를 움직이거나(`git commit -am x && …`)
+    다른 커밋을 원격에 올리면 리뷰한 커밋으로 판정하고 다른 것이 PR이 된다 — 막아야 한다.
+    실제로 쓰는 모양은 **열려야** 한다 — 막히면 게이트를 우회하고 싶어진다.
+  - `WT_CASES`·`PARENT_CASES`: 세션 cwd는 메인, 명령의 `cd`·`--head`가 워크트리 브랜치를 PR로 연다.
+    워크트리 경로에 공백을 넣어 따옴표 친 `cd` 경로도 본다. 고치는 동안 내 판들이 M·O·Q·R·T에서 다시
+    열렸고(리뷰 게이트에서 찾음), V~f는 빌트인 코드 리뷰가 손으로 짚은 것이다 — 「따라가는 형태」를
+    넓힐 때마다 샜다. 그래서 훅은 모르면 막는다.
 """
 import json
 import os
@@ -55,6 +58,16 @@ BLOCK = [
     # 환경변수 접두 — 첫 판이 놓쳤다. gh가 줄머리도 구분자 뒤도 아니게 된다
     ("환경변수 접두", "GH_TOKEN=xxx " + G + " --base main"),
     ("환경변수 둘 + 체인", "git push && GH_HOST=github.com GH_TOKEN=x " + G),
+    # 2026-10-09 코드 리뷰(이슈 #111 PR)가 손으로 짚은 탐지 구멍 — 따옴표·주석·here-string·별칭·접두
+    ("주석 속 아포스트로피", "git push # don't forget\n" + G + " --fill\necho 'done'"),
+    ("이스케이프된 큰따옴표", 'echo \\"; ' + G + '; echo \\"'),
+    ("here-string <<<", "cat <<< wt\n" + G + " --fill\nwt"),
+    ("별칭 gh pr new", "gh pr " + "new --fill"),
+    ("then 뒤", "if true; then " + G + " --fill; fi"),
+    ("command 접두", "command " + G + " --fill"),
+    ("역슬래시 gh", "\\" + G + " --fill"),
+    ("경로 gh", "/usr/bin/" + G + " --fill"),
+    ("pr과 create 사이 플래그", "gh pr -R o/r " + "create --fill"),
 ]
 
 PASS = [
@@ -103,6 +116,41 @@ WT_CASES = [
     # $( … ) 안의 구분자는 PR 명령의 끝이 아니다
     ("WT-T $(…;…) 뒤 --head · 미리뷰", "HEAD", None, G + " --body $(cat f; echo x) --head wt", 2),
     ("WT-U builtin cd 워크트리 · 미리뷰", "HEAD", None, 'builtin cd "<WT>" && ' + G, 2),
+    # 2026-10-09 코드 리뷰가 손으로 짚은 판정 구멍
+    ("WT-V 줄 이음 \\ 뒤 --head · 미리뷰", "HEAD", None, G + " --base main \\\n  --head wt", 2),
+    ("WT-W 줄 이음 \\ 뒤 --head · 리뷰됨", None, "HEAD", G + " --base main \\\n  --head wt", 0),
+    ("WT-X 안 돌았을 수 있는 cd(false &&)", None, "HEAD", 'false && cd "<WT>"; ' + G, 2),
+    ("WT-Y 파이프 속 cd", None, "HEAD", 'cd "<WT>" | true; ' + G, 2),
+    ("WT-Z 백그라운드 cd", None, "HEAD", 'cd "<WT>" & ' + G, 2),
+    ("WT-a if 조건의 cd", "HEAD", None, 'if cd "<WT>"; then :; fi; ' + G, 2),
+    ("WT-b pushd … popd", None, "HEAD", 'pushd "<WT>" && git push && popd && ' + G, 2),
+    ("WT-c 붙은 -Hwt", "HEAD", None, G + " -Hwt --fill", 2),
+    ("WT-d -H=wt", "HEAD", None, G + " -H=wt --fill", 2),
+    ("WT-e 붙은 -Hwt · 리뷰됨", None, "HEAD", G + " -Hwt --fill", 0),
+]
+
+# 리뷰를 마친 저장소(마커 == HEAD)에서 — (이름, 명령, 기대 rc).
+# 막아야 하는 것: 훅은 명령이 돌기 **전** HEAD로 판정하므로, 같은 명령 안에서 HEAD를 움직이거나
+# 다른 커밋을 원격에 올리면 리뷰한 커밋으로 판정하고 다른 것이 PR이 된다. 옛 훅부터 열려 있었다.
+# 열어야 하는 것: 실제로 쓰는 모양 — 막히면 게이트를 우회하고 싶어진다.
+REVIEWED_CASES = [
+    ("같은 명령 안 git commit", "git commit -qam x && " + G, 2),
+    ("같은 명령 안 git checkout", "git checkout other && " + G, 2),
+    ("git -C . switch", "git -C . switch other && " + G, 2),
+    ("push refspec HEAD:다른브랜치", "git push -f origin HEAD:wt && " + G + " --head wt", 2),
+    ("source 뒤", "source x.sh && " + G, 2),
+    ("명령 인자 속 cd 낱말", "echo cd && " + G, 2),
+    ("실사용 — 푸시 + 본문 heredoc", "git push -u origin main && " + G + ' --base main --title "제목" '
+     "--body \"$(cat <<'EOF'\n본문 'x' 와 " + G + "\nEOF\n)\"", 0),
+    ("실사용 — 검사·푸시·PR", "npm run check && git push -u origin main && " + G + " --fill", 0),
+    ("실사용 — URL 원격 푸시", "git push https://github.com/o/r.git main && " + G, 0),
+    ("실사용 — 앞줄 주석의 아포스트로피", "# don't forget\n" + G + " --fill", 0),
+    ("실사용 — 줄 이음", G + " --base main \\\n  --title t \\\n  --fill", 0),
+]
+
+# cwd가 저장소가 아닌데 --head를 준다 — 무엇이 PR이 될지 이 저장소로 확인할 수 없다(코드 리뷰)
+PARENT_CASES = [
+    ("WT-f 저장소 밖 cwd + --head", "HEAD", None, G + " --repo o/r --head wt", 2),
 ]
 
 
@@ -171,12 +219,20 @@ def main():
         fails += not ok
         print(("  OK  " if ok else "  !!  ") + "차단해야 함 — %-22s rc=%s" % ("마커 != HEAD", rc))
 
+        for label, cmd, want in REVIEWED_CASES:
+            rc = run(cmd, reviewed)
+            ok = rc == want
+            fails += not ok
+            print(("  OK  " if ok else "  !!  ") + "%s (리뷰됨) — %-24s rc=%s"
+                  % ("통과해야 함" if want == 0 else "차단해야 함", label, rc))
+
         # 첫 판은 cwd의 HEAD·마커만 읽어서 A·B가 **열렸다**(메인 마커가 메인 HEAD와 같다는 이유로)
         # — 게이트가 열리는 방향이다. C~G는 리뷰를 마친 워크트리인데도 막혔다.
-        for label, mm, wm, cmd, want in WT_CASES:
+        for label, mm, wm, cmd, want, in_parent in (
+                [c + (False,) for c in WT_CASES] + [c + (True,) for c in PARENT_CASES]):
             parent, main_dir, wt_dir = make_worktree_pair(mm, wm)
             try:
-                rc = run(cmd.replace("<WT>", wt_dir), main_dir)
+                rc = run(cmd.replace("<WT>", wt_dir), parent if in_parent else main_dir)
             finally:
                 shutil.rmtree(parent, ignore_errors=True)
             ok = rc == want
