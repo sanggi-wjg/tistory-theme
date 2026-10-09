@@ -675,41 +675,43 @@ def verify_paging_canonical(base):
         info("목록 2페이지의 canonical: %s" % canon)
 
 
-def paging_shape(doc):
+def paging_shape(doc, ignore=frozenset()):
     """`nav.paging` → (토큰들, 번호 목록). nav가 없으면 None.
 
     토큰은 티스토리가 상태를 싣는 자리만 남긴다(결정 53) — 이전·다음은 (종류, 상태 클래스, href 유무),
     번호는 ("num", href 유무, 안쪽 span의 class, 숫자면 "N" 아니면 글자). 번호 목록은 생략 부호를 None으로.
     숫자를 "N"으로 지우는 것은 총 페이지 수가 프리뷰(PAGING_TOTAL)와 달라도 모양은 같게 보려는 것이다.
+    ignore: 스킨이 글자 그대로 쓴 class(`skin_paging`) — 티스토리가 아니라 우리가 정한 것이라 상태에서 뺀다.
+    속성 이름은 `(?:^|\\s)`로 붙인다 — `\b`는 `data-href`의 `-` 뒤에서도 맞는다(HREF_RE와 같은 함정).
     """
-    m = re.search(r'<nav\b[^>]*\bclass=["\'][^"\']*\bpaging\b[^"\']*["\'][^>]*>(.*?)</nav>', doc or "", re.S | re.I)
+    m = re.search(r'<nav\b[^>]*\sclass\s*=\s*["\'][^"\']*\bpaging\b[^"\']*["\'][^>]*>(.*?)</nav>', doc or "", re.S | re.I)
     if not m:
         return None
     toks, nums = [], []
     for a in re.finditer(r"<a\b([^>]*)>(.*?)</a>", m.group(1), re.S | re.I):
         attrs, inner = a.group(1), a.group(2)
-        c = re.search(r'\bclass=["\']([^"\']*)["\']', attrs)
+        c = re.search(r'(?:^|\s)class\s*=\s*["\']([^"\']*)["\']', attrs, re.I)
         classes = (c.group(1) if c else "").split()
-        href = bool(re.search(r"\bhref\s*=", attrs, re.I))
+        href = bool(re.search(r"(?:^|\s)href\s*=", attrs, re.I))
         if "paging-num" in classes:
-            sp = re.search(r'<span\b[^>]*?\bclass=["\']([^"\']*)["\'][^>]*>(.*?)</span>', inner, re.S | re.I)
+            sp = re.search(r'<span\b[^>]*?\sclass\s*=\s*["\']([^"\']*)["\'][^>]*>(.*?)</span>', inner, re.S | re.I)
             span_cls = sp.group(1).strip() if sp else None
             text = re.sub(r"<[^>]+>|\s+", "", sp.group(2) if sp else inner)
             nums.append(int(text) if text.isdigit() else None)
             toks.append(("num", href, span_cls, "N" if text.isdigit() else text))
         else:
             kind = next((k for k in ("paging-prev", "paging-next") if k in classes), "?")
-            toks.append((kind, " ".join(sorted(x for x in classes if x != kind)), href))
+            toks.append((kind, " ".join(sorted(x for x in classes if x != kind and x not in ignore)), href))
     return toks, nums
 
 
-def paging_drift(fixture_html, live_html, cur, live_total, paging_items):
+def paging_drift(fixture_html, live_html, cur, live_total, paging_items, ignore=frozenset()):
     """프리뷰가 그린 페이징과 라이브 페이징이 갈린 곳들(문장 목록). 비면 같다.
 
     둘을 본다 — ① 모양(토큰)이 같은가, ② 라이브 번호 목록이 렌더러의 규칙(`paging_items` — 첫·끝 + 현재 ±3,
     끊기면 ···)과 같은가. ①만 보면 티스토리가 창을 ±2로 줄여도 모르고, ②만 보면 클래스가 바뀌어도 모른다.
     """
-    fx, lv = paging_shape(fixture_html), paging_shape(live_html)
+    fx, lv = paging_shape(fixture_html, ignore), paging_shape(live_html, ignore)
     if lv is None:
         return ["라이브 %d페이지에 nav.paging이 없다" % cur]
     if fx is None:
@@ -741,23 +743,35 @@ def load_renderer():
         mod.__file__ = RENDER_PY
         with open(RENDER_PY, encoding="utf-8") as f:
             exec(compile(f.read(), RENDER_PY, "exec"), mod.__dict__)
-    except Exception:
+    except (Exception, SystemExit):
         return None
     mod.ROOT, mod.SRC = ROOT, os.path.join(ROOT, "src")  # render.py는 cwd를 저장소 루트로 가정한다
     return mod
 
 
-def fixture_navs(mod):
-    """프리뷰가 그리는 페이징 — {현재 페이지: html}. 홈(1)·카테고리(9)·보관함(마지막) — 라이브 1·9·끝과 짝이다."""
+def skin_paging():
+    """skin.html의 `<s_paging>` 블록과, 그 안 앵커에 스킨이 **글자 그대로** 쓴 class들(종류 class 셋은 남긴다).
+
+    티스토리가 싣는 상태는 `[##_no_more_*_##]` 치환 결과뿐이다. 스킨이 `paging-arrow` 같은 class를 더하면
+    라이브는 배포 전까지 그것이 없어 「갈림」이 된다 — 우리 쪽 변경을 티스토리의 변경으로 읽지 않게 뺀다.
+    """
     skin = open(os.path.join(ROOT, "src", "skin.html"), encoding="utf-8").read()
     m = re.search(r"<s_paging>.*?</s_paging>", skin, re.S)
     if not m:
-        return {}
+        return None, frozenset()
+    lit = set()
+    for c in re.findall(r'<a\b[^>]*?\sclass\s*=\s*["\']([^"\']*)["\']', m.group(0), re.I):
+        lit |= {t for t in c.split() if "[##" not in t and "##]" not in t}
+    return m.group(0), frozenset(lit - {"paging-prev", "paging-next", "paging-num"})
+
+
+def fixture_navs(mod, block):
+    """프리뷰가 그리는 페이징 — {현재 페이지: html}. 홈(1)·카테고리(9)·보관함(마지막) — 라이브 1·9·끝과 짝이다."""
     posts, cats = mod.load_fixtures()
     out = {}
     for page in ("index", "category", "archive"):
         ctx = mod.globals_for(page, posts, cats, {})
-        out[mod.PAGING_CURRENT[page]] = mod.render(m.group(0), ctx, page, posts)
+        out[mod.PAGING_CURRENT[page]] = mod.render(block, ctx, page, posts)
     return out
 
 
@@ -769,46 +783,64 @@ def verify_paging_fixture(base, home_doc):
     이름을 보고 있었는데 아무 검사도 몰랐다 — 프리뷰가 그 모양을 그리지 않았기 때문이다. 지금은
     프리뷰가 그리지만, 티스토리가 출력을 바꾸면 CSS와 픽스처가 **같이** 낡은 채 프리뷰는 계속
     통과한다. 그래서 라이브 홈 1·9·끝 페이지를 받아 프리뷰가 같은 페이지에 그리는 것과 대조한다.
+    예외로 멈추면 미검증으로 남긴다 — 뒤의 검사와 리포트까지 잃지 않게.
     """
+    try:
+        _verify_paging_fixture(base, home_doc)
+    except Exception as e:
+        unverified("V018", "페이징 대조가 예외로 멈췄다 (%s: %s)." % (type(e).__name__, e), RENDER_PY)
+
+
+def _verify_paging_fixture(base, home_doc):
+    import inspect
     mod = load_renderer()
     if mod is None or not hasattr(mod, "paging_items"):
         unverified("V018", "프리뷰 렌더러(render.py)를 불러오지 못해 페이징 픽스처를 대조하지 못했다.", RENDER_PY)
         return
-    try:
-        fixtures = fixture_navs(mod)
-    except Exception as e:
-        unverified("V018", "프리뷰 페이징을 그리지 못했다 (%s: %s)." % (type(e).__name__, e), RENDER_PY)
+    block, lit = skin_paging()
+    if block is None:
+        unverified("V018", "skin.html에서 <s_paging> 블록을 찾지 못했다.", os.path.join(ROOT, "src", "skin.html"))
         return
-    first = paging_shape(home_doc)
+    fixtures = fixture_navs(mod, block)
+    middle, last = mod.PAGING_CURRENT["category"], mod.PAGING_TOTAL
+    if sorted(fixtures) != [1, middle, last]:
+        unverified("V018", "프리뷰가 그리는 페이지가 1·%d·%d가 아니다(%s) — 라이브와 짝을 지을 수 없다."
+                   % (middle, last, sorted(fixtures)), RENDER_PY)
+        return
+    first = paging_shape(home_doc, lit)
     if first is None:
         unverified("V018", "라이브 홈에 nav.paging이 없어 페이징 모양을 대조하지 못했다.", base + "/")
         return
     live_total = max([n for n in first[1] if n] or [0])
-    if live_total != mod.PAGING_TOTAL:
+    if live_total != last:
         info("라이브 홈은 %d페이지, 프리뷰 PAGING_TOTAL은 %d다. 모양 대조에는 상관없지만 render.py를 맞추면 "
-             "프리뷰 번호가 실물과 같아진다." % (live_total, mod.PAGING_TOTAL))
-    if live_total < 14:  # 9페이지가 양쪽 생략 부호를 다 가지려면 9+3 < 끝-1
-        unverified("V018", "라이브가 %d페이지뿐이라 프리뷰의 9페이지 모양(양끝 생략 부호)과 대조할 수 없다." % live_total,
-                   base + "/")
-        return
-    problems = []
-    for cur, fx in sorted(fixtures.items()):
-        live_cur = live_total if cur == mod.PAGING_TOTAL else cur
-        if cur == 1:
-            doc, url = home_doc, base + "/"
-        else:
+             "프리뷰 번호가 실물과 같아진다." % (live_total, last))
+    # 1페이지는 총수와 상관없이 늘 대조한다 — 홈의 번호가 깨져 총수를 못 읽어도 갈림은 경고로 나와야 한다
+    problems = [p + " (" + base + "/)" for p in paging_drift(fixtures[1], home_doc, 1, live_total, mod.paging_items, lit)]
+    compared = [1]
+    # 가운데 페이지가 양쪽 생략 부호를 다 가지려면 middle + window < 끝 - 1
+    window = inspect.signature(mod.paging_items).parameters["window"].default
+    if live_total < middle + window + 2:
+        unverified("V018", "라이브가 %d페이지뿐이라 프리뷰의 %d페이지 모양(양끝 생략 부호)·끝 페이지와 대조할 수 없다."
+                   % (live_total, middle), base + "/")
+    else:
+        for cur, live_cur in ((middle, middle), (last, live_total)):
             url = base + "/?page=%d" % live_cur
             status, doc, _ = fetch(url)
             time.sleep(0.4)
             if status != 200 or not doc:
                 unverified("V018", "라이브 %d페이지를 받지 못했다 (HTTP %s)." % (live_cur, status), url)
                 continue
-        problems += [p + " (" + url + ")" for p in paging_drift(fx, doc, live_cur, live_total, mod.paging_items)]
+            problems += [p + " (" + url + ")"
+                         for p in paging_drift(fixtures[cur], doc, live_cur, live_total, mod.paging_items, lit)]
+            compared.append(live_cur)
     for p in problems:
         warn("V018", "프리뷰 페이징 픽스처가 라이브와 갈렸다 — " + p + ". 티스토리가 페이징 출력을 바꿨다면 "
              "render.py 픽스처와 CSS(.paging의 selected·:not([href])·no-more-*)를 같이 고친다(결정 53).")
-    if not problems and len(fixtures) == 3:
-        info("페이징 — 라이브 1·9·%d페이지가 프리뷰 픽스처와 같은 모양이다." % live_total)
+    if not problems:
+        # 실제로 대조한 페이지만 적는다 — 못 받은 페이지를 「같다」에 넣으면 그것이 위조된 통과 신호다
+        info("페이징 — 라이브 %s페이지가 프리뷰 픽스처와 같은 모양이다%s." % (
+            "·".join(map(str, compared)), "" if len(compared) == 3 else " (나머지는 대조하지 못했다 — 미검증 참조)"))
 
 
 def verify_category_tree(base, home_doc):
