@@ -8,7 +8,8 @@
   리뷰 직후처럼 마커가 HEAD와 같으면 차단 케이스 7개가 **전부 통과해 버렸다.**
   `npm run check`의 결과가 게이트 상태에 따라 달라지는 검사는 검사가 아니다.
   그래서 마커 상태(없음 · HEAD와 같음 · 다름)를 각각 만들어 본다. 픽스처마다 **원격(bare)**을 두고
-  푸시해 둔다 — 훅이 원격 추적 ref도 대조하기 때문이다(이슈 #111).
+  푸시해 둔다 — 훅이 원격 브랜치의 끝도 대조하기 때문이다(이슈 #111). 추적 ref가 아니라 원격에 직접
+  묻는다(이슈 #114) — 그래서 남이 원격을 민 경우·추적 ref만 없는 경우를 원격 상태로 따로 만든다.
 
 ⚠ 이슈 #111에서 케이스가 16 → 100여 개로 늘었다. 거의 전부 **옛 훅에 돌려 새는 것을 확인한** 모양이다
   (주석 속 `don't`가 PR 명령을 가림, `git commit -am x && <PR 생성>`, `url="$(<PR 생성>)"`, `"gh" pr create` …).
@@ -16,6 +17,11 @@
   git 하위 명령 허용 목록)이 차례로 샜다 — 내 리뷰가 다섯, 빌트인 코드 리뷰 다섯 번이 열·34·23·10·8을 짚었다.
   그래서 훅은 **PR 생성을 그 호출의 유일한 명령으로**(앞에 `cd <경로>` 하나만) 요구하고, 원격 추적 ref까지
   대조한다. 기대값이 0에서 2로 바뀐 실사용 모양(푸시와 PR을 한 줄에)은 그래서다 — 푸시는 따로 한다.
+
+⚠ 이슈 #114에서 「알려진 한계」 중 고칠 수 있는 넷에 케이스 25개를 더했다 — 스크립트 파일 속 PR 생성, `gh api`,
+  `--repo`·`GH_REPO`, 낡은 추적 ref. 옛 훅에 돌려 16건 실패(15건이 막아야 할 것을 통과)를 확인하고 고쳤다.
+  리뷰에서 7개를 더 더했다(자기를 source하는 스크립트의 오탐, `-euo pipefail`, 스크립트 안의 `cd`·자기 디렉터리,
+  `timeout 5m`, 전체 URL `gh api`, URL로 `push -u`한 브랜치) — 첫 커밋의 훅에 돌려 7건 모두 실패를 확인했다.
 """
 import json
 import os
@@ -46,7 +52,9 @@ def write_marker(d, sha):
 def make_repo(marker):
     """커밋 하나짜리 임시 저장소 + 원격(푸시·추적 완료). marker: None · "HEAD" · 그 밖의 문자열."""
     parent = tempfile.mkdtemp(prefix="gate-fixture-")
-    d, origin = os.path.join(parent, "repo"), os.path.join(parent, "origin.git")
+    # 원격 경로의 끝 두 마디가 `o/r` — `--repo o/r`가 이 저장소, `--repo evil/r`가 남의 저장소다(이슈 #114)
+    d, origin = os.path.join(parent, "repo"), os.path.join(parent, "o", "r.git")
+    os.makedirs(os.path.dirname(origin))
     sh("init", "-q", "--bare", origin)
     sh("init", "-q", "-b", "main", d)
     sh("-C", d, "commit", "-q", "--allow-empty", "-m", "init")
@@ -54,7 +62,29 @@ def make_repo(marker):
     sh("-C", d, "push", "-q", "-u", "origin", "main")
     if marker is not None:
         write_marker(d, head_of(d) if marker == "HEAD" else marker)
+    write_scripts(d)
     return parent, d
+
+
+def write_scripts(d):
+    """셸로 돌리는 스크립트 파일 — 추적하지 않는 파일이라 HEAD는 그대로다(이슈 #114)."""
+    files = {
+        "pr.sh": G + " --fill\n",
+        "outer.sh": "echo start\nsource pr.sh\n",
+        "sub/pr2.sh": G + " --fill\n",
+        "outer-cd.sh": "cd sub && bash pr2.sh\n",
+        "sub/rel.sh": 'cd "$(dirname "$0")"\nbash pr2.sh\n',
+        "self.sh": "[ -n \"$DONE\" ] || { DONE=1; source self.sh; }\necho hi\n",
+        "mention.sh": 'echo "' + G + ' 는 게이트가 막는다"\n',
+        "pr-run": "#!/usr/bin/env bash\nset -e\n" + G + " --fill\n",
+        "tool.py": "#!/usr/bin/env python3\nimport subprocess\nsubprocess.run('" + G + "'.split())\n",
+    }
+    os.makedirs(os.path.join(d, "sub"), exist_ok=True)
+    for name, body in files.items():
+        f = os.path.join(d, name)
+        with open(f, "w", encoding="utf-8") as fh:
+            fh.write(body)
+        os.chmod(f, 0o755)
 
 
 def make_worktree_pair(main_marker, wt_marker, remote="pushed"):
@@ -62,7 +92,8 @@ def make_worktree_pair(main_marker, wt_marker, remote="pushed"):
 
     세션 cwd는 메인에 두고 명령 안의 `cd`·`--head`로 워크트리 브랜치를 가리키는 경우를 만든다.
     main_marker / wt_marker: None(없음) · "HEAD"(그 체크아웃의 HEAD) · "OTHER"(상대 체크아웃의 HEAD).
-    remote: "pushed"(둘 다 푸시) · "unpushed"(wt를 안 푸시) · "diverged"(원격 wt가 main의 커밋).
+    remote: "pushed"(둘 다 푸시) · "unpushed"(wt를 안 푸시) · "diverged"(원격 wt가 main의 커밋) ·
+      "pushed-elsewhere"(남이 원격 wt를 앞으로 밈, 추적 ref는 낡음) · "pushed-untracked"(추적 ref만 없음) …
     반환: (지울 부모 임시 디렉터리, 메인 경로, 워크트리 경로)
     """
     parent = tempfile.mkdtemp(prefix="gate-wt-")
@@ -83,6 +114,15 @@ def make_worktree_pair(main_marker, wt_marker, remote="pushed"):
     elif remote == "tracks-main":  # origin/main에서 딴 워크트리 — 추적은 main, 푸시는 같은 이름
         sh("-C", wt_dir, "push", "-q", "origin", "wt")
         sh("-C", wt_dir, "branch", "-q", "--set-upstream-to=origin/main")
+    elif remote == "pushed-elsewhere":  # 푸시 뒤 다른 클론이 원격 wt를 앞으로 민다 — 로컬 추적 ref는 낡은 채다
+        sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt")
+        other = os.path.join(parent, "other")
+        sh("clone", "-q", "-b", "wt", origin, other)
+        sh("-C", other, "commit", "-q", "--allow-empty", "-m", "someone else")
+        sh("-C", other, "push", "-q", "origin", "wt")
+    elif remote == "pushed-untracked":  # 원격에는 리뷰한 커밋이 있는데 로컬 추적 ref가 없다
+        sh("-C", wt_dir, "push", "-q", "origin", "wt")
+        sh("-C", wt_dir, "update-ref", "-d", "refs/remotes/origin/wt")
     elif remote == "diverged":
         sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt")
         sh("-C", main_dir, "push", "-q", "-f", "origin", "main:wt")  # 원격 wt ← main의 (미리뷰) 커밋
@@ -217,6 +257,44 @@ REVIEWED_CASES = [
     ("실사용 — | tail -3", G + " --fill 2>&1 | tail -3", 0),
     ("실사용 — GH_PROMPT_DISABLED=1", "GH_PROMPT_DISABLED=1 " + G + " --fill", 0),
     ("파이프 뒤가 sink가 아니다", G + " --fill | sh", 2),
+    # 이슈 #114 — 스크립트 파일 속 PR 생성. 옛 훅은 명령문만 봐서 리뷰한 저장소에서 그냥 열었다
+    ("스크립트 파일 bash pr.sh", "bash pr.sh", 2),
+    ("bash -x pr.sh", "bash -x pr.sh", 2),
+    ("source pr.sh", "source pr.sh", 2),
+    (". ./pr.sh", ". ./pr.sh", 2),
+    ("셸 shebang 실행 파일", "./pr-run", 2),
+    ("스크립트가 source한 스크립트", "bash outer.sh", 2),
+    ("cd 뒤 상대 경로 스크립트", "cd sub && bash ../pr.sh", 2),
+    ("스크립트 속 언급만", "bash mention.sh", 0),
+    ("자기를 source하는 스크립트(깊이 한도로 막지 않는다)", "bash self.sh", 0),
+    # 코드 리뷰 — 묶음 끝의 -o, 스크립트 안의 cd·자기 디렉터리, 단위 붙은 timeout
+    ("bash -euo pipefail pr.sh", "bash -euo pipefail pr.sh", 2),
+    ("스크립트 안의 cd 뒤 스크립트", "bash outer-cd.sh", 2),
+    ("스크립트 디렉터리 기준 상대 경로", "bash sub/rel.sh", 2),
+    ("timeout 5m bash pr.sh", "timeout 5m bash pr.sh", 2),
+    ("python 실행 파일(셸 아님)", "./tool.py", 0),
+    ("없는 스크립트", "bash nope.sh", 0),
+    # 이슈 #114 — gh api로 여는 PR
+    ("gh api -f … pulls(POST)", "gh api repos/o/r/pulls -f title=t -f head=main -f base=main", 2),
+    ("gh api -X POST pulls --input", "gh api -X POST 'repos/{owner}/{repo}/pulls' --input b.json", 2),
+    ("gh api graphql createPullRequest",
+     "gh api graphql -f query='mutation { create" + "PullRequest(input: {}) { clientMutationId } }'", 2),
+    ("gh api 전체 URL pulls(POST)", "gh api https://api.github.com/repos/o/r/pulls -f title=t", 2),
+    ("gh api pulls 목록", "gh api repos/o/r/pulls --jq '.[].number'", 0),
+    ("gh api -X GET pulls -f state", "gh api -X GET repos/o/r/pulls -f state=closed", 0),
+    ("gh api pulls/5/comments POST", "gh api repos/o/r/pulls/5/comments -f body=x", 0),
+    # 이슈 #114 — 다른 저장소. 픽스처 원격의 끝 두 마디가 o/r다
+    ("--repo 이 저장소", G + " --repo o/r --fill", 0),
+    ("-R URL 이 저장소", G + " -R https://github.com/o/r.git --fill", 0),
+    ("--repo 남의 저장소", G + " --repo evil/r --fill", 2),
+    ("-R 붙여 쓴 남의 저장소", G + " -Revil/r --fill", 2),
+    ("--repo 둘", G + " --repo o/r --repo evil/r --fill", 2),
+]
+
+# 훅 프로세스 환경의 GH_REPO — (이름, GH_REPO 값, 기대 rc). 리뷰한 저장소에서 돈다
+ENV_CASES = [
+    ("GH_REPO 이 저장소", "o/r", 0),
+    ("GH_REPO 남의 저장소", "evil/r", 2),
 ]
 
 # 워크트리 — (이름, 메인 마커, 워크트리 마커, 명령, 기대 rc[, 원격 상태]). 이슈 #111.
@@ -280,6 +358,9 @@ WT_CASES = [
     ("WT-t 푸시 안 한 브랜치", None, "HEAD", G + " --head wt", 2, "unpushed"),
     ("WT-u 원격 wt가 다른 커밋", None, "HEAD", G + " --head wt", 2, "diverged"),
     ("WT-v 원격 wt로 다른 커밋을 푸시", None, "HEAD", "git push -f origin main:wt && " + G + " --head wt", 2),
+    # 이슈 #114 — 추적 ref가 아니라 원격에 직접 묻는다
+    ("WT-0 남이 원격 wt를 앞으로 밀었다(추적 ref 낡음)", None, "HEAD", G + " --head wt", 2, "pushed-elsewhere"),
+    ("WT-1 추적 ref 없이 원격에 있다", None, "HEAD", G + " --head wt", 0, "pushed-untracked"),
 ]
 
 # cwd가 저장소가 아닌데 --head를 준다 — 무엇이 PR이 될지 이 저장소로 확인할 수 없다
@@ -288,9 +369,12 @@ PARENT_CASES = [
 ]
 
 
-def run(cmd, root):
+def run(cmd, root, gh_repo=None):
     payload = json.dumps({"tool_input": {"command": cmd}, "cwd": root})
-    p = subprocess.run([sys.executable, HOOK], input=payload, capture_output=True, text=True)
+    env = {k: v for k, v in os.environ.items() if k != "GH_REPO"}
+    if gh_repo:
+        env["GH_REPO"] = gh_repo
+    p = subprocess.run([sys.executable, HOOK], input=payload, capture_output=True, text=True, env=env)
     return p.returncode
 
 
@@ -317,6 +401,20 @@ def main():
         for label, cmd, want in REVIEWED_CASES:
             rc = run(cmd, reviewed)
             fails += report(rc == want, want, label, rc, " (리뷰됨)")
+        for label, value, want in ENV_CASES:
+            rc = run(G + " --fill", reviewed, gh_repo=value)
+            fails += report(rc == want, want, label, rc, " (리뷰됨)")
+        # `push -u <URL> x`면 branch.x.remote가 이름이 아니라 URL이다 — `-R`이 같은 저장소면 열려야 한다(코드 리뷰)
+        p_url, url_repo = make_repo(None)
+        try:
+            sh("-C", url_repo, "switch", "-q", "-c", "x")
+            sh("-C", url_repo, "commit", "-q", "--allow-empty", "-m", "x")
+            sh("-C", url_repo, "push", "-q", "-u", os.path.join(p_url, "o", "r.git"), "x")
+            write_marker(url_repo, head_of(url_repo))
+            rc = run(G + " -R o/r --fill", url_repo)
+            fails += report(rc == 0, 0, "URL로 push -u한 브랜치 + -R 이 저장소", rc, " (리뷰됨)")
+        finally:
+            shutil.rmtree(p_url, ignore_errors=True)
         cases = [(c[:5], c[5] if len(c) > 5 else "pushed", False) for c in WT_CASES]
         cases += [(c, "pushed", True) for c in PARENT_CASES]
         for (label, mm, wm, cmd, want), remote, in_parent in cases:
