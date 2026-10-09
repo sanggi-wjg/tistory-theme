@@ -556,29 +556,12 @@
   color: var(--ink-mute);
 }
 
-/* ⚠ 조건 미상 — 2026-09-10 라이브 DOM에 **없다.** 그런데도 미리 덮는다.
-   index.css에 `.tt_box_namecard .tt_link` 갈래가 네 줄 있다(아이콘 14px +
-   12px 글자 + 화살표 한 줄, 자리는 .tt_desc와 .tt_btn_subscribe 사이).
-
-   남의 컴포넌트를 빌려 온 것이 아니라 **같은 카드의 다른 변형**으로 본 근거는
-   이 시트 전체를 단어 경계로 센 결과다(`.이름` 뒤에 [\w-]가 안 오는 것만):
-
-     .tt_tit_g       규칙 1개 · Namecard 밖 0
-     .tt_wrap_svg    규칙 2개 · Namecard 밖 0
-     .tt_link        규칙 5개 · Namecard 밖 0
-     .tt_ico_arrow2  규칙 2개 · Namecard 밖 **1** — 그 1개는 다른 컴포넌트의
-                     사용처가 아니라 아이콘 자신의 스프라이트 좌표 기본값
-                     (`.tt_ico_arrow2{width:5px;height:11px;background-position:…}`)
-
-   ⚠ 이것을 「네 이름이 Namecard 밖에서 한 번도 안 쓰인다」로 줄여 적으면
-     그 순간 거짓이 된다. 넷 중 하나는 밖에 있고, 밖에 있어도 결론이 서는
-     이유가 위의 괄호다. 단어 경계 없이 세도 양방향으로 틀린다 —
-     `.tt_tit_g`는 `.tt_tit_guide`에 접두로 걸려 «밖에 하나 있다»가 나온다.
-
-   뜨는 조건은 프로필 설정으로 보이지만 확인하지 못했다. 뜨는 순간 #333이
-   다크 카드에 1.3:1로 얹히고, **트리거가 코드가 아니라 설정이라 우리 쪽에는
-   아무 신호도 오지 않는다.** 선언 하나가 그보다 싸다.
-   TIS005의 namecardRules에는 넣지 않는다 — 그 목록은 실측한 것의 기록이다. */
+/* 「분야 크리에이터」 배지 줄 — `a.tt_link`(아이콘 14px + 12px 글자 `strong.tt_tit_g` + 화살표 `.tt_ico_arrow2`).
+   **블로그가 티스토리 스토리 크리에이터일 때만** 나온다 — 티스토리 번들(`static/pc/dist/index.js`)의 Namecard가
+   `/namecard` 응답의 `storyCreator`가 있을 때만 그린다(이슈 #89). 자리는 이름(.tt_tit_cont)과 설명(.tt_desc) 사이.
+   이 블로그는 `storyCreator: null`(2026-10-10)이라 라이브에는 없다. 상대는 `#333` — 다크 카드 위 1.48:1.
+   트리거가 코드가 아니라 티스토리 쪽 선정이라 우리에게 신호가 오지 않는다 — 선언 하나가 그보다 싸다.
+   프리뷰 page_toc가 번들의 마크업 그대로 그린다(render.py `namecard_box`), 린트 TIS005가 덮어쓰기를 지킨다. */
 .entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_link .tt_tit_g {
   color: var(--ink-body);
 }
@@ -615,11 +598,15 @@
    **구독 중(.type2)** 상태다. 한쪽만 반전시키면 로그인한 구독자에게만 —
    버튼 테두리는 토큰인데 아이콘만 안 보이는 — 반쪽 상태가 된다. 부분적으로
    동작하는 것이 통째로 안 되는 것보다 찾기 어렵다(결정 35).
-   ⚠ .tt_ico_check는 **미검증**이다. 구독 중 상태는 로그인해야 나와서
-     픽스처에도 프리뷰에도 없다(.type2와 같은 이유). 좌표만 보고 같은 스프라이트로
-     판단했다. */
+   구독 중 상태는 비회원 방문자가 로그인해 구독했을 때만 나와(번들의 `isMember === false && isFollower`)
+   라이브로는 못 본다. 프리뷰 page_toc가 번들의 마크업 그대로 그려, 다크에서 체크가 흰색으로 반전되는 것을
+   확인했다(2026-10-10, 이슈 #89).
+
+   크리에이터 배지 줄의 화살표(.tt_link .tt_ico_arrow2, 좌표 -76px -60px)도 **같은 스프라이트**다 —
+   그 줄을 처음 그려 보니 다크에서 `>`가 바탕에 묻혔다(이슈 #89). 셋을 함께 반전시킨다. */
 .entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_cross,
-.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_check {
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_btn_subscribe .tt_ico_check,
+.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard .tt_link .tt_ico_arrow2 {
   filter: invert(var(--sprite-invert));
 }
 
