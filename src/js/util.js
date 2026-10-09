@@ -15,7 +15,8 @@ export function reducedMotion() {
  *
  * 실제 클래스는 `tt_article_useless_p_margin contents_style`이다.
  * class 속성 전체를 통짜로 비교하는 정확일치 선택자로는 잡히지 않는다 — 반드시 클래스 부분일치.
- * 글 본문뿐 아니라 공지 본문(.notice-body 안)도 같은 래퍼를 쓰므로 전부 잡는다.
+ * 글 본문뿐 아니라 공지 본문도 잡는다 — `.notice-body` 자신이거나(skin.html이 단다),
+ * 티스토리가 안쪽에 래퍼를 달아 왔으면 그 래퍼다(notice.js가 바깥 것을 떼 한 겹만 남긴다).
  */
 export function contentRoots() {
   return Array.prototype.slice.call(document.querySelectorAll('.contents_style'))
