@@ -13,7 +13,7 @@
 ⚠ 이슈 #111에서 케이스가 16 → 100여 개로 늘었다. 거의 전부 **옛 훅에 돌려 새는 것을 확인한** 모양이다
   (주석 속 `don't`가 PR 명령을 가림, `git commit -am x && <PR 생성>`, `url="$(<PR 생성>)"`, `"gh" pr create` …).
   훅을 고치는 동안 「따라가는 형태」를 넓히는 판(cd 추적)과 「허용하는 모양」을 늘리는 판(같은 호출 안의
-  git 하위 명령 허용 목록)이 차례로 샜다 — 내 리뷰가 다섯, 빌트인 코드 리뷰 세 번이 열·34·23을 짚었다.
+  git 하위 명령 허용 목록)이 차례로 샜다 — 내 리뷰가 다섯, 빌트인 코드 리뷰 네 번이 열·34·23·10을 짚었다.
   그래서 훅은 **PR 생성을 그 호출의 유일한 명령으로**(앞에 `cd <경로>` 하나만) 요구하고, 원격 추적 ref까지
   대조한다. 기대값이 0에서 2로 바뀐 실사용 모양(푸시와 PR을 한 줄에)은 그래서다 — 푸시는 따로 한다.
 """
@@ -126,6 +126,16 @@ BLOCK = [
     ("이스케이프 섞인 gh", "g\\h pr " + "create --fill"),
     ("ANSI-C $'\\''", "echo $'\\'' ; " + G + " --fill"),
     ("변수로 gh", "$GH pr " + "create --fill"),
+    # 4차 — heredoc 열기를 주석·산술·부분 따옴표 태그에서 잘못 봄, 큰따옴표 -c/eval, 셸에 먹이는 heredoc
+    ("주석 속 <<X", "# use <<X here\n " + G + " --fill"),
+    ("산술 $((1<<3))", "echo $((1<<3))\n " + G + " --fill"),
+    ('부분 따옴표 태그 <<"E"OF', 'cat <<"E"OF\nx\nEOF\n' + G + " --fill"),
+    ("역슬래시 태그 <<E\\OF", "cat <<E\\OF\nx\nEOF\n" + G + " --fill"),
+    ('bash -c "…"', 'bash -c "' + G + ' --fill"'),
+    ('sh -c "cd; …"', 'sh -c "cd /tmp; ' + G + '"'),
+    ('eval "…"', 'eval "' + G + ' --fill"'),
+    ("bash <<EOF", "bash <<EOF\n" + G + " --fill\nEOF"),
+    ("따옴표 없는 heredoc 본문의 $( )", "cat <<EOF\n$(" + G + " --fill)\nEOF"),
 ]
 
 # 마커 없는 저장소에서 통과해야 한다 — PR 생성이 아니거나 문자열 속 언급이다
@@ -138,6 +148,10 @@ PASS = [
     ("view", "gh pr view 29 --json state"),
     ("npm", "npm run check"),
     ("커밋 메시지 속 언급", 'git commit -m "' + G + ' 게이트를 고친다"'),
+    # 4차 — 작은따옴표 속 백틱·$( )는 글자다. 이 저장소의 커밋 메시지는 늘 백틱을 쓴다
+    ("작은따옴표 커밋 메시지 속 백틱", "git commit -m '`" + G + "` 를 고친다'"),
+    ("작은따옴표 속 $( )", "echo '$(" + G + ")'"),
+    ("큰따옴표 속 이스케이프 백틱", 'echo "\\`' + G + '\\`"'),
 ]
 
 # 리뷰를 마친 저장소(마커 == HEAD, 원격 추적 ref도 같음) — (이름, 명령, 기대 rc)
@@ -175,6 +189,17 @@ REVIEWED_CASES = [
     ("실사용 — 변수 제목", G + ' --title "$TITLE" --fill', 0),
     # 둘째·셋째 판에서 0이던 것 — 이제 푸시는 따로 한다
     ("푸시와 한 줄(따로 한다)", "git push -u origin main && " + G + " --fill", 2),
+    # 4차 — 따옴표 없는 heredoc 본문의 $( )는 PR 생성 전에 돈다
+    ("따옴표 없는 heredoc 본문의 push", G + " --body-file - <<EOF\n$(git push -f origin x:main)\nEOF", 2),
+    ("$(cat <<EOF …) 본문의 push", G + ' --body "$(cat <<EOF\n$(git push -f origin x:main)\nEOF\n)"', 2),
+    ("--head 소유자:브랜치(포크)", G + " --head=evil:main --fill", 2),
+    ("cd X; — cd가 실패해도 PR이 돈다", "cd .; " + G + " --fill", 2),
+    # 4차 — 막으면 안 되는 단독 PR 생성
+    ("실사용 — 2>&1", G + " --fill 2>&1", 0),
+    ("실사용 — cd && … 2>&1", "cd . && " + G + " --fill 2>&1", 0),
+    ("실사용 — 작은따옴표 본문의 백틱", G + " --title t --body 'run `npm run check`'", 0),
+    ("실사용 — 큰따옴표 본문의 이스케이프 백틱", G + ' --body "run \\`npm\\` ok"', 0),
+    ("실사용 — 따옴표 친 heredoc 본문의 백틱·$( )", G + " --body \"$(cat <<'EOF'\n`npm run check` 와 $(x)\nEOF\n)\"", 0),
 ]
 
 # 워크트리 — (이름, 메인 마커, 워크트리 마커, 명령, 기대 rc[, 원격 상태]). 이슈 #111.
@@ -185,8 +210,11 @@ WT_CASES = [
     ("WT-C cd 워크트리 · 리뷰됨", None, "HEAD", 'cd "<WT>" && ' + G + " --base main", 0),
     ("WT-D --head 워크트리 · 리뷰됨", None, "HEAD", G + " --base main --head wt", 0),
     ("WT-E 상대 경로 cd · 리뷰됨", None, "HEAD", 'cd "../wt dir" && ' + G, 0),
-    ("WT-F 앞줄의 cd · 리뷰됨", None, "HEAD", 'cd "<WT>"\n' + G, 0),
-    ("WT-G --head=소유자:브랜치 · 리뷰됨", None, "HEAD", G + " --head=me:wt", 0),
+    # 줄바꿈·`;`로 이은 cd는 실패해도 다음 줄이 돈다 — 4차부터 막는다(`&&`·`|| exit`만)
+    ("WT-F 앞줄의 cd(줄바꿈 — 막음)", None, "HEAD", 'cd "<WT>"\n' + G, 2),
+    # 소유자 접두는 포크 브랜치다 — 이 저장소에서 대조할 수 없어 4차부터 막는다
+    ("WT-G --head=소유자:브랜치(막음)", None, "HEAD", G + " --head=me:wt", 2),
+    ("WT-w cd X &&\\n PR · 리뷰됨", None, "HEAD", 'cd "<WT>" &&\n  ' + G, 0),
     ("WT-H 워크트리 마커가 메인 SHA", "HEAD", "OTHER", 'cd "<WT>" && ' + G, 2),
     ("WT-I cd 대상을 못 푼다($변수)", "HEAD", "HEAD", 'cd "$WT" && ' + G, 2),
     ("WT-J cd 없음 · 메인 리뷰됨(기존 동작)", "HEAD", None, G + " --base main", 0),
