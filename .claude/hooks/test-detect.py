@@ -94,6 +94,11 @@ WT_CASES = [
     # 리뷰된 워크트리의 마커로 판정해 메인의 미리뷰 브랜치가 열렸다
     ("WT-O 닫힌 서브셸의 cd · 메인 미리뷰", None, "HEAD", '(cd "<WT>" && git push) && ' + G, 2),
     ("WT-P 서브셸 안의 cd 뒤 PR · 리뷰됨", None, "HEAD", '(cd "<WT>" && ' + G + ")", 0),
+    # 조건·반복·eval 안의 cd는 돌았는지 셸만 안다 — 막는다. 메인이 리뷰돼 있어도 막혀야 한다
+    ("WT-Q 조건 안의 cd", "HEAD", "HEAD", 'if true; then cd "<WT>"; fi; ' + G, 2),
+    ("WT-R eval 안의 cd", "HEAD", "HEAD", "eval cd /tmp && " + G, 2),
+    # 중괄호 묶음은 서브셸이 아니다 — cd가 남는다
+    ("WT-S { cd; } 묶음 · 리뷰됨", None, "HEAD", '{ cd "<WT>"; } && ' + G, 0),
 ]
 
 
