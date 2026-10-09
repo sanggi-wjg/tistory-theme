@@ -31,7 +31,7 @@
   "devDependencies": {
     "css-tree": "^3.2.1",
     "esbuild": "^0.25.0",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.5"
   },
   "dependencies": {
     "highlight.js": "^11.11.0"
