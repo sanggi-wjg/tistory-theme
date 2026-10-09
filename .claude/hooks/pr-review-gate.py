@@ -19,12 +19,14 @@ PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는�
 ## 판정 (이슈 #111)
 
 **PR 생성은 그 Bash 호출의 유일한 명령이어야 한다.** 앞에 `cd <리터럴 경로>` 하나(뒤가 `&&` 또는
-`|| exit [N]`)만 붙일 수 있다. push·commit은 따로 호출한다. 그 밖의 모양은 막는다.
+`|| exit [N]`), 뒤에 출력만 받는 파이프(`| tail`·`head`·`cat`·`tee`), 무해한 gh 환경변수 접두
+(`GH_PROMPT_DISABLED=1` 등 `SAFE_ENV`)만 붙일 수 있다. push·commit은 따로 호출한다. 그 밖의 모양은 막는다.
 - PR이 될 커밋: `--head <브랜치>`(`-H`·`-fH wt`·`-Hwt`·`--head=`)면 그 브랜치의 로컬 끝, 아니면 그 디렉터리
   (cwd 또는 맨 앞 `cd`)의 HEAD. `--head`가 둘 이상이거나 리터럴이 아니거나 `소유자:`(포크)면 막는다.
 - 마커: 그 브랜치가 체크아웃된 워크트리의 `.claude/.pr-review-ok`. 체크아웃마다 하나다.
-- **원격 추적 ref**(`<브랜치>@{upstream}`, 없으면 `origin/<브랜치>`)도 그 커밋과 같아야 한다. PR은 원격
-  브랜치로 만들어진다 — 푸시하지 않았거나 원격이 다른 커밋을 가리키면 막는다. 최근 푸시·페치 기준이다.
+- **원격 추적 ref**(`remote_tip` — 기본 브랜치가 아닌 `@{upstream}`, 아니면 `origin/<브랜치>`)도 그 커밋과
+  같아야 한다. PR은 원격 브랜치로 만들어진다 — 푸시하지 않았거나 원격이 다른 커밋을 가리키면 막는다.
+  최근 푸시·페치 기준이다.
 - 인자 속 명령 치환은 `cat`만(`--body "$(cat <<'EOF' … EOF)"`). heredoc 태그는 따옴표를 쳐야 한다 —
   따옴표 없는 heredoc 본문의 `$( … )`는 PR 생성 **전에** 실행된다.
 - `cd X;`·줄바꿈은 안 된다 — `cd`가 실패해도 다음 줄의 PR 생성이 원래 디렉터리에서 돈다.
@@ -32,7 +34,8 @@ PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는�
 **왜 이렇게 좁은가.** 첫 판은 `cwd`의 HEAD·마커만 읽어, 세션이 메인 체크아웃에 있고 `cd <워크트리> && …`로
 PR을 열면 메인의 것으로 판정했다 — 메인 마커가 메인 HEAD와 같기만 하면 리뷰 안 된 워크트리 브랜치가 통과했다.
 고치면서 명령 안의 `cd`를 **따라가는** 판, 같은 호출 안의 명령을 **허용 목록**으로 거르는 판을 거쳤는데 둘 다
-샜다(코드 리뷰 네 번이 짚었고 test-detect가 지킨다). 같은 호출 안에서 무엇이든 돌 수 있으면 판정이 무의미하다.
+샜다(코드 리뷰 다섯 번이 짚었고 test-detect가 지킨다). 같은 호출 안에서 무엇이든 돌 수 있으면 판정이 무의미하다.
+다섯째 리뷰는 정직한 PR 명령 중 리뷰 안 된 커밋을 통과시키는 것을 찾지 못했다 — 실사용 차단만 나와 풀었다.
 
 **정하지 못하면 막는다.** 입력을 못 읽는 경우(아래 `main`)와 다르다 — 그건 게이트가 사고를 만들지 않으려고
 열어 두지만, 이건 **PR 생성이 확실한데 무엇을 여는지 모르는** 경우라 열면 바로 위조 경로가 된다.
@@ -248,14 +251,41 @@ def words_of(seg):
         return None
 
 
+def next_word(w, i):
+    """i부터 플래그가 아닌 첫 낱말의 위치. `-R`·`--repo`는 값까지 건너뛴다."""
+    while i < len(w) and w[i].startswith("-"):
+        i += 2 if w[i] in ("-R", "--repo") else 1
+    return i
+
+
 def is_pr_words(w):
-    """낱말 열에 `gh`(또는 `$변수`) … `pr` … `create|new`가 차례로 있는가."""
+    """`gh`(또는 `$변수`) 다음 첫 낱말이 `pr`, 그다음 첫 낱말이 `create|new`인가.
+
+    위치를 본다 — 첫 판은 뒤 어딘가에 `pr`·`create`가 있기만 하면 잡아서 `gh pr list --search create`·
+    `gh issue create --label pr --label create`를 막았다(5차 코드 리뷰).
+    """
     for i, x in enumerate(w):
         if x.rsplit("/", 1)[-1] == "gh" or x.startswith("$"):
-            rest = w[i + 1:]
-            if "pr" in rest and any(v in rest[rest.index("pr") + 1:] for v in VERBS):
-                return True
+            j = next_word(w, i + 1)
+            if j < len(w) and w[j] == "pr":
+                k = next_word(w, j + 1)
+                if k < len(w) and w[k] in VERBS:
+                    return True
     return False
+
+
+WRAPPERS = {"env", "command", "exec", "sudo", "nohup", "time", "timeout", "nice", "xargs", "builtin"}
+
+
+def command_word(w):
+    """환경변수 접두와 래퍼(`env`·`timeout 60`·`sudo -u x` …)를 건너뛴 명령 낱말. 없으면 ""."""
+    i = 0
+    while i < len(w):
+        if re.match(r"^\w+=", w[i]) or w[i] in WRAPPERS or w[i].startswith("-") or w[i].isdigit():
+            i += 1
+        else:
+            return w[i].rsplit("/", 1)[-1]
+    return ""
 
 
 def shell_script(w):
@@ -271,40 +301,24 @@ def shell_script(w):
 
 
 def body_subs(body):
-    """따옴표 없는 heredoc 본문 속 `$( … )`·백틱 — 셸이 펼친다."""
-    out, i = [], 0
-    while i < len(body):
-        if body[i] == "\\":
-            i += 2
-        elif body.startswith("$(", i) and not body.startswith("$((", i):
-            d, j = 0, i + 2
-            while j < len(body) and not (body[j] == ")" and d == 0):
-                d += {"(": 1, ")": -1}.get(body[j], 0)
-                j += 1
-            out.append(body[i + 2:j])
-            i = j + 1
-        elif body[i] == "`":
-            j = body.find("`", i + 1)
-            j = len(body) if j < 0 else j
-            out.append(body[i + 1:j])
-            i = j + 1
-        else:
-            i += 1
-    return out
+    """따옴표 없는 heredoc 본문 속 `$( … )`·백틱 — 셸이 펼친다. 큰따옴표 안과 같은 규칙이라 `Lexed`에 맡긴다
+    (`"`는 본문에서 글자이므로 이스케이프한다)."""
+    return Lexed('"' + body.replace('"', '\\"') + '"').subs
 
 
-def has_pr(command, depth=0):
+def has_pr(command, depth=0, lx=None):
     """이 명령 어딘가에서 PR 생성이 도는가. 모르면 참."""
     if depth > 8:
         return True
-    lx = Lexed(command)
+    lx = lx or Lexed(command)
     segs, _ = split_top(lx)
     for seg, a, b in segs:
         if not seg.strip():
             continue
         w = words_of(seg)
         if w is None:
-            if re.search(r"gh.*\bpr\b.*\b(?:" + "|".join(VERBS) + r")\b", seg, re.S):
+            # 따옴표 안은 가린 full에서 찾는다 — 따옴표 속 언급(`$'…'` 본문)까지 잡지 않게
+            if re.search(r"\bgh\b.*\bpr\b.*\b(?:" + "|".join(VERBS) + r")\b", lx.full[a:b], re.S):
                 return True
             continue
         if is_pr_words(w):
@@ -312,7 +326,7 @@ def has_pr(command, depth=0):
         script = shell_script(w)
         if script is not None and has_pr(script, depth + 1):
             return True
-        fed = any(x.rsplit("/", 1)[-1] in SHELLS for x in w)
+        fed = command_word(w) in SHELLS  # 명령 낱말이 셸일 때만 — `--label sh`는 아니다
         for pos, quoted, body in lx.docs:
             if a <= pos < b and fed and has_pr(body, depth + 1):
                 return True
@@ -355,11 +369,15 @@ def parse_heads(args):
     return heads
 
 
-def shape(command, cwd):
+SINKS = {"tail", "head", "cat", "tee"}  # PR 생성 뒤 파이프로 출력만 받는 것 — 어느 커밋이 PR이 될지 바꾸지 못한다
+SAFE_ENV = {"GH_PROMPT_DISABLED", "NO_COLOR", "GH_NO_UPDATE_NOTIFIER", "GH_PAGER", "PAGER", "CLICOLOR",
+            "CLICOLOR_FORCE", "GH_SPINNER_DISABLED", "TERM"}
+
+
+def shape(lx, cwd):
     """허용하는 모양이면 (디렉터리, --head 값 또는 None, None), 아니면 (None, None, 이유)."""
-    lx = Lexed(command)
     segs, seps = split_top(lx)
-    bad = [s for s in seps if s not in ("&&", "\n", "||", ";")]
+    bad = [s for s in seps if s not in ("&&", "\n", "||", ";", "|")]
     if bad:
         return None, None, "`%s`가 있다(파이프·백그라운드·서브셸·명령 치환)" % bad[0].strip()
     body = [(i, s) for i, (s, _a, _b) in enumerate(segs) if s.strip()]
@@ -400,11 +418,17 @@ def shape(command, cwd):
         d = os.path.realpath(d) if physical else os.path.normpath(d)
         if not os.path.isdir(d):
             return None, None, "`cd` 대상 디렉터리가 없다: %s" % d
-    if len(body) != k + 1:
-        return None, None, "PR 생성 말고 다른 명령이 같은 호출에 있다"
+    if "|" in seps[:body[k][0]]:
+        return None, None, "PR 생성 앞에 파이프가 있다"
+    # PR 생성 뒤에는 `| tail -3` 같은 출력 받기만 — 그 밖의 명령은 같은 호출에 두지 않는다
+    for m in range(k + 1, len(body)):
+        if [s for s in seps[body[m - 1][0]:body[m][0]]] != ["|"] or not words[m] or words[m][0] not in SINKS:
+            return None, None, "PR 생성 말고 다른 명령이 같은 호출에 있다(뒤에는 `| tail`·`head`·`cat`·`tee`만)"
     if any(s in ("||", "&&") for s in seps[body[k][0]:]):
         return None, None, "PR 생성 뒤에 `&&`·`||`가 있다"
     w = words[k]
+    while w and re.match(r"^\w+=", w[0]) and w[0].split("=", 1)[0] in SAFE_ENV:
+        w = w[1:]  # GH_PROMPT_DISABLED=1 같은 무해한 접두. GIT_DIR=·GH_REPO=는 남아서 아래에서 막힌다
     if len(w) < 3 or w[0] != "gh" or w[1] != "pr" or w[2] not in VERBS:
         return None, None, "PR 생성은 `gh pr create …` 그대로 써야 한다(환경변수·래퍼·경로·변수 없이)"
     for inner in lx.subs:
@@ -418,6 +442,20 @@ def shape(command, cwd):
     if heads and ":" in heads[0]:
         return None, None, "`--head 소유자:브랜치` — 포크의 브랜치는 이 저장소에서 대조할 수 없다"
     return d, (heads[0] if heads else None), None
+
+
+def remote_tip(top, branch):
+    """PR이 만들어질 원격 브랜치의 끝(추적 ref). 못 찾으면 "".
+
+    `<브랜치>@{upstream}`이 있고 그 이름이 기본 브랜치가 아니면 그것(`push -u origin wt:feature` → origin/feature).
+    기본 브랜치를 추적하는 것은 「거기서 땄다」는 뜻이지 푸시했다는 뜻이 아니라(`switch -c x origin/main`,
+    워크트리 생성) `origin/<브랜치>`로 넘어간다. 첫 판은 `refs/heads/x@{upstream}`으로 물어 git이 늘 거절했다 —
+    이 조회가 죽어 있어 다른 이름으로 푸시한 브랜치가 막혔다(5차 코드 리뷰).
+    """
+    name = git("-C", top, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "%s@{upstream}" % branch)
+    if name and (name.split("/", 1)[-1] not in ("main", "master") or branch in ("main", "master")):
+        return git("-C", top, "rev-parse", "--verify", "-q", "%s@{upstream}" % branch)
+    return git("-C", top, "rev-parse", "--verify", "-q", "refs/remotes/origin/%s" % branch)
 
 
 def checkout_of(branch, top):
@@ -455,11 +493,12 @@ def main():
         return 0  # 입력을 못 읽으면 막지 않는다. 게이트가 사고를 만들면 안 된다
 
     command = (payload.get("tool_input") or {}).get("command") or ""
-    if not has_pr(command):
+    lx = Lexed(command)  # 한 번만 렉싱한다 — 탐지와 모양 판정이 같은 낱말을 본다
+    if not has_pr(command, 0, lx):
         return 0
 
     cwd = os.path.normpath(payload.get("cwd") or os.getcwd())
-    d, head, why = shape(command, cwd)
+    d, head, why = shape(lx, cwd)
     if d is None:
         return block("PR 생성 명령이 허용하는 모양이 아니다 — %s. %s" % (why, SIMPLE))
     top = git("-C", d, "rev-parse", "--show-toplevel")
@@ -495,8 +534,7 @@ def main():
             why = "%s에 리뷰 마커가 없다 — 이 브랜치는 아직 리뷰되지 않았다." % where
         return block(why, branch, sha, stat)
 
-    up = (git("-C", top, "rev-parse", "--verify", "-q", "refs/heads/%s@{upstream}" % branch)
-          or git("-C", top, "rev-parse", "--verify", "-q", "refs/remotes/origin/%s" % branch))
+    up = remote_tip(top, branch)
     if not up:
         return block("`%s`가 원격에 없다(추적 ref 없음) — 리뷰한 커밋을 먼저 푸시한다(따로 호출)." % branch, branch, sha)
     if up != sha:

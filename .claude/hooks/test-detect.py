@@ -13,7 +13,7 @@
 ⚠ 이슈 #111에서 케이스가 16 → 100여 개로 늘었다. 거의 전부 **옛 훅에 돌려 새는 것을 확인한** 모양이다
   (주석 속 `don't`가 PR 명령을 가림, `git commit -am x && <PR 생성>`, `url="$(<PR 생성>)"`, `"gh" pr create` …).
   훅을 고치는 동안 「따라가는 형태」를 넓히는 판(cd 추적)과 「허용하는 모양」을 늘리는 판(같은 호출 안의
-  git 하위 명령 허용 목록)이 차례로 샜다 — 내 리뷰가 다섯, 빌트인 코드 리뷰 네 번이 열·34·23·10을 짚었다.
+  git 하위 명령 허용 목록)이 차례로 샜다 — 내 리뷰가 다섯, 빌트인 코드 리뷰 다섯 번이 열·34·23·10·8을 짚었다.
   그래서 훅은 **PR 생성을 그 호출의 유일한 명령으로**(앞에 `cd <경로>` 하나만) 요구하고, 원격 추적 ref까지
   대조한다. 기대값이 0에서 2로 바뀐 실사용 모양(푸시와 PR을 한 줄에)은 그래서다 — 푸시는 따로 한다.
 """
@@ -78,6 +78,11 @@ def make_worktree_pair(main_marker, wt_marker, remote="pushed"):
     sh("-C", wt_dir, "commit", "-q", "--allow-empty", "-m", "work")
     if remote == "pushed":
         sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt")
+    elif remote == "renamed":
+        sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt:feature")
+    elif remote == "tracks-main":  # origin/main에서 딴 워크트리 — 추적은 main, 푸시는 같은 이름
+        sh("-C", wt_dir, "push", "-q", "origin", "wt")
+        sh("-C", wt_dir, "branch", "-q", "--set-upstream-to=origin/main")
     elif remote == "diverged":
         sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt")
         sh("-C", main_dir, "push", "-q", "-f", "origin", "main:wt")  # 원격 wt ← main의 (미리뷰) 커밋
@@ -152,6 +157,14 @@ PASS = [
     ("작은따옴표 커밋 메시지 속 백틱", "git commit -m '`" + G + "` 를 고친다'"),
     ("작은따옴표 속 $( )", "echo '$(" + G + ")'"),
     ("큰따옴표 속 이스케이프 백틱", 'echo "\\`' + G + '\\`"'),
+    # 5차 — PR을 만들지 않는 gh 명령의 값이 create·new다, 따옴표 속 언급, 셸 이름이 플래그 값이다
+    ("gh pr list --search create", "gh pr list --search create"),
+    ("gh pr list --label new", "gh pr list --label new --state open"),
+    ("gh pr edit --add-label new", 'gh pr edit 5 --add-label "new"'),
+    ("gh pr comment --body new", "gh pr comment 5 --body new"),
+    ("gh issue create --label pr --label create", "gh issue create --title x --label pr --label create"),
+    ("ANSI-C 본문 속 언급", "gh issue comment 5 --body $'it\\'s fixed\\n" + G + " works'"),
+    ("--label sh 뒤 heredoc 본문 속 언급", "gh issue create --label sh --body-file - <<'EOF'\n" + G + "\nEOF"),
 ]
 
 # 리뷰를 마친 저장소(마커 == HEAD, 원격 추적 ref도 같음) — (이름, 명령, 기대 rc)
@@ -200,6 +213,10 @@ REVIEWED_CASES = [
     ("실사용 — 작은따옴표 본문의 백틱", G + " --title t --body 'run `npm run check`'", 0),
     ("실사용 — 큰따옴표 본문의 이스케이프 백틱", G + ' --body "run \\`npm\\` ok"', 0),
     ("실사용 — 따옴표 친 heredoc 본문의 백틱·$( )", G + " --body \"$(cat <<'EOF'\n`npm run check` 와 $(x)\nEOF\n)\"", 0),
+    # 5차 — 출력을 자르는 파이프, 무해한 gh 환경변수
+    ("실사용 — | tail -3", G + " --fill 2>&1 | tail -3", 0),
+    ("실사용 — GH_PROMPT_DISABLED=1", "GH_PROMPT_DISABLED=1 " + G + " --fill", 0),
+    ("파이프 뒤가 sink가 아니다", G + " --fill | sh", 2),
 ]
 
 # 워크트리 — (이름, 메인 마커, 워크트리 마커, 명령, 기대 rc[, 원격 상태]). 이슈 #111.
@@ -215,6 +232,9 @@ WT_CASES = [
     # 소유자 접두는 포크 브랜치다 — 이 저장소에서 대조할 수 없어 4차부터 막는다
     ("WT-G --head=소유자:브랜치(막음)", None, "HEAD", G + " --head=me:wt", 2),
     ("WT-w cd X &&\\n PR · 리뷰됨", None, "HEAD", 'cd "<WT>" &&\n  ' + G, 0),
+    # 5차 — 다른 이름으로 푸시한 브랜치(`push -u origin wt:feature`). @{upstream} 조회가 죽어 있어 막혔다
+    ("WT-x 다른 이름으로 푸시 · 리뷰됨", None, "HEAD", 'cd "<WT>" && ' + G, 0, "renamed"),
+    ("WT-y origin/main을 추적 · 같은 이름 푸시 · 리뷰됨", None, "HEAD", 'cd "<WT>" && ' + G, 0, "tracks-main"),
     ("WT-H 워크트리 마커가 메인 SHA", "HEAD", "OTHER", 'cd "<WT>" && ' + G, 2),
     ("WT-I cd 대상을 못 푼다($변수)", "HEAD", "HEAD", 'cd "$WT" && ' + G, 2),
     ("WT-J cd 없음 · 메인 리뷰됨(기존 동작)", "HEAD", None, G + " --base main", 0),
