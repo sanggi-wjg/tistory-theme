@@ -24,9 +24,10 @@ PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는�
 - PR이 될 커밋: `--head <브랜치>`(`-H`·`-fH wt`·`-Hwt`·`--head=`)면 그 브랜치의 로컬 끝, 아니면 그 디렉터리
   (cwd 또는 맨 앞 `cd`)의 HEAD. `--head`가 둘 이상이거나 리터럴이 아니거나 `소유자:`(포크)면 막는다.
 - 마커: 그 브랜치가 체크아웃된 워크트리의 `.claude/.pr-review-ok`. 체크아웃마다 하나다.
-- **원격 추적 ref**(`remote_tip` — 기본 브랜치가 아닌 `@{upstream}`, 아니면 `origin/<브랜치>`)도 그 커밋과
+- **원격 브랜치**(`remote_branch` — 기본 브랜치가 아닌 추적 설정, 아니면 `origin <브랜치>`)의 끝도 그 커밋과
   같아야 한다. PR은 원격 브랜치로 만들어진다 — 푸시하지 않았거나 원격이 다른 커밋을 가리키면 막는다.
-  최근 푸시·페치 기준이다.
+  추적 ref가 아니라 `ls-remote`로 **원격에 직접** 묻는다(이슈 #114 — 추적 ref는 남이 민 뒤에 낡는다). 못 읽으면 막는다.
+- `--repo`·`-R`(없으면 훅 프로세스의 `GH_REPO`)는 그 원격과 같은 `소유자/저장소`여야 한다. 둘 이상·비리터럴이면 막는다.
 - 인자 속 명령 치환은 `cat`만(`--body "$(cat <<'EOF' … EOF)"`). heredoc 태그는 따옴표를 쳐야 한다 —
   따옴표 없는 heredoc 본문의 `$( … )`는 PR 생성 **전에** 실행된다.
 - `cd X;`·줄바꿈은 안 된다 — `cd`가 실패해도 다음 줄의 PR 생성이 원래 디렉터리에서 돈다.
@@ -51,11 +52,20 @@ PR을 열면 메인의 것으로 판정했다 — 메인 마커가 메인 HEAD�
 그래서 `"gh" pr 'create'`·`g\\h`·`url="$(…)"`는 잡고, `grep 'gh pr create'`·작은따옴표 커밋 메시지 속
 백틱처럼 글자인 것은 안 잡는다. 낱말로 못 나누는 토막은 글자로 찾는다(닫는 쪽 기본값).
 
+셸이 읽는 **스크립트 파일**(`bash x.sh`·`source x`·`. x`·셸 shebang의 `./x`)은 파일을 열어 같은 탐지를
+돌린다(이슈 #114 — 셸이 막는 복잡한 명령을 `_workspace/`의 스크립트로 돌리는 것이 이 저장소의 실사용이다).
+상대 경로는 cwd와 맨 위 `cd <리터럴>` 대상에서 찾고, 못 찾으면 PR 생성이 확실하지 않으니 막지 않는다.
+`gh api`로 `repos/…/pulls`에 POST하거나 GraphQL `createPullRequest`를 부르는 것도 PR 생성으로 본다. 둘 다
+잡히면 `gh pr create` 모양이 아니라 막힌다 — PR은 `gh pr create`로만 연다.
+
 ## 알려진 한계 (이슈 #114)
 
-- 함수·별칭·`source`한 스크립트 안의 PR 생성. 셸 이름을 바꾼 사본(`/tmp/x -c …`).
-- 판정 뒤에 다른 프로세스가 브랜치를 바꾸는 경우(동시 작업), 원격 추적 ref가 낡은 경우.
-- `--repo`·`GH_REPO`로 다른 저장소를 여는 것.
+남은 것은 일부러 감싸야 생기는 모양이거나 훅이 원리적으로 못 보는 곳이다.
+- 사용자 프로필의 함수·별칭, 셸 이름을 바꾼 사본(`/tmp/x -c …`), 셸이 아닌 실행기(python `subprocess`·
+  `npm run`·`make`) 안의 PR 생성. 경로가 변수인 스크립트(`bash "$X"`).
+- 판정과 PR 생성 사이에 다른 프로세스가 브랜치·원격을 바꾸는 경우(동시 작업).
+- 저장소에 원격이 여럿일 때 gh가 고르는 기본 저장소(`gh repo set-default`) — 훅은 브랜치의 원격으로 판정한다.
+- 웹 UI·`curl`로 여는 PR. 훅을 지나지 않거나 문자열 검사로 못 본다.
 """
 import json
 import os
@@ -233,6 +243,16 @@ def git(*args):
         return ""
 
 
+def git_ok(*args, timeout=10):
+    """(성공했나, 표준출력). 실패와 빈 결과를 가려야 할 때 — `ls-remote`는 없는 브랜치에도 0으로 끝난다."""
+    try:
+        p = subprocess.run(["git", *args], capture_output=True, text=True, timeout=timeout,
+                           env=dict(os.environ, GIT_TERMINAL_PROMPT="0"))
+        return p.returncode == 0, p.stdout.strip()
+    except Exception:
+        return False, ""
+
+
 def split_top(lx):
     """맨 위 단순 명령들 — ([(clean 토막, 시작, 끝)], [구분자들])."""
     segs, seps, last = [], [], 0
@@ -277,15 +297,18 @@ def is_pr_words(w):
 WRAPPERS = {"env", "command", "exec", "sudo", "nohup", "time", "timeout", "nice", "xargs", "builtin"}
 
 
-def command_word(w):
-    """환경변수 접두와 래퍼(`env`·`timeout 60`·`sudo -u x` …)를 건너뛴 명령 낱말. 없으면 ""."""
+def command_index(w):
+    """환경변수 접두와 래퍼(`env`·`timeout 60`·`sudo -u x` …)를 건너뛴 명령 낱말의 위치."""
     i = 0
-    while i < len(w):
-        if re.match(r"^\w+=", w[i]) or w[i] in WRAPPERS or w[i].startswith("-") or w[i].isdigit():
-            i += 1
-        else:
-            return w[i].rsplit("/", 1)[-1]
-    return ""
+    while i < len(w) and (re.match(r"^\w+=", w[i]) or w[i] in WRAPPERS or w[i].startswith("-") or w[i].isdigit()):
+        i += 1
+    return i
+
+
+def command_word(w):
+    """명령 낱말의 이름(경로를 뗀다). 없으면 ""."""
+    i = command_index(w)
+    return w[i].rsplit("/", 1)[-1] if i < len(w) else ""
 
 
 def shell_script(w):
@@ -306,8 +329,106 @@ def body_subs(body):
     return Lexed('"' + body.replace('"', '\\"') + '"').subs
 
 
-def has_pr(command, depth=0, lx=None):
-    """이 명령 어딘가에서 PR 생성이 도는가. 모르면 참."""
+SHELL_VALUE_OPTS = {"-o", "+o", "-O", "+O", "--rcfile", "--init-file"}
+
+
+def script_path(w):
+    """이 단순 명령이 셸로 읽는 스크립트 파일 — (경로, shebang을 봐야 하나). 없으면 None.
+
+    `bash x.sh`·`sh -x x.sh`·`source x`·`. x`는 셸이 읽고, `./x`처럼 경로로 실행하는 것은 셸 shebang일 때만이다.
+    """
+    i = command_index(w)
+    if i >= len(w):
+        return None
+    name = w[i].rsplit("/", 1)[-1]
+    if name in ("source", "."):
+        return (w[i + 1], False) if i + 1 < len(w) else None
+    if name in SHELLS:
+        j = i + 1
+        while j < len(w) and w[j][:1] in "-+" and w[j] not in ("-", "--"):
+            if not w[j].startswith("--") and ("c" in w[j][1:] or "s" in w[j][1:]):
+                return None  # -c는 shell_script가, -s(표준 입력)는 셸에 먹이는 heredoc이 본다
+            j += 2 if w[j] in SHELL_VALUE_OPTS else 1
+        j += 1 if j < len(w) and w[j] == "--" else 0
+        return (w[j], False) if j < len(w) else None
+    if "/" in w[i]:
+        return w[i], True
+    return None
+
+
+def read_script(path, need_shebang, bases):
+    """스크립트 본문. 경로를 못 풀거나(`$`), 없거나, 셸 스크립트가 아니면 None — PR 생성이 확실하지 않으니 막지 않는다."""
+    if "$" in path or "`" in path:
+        return None
+    path = os.path.expanduser(path)
+    for base in bases:
+        f = os.path.join(base, path)
+        if not os.path.isfile(f):
+            continue
+        try:
+            with open(f, encoding="utf-8", errors="replace") as fh:
+                text = fh.read(1 << 20)
+        except OSError:
+            continue
+        if need_shebang:
+            first = text.split("\n", 1)[0]
+            if not first.startswith("#!"):
+                if not f.endswith(".sh"):
+                    continue
+            else:
+                argv = first[2:].split()
+                if argv and argv[0].rsplit("/", 1)[-1] == "env":
+                    argv = [a for a in argv[1:] if not a.startswith("-")]
+                if not argv or argv[0].rsplit("/", 1)[-1] not in SHELLS:
+                    continue
+        return text
+    return None
+
+
+API_VALUE = {"-X", "--method", "-f", "--raw-field", "-F", "--field", "-H", "--header", "--input", "-q", "--jq",
+             "-t", "--template", "--cache", "-p", "--preview", "--hostname"}
+PULLS = re.compile(r"/?repos/[^/]+/[^/]+/pulls/?(?:\?.*)?")
+
+
+def is_api_pr(w):
+    """`gh api`로 PR을 여는가 — `repos/o/r/pulls`에 POST(`-f`·`-F`·`--input`이 있으면 기본이 POST),
+    또는 GraphQL `createPullRequest`."""
+    for i, x in enumerate(w):
+        if not (x.rsplit("/", 1)[-1] == "gh" or x.startswith("$")):
+            continue
+        j = next_word(w, i + 1)
+        if j >= len(w) or w[j] != "api":
+            continue
+        args = w[j + 1:]
+        if any("createPullRequest" in a for a in args):
+            return True
+        method, fields, endpoint, k = None, False, None, 0
+        while k < len(args):
+            a = args[k]
+            if a.startswith("--"):
+                name, eq, val = a.partition("=")
+            elif a.startswith("-") and len(a) > 1:
+                name, val = a[:2], a[2:]
+                eq = val
+            else:
+                endpoint = endpoint or a
+                k += 1
+                continue
+            if name in API_VALUE and not eq:
+                val = args[k + 1] if k + 1 < len(args) else ""
+                k += 1
+            if name in ("-X", "--method"):
+                method = val
+            elif name in ("-f", "--raw-field", "-F", "--field", "--input"):
+                fields = True
+            k += 1
+        if endpoint and PULLS.fullmatch(endpoint) and (method or ("POST" if fields else "GET")).upper() == "POST":
+            return True
+    return False
+
+
+def has_pr(command, depth=0, lx=None, bases=()):
+    """이 명령 어딘가에서 PR 생성이 도는가. 모르면 참. bases: 상대 경로 스크립트를 찾을 디렉터리들."""
     if depth > 8:
         return True
     lx = lx or Lexed(command)
@@ -321,34 +442,39 @@ def has_pr(command, depth=0, lx=None):
             if re.search(r"\bgh\b.*\bpr\b.*\b(?:" + "|".join(VERBS) + r")\b", lx.full[a:b], re.S):
                 return True
             continue
-        if is_pr_words(w):
+        if is_pr_words(w) or is_api_pr(w):
             return True
         script = shell_script(w)
-        if script is not None and has_pr(script, depth + 1):
+        if script is not None and has_pr(script, depth + 1, bases=bases):
+            return True
+        found = script_path(w)
+        text = found and read_script(found[0], found[1], bases)
+        if text is not None and has_pr(text, depth + 1, bases=bases):
             return True
         fed = command_word(w) in SHELLS  # 명령 낱말이 셸일 때만 — `--label sh`는 아니다
         for pos, quoted, body in lx.docs:
-            if a <= pos < b and fed and has_pr(body, depth + 1):
+            if a <= pos < b and fed and has_pr(body, depth + 1, bases=bases):
                 return True
-    if any(has_pr(s, depth + 1) for s in lx.subs):
+    if any(has_pr(s, depth + 1, bases=bases) for s in lx.subs):
         return True
-    return any(has_pr(s, depth + 1) for _p, quoted, body in lx.docs if not quoted for s in body_subs(body))
+    return any(has_pr(s, depth + 1, bases=bases)
+               for _p, quoted, body in lx.docs if not quoted for s in body_subs(body))
 
 
-def parse_heads(args):
-    """gh pr create 인자에서 `--head` 값들. pflag처럼 짧은 플래그 묶음(`-fH wt`·`-Hwt`)도 푼다."""
-    heads, i = [], 0
+def flag_values(args, long, short):
+    """gh pr create 인자에서 한 플래그(`--head`·`-H`)의 값들. pflag처럼 짧은 플래그 묶음(`-fH wt`·`-Hwt`)도 푼다."""
+    values, i = [], 0
     while i < len(args):
         t = args[i]
         if t == "--":
             break
         if t.startswith("--"):
             name = t.split("=", 1)[0]
-            if name == "--head":
+            if name == long:
                 if "=" in t:
-                    heads.append(t.split("=", 1)[1])
+                    values.append(t.split("=", 1)[1])
                 else:
-                    heads.append(args[i + 1] if i + 1 < len(args) else "")
+                    values.append(args[i + 1] if i + 1 < len(args) else "")
                     i += 1
             elif name in VALUE_LONG and "=" not in t:
                 i += 1
@@ -362,11 +488,11 @@ def parse_heads(args):
                         i += 1
                     else:
                         val = rest[1:] if rest.startswith("=") else rest
-                    if ch == "H":
-                        heads.append(val)
+                    if ch == short:
+                        values.append(val)
                     break
         i += 1
-    return heads
+    return values
 
 
 SINKS = {"tail", "head", "cat", "tee"}  # PR 생성 뒤 파이프로 출력만 받는 것 — 어느 커밋이 PR이 될지 바꾸지 못한다
@@ -375,7 +501,8 @@ SAFE_ENV = {"GH_PROMPT_DISABLED", "NO_COLOR", "GH_NO_UPDATE_NOTIFIER", "GH_PAGER
 
 
 def shape(lx, cwd):
-    """허용하는 모양이면 (디렉터리, --head 값 또는 None, None), 아니면 (None, None, 이유)."""
+    """허용하는 모양이면 (디렉터리, {"head": --head 값, "repo": --repo 값}(없으면 None), None),
+    아니면 (None, None, 이유)."""
     segs, seps = split_top(lx)
     bad = [s for s in seps if s not in ("&&", "\n", "||", ";", "|")]
     if bad:
@@ -430,32 +557,65 @@ def shape(lx, cwd):
     while w and re.match(r"^\w+=", w[0]) and w[0].split("=", 1)[0] in SAFE_ENV:
         w = w[1:]  # GH_PROMPT_DISABLED=1 같은 무해한 접두. GIT_DIR=·GH_REPO=는 남아서 아래에서 막힌다
     if len(w) < 3 or w[0] != "gh" or w[1] != "pr" or w[2] not in VERBS:
-        return None, None, "PR 생성은 `gh pr create …` 그대로 써야 한다(환경변수·래퍼·경로·변수 없이)"
+        return None, None, "PR 생성은 `gh pr create …` 그대로 써야 한다(환경변수·래퍼·경로·변수·스크립트 파일·`gh api` 없이)"
     for inner in lx.subs:
         if not CAT_ONLY.fullmatch(Lexed(inner).clean):
             return None, None, "인자 속 명령 치환은 `cat`만 허용한다: %r" % inner.strip()[:40]
-    heads = parse_heads(w[3:])
+    heads = flag_values(w[3:], "--head", "H")
+    repos = flag_values(w[3:], "--repo", "R")
+    if len(repos) > 1:
+        return None, None, "`--repo`가 둘 이상이다 — gh는 마지막 것을 쓴다"
+    if repos and (not repos[0] or "$" in repos[0] or "`" in repos[0]):
+        return None, None, "`--repo` 값이 리터럴이 아니다"
     if len(heads) > 1:
         return None, None, "`--head`가 둘 이상이다 — gh는 마지막 것을 쓴다"
     if heads and (not heads[0] or "$" in heads[0] or "`" in heads[0]):
         return None, None, "`--head` 값이 리터럴이 아니다"
     if heads and ":" in heads[0]:
         return None, None, "`--head 소유자:브랜치` — 포크의 브랜치는 이 저장소에서 대조할 수 없다"
-    return d, (heads[0] if heads else None), None
+    return d, {"head": heads[0] if heads else None, "repo": repos[0] if repos else None}, None
 
 
-def remote_tip(top, branch):
-    """PR이 만들어질 원격 브랜치의 끝(추적 ref). 못 찾으면 "".
+def remote_branch(top, branch):
+    """PR이 만들어질 원격 브랜치 — (원격 이름, 브랜치 이름).
 
-    `<브랜치>@{upstream}`이 있고 그 이름이 기본 브랜치가 아니면 그것(`push -u origin wt:feature` → origin/feature).
-    기본 브랜치를 추적하는 것은 「거기서 땄다」는 뜻이지 푸시했다는 뜻이 아니라(`switch -c x origin/main`,
-    워크트리 생성) `origin/<브랜치>`로 넘어간다. 첫 판은 `refs/heads/x@{upstream}`으로 물어 git이 늘 거절했다 —
-    이 조회가 죽어 있어 다른 이름으로 푸시한 브랜치가 막혔다(5차 코드 리뷰).
+    추적 설정(`branch.<b>.remote`·`.merge`)이 있고 그 이름이 기본 브랜치가 아니면 그것(`push -u origin wt:feature`
+    → origin feature). 기본 브랜치를 추적하는 것은 「거기서 땄다」는 뜻이지 푸시했다는 뜻이 아니라
+    (`switch -c x origin/main`, 워크트리 생성) `origin <브랜치>`로 넘어간다. 원격이 `.`(로컬 브랜치 추적)이어도 같다.
     """
-    name = git("-C", top, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "%s@{upstream}" % branch)
-    if name and (name.split("/", 1)[-1] not in ("main", "master") or branch in ("main", "master")):
-        return git("-C", top, "rev-parse", "--verify", "-q", "%s@{upstream}" % branch)
-    return git("-C", top, "rev-parse", "--verify", "-q", "refs/remotes/origin/%s" % branch)
+    remote = git("-C", top, "config", "branch.%s.remote" % branch)
+    merge = git("-C", top, "config", "branch.%s.merge" % branch)
+    name = merge[len("refs/heads/"):] if merge.startswith("refs/heads/") else ""
+    if remote and remote != "." and name and (name not in ("main", "master") or branch in ("main", "master")):
+        return remote, name
+    return "origin", branch
+
+
+def remote_tip(top, remote, name):
+    """원격 브랜치의 **지금** 끝 — (읽었나, SHA 또는 ""). 추적 ref(`origin/x`)가 아니라 원격에 직접 묻는다.
+
+    추적 ref는 마지막 fetch·push 때의 값이다 — 그 뒤 남이 원격 브랜치를 밀면 낡은 값으로 통과했고, 다른 곳에서
+    푸시해 추적 ref가 없으면 푸시했는데도 막았다(이슈 #114). 원격을 못 읽으면 PR 생성도 못 하므로 막는다.
+    """
+    ok, out = git_ok("-C", top, "ls-remote", remote, "refs/heads/" + name, timeout=20)
+    sha = next((ln.split("\t", 1)[0] for ln in out.splitlines() if ln.endswith("\trefs/heads/" + name)), "")
+    return ok, sha
+
+
+def slug(s):
+    """`소유자/저장소`(소문자) — `o/r`·`HOST/o/r`·URL·`git@host:o/r.git`·로컬 경로 모두 끝 두 마디로. 못 읽으면 ""."""
+    parts = re.split(r"[/:]", re.sub(r"(?:\.git)?/*$", "", (s or "").strip()))
+    return "/".join(parts[-2:]).lower() if len(parts) >= 2 and all(parts[-2:]) else ""
+
+
+def cd_targets(lx, cwd):
+    """맨 위 `cd <리터럴>`들의 대상 — 상대 경로 스크립트를 찾을 곳. 탐지만 쓴다(판정은 `shape`가 한다)."""
+    out = []
+    for seg, _a, _b in split_top(lx)[0]:
+        w = words_of(seg)
+        if w and w[0] == "cd" and len(w) >= 2 and "$" not in w[-1] and w[-1] != "-":
+            out.append(os.path.normpath(os.path.join(cwd, os.path.expanduser(w[-1]))))
+    return out
 
 
 def checkout_of(branch, top):
@@ -494,21 +654,21 @@ def main():
 
     command = (payload.get("tool_input") or {}).get("command") or ""
     lx = Lexed(command)  # 한 번만 렉싱한다 — 탐지와 모양 판정이 같은 낱말을 본다
-    if not has_pr(command, 0, lx):
+    cwd = os.path.normpath(payload.get("cwd") or os.getcwd())
+    if not has_pr(command, 0, lx, bases=[cwd] + cd_targets(lx, cwd)):
         return 0
 
-    cwd = os.path.normpath(payload.get("cwd") or os.getcwd())
-    d, head, why = shape(lx, cwd)
+    d, opts, why = shape(lx, cwd)
     if d is None:
         return block("PR 생성 명령이 허용하는 모양이 아니다 — %s. %s" % (why, SIMPLE))
     top = git("-C", d, "rev-parse", "--show-toplevel")
     if not top:
-        if d == cwd and not head:
+        if d == cwd and not opts["head"]:
             return 0  # 저장소 밖 — 첫 판부터의 동작
         return block("PR 생성 위치가 git 저장소가 아니라(%s) `--head`·`cd`가 가리키는 것을 확인할 수 없다." % d)
 
-    if head:
-        branch = head
+    if opts["head"]:
+        branch = opts["head"]
         sha = git("-C", top, "rev-parse", "--verify", "-q", "refs/heads/%s^{commit}" % branch)
         if not sha:
             return block("`--head %s` 브랜치가 로컬에 없어 무엇이 PR이 되는지 확인할 수 없다." % branch, branch)
@@ -534,12 +694,23 @@ def main():
             why = "%s에 리뷰 마커가 없다 — 이 브랜치는 아직 리뷰되지 않았다." % where
         return block(why, branch, sha, stat)
 
-    up = remote_tip(top, branch)
+    remote, name = remote_branch(top, branch)
+    # PR이 열릴 저장소 — `--repo`, 없으면 훅 프로세스 환경의 GH_REPO. 판정한 원격과 같아야 한다(이슈 #114)
+    target = opts["repo"] or os.environ.get("GH_REPO", "")
+    if target:
+        mine = slug(git("-C", top, "config", "remote.%s.url" % remote))
+        if not mine or slug(target) != mine:
+            return block("PR을 `%s`에 연다 — 판정한 원격 `%s`(%s)와 다른 저장소다. 그 저장소의 브랜치는 여기서 "
+                         "대조할 수 없다." % (target, remote, mine or "주소를 못 읽음"), branch, sha)
+    ok, up = remote_tip(top, remote, name)
+    if not ok:
+        return block("원격 `%s`를 읽지 못했다(ls-remote 실패) — 리뷰한 커밋이 원격에 있는지 확인할 수 없다." % remote,
+                     branch, sha)
     if not up:
-        return block("`%s`가 원격에 없다(추적 ref 없음) — 리뷰한 커밋을 먼저 푸시한다(따로 호출)." % branch, branch, sha)
+        return block("`%s/%s`가 원격에 없다 — 리뷰한 커밋을 먼저 푸시한다(따로 호출)." % (remote, name), branch, sha)
     if up != sha:
-        return block("원격 `%s`(%s)가 리뷰한 커밋(%s)과 다르다 — PR은 원격 브랜치로 만들어진다. 리뷰한 커밋을 푸시했는가, "
-                     "원격에 다른 커밋이 올라가 있지 않은가." % (branch, up[:8], sha[:8]), branch, sha)
+        return block("원격 `%s/%s`(%s)가 리뷰한 커밋(%s)과 다르다 — PR은 원격 브랜치로 만들어진다. 리뷰한 커밋을 "
+                     "푸시했는가, 원격에 다른 커밋이 올라가 있지 않은가." % (remote, name, up[:8], sha[:8]), branch, sha)
     return 0
 
 
