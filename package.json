@@ -14,10 +14,11 @@
     "preview": "npm run build && npm run preview:only",
     "preview:images": "npm run preview && node scripts/gen-preview.mjs",
     "lint": "python3 .claude/skills/skin-qa-check/scripts/lint.py",
-    "check": "npm run build && npm run lint && npm run test:css && npm run test:syntax && npm run test:lint && npm run test:codes && npm run test:markup && npm run test:decor && npm run test:namecard && npm run test:images && npm run test:code && npm run test:hooks && npm run preview:only",
+    "check": "npm run build && npm run lint && npm run test:css && npm run test:syntax && npm run test:lint && npm run test:codes && npm run test:markup && npm run test:decor && npm run test:namecard && npm run test:images && npm run test:code && npm run test:hooks && npm run test:paging && npm run preview:only && npm run test:notice",
     "test:css": "node scripts/check-css.mjs",
     "test:syntax": "python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py",
     "test:hooks": "python3 .claude/hooks/test-detect.py",
+    "test:paging": "python3 .claude/skills/seo-verify-live/scripts/test-paging-shape.py",
     "test:lint": "python3 .claude/skills/skin-qa-check/scripts/test-js-dom-classes.py",
     "test:codes": "python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py",
     "test:markup": "python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py",
@@ -25,12 +26,14 @@
     "test:namecard": "python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py",
     "test:code": "node scripts/probe-code-detect.mjs",
     "census:coverage": "node scripts/probe-code-coverage.mjs",
-    "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py"
+    "probe:live": "node scripts/probe-live-visual.mjs",
+    "test:images": "python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py",
+    "test:notice": "node scripts/test-notice-unwrap.mjs"
   },
   "devDependencies": {
     "css-tree": "^3.2.1",
     "esbuild": "^0.25.0",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.5"
   },
   "dependencies": {
     "highlight.js": "^11.11.0"

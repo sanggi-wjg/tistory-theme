@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>데드락 썸네일</title>
+<style>
+  /* 색은 lock-order-deadlock.html과 같다 — 글 속 애니메이션과 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 대표이미지(= og:image). 시안 셋 중 A(글자 없음)로 정했다(2026-10-09) — b·c는 비교용으로 남긴다.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=a'
+var v = new URLSearchParams(location.search).get('v') || 'a';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx, extra) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx || 20) + '"' + (extra || '') +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function arrow(x1, y1, x2, y2, col, dash) {
+  return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+    (dash ? ' stroke-dasharray="16 12"' : '') + ' stroke-linecap="round"' +
+    ' style="stroke:var(' + col + ');stroke-width:6" marker-end="url(#m' + col.slice(2) + ')"/>';
+}
+function pill(cx, cy, s, fill, stroke, col, size, cls) {
+  var w = s.length * size * (cls ? 0.62 : 0.95) + size * 1.4, h = size * 1.9;
+  return rect(cx - w / 2, cy - h / 2, w, h, fill, stroke, 4, h / 2) +
+    text(cx, cy + size * 0.36, s, 'fill:var(' + col + ');font-size:' + size + 'px;font-weight:800;text-anchor:middle', cls);
+}
+function defs() {
+  return '<defs>' + ['--a', '--b', '--err', '--ok'].map(function (c) {
+    return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="30" markerHeight="30" orient="auto">' +
+      '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+  }).join('') + '</defs>';
+}
+
+// 마름모 도식 — 가운데 (800,500) 기준. mode: 'deadlock'(제각각 순서) | 'sorted'(정렬)
+function diagram(mode) {
+  var dl = mode === 'deadlock', out = [];
+  var C = { 3: { x: 690, y: 180 }, 9: { x: 690, y: 680 } }, CW = 220, CH = 140;
+  var B = { A: { x: 230, y: 420 }, B: { x: 1070, y: 420 } }, BW = 300, BH = 160;
+  var owner = { 3: 'A', 9: dl ? 'B' : 'A' };
+  var col = { A: '--a', B: '--b' }, soft = { A: '--a-soft', B: '--b-soft' };
+
+  // 선을 먼저 — 상자가 선 끝을 덮는다
+  // 쥐고 있음: 행 → 주인 (실선)
+  out.push(arrow(690, 262, 492, 412, '--a'));
+  if (dl) out.push(arrow(910, 738, 1108, 588, '--b'));
+  else out.push(arrow(690, 738, 492, 588, '--a'));
+  // 기다림: 트랜잭션 → 행 (점선)
+  var waitCol = dl ? '--err' : '--b';
+  out.push(arrow(1120, 420, 918, 268, waitCol, true));
+  if (dl) out.push(arrow(480, 580, 682, 732, '--err', true));
+
+  ['A', 'B'].forEach(function (w) {
+    var b = B[w], waiting = dl || w === 'B';
+    out.push(rect(b.x, b.y, BW, BH, '--surface', dl ? '--err' : col[w], 5));
+    out.push(text(b.x + BW / 2, b.y + 70, '트랜잭션 ' + w, 'fill:var(' + col[w] + ');font-size:44px;font-weight:800;text-anchor:middle'));
+    out.push(text(b.x + BW / 2, b.y + 122, waiting ? '대기 중' : '진행 중',
+      'fill:var(' + (dl ? '--err' : '--mute') + ');font-size:32px;font-weight:600;text-anchor:middle'));
+  });
+  [3, 9].forEach(function (id) {
+    var c = C[id], o = owner[id];
+    out.push(rect(c.x, c.y, CW, CH, soft[o], dl ? '--err' : col[o], 5));
+    out.push(text(c.x + CW / 2, c.y + 50, o + ' 잠금', 'fill:var(' + col[o] + ');font-size:30px;font-weight:800;text-anchor:middle'));
+    out.push(text(c.x + CW / 2, c.y + 106, 'user ' + id, 'fill:var(' + col[o] + ');font-size:44px;font-weight:700;text-anchor:middle', 'mono'));
+  });
+  // 점선 위 「대기」
+  out.push(pill(1015, 344, '대기', '--bg', waitCol, waitCol, 30));
+  if (dl) out.push(pill(585, 656, '대기', '--bg', '--err', '--err', 30));
+
+  out.push(dl ? pill(800, 500, 'DEADLOCK', '--err-soft', '--err', '--err', 44, 'mono')
+              : pill(800, 500, 'NO DEADLOCK', '--ok-soft', '--ok', '--ok', 40, 'mono'));
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(-800,-500)">' + inner + '</g>';
+}
+
+var out = defs() + '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+
+if (v === 'a') {
+  // 글자 없는 판 — 데드락 고리 하나
+  out += place(diagram('deadlock'), 800, 500, 1);
+} else if (v === 'b') {
+  // 문구 + 도식
+  out += text(130, 350, 'MySQL 8.0 · InnoDB', 'fill:var(--mute);font-size:36px;font-weight:600', 'mono');
+  out += text(124, 470, '락 순서를 맞춰', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 590, '데드락 피하기', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += rect(130, 650, 470, 70, '--err-soft', '--err', 4, 35);
+  out += text(365, 697, 'ERROR 1213 (40001)', 'fill:var(--err);font-size:32px;font-weight:700;text-anchor:middle', 'mono');
+  out += place(diagram('deadlock'), 1190, 500, 0.56);
+} else {
+  // 전후 비교 — 제각각 순서 vs 정렬
+  [['deadlock', 450, '순서가 제각각이면', '--err'], ['sorted', 1150, '같은 순서로 잠그면', '--ok']].forEach(function (p) {
+    out += rect(p[1] - 330, 160, 660, 680, '--surface', '--hair', 3, 28);
+    out += place(diagram(p[0]), p[1], 455, 0.52);
+    out += text(p[1], 760, p[2], 'fill:var(' + p[3] + ');font-size:44px;font-weight:800;text-anchor:middle');
+  });
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
