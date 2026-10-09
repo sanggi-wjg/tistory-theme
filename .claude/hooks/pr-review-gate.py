@@ -142,17 +142,24 @@ def follow_cd(text, masked, start, cwd):
 
 
 def head_branch(text, masked, start):
-    """PR 생성 명령의 `--head` 값(소유자 접두는 뗀다). 없으면 None."""
-    nxt = SEP.search(masked, start + 1)
-    w = words(text[start:nxt.start() if nxt else len(text)].lstrip(";&|(\n")) or []
-    for i, t in enumerate(w):
-        v = None
-        if t in ("--head", "-H") and i + 1 < len(w):
-            v = w[i + 1]
-        elif t.startswith("--head="):
-            v = t[len("--head="):]
-        if v:
-            return v.split(":")[-1]
+    """PR 생성 명령의 `--head` 값(소유자 접두는 뗀다). 없으면 None.
+
+    명령의 끝은 명령 구분자(`&&` `||` `;` `|` `&` 줄바꿈)까지다 — **괄호에서 끊지 않는다.**
+    첫 판은 `SEP`로 끊어서 `--body $(cat f) --head wt`의 `--head`를 못 보고 cwd의 HEAD로
+    판정했다(test-detect WT-M — 게이트가 열리는 방향). 값은 가린 문자열에서 위치를 찾고
+    원문에서 셸 단어로 읽는다(`--head "wt"`).
+    """
+    end = re.compile(r"&&|\|\||[;|&\n]").search(masked, start + 1)
+    stop = end.start() if end else len(masked)
+    for m in re.finditer(r"(?<!\S)(?:--head(?:=|\s+)|-H\s+)", masked[:stop]):
+        if m.start() < start:
+            continue
+        try:
+            w = shlex.split(text[m.end():stop], posix=True)
+        except ValueError:
+            w = text[m.end():stop].split()
+        if w:
+            return w[0].split(":")[-1]
     return None
 
 
