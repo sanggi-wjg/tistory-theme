@@ -572,7 +572,7 @@
       "properties": ["border-color"],
       "value": "#d0d0d0",
       "kind": "background",
-      "contrastNote": "상대가 (0,3,0)으로 쓰는 유일한 자리 중 하나다. **로그인 상태에서만** 나오는 클래스라 프리뷰 픽스처에 없다 — 눈으로 볼 수 없으므로 린트가 유일한 검사다."
+      "contrastNote": "상대가 (0,3,0)으로 쓰는 유일한 자리 중 하나다. 비회원 방문자가 구독했을 때만 나와(티스토리 번들의 isMember === false && isFollower) 라이브로는 못 본다 — 프리뷰 page_toc가 번들 마크업 그대로 그린다(이슈 #89)."
     },
     {
       "component": "구독 버튼 글자",
@@ -582,6 +582,42 @@
       "darkContrast": 1.16,
       "kind": "text",
       "contrastNote": "상대가 (0,3,0)이라 접두+marker로 (0,5,0)이 된다."
+    },
+    {
+      "component": "크리에이터 배지 글자",
+      "marker": ".tt_link .tt_tit_g",
+      "properties": ["color"],
+      "value": "#333333",
+      "darkContrast": 1.48,
+      "kind": "text",
+      "contrastNote": "블로그가 티스토리 스토리 크리에이터일 때만 나오는 줄이다(번들의 storyCreator). 이 블로그는 null이라 라이브에 없다 — 프리뷰 page_toc가 그린다(이슈 #89)."
+    },
+    {
+      "component": "구독 버튼 + 아이콘",
+      "marker": ".tt_btn_subscribe .tt_ico_cross",
+      "properties": ["filter"],
+      "value": "짙은 회색 스프라이트(tt_img_area_reply_231108.svg)",
+      "darkContrast": null,
+      "kind": "image",
+      "contrastNote": "색 토큰이 못 닿는다 — filter: invert(var(--sprite-invert)). 다크에서 바탕에 묻힌다"
+    },
+    {
+      "component": "구독 중 체크 아이콘",
+      "marker": ".tt_btn_subscribe .tt_ico_check",
+      "properties": ["filter"],
+      "value": "짙은 회색 스프라이트(-82px -60px)",
+      "darkContrast": null,
+      "kind": "image",
+      "contrastNote": "색 토큰이 못 닿는다 — filter: invert(var(--sprite-invert)). 다크에서 바탕에 묻힌다"
+    },
+    {
+      "component": "크리에이터 배지 화살표",
+      "marker": ".tt_link .tt_ico_arrow2",
+      "properties": ["filter"],
+      "value": "짙은 회색 스프라이트(-76px -60px)",
+      "darkContrast": null,
+      "kind": "image",
+      "contrastNote": "색 토큰이 못 닿는다 — filter: invert(var(--sprite-invert)). 다크에서 바탕에 묻힌다"
     }
   ]
 }

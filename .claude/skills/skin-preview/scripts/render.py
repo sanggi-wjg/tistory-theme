@@ -52,25 +52,60 @@ REACT_BOX_EMPTY = '<div data-tistory-react-app="Comment"></div>'
 #
 # .tt_ico_cross(구독 버튼의 +)는 index.css가 CDN 상대경로로 스프라이트를 가져오므로 프리뷰에도
 # 뜬다 — 다크에서 --sprite-invert로 반전되는지까지 여기서 보인다(결정 53).
-# 재현하지 못하는 것:
-# 구독 중 상태 .tt_btn_subscribe.type2도 없다 — 로그인 상태에서만 나오는 클래스다.
-NAMECARD_BOX = (
-    '<!-- 티스토리 React가 렌더링: Namecard (소스에는 빈 div뿐이다) -->'
-    '<div data-tistory-react-app="Namecard" data-preview="티스토리 React가 런타임에 그린다">'
-    '<div class="tt_box_namecard">'
-    '<div class="tt_cont">'
-    '<a class="tt_tit_cont" href="/">상쾌한기분</a>'
-    '<a class="tt_desc" href="/">오늘도 상쾌한기분</a>'
-    '<button type="button" class="tt_btn_subscribe">'
-    '<span class="tt_txt_g">구독하기</span>'
-    '<span class="tt_img_area_reply tt_ico_cross"></span>'
-    '</button>'
-    '</div>'
-    '<a class="tt_wrap_thumb" href="/">'
-    '<span class="tt_thumb_g" style="background-image:url(https://placehold.co/200x200/eeeeee/999999?text=logo);'
-    'display:block;width:100%;height:100%;background-size:cover"></span>'
-    '</a>'
-    '</div></div>')
+#
+# **두 상태를 나눠 그린다**(이슈 #89). 티스토리 번들(`static/pc/dist/index.js` @e0a0fbc의 Namecard 컴포넌트)에서
+# 조건과 마크업을 그대로 옮겼다 — 둘 다 이 블로그를 로그아웃·주인으로 보면 나오지 않아 라이브로는 못 잰다.
+#   · 구독 버튼은 방문자가 블로그 멤버가 아닐 때(`isMember === false`)만 나온다 — 주인으로 로그인하면 버튼이 없다.
+#     구독 중(`isFollower`)이면 `button.tt_btn_subscribe.type2` > 「구독중」 + `.tt_ico_check`.
+#   · `a.tt_link`(이름 아래 배지 줄, 안에 `strong.tt_tit_g`)는 블로그가 티스토리 「분야 크리에이터」
+#     (`storyCreator`)일 때만 나온다. 이 블로그는 `/namecard` 응답에서 `storyCreator: null`(2026-10-10).
+# page·page_bare = 로그아웃 방문자(구독하기), page_toc = 구독 중 + 크리에이터 배지 줄.
+# 재현하지 못하는 것: 버튼이 아예 없는 주인 화면(isMember), 실제 크리에이터 블로그의 분야 이름.
+_NC_SVG = (
+    '<svg fill="none" height="15" viewBox="0 0 14 15" width="14" xmlns="http://www.w3.org/2000/svg">'
+    '<path clip-rule="evenodd" d="M14 7.50006C14 11.366 10.866 14.5001 6.99997 14.5001C3.13398 14.5001 0 11.366 0 '
+    '7.50006C0 3.63407 3.13398 0.5 6.99997 0.5C10.866 0.5 14 3.63407 14 7.50006Z" fill="#C5F220" fill-rule="evenodd"></path>'
+    '<path clip-rule="evenodd" d="M5.62497 8.77088C5.70206 9.43979 6.25464 9.85446 7.11558 9.85446C7.93802 9.85446 '
+    '8.3877 9.49327 8.3877 8.95817C8.3877 8.42307 8.10506 8.31603 7.23126 8.14213L6.13897 7.92806C4.76404 7.6739 '
+    '4.17295 7.01837 4.17295 6.04182C4.17295 4.75755 5.22658 3.84778 6.99999 3.84778C8.69614 3.84778 9.72412 4.6906 '
+    '9.82694 6.13547H8.32347C8.2336 5.50664 7.74525 5.13205 6.89717 5.13205C6.0876 5.13205 5.67634 5.46655 5.67634 '
+    '5.93479C5.67634 6.29598 5.92056 6.51006 6.82008 6.68396L7.91229 6.88455C9.24872 7.1388 9.89125 7.76755 9.89125 '
+    '8.82435C9.89125 10.1889 8.83754 11.1521 7.05135 11.1521C5.30375 11.1521 4.17295 10.2424 4.10864 8.77088H5.62497Z" '
+    'fill="black" fill-rule="evenodd"></path>'
+    '</svg>')
+
+
+def namecard_box(follower=False, creator=False):
+    link = ('<a class="tt_link" href="https://notice.tistory.com/2648">'
+            '<div class="tt_wrap_svg">' + _NC_SVG + '</div>'
+            '<strong class="tt_tit_g">IT 분야 크리에이터</strong>'
+            '<span class="tt_img_area_reply tt_ico_arrow2"></span></a>') if creator else ''
+    button = ('<button type="button" class="tt_btn_subscribe type2">'
+              '<span class="tt_txt_g">구독중</span>'
+              '<span class="tt_img_area_reply tt_ico_check"></span>'
+              '</button>') if follower else (
+              '<button type="button" class="tt_btn_subscribe">'
+              '<span class="tt_txt_g">구독하기</span>'
+              '<span class="tt_img_area_reply tt_ico_cross"></span>'
+              '</button>')
+    return (
+        '<!-- 티스토리 React가 렌더링: Namecard (소스에는 빈 div뿐이다) -->'
+        '<div data-tistory-react-app="Namecard" data-preview="티스토리 React가 런타임에 그린다">'
+        '<div class="tt_box_namecard">'
+        '<div class="tt_cont">'
+        '<a class="tt_tit_cont" href="/">상쾌한기분</a>'
+        + link +
+        '<a class="tt_desc" href="/">오늘도 상쾌한기분</a>'
+        + button +
+        '</div>'
+        '<a class="tt_wrap_thumb" href="/">'
+        '<span class="tt_thumb_g" style="background-image:url(https://placehold.co/200x200/eeeeee/999999?text=logo);'
+        'display:block;width:100%;height:100%;background-size:cover"></span>'
+        '</a>'
+        '</div></div>')
+
+
+NAMECARD_BOX = namecard_box()
 
 # 티스토리 **phocus 이미지 뷰어**의 흉내(프리뷰 전용). 라이브는 티스토리 `static/pc/dist/index.js`가
 # DOMContentLoaded에 `span[data-phocus] > img`마다 click을 **직접** 걸고(타깃 단계), `body.with-phocus`는
@@ -846,7 +881,8 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             # <div id="entry{글번호}Comment">로 감싼다 (2026-09-10 라이브 실측).
             # 둘 다 우리 마크업이 아니라 서버가 끼우는 것이라, 재현하지 않으면
             # .entry-main의 마지막 자식이 무엇인지도 실물과 달라진다.
-            return (NAMECARD_BOX + '<div id="entry179Comment">'
+            nc = namecard_box(follower=True, creator=True) if page == "page_toc" else NAMECARD_BOX
+            return (nc + '<div id="entry179Comment">'
                     + R(inner, {**ctx, "comment_group": REACT_BOX_EMPTY if page == "page_bare"
                                 else REACT_BOX % "댓글"}) + '</div>')
         return R(inner)
