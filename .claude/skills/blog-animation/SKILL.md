@@ -109,8 +109,10 @@ HTML과 같은 그림인지 본다.
 
 엔진이 매 프레임 `initial()`에서 단계를 다시 쌓는 것이 순수성을 지키는 방식이다 — 상태를 프레임 사이에 들고 가지 않는다.
 
-**`render-gif.mjs`의 검사나 엔진을 고치면 `scripts/test-contract.mjs`를 돌린다.** 템플릿에서 계약을 하나씩 깬 사본 여덟 개가 전부
-실패하고, 원본·예시가 전부 통과하고, 예시의 엔진이 템플릿과 같아야 한다. `npm run check`에는 없다 — 맥 Chrome과 ffmpeg가 필요하다(이슈 #105 `anim-contract-test-unwired`).
+**`scripts/test-contract.mjs`가 이 계약 검사를 지킨다 — `npm run test:anim`, `npm run check`와 CI가 돈다**(이슈 #105).
+템플릿에서 계약을 하나씩 깬 사본 여덟 개가 전부 **계약 위반으로** 실패하고, 원본·예시가 전부 통과하고, 예시의 엔진이 템플릿과
+같아야 한다. `--check`는 Chrome만 쓰고 ffmpeg는 안 쓴다. Chrome이 없으면 기준선이 실패해 **빨갛게** 끝난다 — 건너뛰지 않는다.
+변이가 「잡혔다」는 것은 종료 코드가 아니라 실패 이유(`계약 위반`)로 센다. 종료 코드만 보면 Chrome이 안 떠도 여덟 개가 전부 잡힌다.
 검사는 두 번 위조됐다. 처음 판은 t=0 한 점만 보고 `getAnimations()`만 세어 `Math.random`과 CSS transition을 **통과시켰고**, 고친 판은
 24개 시점을 봤지만 CSS·SMIL은 마지막 그림 하나에서만 세어 **늦은 단계에만 생기는 애니메이션을 통과시켰다**(PR #104 코드 리뷰).
 
@@ -136,5 +138,5 @@ HTML과 같은 그림인지 본다.
 
 ## 필요한 것
 
-Chrome(`/Applications/Google Chrome.app`, 다른 경로는 환경변수 `CHROME`), Node 22 이상(내장 WebSocket), ffmpeg(`brew install ffmpeg`).
+Chrome(환경변수 `CHROME` → `/Applications/Google Chrome.app` → PATH의 `google-chrome`·`chromium`), Node 22 이상(내장 WebSocket), ffmpeg(`brew install ffmpeg`).
 없으면 스크립트가 무엇이 없는지 말하고 멈춘다.
