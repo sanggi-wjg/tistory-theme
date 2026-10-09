@@ -660,14 +660,32 @@ def block(why, branch="?", sha="", stat="", footer=REVIEW_FIRST):
     return 2
 
 
-REDIRECT = re.compile(r"(?:\d+|&)?>>?\|?[ \t]*")  # `>` `>>` `>|` `2>` `&>` — 대상은 붙여 써도 띄어 써도 된다
+REDIRECT = re.compile(r"(?:\d+|&)?>>?\|?")  # `>` `>>` `>|` `2>` `&>`
+COPIERS = {"cp", "mv", "install", "ln"}  # 마지막 인자가 대상이다
+
+
+def read_marker(d):
+    """그 디렉터리의 마커 SHA. 없거나 못 읽으면 "".
+
+    ⚠ `UnicodeDecodeError`(ValueError)도 잡는다 — 마커가 UTF-8이 아니면 훅이 rc 1로 죽었고, Claude Code는
+    2가 아닌 실패를 차단으로 보지 않아 PR 생성이 그대로 돌았다(이슈 #101 코드 리뷰).
+    """
+    if not d:  # 빈 경로면 훅 프로세스의 cwd에서 읽게 된다
+        return ""
+    try:
+        with open(os.path.join(d, MARKER), encoding="utf-8") as f:
+            return f.read().strip()
+    except (OSError, ValueError):
+        return ""
 
 
 def marker_writes(lx):
-    """맨 위 단순 명령 중 리뷰 마커 파일에 **쓰는** 것이 있는가 — 리다이렉션 대상이나 `tee`의 인자.
+    """맨 위 단순 명령 중 리뷰 마커 파일에 **쓰는** 것이 있는가 — 리다이렉션 대상, `tee`의 인자, `cp`·`mv`의 대상.
 
-    이름을 언급만 하는 것(`cat 마커`·`echo "> 마커"`)은 아니다. 리다이렉션은 따옴표를 가린 `full`에서 찾는다 —
-    따옴표 속 `>`는 글자다. 대상 낱말은 같은 자리의 `clean`에서 읽어 따옴표를 벗긴다.
+    이름을 언급만 하는 것(`cat 마커`·`echo "> 마커"`)은 아니다. 리다이렉션 연산자는 따옴표를 가린 `full`에서
+    찾는다 — 따옴표 속 `>`는 글자다. 대상 낱말은 **`clean`에서** 공백을 건너뛰고 읽는다 — `full`에서는 따옴표 친
+    대상(`> "$PWD/마커"`)도 공백이라 거기서 건너뛰면 대상을 통째로 지나친다(코드 리뷰).
+    못 잡는 것: `bash -c '… > 마커'`, 대상 경로가 명령 치환인 것. 그래도 막히는 것은 같고 안내만 일반 문구다.
     """
     name = os.path.basename(MARKER)
     for seg, a, b in split_top(lx)[0]:
@@ -677,8 +695,10 @@ def marker_writes(lx):
         if w and command_word(w) == "tee" and any(
                 os.path.basename(x) == name for x in w[command_index(w) + 1:] if not x.startswith("-")):
             return True
+        if w and command_word(w) in COPIERS and len(w) > command_index(w) + 1 and os.path.basename(w[-1]) == name:
+            return True
         for m in REDIRECT.finditer(lx.full, a, b):
-            target = words_of(re.match(r"\S*", lx.clean[m.end():b]).group(0))
+            target = words_of(re.match(r"[ \t]*(\S*)", lx.clean[m.end():b]).group(1))
             if target and os.path.basename(target[0]) == name:
                 return True
     return False
@@ -692,13 +712,7 @@ def bundled_marker(lx, cwd):
     top = git("-C", d, "rev-parse", "--show-toplevel")
     sha = git("-C", top, "rev-parse", "HEAD") if top else ""
     branch = (git("-C", top, "rev-parse", "--abbrev-ref", "HEAD") if top else "") or "?"
-    reviewed = ""
-    if top:  # 빈 top이면 훅 프로세스의 cwd에서 읽게 된다
-        try:
-            with open(os.path.join(top, MARKER), encoding="utf-8") as f:
-                reviewed = f.read().strip()
-        except OSError:
-            pass
+    reviewed = read_marker(top)
     if not sha:
         state = "(HEAD를 읽지 못했다)"
     elif not reviewed:
@@ -758,11 +772,7 @@ def main():
         branch = git("-C", top, "rev-parse", "--abbrev-ref", "HEAD") or "?"
         where = top
 
-    try:
-        with open(os.path.join(where, MARKER), encoding="utf-8") as f:
-            reviewed = f.read().strip()
-    except OSError:
-        reviewed = ""
+    reviewed = read_marker(where)
     if reviewed != sha:
         stat = git("-C", where, "diff", "--stat", "main..." + sha) or "(main과의 차이를 못 읽었다)"
         if reviewed:

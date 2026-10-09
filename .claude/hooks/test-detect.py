@@ -383,6 +383,10 @@ MSG_CASES = [
     (">> 덧붙이기", "reviewed", "git rev-parse HEAD >> " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
     ("tee로 기록", "reviewed", "git rev-parse HEAD | tee " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
     ("cd && 마커 기록 && PR", "reviewed", "cd . && " + MARK + " && " + G, [BUNDLED], [REVIEW_FIRST]),
+    # 코드 리뷰 — 따옴표 친 대상(`full`에서는 공백이라 정규식이 넘어갔다), 복사로 쓰기
+    ('따옴표 친 > "마커"', "reviewed", 'git rev-parse HEAD > "' + MARKER + '" && ' + G, [BUNDLED], [REVIEW_FIRST]),
+    ('> "$PWD/마커"', "reviewed", 'git rev-parse HEAD > "$PWD/' + MARKER + '" && ' + G, [BUNDLED], [REVIEW_FIRST]),
+    ("cp로 마커", "reviewed", "cp /tmp/x " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
     # PR 출력으로 마커를 덮는다 — 전에는 `| tee`가 sink라 열렸다. 다음 판정을 망가뜨리는 모양이라 막는다
     ("PR 출력을 | tee 마커", "reviewed", G + " --fill | tee " + MARKER, [BUNDLED], [REVIEW_FIRST]),
     ("PR 출력을 > 마커", "reviewed", G + " --fill > " + MARKER, [BUNDLED], [REVIEW_FIRST]),
@@ -435,6 +439,18 @@ def main():
         # 마커만 기록하는 호출은 PR 생성이 아니다 — 스킬 5단계가 이렇게 찍는다
         rc = run(MARK, no_marker)
         fails += report(rc == 0, 0, "마커 기록 단독", rc, " (마커 없음)")
+        # 코드 리뷰 — 마커가 UTF-8이 아니면 훅이 UnicodeDecodeError로 rc 1을 냈다. Claude Code는 2가 아닌 실패를
+        # 차단으로 보지 않아 묶인 명령이 그대로 돈다. 단독 PR 생성도 같은 자리에서 죽었다(main)
+        p_bad, bad = make_repo(None)
+        try:
+            os.makedirs(os.path.join(bad, ".claude"), exist_ok=True)
+            with open(os.path.join(bad, MARKER), "wb") as f:
+                f.write(b"\xff\xfe\x00bad")
+            for label, cmd in (("마커가 UTF-8 아님 · 묶음", MARK + " && " + G), ("마커가 UTF-8 아님 · 단독", G + " --fill")):
+                rc = run(cmd, bad)
+                fails += report(rc == 2, 2, label, rc)
+        finally:
+            shutil.rmtree(p_bad, ignore_errors=True)
         for label, state, cmd, must, must_not in MSG_CASES:
             rc, err = run_full(cmd, reviewed if state == "reviewed" else no_marker)
             miss = [s for s in must if s not in err] + ["¬" + s for s in must_not if s in err]
