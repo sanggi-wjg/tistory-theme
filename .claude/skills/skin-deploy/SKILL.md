@@ -124,7 +124,11 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py --base https://<블로�
 - [ ] 홈 · 글 · 카테고리 · 검색 · 태그 · 보관함 · 방명록 각 URL
 - [ ] **공지** (`<s_notice_rep>`) — 홈 상단에 공지 전문이 깔리는가, 아니면 퍼머링크에서만 나오는가.
       **테스트 블로그에 공지가 0건이라 2026-08-25 배포에서도 확인하지 못했다.** 공지를 하나
-      만들고 봐야 한다 — 전문이 깔리면 모바일 첫 화면을 공지가 다 먹는다
+      만들고 봐야 한다 — 전문이 깔리면 모바일 첫 화면을 공지가 다 먹는다.
+      그때 함께 본다: `[##_notice_rep_desc_##]`가 안쪽에 `.contents_style` 래퍼를 달고 오는가
+      (DevTools에서 `.notice-body`의 자식), 그리고 겹친 본문 루트가 없는가
+      (`document.querySelectorAll('.contents_style .contents_style').length === 0`).
+      공지 아래 밀림은 어느 쪽이든 0이 되게 만들었다(hooks.md §5.7, 결정 62 「넷째」) — 이건 그 가정의 확인이다
 - [ ] **홈의 카드 그리드** — `<s_list>`가 홈에서도 렌더된다(결정 29). 홈은 3열 그리드,
       목록 4종은 세로 행이다. 같은 마크업이라 body_id 게이트가 빠지면 홈 카드에 밑줄이
       깔리고 썸네일이 180px로 눌린다

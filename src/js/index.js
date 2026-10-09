@@ -29,8 +29,8 @@ function safe(name, fn) {
 
 function boot() {
   safe('theme', initTheme)
-  // 공지 본문에 .contents_style이 없으면 붙인다. 아래 본문 모듈들이 그 클래스로 찾으므로
-  // 반드시 먼저 돈다 — hooks.md §5.7
+  // 공지 본문 래퍼가 두 겹이면 바깥 것을 뗀다(그릇의 .contents_style은 skin.html이 단다).
+  // 아래 본문 모듈들이 그 클래스로 찾으므로 반드시 먼저 돈다 — hooks.md §5.7
   safe('notice', initNotice)
   safe('code', initCode)
   safe('tables', initTables)

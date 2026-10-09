@@ -6,6 +6,7 @@
   BND004  lint.py                 마크업+CSS에서만 개명(접두 공유)
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
   BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
+  BND012  lint.py                 공지 본문 그릇에서 contents_style을 빼거나 그릇 이름을 바꾸면 잡는다 (이슈 #97)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
@@ -202,6 +203,26 @@ def c_thumb_hit(root):
                       s, count=1, flags=re.S)
     edit(root, "src/skin.html", fn)
     return any("_thumbnail" in m for m in lint_codes(root, "BND011"))
+
+
+# ── BND012 ──
+# 앵커는 훅 계약의 클래스 토큰 `notice-body` 하나다. 클래스 순서는 건드리지 않는다.
+@case("BND012 기준선 — 공지 본문 그릇이 contents_style을 단다", False)
+def c_notice_base(root):
+    return bool(lint_codes(root, "BND012"))
+
+
+@case("BND012 그릇에서 contents_style을 빼면 잡는다", True)
+def c_notice_hit(root):
+    edit(root, "src/skin.html", lambda s: re.sub(r'(class="[^"]*\bnotice-body\b[^"]*)"',
+                                                 lambda m: m.group(1).replace(" contents_style", "").replace("contents_style ", "") + '"', s))
+    return any("없다" in m for m in lint_codes(root, "BND012"))
+
+
+@case("BND012 그릇 이름이 바뀌어 못 찾으면 잡는다", True)
+def c_notice_gone(root):
+    edit(root, "src/skin.html", lambda s: re.sub(r"\bnotice-body\b", "notice-text", s))
+    return any("찾지 못했다" in m for m in lint_codes(root, "BND012"))
 
 
 # ── DOC001 ──

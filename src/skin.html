@@ -140,7 +140,10 @@ gtag('config', 'G-PHQ5FKMZ37');
       <h2 class="notice-title"><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></h2>
       <time class="notice-date">[##_notice_rep_simple_date_##]</time>
     </header>
-    <div class="notice-body">[##_notice_rep_desc_##]</div>
+    <!-- contents_style은 서버 HTML에서부터 단다. notice.js가 나중에 붙이면 첫 페인트 뒤에 본문 시트가
+         걸려 공지마다 문단 여백만큼 아래가 밀렸다(프리뷰 공지 2건에 48px). 티스토리가 안쪽에 래퍼를
+         달아 오면 notice.js가 이 바깥 것을 뗀다 — hooks.md §5.7, 린트 BND012 -->
+    <div class="notice-body contents_style">[##_notice_rep_desc_##]</div>
   </article>
   </s_notice_rep>
 

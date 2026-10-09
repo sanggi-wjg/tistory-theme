@@ -723,6 +723,33 @@ def lint_thumb_groups(skin):
             "src/skin.html")
 
 
+def lint_notice_body(skin):
+    """공지 본문 그릇이 서버 HTML에서부터 `contents_style`을 다는가 — BND012 (이슈 #97).
+
+    `[##_notice_rep_desc_##]`가 티스토리 본문 래퍼를 달고 오는지 모른다. 첫 판은
+    `notice.js`가 없을 때 붙였는데, 그러면 첫 페인트 뒤에 본문 시트(문단 여백)가 걸려
+    공지마다 24px씩 아래가 밀렸다 — 프리뷰 공지 2건에 48px, 3페이지 × 4폭 12경우 전부.
+    이 밀림은 `script.js`를 붙잡아야만 보여서 `npm run check`에 나오지 않는다. 그런데 원인은
+    「마크업에 클래스가 있는가」 하나라 정적으로 고정할 수 있다. `notice.js`는 이제 티스토리가
+    안쪽에 래퍼를 달아 온 경우에만 바깥 것을 뗀다(안쪽이 같은 시트를 받아 기하는 그대로다).
+
+    주석은 벗기고 본다. `.notice-body`를 못 찾으면 통과가 아니라 오류다(결정 40).
+    """
+    if not skin:
+        return
+    body = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+    tags = [m.group(1).split() for m in re.finditer(r"""<[a-z][^>]*\bclass=["']([^"']*)["']""", body)]
+    notice = [t for t in tags if "notice-body" in t]
+    if not notice:
+        err("BND012", "skin.html에서 `.notice-body`를 찾지 못했다 — 검사가 꺼진 것이지 통과가 아니다. "
+            "이름을 바꿨으면 이 규칙과 notice.js·hooks.md §5.7을 같이 옮긴다.", "src/skin.html")
+        return
+    if any("contents_style" not in t for t in notice):
+        err("BND012", "`.notice-body`에 `contents_style`이 없다. JS가 나중에 붙이면 첫 페인트 뒤에 본문 시트가 "
+            "걸려 공지마다 문단 여백만큼 아래가 밀린다(이슈 #97 — 공지 2건에 48px). 서버 HTML에서부터 "
+            "`class=\"notice-body contents_style\"`로 단다(hooks.md §5.7).", "src/skin.html")
+
+
 def lint_const_pairs(skin):
     """두 곳에 적혀야 하는 상수가 같은가 — BND010 (결정 48).
 
@@ -1531,6 +1558,7 @@ def main():
     lint_markup_css(skin, src_css)
     lint_const_pairs(skin)
     lint_thumb_groups(skin)
+    lint_notice_body(skin)
     lint_tokens(css)
     # 빌드 산출물이 있을 때만 돈다 — 생성된 --ph-* 정의와 생성기가 문자열로 쓰는
     # var(--error)·var(--link) 참조가 dist에만 있다.

@@ -936,23 +936,30 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     # 프리뷰로는 볼 수 없었다. 리뷰에서 눈으로 찾았다 — 그러라고 있는 도구가 아니다.
     #
     # ⚠ 재현하지 못하는 것: 티스토리가 [##_notice_rep_desc_##]를 어떤 래퍼로 감싸는지
-    #    모른다. 여기서는 .contents_style을 **씌우지 않은** 형태로 낸다 — 최악의 경우를
-    #    보여 주는 쪽이 안전하고, js/notice.js가 그 경우를 받는지도 같이 보인다.
+    #    모른다(라이브에 공지가 없다). 그래서 **두 경우를 한 건씩** 낸다 —
+    #    1번은 래퍼 없이(skin.html의 .notice-body가 contents_style을 맡는다),
+    #    2번은 글 본문과 같은 티스토리 래퍼를 안쪽에 달아(js/notice.js가 바깥 것을 뗀다).
+    #    한쪽만 그리면 다른 쪽 경로는 프리뷰에서 한 번도 돌지 않는다. 처음 판이 1번만
+    #    그렸고, notice.js가 첫 페인트 뒤에 클래스를 붙여 공지 아래가 48px 밀리는 것이
+    #    그 화면에서 나왔다(이슈 #97).
     if name == "s_notice_rep":
         if page not in (POST_PAGES | {"index"}) or name in (BARE_EMPTY_AREAS if page == "page_bare" else ()):
             return ""
         buf = []
         for i, pst in enumerate(posts[:2]):
+            desc = ('<p>본문 문단이다. 인라인 색이 섞인 옛 글을 흉내낸다 — '
+                    '<span style="color: #000000;">검은 글자</span>와 '
+                    '<span style="background-color: #ffffff;">흰 배경</span>.</p>'
+                    '<p>두 번째 문단.</p>')
+            if i == 1:
+                desc = '<div class="tt_article_useless_p_margin contents_style">%s</div>' % desc
             sub = dict(ctx)
             sub.update({
                 "notice_rep_link": "/notice/%d" % (i + 1),
                 "notice_rep_title": ["블로그 카테고리를 개편했습니다",
                                      "댓글 정책 안내"][i],
                 "notice_rep_date": pst["date"], "notice_rep_simple_date": pst["date"],
-                "notice_rep_desc": ('<p>본문 문단이다. 인라인 색이 섞인 옛 글을 흉내낸다 — '
-                                    '<span style="color: #000000;">검은 글자</span>와 '
-                                    '<span style="background-color: #ffffff;">흰 배경</span>.</p>'
-                                    '<p>두 번째 문단.</p>'),
+                "notice_rep_desc": desc,
             })
             buf.append(render(inner, sub, page, posts))
         return "".join(buf)

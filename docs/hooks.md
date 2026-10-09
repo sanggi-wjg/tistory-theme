@@ -551,10 +551,12 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 
 | 계약 | 내용 |
 |---|---|
-| 하는 일 | `.notice-body`에 `.contents_style`이 **없으면** 붙인다. 이미 있거나 안쪽에 있으면 아무것도 하지 않는다 |
+| 마크업 | `skin.html`이 그릇에 **처음부터** 단다 — `<div class="notice-body contents_style">`. 린트 `BND012`가 본다 |
+| 하는 일 | 티스토리가 **안쪽에** `.contents_style` 래퍼를 달아 왔으면 그릇의 `contents_style`을 **뗀다.** 안 달아 왔으면 아무것도 하지 않는다 |
 | 순서 | **다른 본문 모듈보다 먼저 돈다.** code·tables·lightbox·inline-fix가 `contentRoots()`(= `.contents_style`)로 대상을 찾기 때문이다 |
-| 왜 필요한가 | `[##_notice_rep_desc_##]`가 `.contents_style` 래퍼를 달고 오는지 **확인할 방법이 없다.** 안 달고 오면 `content.css`(전부 그 스코프)와 빌드가 만든 인라인색 보정이 통째로 비껴간다 — 에러 없이 무스타일 본문 + 다크에서 묻힌 옛 글 색 |
-| 확인 방법 | 프리뷰 `index.html` · `page.html` · `page_toc.html`에 공지 2건이 렌더된다. 렌더러는 일부러 **래퍼 없이** 낸다(최악의 경우) |
+| 왜 필요한가 | `[##_notice_rep_desc_##]`가 `.contents_style` 래퍼를 달고 오는지 **확인할 방법이 없다**(라이브에 공지가 없다). 안 달고 오면 `content.css`(전부 그 스코프)와 빌드가 만든 인라인색 보정이 통째로 비껴간다 — 에러 없이 무스타일 본문 + 다크에서 묻힌 옛 글 색. 달고 왔는데 그릇에도 있으면 두 겹이라 `contentRoots()`가 같은 본문을 두 번 낸다 — 루트마다 click 리스너를 거는 `lightbox.js`가 라이트박스를 두 번 연다 |
+| 왜 마크업인가 | 처음에는 `notice.js`가 **없을 때 붙였다.** 그러면 첫 페인트 뒤에 본문 시트가 걸려 공지마다 문단 여백(24px)만큼 아래가 밀렸다 — 프리뷰 공지 2건에 48px, 3페이지 × 4폭 12경우 전부(이슈 #97, `script.js`를 붙잡고 잰 기하). 지금은 두 경우 모두 0이다 — 안쪽 래퍼가 같은 시트를 받으므로 바깥 것을 떼도 기하가 그대로다. 결정 62의 예약과 달리 `html.js`에 걸지 않는다: JS가 오지 않아도 맞는 모양이라서다 |
+| 확인 방법 | 프리뷰 `index.html` · `page.html` · `page_toc.html`에 공지 2건이 렌더된다. **1번은 래퍼 없이, 2번은 티스토리 래퍼를 안쪽에 달아** 낸다 — 두 경로를 한 화면에서 본다. 첫 페인트 밀림은 프리뷰가 재현하지 않는다(로컬 `script.js`가 페인트 전에 끝난다) — 그 축은 `BND012`가 원인 쪽에서 막는다 |
 
 ### 5.8 소제목 앵커 — `.heading-anchor`
 
@@ -641,7 +643,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 |---|---|
 | 태그 클라우드 페이지 | `section.tagcloud` `.tagcloud-title` `.tagcloud-list` `.tagcloud-item` `.tagcloud-link` |
 | 페이징 | `nav.paging` `.paging-prev` `.paging-next` `.paging-nums` `.paging-num` `.paging-icon` `.paging-label` — 이전·다음 앵커 안은 우리 마크업이다: `svg.icon.paging-icon`(꺾쇠, `aria-hidden`)과 `span.paging-label`(「이전」·「다음」), 순서는 이전이 아이콘→글자, 다음이 글자→아이콘. **글자는 767px 이하에서 화면에서만 숨기고 앵커의 이름으로 남긴다 — 아이콘은 그때만 보인다**(결정 66). 그 밖은 티스토리가 내보내는 것 셋(2026-09-10 라이브 실측, 결정 53): ① `[##_paging_rep_link_num_##]`은 숫자가 아니라 **`<span class="selected">N</span>`**(현재 페이지) / `<span class="">N</span>`이다 — 현재 위치 신호는 이 `span.selected`뿐이다 ② 생략 부호 `···`도 `a.paging-num`인데 **href가 없다** ③ 더 갈 곳이 없을 때 붙는 클래스는 **`no-more-prev` / `no-more-next`(하이픈)** 이고 그 앵커에도 href가 없다. 2026-09-10까지 CSS·이 문서가 `no_more_prev`(밑줄)로 적혀 있어 라이브에서 한 번도 매칭된 적이 없었다. href 없는 앵커는 `.paging a:not([href])`가 한 번에 잡는다 |
-| 공지 | `article.notice` `.notice-head` `.notice-badge` `.notice-title` `.notice-date` `.notice-body`(안이 `.contents_style`) |
+| 공지 | `article.notice` `.notice-head` `.notice-badge` `.notice-title` `.notice-date` `.notice-body`(그릇 자신이 `.contents_style` — 티스토리가 안쪽에 달아 오면 그쪽, §5.7) |
 | 보호글 | `section.protected` `.protected-title` `.protected-desc` `.protected-form` `.protected-label` `.protected-input` `.protected-submit` |
 | 방명록 | `section.guestbook` `.guestbook-title` — 본체는 `[##_guestbook_group_##]`, 안은 `tt-*` |
 | 광고 | `.ad` `.ad-upper` `.ad-lower` — 비어 있을 때 여백이 생기지 않게 (자식이 없으면 높이 0) |
@@ -684,8 +686,8 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 - `.side-body` — 안이 `[##_category_list_##]`의 **티스토리 고정 마크업**이라
   `tistory.css`가 `.tt_category` 쪽 이름으로 잡는다.
 - `.toc-title` — `.toc-toggle`이 flex 배치와 글자를 정한다. 라벨 자체에 줄 것이 없다.
-- `.notice-body` — `notice.js`가 여기에 `.contents_style`을 붙이고(§5.7),
-  그때부터 `content.css`가 통째로 맡는다.
+- `.notice-body` — `skin.html`이 같은 요소에 `.contents_style`을 함께 달아(§5.7)
+  `content.css`가 통째로 맡는다.
 
 **기본 층이라 보정할 것이 없다** (변형 쪽만 규칙을 갖는다)
 
