@@ -941,7 +941,8 @@ def handle_group(name, attrs, inner, ctx, page, posts):
     #    2번은 글 본문과 같은 티스토리 래퍼를 안쪽에 달아(js/notice.js가 바깥 것을 뗀다).
     #    한쪽만 그리면 다른 쪽 경로는 프리뷰에서 한 번도 돌지 않는다. 처음 판이 1번만
     #    그렸고, notice.js가 첫 페인트 뒤에 클래스를 붙여 공지 아래가 48px 밀리는 것이
-    #    그 화면에서 나왔다(이슈 #97).
+    #    그 화면에서 나왔다(이슈 #97). 두 경우를 다 그리는지는 `npm run test:notice`가 본다
+    #    (scripts/test-notice-unwrap.mjs — 이 출력을 읽어 notice.js를 돌린다, 이슈 #112).
     if name == "s_notice_rep":
         if page not in (POST_PAGES | {"index"}) or name in (BARE_EMPTY_AREAS if page == "page_bare" else ()):
             return ""

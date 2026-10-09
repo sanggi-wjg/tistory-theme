@@ -14,7 +14,7 @@
 1. git switch main && git pull   ← 기점을 최신 origin/main 으로 맞춘다
 2. git switch -c <이름>
 3. … 작업 …
-4. npm run check                 ← 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰. 통과해야 커밋
+4. npm run check                 ← 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰 → 프리뷰 검사. 통과해야 커밋
 5. 커밋
 6. /pr-review-gate               ← 브랜치 diff 리뷰. 차단이 0이어야 PR이 열린다
 7. 푸시 → PR 생성                ← GitHub Actions `check`가 4번을 깨끗한 러너에서 다시 돈다
