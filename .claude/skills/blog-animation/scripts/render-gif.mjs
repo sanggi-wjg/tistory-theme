@@ -38,8 +38,13 @@ if (STILL_TS.some(Number.isNaN)) fail(`--stills는 쉼표로 구분한 초: ${ST
 const CHECK_ONLY = args.includes('--check');
 const OUT = resolve(opt('--out', join(dirname(HTML), basename(HTML, extname(HTML)) + '.gif')));
 
-const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-if (!existsSync(CHROME)) fail(`Chrome이 없다: ${CHROME} (환경변수 CHROME으로 경로를 준다)`);
+// 환경변수 CHROME → macOS 앱 → PATH의 리눅스 이름들. CI(ubuntu 러너)는 google-chrome이 깔려 있다(이슈 #105)
+const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const onPath = (name) => (process.env.PATH || '').split(':').map((d) => join(d, name)).find(isFile);
+function isFile(f) { try { return statSync(f).isFile(); } catch { return false; } }
+const CHROME = process.env.CHROME || (existsSync(MAC_CHROME) ? MAC_CHROME
+  : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].map(onPath).find(Boolean));
+if (!CHROME || !existsSync(CHROME)) fail(`Chrome이 없다: ${CHROME || MAC_CHROME + ' · PATH의 google-chrome·chromium'} (환경변수 CHROME으로 경로를 준다)`);
 if (typeof WebSocket !== 'function') fail('Node 22 이상이 필요하다 (내장 WebSocket)');
 if (!STILLS && !CHECK_ONLY && spawnSync('ffmpeg', ['-version']).status !== 0) fail('ffmpeg가 없다 — brew install ffmpeg');
 
