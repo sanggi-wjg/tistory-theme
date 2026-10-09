@@ -1,14 +1,21 @@
-"""게이트 훅 탐지기 시험 — `python3 .claude/hooks/test-detect.py`
+"""게이트 훅 시험 — `python3 .claude/hooks/test-detect.py`
 
-훅이 명령을 **실행 위치에서만** 잡는지 본다. 첫 판은 명령문 어디에나 있는
-문자열을 잡아서, 훅을 설명하는 문서를 heredoc으로 쓰는 명령이 막혔다.
-탐지기를 손대면 이 파일을 먼저 돌린다.
+훅이 PR 생성을 **셸 낱말 단위로** 잡는지(문서·문자열 속 언급은 안 잡는지), 그리고 PR이 될 커밋을
+제대로 판정하는지 본다. 탐지기·판정을 손대면 이 파일에 케이스를 먼저 더하고 돌린다.
 
 ⚠ 실제 저장소가 아니라 **임시 git 저장소**에서 돌린다 (2026-08-27).
   첫 판은 `cwd`로 실제 저장소를 넘겨 진짜 마커(`.claude/.pr-review-ok`)를 읽었다 —
   리뷰 직후처럼 마커가 HEAD와 같으면 차단 케이스 7개가 **전부 통과해 버렸다.**
   `npm run check`의 결과가 게이트 상태에 따라 달라지는 검사는 검사가 아니다.
-  그래서 마커 세 상태(없음 · HEAD와 같음 · 다름)를 각각 만들어 본다.
+  그래서 마커 상태(없음 · HEAD와 같음 · 다름)를 각각 만들어 본다. 픽스처마다 **원격(bare)**을 두고
+  푸시해 둔다 — 훅이 원격 추적 ref도 대조하기 때문이다(이슈 #111).
+
+⚠ 이슈 #111에서 케이스가 16 → 100여 개로 늘었다. 거의 전부 **옛 훅에 돌려 새는 것을 확인한** 모양이다
+  (주석 속 `don't`가 PR 명령을 가림, `git commit -am x && <PR 생성>`, `url="$(<PR 생성>)"`, `"gh" pr create` …).
+  훅을 고치는 동안 「따라가는 형태」를 넓히는 판(cd 추적)과 「허용하는 모양」을 늘리는 판(같은 호출 안의
+  git 하위 명령 허용 목록)이 차례로 샜다 — 내 리뷰가 다섯, 빌트인 코드 리뷰 다섯 번이 열·34·23·10·8을 짚었다.
+  그래서 훅은 **PR 생성을 그 호출의 유일한 명령으로**(앞에 `cd <경로>` 하나만) 요구하고, 원격 추적 ref까지
+  대조한다. 기대값이 0에서 2로 바뀐 실사용 모양(푸시와 PR을 한 줄에)은 그래서다 — 푸시는 따로 한다.
 """
 import json
 import os
@@ -19,36 +26,124 @@ import tempfile
 
 HOOK = os.path.abspath(os.path.join(os.path.dirname(__file__), "pr-review-gate.py"))
 MARKER = ".claude/.pr-review-ok"
+GIT = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+
+
+def sh(*args, **kw):
+    return subprocess.run(GIT + list(args), check=True, capture_output=True, text=True, **kw).stdout.strip()
+
+
+def head_of(d, ref="HEAD"):
+    return sh("-C", d, "rev-parse", ref)
+
+
+def write_marker(d, sha):
+    os.makedirs(os.path.join(d, ".claude"), exist_ok=True)
+    with open(os.path.join(d, MARKER), "w", encoding="utf-8") as f:
+        f.write(sha)
 
 
 def make_repo(marker):
-    """커밋 하나짜리 임시 저장소. marker: None(없음) · "HEAD"(같음) · 그 밖의 문자열(다름)."""
-    d = tempfile.mkdtemp(prefix="gate-fixture-")
-    g = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
-    subprocess.run(g + ["init", "-q", "-b", "main", d], check=True)
-    subprocess.run(g + ["-C", d, "commit", "-q", "--allow-empty", "-m", "init"], check=True)
+    """커밋 하나짜리 임시 저장소 + 원격(푸시·추적 완료). marker: None · "HEAD" · 그 밖의 문자열."""
+    parent = tempfile.mkdtemp(prefix="gate-fixture-")
+    d, origin = os.path.join(parent, "repo"), os.path.join(parent, "origin.git")
+    sh("init", "-q", "--bare", origin)
+    sh("init", "-q", "-b", "main", d)
+    sh("-C", d, "commit", "-q", "--allow-empty", "-m", "init")
+    sh("-C", d, "remote", "add", "origin", origin)
+    sh("-C", d, "push", "-q", "-u", "origin", "main")
     if marker is not None:
-        head = subprocess.run(["git", "-C", d, "rev-parse", "HEAD"], capture_output=True,
-                              text=True, check=True).stdout.strip()
-        os.makedirs(os.path.join(d, ".claude"))
-        with open(os.path.join(d, MARKER), "w", encoding="utf-8") as f:
-            f.write(head if marker == "HEAD" else marker)
-    return d
+        write_marker(d, head_of(d) if marker == "HEAD" else marker)
+    return parent, d
+
+
+def make_worktree_pair(main_marker, wt_marker, remote="pushed"):
+    """메인 체크아웃 + 워크트리 하나(브랜치 `wt`, 메인보다 커밋 하나 앞) + 원격. 이슈 #111.
+
+    세션 cwd는 메인에 두고 명령 안의 `cd`·`--head`로 워크트리 브랜치를 가리키는 경우를 만든다.
+    main_marker / wt_marker: None(없음) · "HEAD"(그 체크아웃의 HEAD) · "OTHER"(상대 체크아웃의 HEAD).
+    remote: "pushed"(둘 다 푸시) · "unpushed"(wt를 안 푸시) · "diverged"(원격 wt가 main의 커밋).
+    반환: (지울 부모 임시 디렉터리, 메인 경로, 워크트리 경로)
+    """
+    parent = tempfile.mkdtemp(prefix="gate-wt-")
+    main_dir = os.path.join(parent, "main")
+    wt_dir = os.path.join(parent, "wt dir")  # 공백 — 따옴표 친 cd 경로를 시험한다
+    origin = os.path.join(parent, "origin.git")
+    sh("init", "-q", "--bare", origin)
+    sh("init", "-q", "-b", "main", main_dir)
+    sh("-C", main_dir, "commit", "-q", "--allow-empty", "-m", "init")
+    sh("-C", main_dir, "remote", "add", "origin", origin)
+    sh("-C", main_dir, "push", "-q", "-u", "origin", "main")
+    sh("-C", main_dir, "worktree", "add", "-q", "-b", "wt", wt_dir)
+    sh("-C", wt_dir, "commit", "-q", "--allow-empty", "-m", "work")
+    if remote == "pushed":
+        sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt")
+    elif remote == "renamed":
+        sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt:feature")
+    elif remote == "tracks-main":  # origin/main에서 딴 워크트리 — 추적은 main, 푸시는 같은 이름
+        sh("-C", wt_dir, "push", "-q", "origin", "wt")
+        sh("-C", wt_dir, "branch", "-q", "--set-upstream-to=origin/main")
+    elif remote == "diverged":
+        sh("-C", wt_dir, "push", "-q", "-u", "origin", "wt")
+        sh("-C", main_dir, "push", "-q", "-f", "origin", "main:wt")  # 원격 wt ← main의 (미리뷰) 커밋
+        sh("-C", main_dir, "fetch", "-q", "origin")
+    heads = {main_dir: head_of(main_dir), wt_dir: head_of(wt_dir)}
+    for d, other, m in ((main_dir, wt_dir, main_marker), (wt_dir, main_dir, wt_marker)):
+        if m is not None:
+            write_marker(d, heads[d] if m == "HEAD" else heads[other])
+    return parent, main_dir, wt_dir
 
 
 G = "gh pr " + "create"  # 이 파일 자체가 게이트에 걸리지 않게 쪼개 둔다
 
+# 마커 없는 저장소에서 막혀야 한다 — 탐지가 PR 생성을 보는가
 BLOCK = [
     ("맨몸", G + " --base main"),
     ("체인 뒤", "git push -u origin br && " + G + " --fill"),
     ("heredoc 여는 줄", G + " --body-file - <<'BODY'\n본문\nBODY"),
     ("줄바꿈 뒤", "git push\n" + G + " --base main"),
     ("세미콜론 뒤", "npm run check; " + G),
-    # 환경변수 접두 — 첫 판이 놓쳤다. gh가 줄머리도 구분자 뒤도 아니게 된다
+    # 환경변수 접두 — 둘째 판이 놓쳤다
     ("환경변수 접두", "GH_TOKEN=xxx " + G + " --base main"),
     ("환경변수 둘 + 체인", "git push && GH_HOST=github.com GH_TOKEN=x " + G),
+    # 1차 코드 리뷰가 손으로 짚은 탐지 구멍 — 따옴표·주석·here-string·별칭·접두
+    ("주석 속 아포스트로피", "git push # don't forget\n" + G + " --fill\necho 'done'"),
+    ("이스케이프된 큰따옴표", 'echo \\"; ' + G + '; echo \\"'),
+    ("here-string <<<", "cat <<< wt\n" + G + " --fill\nwt"),
+    ("별칭 gh pr new", "gh pr " + "new --fill"),
+    ("then 뒤", "if true; then " + G + " --fill; fi"),
+    ("command 접두", "command " + G + " --fill"),
+    ("역슬래시 gh", "\\" + G + " --fill"),
+    ("경로 gh", "/usr/bin/" + G + " --fill"),
+    ("pr과 create 사이 플래그", "gh pr -R o/r " + "create --fill"),
+    # 2차 — 큰따옴표 속 $( )·백틱은 셸이 실행한다, 래퍼, 하이픈 heredoc 태그
+    ("큰따옴표 속 $( )", 'url="$(' + G + ' --fill)"'),
+    ("echo 속 $( )", 'echo "PR: $(' + G + ' --fill)"'),
+    ("백틱", "url=`" + G + " --fill`"),
+    ("timeout 래퍼", "timeout 60 " + G + " --fill"),
+    ("xargs 래퍼", "echo | xargs " + G + " --fill"),
+    ("sudo -u 래퍼", "sudo -u me " + G + " --fill"),
+    ("env -i 래퍼", "env -i PATH=/usr/bin " + G + " --fill"),
+    ("하이픈 heredoc 태그", "cat <<END-X\nhi\nEND-X\n" + G + " --fill"),
+    # 3차 — 낱말을 따옴표·이스케이프로 감싸도 셸에는 같은 낱말이다, ANSI-C 따옴표
+    ("따옴표 친 gh", '"gh" pr ' + "create --fill"),
+    ("따옴표 친 create", "gh pr 'create' --fill"),
+    ("이스케이프 섞인 gh", "g\\h pr " + "create --fill"),
+    ("ANSI-C $'\\''", "echo $'\\'' ; " + G + " --fill"),
+    ("변수로 gh", "$GH pr " + "create --fill"),
+    # 4차 — heredoc 열기를 주석·산술·부분 따옴표 태그에서 잘못 봄, 큰따옴표 -c/eval, 셸에 먹이는 heredoc
+    ("주석 속 <<X", "# use <<X here\n " + G + " --fill"),
+    ("산술 $((1<<3))", "echo $((1<<3))\n " + G + " --fill"),
+    ('부분 따옴표 태그 <<"E"OF', 'cat <<"E"OF\nx\nEOF\n' + G + " --fill"),
+    ("역슬래시 태그 <<E\\OF", "cat <<E\\OF\nx\nEOF\n" + G + " --fill"),
+    ('bash -c "…"', 'bash -c "' + G + ' --fill"'),
+    ('sh -c "cd; …"', 'sh -c "cd /tmp; ' + G + '"'),
+    ('eval "…"', 'eval "' + G + ' --fill"'),
+    ("bash <<EOF", "bash <<EOF\n" + G + " --fill\nEOF"),
+    ("따옴표 없는 heredoc 본문의 $( )", "cat <<EOF\n$(" + G + " --fill)\nEOF"),
 ]
 
+# 마커 없는 저장소에서 통과해야 한다 — PR 생성이 아니거나 문자열 속 언급이다
 PASS = [
     ("heredoc 본문 안 (첫 오탐)", "cat > a.md <<'MD'\n" + G + "는 훅이 막는다\nMD"),
     ("작은따옴표 안", "grep '" + G + "' CLAUDE.md"),
@@ -57,46 +152,182 @@ PASS = [
     ("무관한 명령", "gh pr list --state open"),
     ("view", "gh pr view 29 --json state"),
     ("npm", "npm run check"),
+    ("커밋 메시지 속 언급", 'git commit -m "' + G + ' 게이트를 고친다"'),
+    # 4차 — 작은따옴표 속 백틱·$( )는 글자다. 이 저장소의 커밋 메시지는 늘 백틱을 쓴다
+    ("작은따옴표 커밋 메시지 속 백틱", "git commit -m '`" + G + "` 를 고친다'"),
+    ("작은따옴표 속 $( )", "echo '$(" + G + ")'"),
+    ("큰따옴표 속 이스케이프 백틱", 'echo "\\`' + G + '\\`"'),
+    # 5차 — PR을 만들지 않는 gh 명령의 값이 create·new다, 따옴표 속 언급, 셸 이름이 플래그 값이다
+    ("gh pr list --search create", "gh pr list --search create"),
+    ("gh pr list --label new", "gh pr list --label new --state open"),
+    ("gh pr edit --add-label new", 'gh pr edit 5 --add-label "new"'),
+    ("gh pr comment --body new", "gh pr comment 5 --body new"),
+    ("gh issue create --label pr --label create", "gh issue create --title x --label pr --label create"),
+    ("ANSI-C 본문 속 언급", "gh issue comment 5 --body $'it\\'s fixed\\n" + G + " works'"),
+    ("--label sh 뒤 heredoc 본문 속 언급", "gh issue create --label sh --body-file - <<'EOF'\n" + G + "\nEOF"),
+]
+
+# 리뷰를 마친 저장소(마커 == HEAD, 원격 추적 ref도 같음) — (이름, 명령, 기대 rc)
+REVIEWED_CASES = [
+    ("단독 PR 생성", G + " --base main", 0),
+    # PR 생성은 그 호출의 유일한 명령이어야 한다 — 같은 호출 안의 다른 명령은 훅이 판정한 뒤에 돈다
+    ("같은 호출 안 git commit", "git commit -qam x && " + G, 2),
+    ("같은 호출 안 git checkout", "git checkout other && " + G, 2),
+    ("git -C . switch", "git -C . switch other && " + G, 2),
+    ("source 뒤", "source x.sh && " + G, 2),
+    ("명령 인자 속 cd 낱말", "echo cd && " + G, 2),
+    ("if 조건의 git commit", "if git commit -qam x; then " + G + "; fi", 2),
+    ("경로 git commit", "/usr/bin/git commit -qam x && " + G, 2),
+    ("timeout git commit", "timeout 60 git commit -qam x && " + G, 2),
+    ("env git commit", "env git commit -qam x && " + G, 2),
+    ("git --git-dir 옵션 뒤 commit", "git --git-dir .git commit -qam x && " + G, 2),
+    ("git bisect", "git bisect start HEAD HEAD~ && " + G, 2),
+    ("git stash branch", "git stash branch x && " + G, 2),
+    ("gh pr checkout", "gh pr checkout 3 && " + G, 2),
+    ("$( ) 속 git commit", 'x="$(git commit -qam x)" && ' + G, 2),
+    ("따옴표 친 git commit", '"git" commit -qam x && ' + G, 2),
+    ("git symbolic-ref", "git symbolic-ref HEAD refs/heads/evil && " + G, 2),
+    ("npm version", "npm version patch && " + G, 2),
+    ("-c remote.origin.push", "git -c remote.origin.push=refs/heads/x:refs/heads/main push origin && " + G, 2),
+    ("GIT_DIR 접두", "GIT_DIR=.git " + G, 2),
+    ("env -C", "env -C . " + G + " --fill", 2),
+    ("--head가 $( )", G + ' --head "$(git branch --show-current)" --fill', 2),
+    # 실사용 — 단독이면 열려야 한다(막히면 게이트를 우회하고 싶어진다)
+    ("실사용 — 본문 heredoc", G + ' --base main --title "제목 (괄호)" '
+     "--body \"$(cat <<'EOF'\n본문 'x' 와 " + G + " 와 git commit\nEOF\n)\"", 0),
+    ("실사용 — 앞줄 주석의 아포스트로피", "# don't forget\n" + G + " --fill", 0),
+    ("실사용 — 줄 이음", G + " --base main \\\n  --title t \\\n  --fill", 0),
+    ("실사용 — cd . || exit 1", "cd . || exit 1; " + G + " --fill", 0),
+    ("실사용 — cd -P .", "cd -P . && " + G + " --fill", 0),
+    ("실사용 — 변수 제목", G + ' --title "$TITLE" --fill', 0),
+    # 둘째·셋째 판에서 0이던 것 — 이제 푸시는 따로 한다
+    ("푸시와 한 줄(따로 한다)", "git push -u origin main && " + G + " --fill", 2),
+    # 4차 — 따옴표 없는 heredoc 본문의 $( )는 PR 생성 전에 돈다
+    ("따옴표 없는 heredoc 본문의 push", G + " --body-file - <<EOF\n$(git push -f origin x:main)\nEOF", 2),
+    ("$(cat <<EOF …) 본문의 push", G + ' --body "$(cat <<EOF\n$(git push -f origin x:main)\nEOF\n)"', 2),
+    ("--head 소유자:브랜치(포크)", G + " --head=evil:main --fill", 2),
+    ("cd X; — cd가 실패해도 PR이 돈다", "cd .; " + G + " --fill", 2),
+    # 4차 — 막으면 안 되는 단독 PR 생성
+    ("실사용 — 2>&1", G + " --fill 2>&1", 0),
+    ("실사용 — cd && … 2>&1", "cd . && " + G + " --fill 2>&1", 0),
+    ("실사용 — 작은따옴표 본문의 백틱", G + " --title t --body 'run `npm run check`'", 0),
+    ("실사용 — 큰따옴표 본문의 이스케이프 백틱", G + ' --body "run \\`npm\\` ok"', 0),
+    ("실사용 — 따옴표 친 heredoc 본문의 백틱·$( )", G + " --body \"$(cat <<'EOF'\n`npm run check` 와 $(x)\nEOF\n)\"", 0),
+    # 5차 — 출력을 자르는 파이프, 무해한 gh 환경변수
+    ("실사용 — | tail -3", G + " --fill 2>&1 | tail -3", 0),
+    ("실사용 — GH_PROMPT_DISABLED=1", "GH_PROMPT_DISABLED=1 " + G + " --fill", 0),
+    ("파이프 뒤가 sink가 아니다", G + " --fill | sh", 2),
+]
+
+# 워크트리 — (이름, 메인 마커, 워크트리 마커, 명령, 기대 rc[, 원격 상태]). 이슈 #111.
+# 세션 cwd는 메인이고, 명령의 `cd`·`--head`가 워크트리 브랜치를 PR로 연다. `<WT>`는 워크트리 절대 경로(공백 포함).
+WT_CASES = [
+    ("WT-A cd 워크트리 · 워크트리 미리뷰", "HEAD", None, 'cd "<WT>" && ' + G + " --base main", 2),
+    ("WT-B --head 워크트리 · 미리뷰", "HEAD", None, G + " --head wt --base main", 2),
+    ("WT-C cd 워크트리 · 리뷰됨", None, "HEAD", 'cd "<WT>" && ' + G + " --base main", 0),
+    ("WT-D --head 워크트리 · 리뷰됨", None, "HEAD", G + " --base main --head wt", 0),
+    ("WT-E 상대 경로 cd · 리뷰됨", None, "HEAD", 'cd "../wt dir" && ' + G, 0),
+    # 줄바꿈·`;`로 이은 cd는 실패해도 다음 줄이 돈다 — 4차부터 막는다(`&&`·`|| exit`만)
+    ("WT-F 앞줄의 cd(줄바꿈 — 막음)", None, "HEAD", 'cd "<WT>"\n' + G, 2),
+    # 소유자 접두는 포크 브랜치다 — 이 저장소에서 대조할 수 없어 4차부터 막는다
+    ("WT-G --head=소유자:브랜치(막음)", None, "HEAD", G + " --head=me:wt", 2),
+    ("WT-w cd X &&\\n PR · 리뷰됨", None, "HEAD", 'cd "<WT>" &&\n  ' + G, 0),
+    # 5차 — 다른 이름으로 푸시한 브랜치(`push -u origin wt:feature`). @{upstream} 조회가 죽어 있어 막혔다
+    ("WT-x 다른 이름으로 푸시 · 리뷰됨", None, "HEAD", 'cd "<WT>" && ' + G, 0, "renamed"),
+    ("WT-y origin/main을 추적 · 같은 이름 푸시 · 리뷰됨", None, "HEAD", 'cd "<WT>" && ' + G, 0, "tracks-main"),
+    ("WT-H 워크트리 마커가 메인 SHA", "HEAD", "OTHER", 'cd "<WT>" && ' + G, 2),
+    ("WT-I cd 대상을 못 푼다($변수)", "HEAD", "HEAD", 'cd "$WT" && ' + G, 2),
+    ("WT-J cd 없음 · 메인 리뷰됨(기존 동작)", "HEAD", None, G + " --base main", 0),
+    ("WT-K 실사용 모양 · 리뷰됨", None, "HEAD",
+     G + ' --base main --head wt --title "제목 \'따옴표\'" '
+     '--body "$(cat <<\'EOF\'\n본문의 ' + G + ' 와 it\'s\nEOF\n)"', 0),
+    ("WT-L 실사용 모양 · 미리뷰", "HEAD", None,
+     G + ' --base main --head wt --title "제목" --body "$(cat <<\'EOF\'\n본문\nEOF\n)"', 2),
+    ("WT-M 따옴표 없는 $(…) 뒤 --head · 미리뷰", "HEAD", None, G + " --body $(cat f) --head wt", 2),
+    # N·P·S·E~F 옛 판: 셸로는 맞는 모양이지만 단독 PR 생성이 아니라 막는다
+    ("WT-N 따옴표 없는 $(…)(단독 아님)", None, "HEAD", G + " --body $(cat f) --head wt", 2),
+    ("WT-O 닫힌 서브셸의 cd · 메인 미리뷰", None, "HEAD", '(cd "<WT>" && git push) && ' + G, 2),
+    ("WT-P 서브셸 안의 cd 뒤 PR(단독 아님)", None, "HEAD", '(cd "<WT>" && ' + G + ")", 2),
+    ("WT-Q 조건 안의 cd", "HEAD", "HEAD", 'if true; then cd "<WT>"; fi; ' + G, 2),
+    ("WT-R eval 안의 cd", "HEAD", "HEAD", "eval cd /tmp && " + G, 2),
+    ("WT-S { cd; } 묶음(단독 아님)", None, "HEAD", '{ cd "<WT>"; } && ' + G, 2),
+    ("WT-T $(…;…) 뒤 --head · 미리뷰", "HEAD", None, G + " --body $(cat f; echo x) --head wt", 2),
+    ("WT-U builtin cd 워크트리 · 미리뷰", "HEAD", None, 'builtin cd "<WT>" && ' + G, 2),
+    ("WT-V 줄 이음 \\ 뒤 --head · 미리뷰", "HEAD", None, G + " --base main \\\n  --head wt", 2),
+    ("WT-W 줄 이음 \\ 뒤 --head · 리뷰됨", None, "HEAD", G + " --base main \\\n  --head wt", 0),
+    ("WT-X 안 돌았을 수 있는 cd(false &&)", None, "HEAD", 'false && cd "<WT>"; ' + G, 2),
+    ("WT-Y 파이프 속 cd", None, "HEAD", 'cd "<WT>" | true; ' + G, 2),
+    ("WT-Z 백그라운드 cd", None, "HEAD", 'cd "<WT>" & ' + G, 2),
+    ("WT-a if 조건의 cd", "HEAD", None, 'if cd "<WT>"; then :; fi; ' + G, 2),
+    ("WT-b pushd … popd", None, "HEAD", 'pushd "<WT>" && git push && popd && ' + G, 2),
+    ("WT-c 붙은 -Hwt", "HEAD", None, G + " -Hwt --fill", 2),
+    ("WT-d -H=wt", "HEAD", None, G + " -H=wt --fill", 2),
+    ("WT-e 붙은 -Hwt · 리뷰됨", None, "HEAD", G + " -Hwt --fill", 0),
+    ("WT-g then\\n cd", None, "HEAD", 'if false; then\n  cd "<WT>"\nfi\n' + G, 2),
+    ("WT-h case 패턴 뒤 cd", None, "HEAD", 'case x in nope) cd "<WT>";; esac; ' + G, 2),
+    ("WT-i 함수 본문 cd", None, "HEAD", 'f() {\n cd "<WT>"\n}\n' + G, 2),
+    ("WT-j do\\n cd", None, "HEAD", 'while false\ndo\n cd "<WT>"\ndone\n' + G, 2),
+    ("WT-k &&\\n cd", None, "HEAD", 'false &&\n cd "<WT>"\n' + G, 2),
+    ("WT-l PR 생성 둘 — 둘째가 미리뷰", "HEAD", None, G + " --fill && " + G + " --head wt", 2),
+    ("WT-m PR 생성 둘 — 둘째가 cd 뒤", "HEAD", None, G + ' --fill; cd "<WT>" && ' + G + " --fill", 2),
+    ("WT-n --head 둘(gh는 마지막을 쓴다)", None, "HEAD", G + " --head wt --head main", 2),
+    ("WT-o cd || exit 1 · 리뷰됨", None, "HEAD", 'cd "<WT>" || exit 1\n' + G, 0),
+    # 3차 — 묶은 짧은 플래그, 디렉터리를 바꾸는 래퍼·환경변수, 원격 쪽
+    ("WT-p 묶은 -fH wt · 미리뷰", "HEAD", None, G + " -fH wt", 2),
+    ("WT-q 묶은 -fH wt · 리뷰됨", None, "HEAD", G + " -fH wt", 0),
+    ("WT-r env -C 워크트리", "HEAD", None, 'env -C "<WT>" ' + G + " --fill", 2),
+    ("WT-s GIT_DIR=워크트리", "HEAD", None, 'GIT_DIR="<WT>/.git" ' + G + " --fill", 2),
+    ("WT-t 푸시 안 한 브랜치", None, "HEAD", G + " --head wt", 2, "unpushed"),
+    ("WT-u 원격 wt가 다른 커밋", None, "HEAD", G + " --head wt", 2, "diverged"),
+    ("WT-v 원격 wt로 다른 커밋을 푸시", None, "HEAD", "git push -f origin main:wt && " + G + " --head wt", 2),
+]
+
+# cwd가 저장소가 아닌데 --head를 준다 — 무엇이 PR이 될지 이 저장소로 확인할 수 없다
+PARENT_CASES = [
+    ("WT-f 저장소 밖 cwd + --head", "HEAD", None, G + " --repo o/r --head wt", 2),
 ]
 
 
 def run(cmd, root):
     payload = json.dumps({"tool_input": {"command": cmd}, "cwd": root})
-    p = subprocess.run(
-        [sys.executable, HOOK], input=payload, capture_output=True, text=True
-    )
+    p = subprocess.run([sys.executable, HOOK], input=payload, capture_output=True, text=True)
     return p.returncode
+
+
+def report(ok, want, label, rc, tag=""):
+    print(("  OK  " if ok else "  !!  ") + "%s%s — %-34s rc=%s"
+          % ("통과해야 함" if want == 0 else "차단해야 함", tag, label, rc))
+    return not ok
 
 
 def main():
     fails = 0
-    no_marker = make_repo(None)
-    reviewed = make_repo("HEAD")
-    stale = make_repo("0000000000000000000000000000000000000000")
+    p_none, no_marker = make_repo(None)
+    p_rev, reviewed = make_repo("HEAD")
+    p_stale, stale = make_repo("0000000000000000000000000000000000000000")
     try:
         for label, cmd in BLOCK:
             rc = run(cmd, no_marker)
-            ok = rc == 2
-            fails += not ok
-            print(("  OK  " if ok else "  !!  ") + "차단해야 함 (마커 없음) — %-22s rc=%s" % (label, rc))
-
+            fails += report(rc == 2, 2, label, rc, " (마커 없음)")
         for label, cmd in PASS:
             rc = run(cmd, no_marker)
-            ok = rc == 0
-            fails += not ok
-            print(("  OK  " if ok else "  !!  ") + "통과해야 함 — %-22s rc=%s" % (label, rc))
-
-        # 마커 상태 — 탐지가 아니라 판정 쪽. 같으면 열리고, 다르면(리뷰 뒤 커밋이 쌓임) 막힌다.
-        rc = run(BLOCK[0][1], reviewed)
-        ok = rc == 0
-        fails += not ok
-        print(("  OK  " if ok else "  !!  ") + "통과해야 함 — %-22s rc=%s" % ("마커 == HEAD", rc))
-        rc = run(BLOCK[0][1], stale)
-        ok = rc == 2
-        fails += not ok
-        print(("  OK  " if ok else "  !!  ") + "차단해야 함 — %-22s rc=%s" % ("마커 != HEAD", rc))
+            fails += report(rc == 0, 0, label, rc, " (마커 없음)")
+        rc = run(G + " --base main", stale)
+        fails += report(rc == 2, 2, "마커 != HEAD", rc)
+        for label, cmd, want in REVIEWED_CASES:
+            rc = run(cmd, reviewed)
+            fails += report(rc == want, want, label, rc, " (리뷰됨)")
+        cases = [(c[:5], c[5] if len(c) > 5 else "pushed", False) for c in WT_CASES]
+        cases += [(c, "pushed", True) for c in PARENT_CASES]
+        for (label, mm, wm, cmd, want), remote, in_parent in cases:
+            parent, main_dir, wt_dir = make_worktree_pair(mm, wm, remote)
+            try:
+                rc = run(cmd.replace("<WT>", wt_dir), parent if in_parent else main_dir)
+            finally:
+                shutil.rmtree(parent, ignore_errors=True)
+            fails += report(rc == want, want, label, rc)
     finally:
-        for d in (no_marker, reviewed, stale):
+        for d in (p_none, p_rev, p_stale):
             shutil.rmtree(d, ignore_errors=True)
 
     print("\n실패 %d건" % fails)

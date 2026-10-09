@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PR 생성 전 코드리뷰 게이트 — PreToolUse(Bash) 훅.
 
-PR 생성 명령을 가로채, **지금 HEAD에 대한 리뷰가 끝났는지**만 본다.
+PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는지**만 본다.
 끝나 있으면 통과시키고, 아니면 exit 2로 막고 무엇을 하라고 알려 준다.
 
 왜 훅인가 — 이 저장소의 사이클은 CLAUDE.md에 적혀 있지만, 적혀 있는 것은
@@ -13,57 +13,214 @@ PR 생성 명령을 가로채, **지금 HEAD에 대한 리뷰가 끝났는지**�
 찍는 순간 "이 커밋을 읽었고 문제가 없다"는 뜻이 되고, 그 문장이 거짓이면
 게이트는 있는 것이 없는 것보다 나쁘다 — 다음 사람이 초록불을 믿는다.
 
-⚠ **명령문 어디에나 있는 문자열을 잡으면 안 된다.** 첫 판에서 정확히 그
-사고를 냈다 — 훅을 설명하는 문서를 heredoc으로 쓰는 명령이 게이트에 막혔다.
-명령을 **실행 위치**에서만 본다: 따옴표 안과 heredoc 본문을 걷어낸 뒤,
-줄머리나 셸 구분자 바로 뒤에 오는 것만 명령으로 친다.
+**이 훅은 실수를 막는다 — 일부러 우회하는 것은 막지 못한다.** 명령이 돌기 전에 문자열만 보고 판정하므로
+셸이 할 수 있는 모든 일을 따라갈 수 없다. 그래서 판정할 수 있는 좁은 모양만 열고 나머지는 막는다.
 
-⚠ **알려진 한계 하나** — `strip_heredocs`는 따옴표 상태를 추적하지 않는다.
-따옴표 안의 `<< 단어`를 heredoc 여는 줄로 오인해서, 뒤따르는 줄들을
-종료 태그까지 걷어낸다. 그 안에 PR 생성 명령이 있으면 못 본다.
-"여러 줄 명령 + 앞줄 따옴표 안의 `<<` + 뒤에 PR 생성"이 겹쳐야 하므로
-지금은 파서를 세우지 않고 조건만 적어 둔다. 겹치는 명령을 쓰게 되면 그때 판단한다.
+## 판정 (이슈 #111)
+
+**PR 생성은 그 Bash 호출의 유일한 명령이어야 한다.** 앞에 `cd <리터럴 경로>` 하나(뒤가 `&&` 또는
+`|| exit [N]`), 뒤에 출력만 받는 파이프(`| tail`·`head`·`cat`·`tee`), 무해한 gh 환경변수 접두
+(`GH_PROMPT_DISABLED=1` 등 `SAFE_ENV`)만 붙일 수 있다. push·commit은 따로 호출한다. 그 밖의 모양은 막는다.
+- PR이 될 커밋: `--head <브랜치>`(`-H`·`-fH wt`·`-Hwt`·`--head=`)면 그 브랜치의 로컬 끝, 아니면 그 디렉터리
+  (cwd 또는 맨 앞 `cd`)의 HEAD. `--head`가 둘 이상이거나 리터럴이 아니거나 `소유자:`(포크)면 막는다.
+- 마커: 그 브랜치가 체크아웃된 워크트리의 `.claude/.pr-review-ok`. 체크아웃마다 하나다.
+- **원격 추적 ref**(`remote_tip` — 기본 브랜치가 아닌 `@{upstream}`, 아니면 `origin/<브랜치>`)도 그 커밋과
+  같아야 한다. PR은 원격 브랜치로 만들어진다 — 푸시하지 않았거나 원격이 다른 커밋을 가리키면 막는다.
+  최근 푸시·페치 기준이다.
+- 인자 속 명령 치환은 `cat`만(`--body "$(cat <<'EOF' … EOF)"`). heredoc 태그는 따옴표를 쳐야 한다 —
+  따옴표 없는 heredoc 본문의 `$( … )`는 PR 생성 **전에** 실행된다.
+- `cd X;`·줄바꿈은 안 된다 — `cd`가 실패해도 다음 줄의 PR 생성이 원래 디렉터리에서 돈다.
+
+**왜 이렇게 좁은가.** 첫 판은 `cwd`의 HEAD·마커만 읽어, 세션이 메인 체크아웃에 있고 `cd <워크트리> && …`로
+PR을 열면 메인의 것으로 판정했다 — 메인 마커가 메인 HEAD와 같기만 하면 리뷰 안 된 워크트리 브랜치가 통과했다.
+고치면서 명령 안의 `cd`를 **따라가는** 판, 같은 호출 안의 명령을 **허용 목록**으로 거르는 판을 거쳤는데 둘 다
+샜다(코드 리뷰 다섯 번이 짚었고 test-detect가 지킨다). 같은 호출 안에서 무엇이든 돌 수 있으면 판정이 무의미하다.
+다섯째 리뷰는 정직한 PR 명령 중 리뷰 안 된 커밋을 통과시키는 것을 찾지 못했다 — 실사용 차단만 나와 풀었다.
+
+**정하지 못하면 막는다.** 입력을 못 읽는 경우(아래 `main`)와 다르다 — 그건 게이트가 사고를 만들지 않으려고
+열어 두지만, 이건 **PR 생성이 확실한데 무엇을 여는지 모르는** 경우라 열면 바로 위조 경로가 된다.
+
+## 탐지
+
+⚠ **명령문 어디에나 있는 문자열을 잡으면 안 된다.** 첫 판에서 정확히 그 사고를 냈다 — 훅을 설명하는
+문서를 heredoc으로 쓰는 명령이 게이트에 막혔다. 그래서 **셸 낱말 단위**로 본다. `lex`가 한 번 훑으며
+따옴표·이스케이프·`#` 주석·줄 이음·heredoc 본문·산술 `$(( ))`을 가리고, **실제로 실행되는** 명령 치환
+(`$( … )`·백틱 — 따옴표 밖이나 큰따옴표 안)만 따로 모은다. 맨 위 구분자로 나눈 단순 명령을 `shlex`로
+벗긴 낱말에서 `gh`(또는 `$변수`)·`pr`·`create|new`가 차례로 나오면 PR 생성이다. 실행되는 명령 치환,
+`bash -c`·`eval`의 인자, 셸에 먹이는 heredoc 본문, 따옴표 없는 heredoc 본문 속 치환은 안을 다시 본다.
+그래서 `"gh" pr 'create'`·`g\\h`·`url="$(…)"`는 잡고, `grep 'gh pr create'`·작은따옴표 커밋 메시지 속
+백틱처럼 글자인 것은 안 잡는다. 낱말로 못 나누는 토막은 글자로 찾는다(닫는 쪽 기본값).
+
+## 알려진 한계 (이슈 #114)
+
+- 함수·별칭·`source`한 스크립트 안의 PR 생성. 셸 이름을 바꾼 사본(`/tmp/x -c …`).
+- 판정 뒤에 다른 프로세스가 브랜치를 바꾸는 경우(동시 작업), 원격 추적 ref가 낡은 경우.
+- `--repo`·`GH_REPO`로 다른 저장소를 여는 것.
 """
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
 # `gh` `pr` `create`를 붙여 쓰지 않는다 — 이 파일 자체가 게이트에 걸린다.
-# `VAR=x VAR2=y gh …` 형태를 놓치지 않도록 환경변수 접두를 먼저 흘린다.
-# 첫 판이 이걸 빠뜨렸다 — 게이트가 **열리는** 방향의 결함이라 가장 나쁘다.
-CMD = re.compile(r"(?:^|[;&|(\n])\s*(?:\w+=\S*\s+)*gh\s+pr\s+" + "create" + r"\b")
-HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
+VERBS = ("create", "new")
+SHELLS = {"bash", "sh", "zsh", "dash", "ksh", "fish"}
+# 명령 구분자. `2>&1`·`&>`·`>&`·`>|`의 `&`·`|`는 리다이렉션이다.
+SEP = re.compile(r"&&|\|\||;;|(?<![<>])&(?!>)|(?<!>)\||[;()\n`]")
+# gh pr create의 값을 받는 플래그 — 값이 다음 낱말이면 건너뛴다(그 값이 `-H…`처럼 보여도 플래그가 아니다)
+VALUE_SHORT = set("BbFtalmprRTH")
+VALUE_LONG = {"--base", "--body", "--body-file", "--title", "--assignee", "--label", "--milestone",
+              "--project", "--reviewer", "--repo", "--template", "--recover", "--head"}
+CAT_ONLY = re.compile(r"\s*cat(?:\s+<<-?\s*\S+|\s+[^\s;&|()`$<>]+)?\s*")
 MARKER = ".claude/.pr-review-ok"
 
 
-def strip_heredocs(command):
-    """heredoc 본문을 걷어낸다.
+class Lexed:
+    """`lex`의 결과. full·clean은 원문과 **같은 길이**다.
 
-    `... --body-file - <<'BODY'` 형태에서 **본문만** 지운다. 명령 자체는
-    heredoc 여는 줄에 그대로 남으므로 탐지가 죽지 않는다.
+    full:  따옴표 안·이스케이프·주석·줄 이음·heredoc 본문·산술을 공백으로. 맨 위 구분자를 찾을 때 쓴다.
+    clean: 주석·줄 이음·heredoc 본문만 공백으로. `shlex`로 낱말을 나눌 때 쓴다.
+    subs:  실행되는 명령 치환의 안쪽 텍스트들(깊이 무관).
+    docs:  heredoc들 — (여는 위치, 태그에 따옴표가 있었나, 본문).
     """
-    lines = command.split("\n")
-    out = []
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        out.append(line)
-        m = HEREDOC.search(line)
-        i += 1
-        if not m:
-            continue
-        tag = m.group(2)
-        while i < len(lines) and lines[i].strip() != tag:
-            i += 1
-        i += 1  # 종료 태그 줄도 버린다
-    return "\n".join(out)
 
+    def __init__(self, text):
+        self.t, self.n = text, len(text)
+        self.full, self.clean = list(text), list(text)
+        self.subs, self.docs, self.pending = [], [], []
+        self.normal(0, None)
+        self.full, self.clean = "".join(self.full), "".join(self.clean)
 
-def strip_quoted(command):
-    """따옴표로 감싼 구간을 지운다. `grep "gh pr …"` 같은 언급을 걸러낸다."""
-    return re.sub(r"'[^']*'|\"[^\"]*\"", " ", command)
+    def blank(self, a, b, both=False):
+        for k in range(a, min(b, self.n)):
+            self.full[k] = " "
+            if both:
+                self.clean[k] = " "
+
+    def heredoc_open(self, i):
+        """`<<` 다음의 태그를 읽어 pending에 넣는다. 태그 끝 위치를 돌려준다."""
+        t, n = self.t, self.n
+        j = i + 2
+        strip_tabs = j < n and t[j] == "-"
+        j += 1 if strip_tabs else 0
+        while j < n and t[j] in " \t":
+            j += 1
+        tag, quoted = [], False
+        while j < n and t[j] not in " \t\n;&|()<>":
+            c = t[j]
+            if c in "'\"":
+                e = t.find(c, j + 1)
+                e = n if e < 0 else e
+                tag.append(t[j + 1:e])
+                quoted, j = True, e + 1
+            elif c == "\\":
+                tag.append(t[j + 1:j + 2])
+                quoted, j = True, j + 2
+            else:
+                tag.append(c)
+                j += 1
+        if tag:
+            self.pending.append((i, "".join(tag), quoted, strip_tabs))
+        return j
+
+    def heredoc_bodies(self, i):
+        """줄바꿈(i) 뒤에서 대기 중인 heredoc 본문들을 읽고 가린다. 다음 위치를 돌려준다."""
+        t, n = self.t, self.n
+        j = i + 1
+        for pos, tag, quoted, strip_tabs in self.pending:
+            start = j
+            while True:
+                e = t.find("\n", j)
+                e = n if e < 0 else e
+                line = t[j:e].lstrip("\t") if strip_tabs else t[j:e]
+                if line == tag or e >= n:
+                    self.docs.append((pos, quoted, t[start:j if line == tag else e]))
+                    self.blank(start, e, both=True)
+                    j = e + 1
+                    break
+                j = e + 1
+        self.pending = []
+        return j
+
+    def subst(self, i, closer):
+        """i는 `$(`의 `(` 다음이나 백틱 다음. 안을 normal로 읽고 닫는 위치를 돌려준다."""
+        end = self.normal(i, closer)
+        self.subs.append(self.t[i:end])
+        return end
+
+    def normal(self, i, closer):
+        t, n = self.t, self.n
+        depth = 0
+        while i < n:
+            c = t[i]
+            if closer == ")" and c == "(":
+                depth += 1
+            elif closer == ")" and c == ")":
+                if depth == 0:
+                    return i
+                depth -= 1
+            elif closer == "`" and c == "`":
+                return i
+            if c == "\\":
+                self.blank(i, i + 2, both=(i + 1 < n and t[i + 1] == "\n"))
+                i += 2
+            elif t.startswith("$((", i):  # 산술 — 코드도 heredoc도 아니다
+                d, j = 0, i + 1
+                while j < n:
+                    d += {"(": 1, ")": -1}.get(t[j], 0)
+                    j += 1
+                    if d == 0:
+                        break
+                self.blank(i, j)
+                i = j
+            elif t.startswith("$(", i):
+                i = self.subst(i + 2, ")") + 1
+            elif c == "`":
+                i = self.subst(i + 1, "`") + 1
+            elif t.startswith("$'", i):  # ANSI-C — 안의 `\'`는 닫는 따옴표가 아니다
+                j = i + 2
+                while j < n and t[j] != "'":
+                    j += 2 if t[j] == "\\" else 1
+                self.blank(i, j + 1)
+                i = j + 1
+            elif c == "'":
+                j = t.find("'", i + 1)
+                j = n - 1 if j < 0 else j
+                self.blank(i, j + 1)
+                i = j + 1
+            elif c == '"':
+                i = self.dquote(i)
+            elif c == "#" and (i == 0 or t[i - 1] in " \t\n;&|()`"):
+                j = t.find("\n", i)
+                j = n if j < 0 else j
+                self.blank(i, j, both=True)
+                i = j
+            elif t.startswith("<<<", i):  # here-string — heredoc이 아니다. 둘째 `<`에서 다시 읽지 않게 통째로 넘긴다
+                i += 3
+            elif t.startswith("<<", i):
+                i = self.heredoc_open(i)
+            elif c == "\n" and self.pending:
+                i = self.heredoc_bodies(i)
+            else:
+                i += 1
+        return n
+
+    def dquote(self, i):
+        t, n = self.t, self.n
+        start, j = i, i + 1
+        while j < n and t[j] != '"':
+            if t[j] == "\\":
+                j += 2
+            elif t.startswith("$(", j) and not t.startswith("$((", j):
+                j = self.subst(j + 2, ")") + 1
+            elif t[j] == "`":
+                j = self.subst(j + 1, "`") + 1
+            else:
+                j += 1
+        self.blank(start, j + 1)
+        return j + 1
 
 
 def git(*args):
@@ -76,6 +233,259 @@ def git(*args):
         return ""
 
 
+def split_top(lx):
+    """맨 위 단순 명령들 — ([(clean 토막, 시작, 끝)], [구분자들])."""
+    segs, seps, last = [], [], 0
+    for m in SEP.finditer(lx.full):
+        segs.append((lx.clean[last:m.start()], last, m.start()))
+        seps.append(m.group(0))
+        last = m.end()
+    segs.append((lx.clean[last:], last, len(lx.full)))
+    return segs, seps
+
+
+def words_of(seg):
+    try:
+        return shlex.split(seg, posix=True)
+    except ValueError:
+        return None
+
+
+def next_word(w, i):
+    """i부터 플래그가 아닌 첫 낱말의 위치. `-R`·`--repo`는 값까지 건너뛴다."""
+    while i < len(w) and w[i].startswith("-"):
+        i += 2 if w[i] in ("-R", "--repo") else 1
+    return i
+
+
+def is_pr_words(w):
+    """`gh`(또는 `$변수`) 다음 첫 낱말이 `pr`, 그다음 첫 낱말이 `create|new`인가.
+
+    위치를 본다 — 첫 판은 뒤 어딘가에 `pr`·`create`가 있기만 하면 잡아서 `gh pr list --search create`·
+    `gh issue create --label pr --label create`를 막았다(5차 코드 리뷰).
+    """
+    for i, x in enumerate(w):
+        if x.rsplit("/", 1)[-1] == "gh" or x.startswith("$"):
+            j = next_word(w, i + 1)
+            if j < len(w) and w[j] == "pr":
+                k = next_word(w, j + 1)
+                if k < len(w) and w[k] in VERBS:
+                    return True
+    return False
+
+
+WRAPPERS = {"env", "command", "exec", "sudo", "nohup", "time", "timeout", "nice", "xargs", "builtin"}
+
+
+def command_word(w):
+    """환경변수 접두와 래퍼(`env`·`timeout 60`·`sudo -u x` …)를 건너뛴 명령 낱말. 없으면 ""."""
+    i = 0
+    while i < len(w):
+        if re.match(r"^\w+=", w[i]) or w[i] in WRAPPERS or w[i].startswith("-") or w[i].isdigit():
+            i += 1
+        else:
+            return w[i].rsplit("/", 1)[-1]
+    return ""
+
+
+def shell_script(w):
+    """`bash -c '…'`·`sh -lc "…"`의 스크립트, `eval …`의 인자. 없으면 None."""
+    for i, x in enumerate(w):
+        if x.rsplit("/", 1)[-1] in SHELLS:
+            for j in range(i + 1, len(w) - 1):
+                if w[j].startswith("-") and not w[j].startswith("--") and "c" in w[j][1:]:
+                    return w[j + 1]
+        if x == "eval":
+            return " ".join(w[i + 1:])
+    return None
+
+
+def body_subs(body):
+    """따옴표 없는 heredoc 본문 속 `$( … )`·백틱 — 셸이 펼친다. 큰따옴표 안과 같은 규칙이라 `Lexed`에 맡긴다
+    (`"`는 본문에서 글자이므로 이스케이프한다)."""
+    return Lexed('"' + body.replace('"', '\\"') + '"').subs
+
+
+def has_pr(command, depth=0, lx=None):
+    """이 명령 어딘가에서 PR 생성이 도는가. 모르면 참."""
+    if depth > 8:
+        return True
+    lx = lx or Lexed(command)
+    segs, _ = split_top(lx)
+    for seg, a, b in segs:
+        if not seg.strip():
+            continue
+        w = words_of(seg)
+        if w is None:
+            # 따옴표 안은 가린 full에서 찾는다 — 따옴표 속 언급(`$'…'` 본문)까지 잡지 않게
+            if re.search(r"\bgh\b.*\bpr\b.*\b(?:" + "|".join(VERBS) + r")\b", lx.full[a:b], re.S):
+                return True
+            continue
+        if is_pr_words(w):
+            return True
+        script = shell_script(w)
+        if script is not None and has_pr(script, depth + 1):
+            return True
+        fed = command_word(w) in SHELLS  # 명령 낱말이 셸일 때만 — `--label sh`는 아니다
+        for pos, quoted, body in lx.docs:
+            if a <= pos < b and fed and has_pr(body, depth + 1):
+                return True
+    if any(has_pr(s, depth + 1) for s in lx.subs):
+        return True
+    return any(has_pr(s, depth + 1) for _p, quoted, body in lx.docs if not quoted for s in body_subs(body))
+
+
+def parse_heads(args):
+    """gh pr create 인자에서 `--head` 값들. pflag처럼 짧은 플래그 묶음(`-fH wt`·`-Hwt`)도 푼다."""
+    heads, i = [], 0
+    while i < len(args):
+        t = args[i]
+        if t == "--":
+            break
+        if t.startswith("--"):
+            name = t.split("=", 1)[0]
+            if name == "--head":
+                if "=" in t:
+                    heads.append(t.split("=", 1)[1])
+                else:
+                    heads.append(args[i + 1] if i + 1 < len(args) else "")
+                    i += 1
+            elif name in VALUE_LONG and "=" not in t:
+                i += 1
+        elif t.startswith("-") and len(t) > 1:
+            cluster = t[1:]
+            for ci, ch in enumerate(cluster):
+                if ch in VALUE_SHORT:
+                    rest = cluster[ci + 1:]
+                    if not rest:
+                        val = args[i + 1] if i + 1 < len(args) else ""
+                        i += 1
+                    else:
+                        val = rest[1:] if rest.startswith("=") else rest
+                    if ch == "H":
+                        heads.append(val)
+                    break
+        i += 1
+    return heads
+
+
+SINKS = {"tail", "head", "cat", "tee"}  # PR 생성 뒤 파이프로 출력만 받는 것 — 어느 커밋이 PR이 될지 바꾸지 못한다
+SAFE_ENV = {"GH_PROMPT_DISABLED", "NO_COLOR", "GH_NO_UPDATE_NOTIFIER", "GH_PAGER", "PAGER", "CLICOLOR",
+            "CLICOLOR_FORCE", "GH_SPINNER_DISABLED", "TERM"}
+
+
+def shape(lx, cwd):
+    """허용하는 모양이면 (디렉터리, --head 값 또는 None, None), 아니면 (None, None, 이유)."""
+    segs, seps = split_top(lx)
+    bad = [s for s in seps if s not in ("&&", "\n", "||", ";", "|")]
+    if bad:
+        return None, None, "`%s`가 있다(파이프·백그라운드·서브셸·명령 치환)" % bad[0].strip()
+    body = [(i, s) for i, (s, _a, _b) in enumerate(segs) if s.strip()]
+    if not body:
+        return None, None, "PR 생성 명령을 찾지 못했다"
+    if any(not quoted for _p, quoted, _b in lx.docs):
+        return None, None, "따옴표 없는 heredoc 태그가 있다 — 본문의 `$( … )`가 PR 생성 전에 돈다(`<<'EOF'`로 쓴다)"
+    words = []
+    for _i, s in body:
+        w = words_of(s)
+        if w is None:
+            return None, None, "명령을 셸 낱말로 나누지 못했다: %r" % s.strip()[:60]
+        words.append(w)
+    d, k = cwd, 0
+    if len(body) >= 2 and words[0] and words[0][0] == "cd":
+        args = words[0][1:]
+        physical = False
+        while args and args[0] in ("-P", "-L", "-e", "-@", "--"):
+            physical = physical or args[0] == "-P"
+            args = args[1:]
+        if len(args) != 1:
+            return None, None, "맨 앞 `cd`의 대상이 하나가 아니다"
+        arg = args[0]
+        if arg == "-" or "$" in arg or "`" in arg:
+            return None, None, "`cd %s`의 대상은 셸이 돌아야 안다" % arg
+        # `cd X &&` 뒤의 줄바꿈은 셸이 다음 줄로 잇는다 — 연산자가 먼저 오면 줄바꿈은 무시한다
+        mid = seps[body[0][0]:body[1][0]]
+        op = mid[:1] + [s for s in mid[1:] if s != "\n"]
+        if op == ["&&"]:
+            k = 1
+        elif (op == ["||"] and len(body) == 3 and re.fullmatch(r"exit(\s+\d+)?", " ".join(words[1]))
+              and seps[body[1][0]:body[2][0]] and all(s in (";", "\n", "&&") for s in seps[body[1][0]:body[2][0]])):
+            k = 2
+        else:
+            return None, None, ("맨 앞 `cd` 뒤는 `&&`나 `|| exit`여야 한다 — `;`·줄바꿈이면 `cd`가 실패해도 "
+                                "PR 생성이 원래 디렉터리에서 돈다")
+        d = os.path.join(cwd, os.path.expanduser(arg))
+        d = os.path.realpath(d) if physical else os.path.normpath(d)
+        if not os.path.isdir(d):
+            return None, None, "`cd` 대상 디렉터리가 없다: %s" % d
+    if "|" in seps[:body[k][0]]:
+        return None, None, "PR 생성 앞에 파이프가 있다"
+    # PR 생성 뒤에는 `| tail -3` 같은 출력 받기만 — 그 밖의 명령은 같은 호출에 두지 않는다
+    for m in range(k + 1, len(body)):
+        if [s for s in seps[body[m - 1][0]:body[m][0]]] != ["|"] or not words[m] or words[m][0] not in SINKS:
+            return None, None, "PR 생성 말고 다른 명령이 같은 호출에 있다(뒤에는 `| tail`·`head`·`cat`·`tee`만)"
+    if any(s in ("||", "&&") for s in seps[body[k][0]:]):
+        return None, None, "PR 생성 뒤에 `&&`·`||`가 있다"
+    w = words[k]
+    while w and re.match(r"^\w+=", w[0]) and w[0].split("=", 1)[0] in SAFE_ENV:
+        w = w[1:]  # GH_PROMPT_DISABLED=1 같은 무해한 접두. GIT_DIR=·GH_REPO=는 남아서 아래에서 막힌다
+    if len(w) < 3 or w[0] != "gh" or w[1] != "pr" or w[2] not in VERBS:
+        return None, None, "PR 생성은 `gh pr create …` 그대로 써야 한다(환경변수·래퍼·경로·변수 없이)"
+    for inner in lx.subs:
+        if not CAT_ONLY.fullmatch(Lexed(inner).clean):
+            return None, None, "인자 속 명령 치환은 `cat`만 허용한다: %r" % inner.strip()[:40]
+    heads = parse_heads(w[3:])
+    if len(heads) > 1:
+        return None, None, "`--head`가 둘 이상이다 — gh는 마지막 것을 쓴다"
+    if heads and (not heads[0] or "$" in heads[0] or "`" in heads[0]):
+        return None, None, "`--head` 값이 리터럴이 아니다"
+    if heads and ":" in heads[0]:
+        return None, None, "`--head 소유자:브랜치` — 포크의 브랜치는 이 저장소에서 대조할 수 없다"
+    return d, (heads[0] if heads else None), None
+
+
+def remote_tip(top, branch):
+    """PR이 만들어질 원격 브랜치의 끝(추적 ref). 못 찾으면 "".
+
+    `<브랜치>@{upstream}`이 있고 그 이름이 기본 브랜치가 아니면 그것(`push -u origin wt:feature` → origin/feature).
+    기본 브랜치를 추적하는 것은 「거기서 땄다」는 뜻이지 푸시했다는 뜻이 아니라(`switch -c x origin/main`,
+    워크트리 생성) `origin/<브랜치>`로 넘어간다. 첫 판은 `refs/heads/x@{upstream}`으로 물어 git이 늘 거절했다 —
+    이 조회가 죽어 있어 다른 이름으로 푸시한 브랜치가 막혔다(5차 코드 리뷰).
+    """
+    name = git("-C", top, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "%s@{upstream}" % branch)
+    if name and (name.split("/", 1)[-1] not in ("main", "master") or branch in ("main", "master")):
+        return git("-C", top, "rev-parse", "--verify", "-q", "%s@{upstream}" % branch)
+    return git("-C", top, "rev-parse", "--verify", "-q", "refs/remotes/origin/%s" % branch)
+
+
+def checkout_of(branch, top):
+    """그 브랜치가 체크아웃된 워크트리 경로. 없으면 None."""
+    path = None
+    for line in git("-C", top, "worktree", "list", "--porcelain").split("\n"):
+        if line.startswith("worktree "):
+            path = line[len("worktree "):]
+        elif line == "branch refs/heads/" + branch:
+            return path
+    return None
+
+
+def block(why, branch="?", sha="", stat=""):
+    sys.stderr.write(
+        "PR 생성이 게이트에 막혔다. %s\n\n"
+        "브랜치: %s (커밋 %s)\n%s\n\n"
+        "`/pr-review-gate` 스킬을 먼저 실행하라. 리뷰는 `npm run check`와 보는 축이 다르다 —\n"
+        "린트는 규칙의 **존재**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을\n"
+        "재현하는지**를 본다. 차단 항목이 0이 되면 스킬이 마커를 찍고, 그때 통과한다.\n\n"
+        "게이트를 건너뛸 이유가 있으면 사용자에게 확인받아라. 마커를 손으로 찍지 마라.\n"
+        % (why, branch, sha[:8] or "?", stat)
+    )
+    return 2
+
+
+SIMPLE = ("PR 생성은 그 호출의 유일한 명령으로 쓴다 — push·commit은 따로 호출하고, 워크트리면 세션을 옮기거나"
+          "(EnterWorktree) `cd <경로> && gh pr create …` 또는 `gh pr create --head <브랜치> …`.")
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -83,48 +493,54 @@ def main():
         return 0  # 입력을 못 읽으면 막지 않는다. 게이트가 사고를 만들면 안 된다
 
     command = (payload.get("tool_input") or {}).get("command") or ""
-    if not CMD.search(strip_quoted(strip_heredocs(command))):
+    lx = Lexed(command)  # 한 번만 렉싱한다 — 탐지와 모양 판정이 같은 낱말을 본다
+    if not has_pr(command, 0, lx):
         return 0
 
-    root = payload.get("cwd") or os.getcwd()
-    try:
-        os.chdir(root)
-    except OSError:
-        return 0
+    cwd = os.path.normpath(payload.get("cwd") or os.getcwd())
+    d, head, why = shape(lx, cwd)
+    if d is None:
+        return block("PR 생성 명령이 허용하는 모양이 아니다 — %s. %s" % (why, SIMPLE))
+    top = git("-C", d, "rev-parse", "--show-toplevel")
+    if not top:
+        if d == cwd and not head:
+            return 0  # 저장소 밖 — 첫 판부터의 동작
+        return block("PR 생성 위치가 git 저장소가 아니라(%s) `--head`·`cd`가 가리키는 것을 확인할 수 없다." % d)
 
-    head = git("rev-parse", "HEAD")
-    if not head:
-        return 0  # 저장소가 아니다
+    if head:
+        branch = head
+        sha = git("-C", top, "rev-parse", "--verify", "-q", "refs/heads/%s^{commit}" % branch)
+        if not sha:
+            return block("`--head %s` 브랜치가 로컬에 없어 무엇이 PR이 되는지 확인할 수 없다." % branch, branch)
+        where = checkout_of(branch, top) or top
+    else:
+        sha = git("-C", top, "rev-parse", "HEAD")
+        if not sha:
+            return 0  # 커밋이 없는 저장소
+        branch = git("-C", top, "rev-parse", "--abbrev-ref", "HEAD") or "?"
+        where = top
 
     try:
-        with open(os.path.join(root, MARKER), encoding="utf-8") as f:
+        with open(os.path.join(where, MARKER), encoding="utf-8") as f:
             reviewed = f.read().strip()
     except OSError:
         reviewed = ""
+    if reviewed != sha:
+        stat = git("-C", where, "diff", "--stat", "main..." + sha) or "(main과의 차이를 못 읽었다)"
+        if reviewed:
+            why = "%s의 마커는 %s에 찍혀 있는데 PR이 될 커밋은 %s다 — 리뷰 뒤에 커밋이 더 쌓였거나 다른 브랜치의 마커다." % (
+                where, reviewed[:8], sha[:8])
+        else:
+            why = "%s에 리뷰 마커가 없다 — 이 브랜치는 아직 리뷰되지 않았다." % where
+        return block(why, branch, sha, stat)
 
-    if reviewed == head:
-        return 0
-
-    branch = git("rev-parse", "--abbrev-ref", "HEAD") or "?"
-    stat = git("diff", "--stat", "main...HEAD") or "(main과의 차이를 못 읽었다)"
-    if reviewed:
-        why = "마커는 %s에 찍혀 있는데 HEAD는 %s다 — 리뷰 뒤에 커밋이 더 쌓였다." % (
-            reviewed[:8],
-            head[:8],
-        )
-    else:
-        why = "이 저장소에 리뷰 마커가 없다 — 이 브랜치는 아직 리뷰되지 않았다."
-
-    sys.stderr.write(
-        "PR 생성이 게이트에 막혔다. %s\n\n"
-        "브랜치: %s (HEAD %s)\n%s\n\n"
-        "`/pr-review-gate` 스킬을 먼저 실행하라. 리뷰는 `npm run check`와 보는 축이 다르다 —\n"
-        "린트는 규칙의 **존재**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을\n"
-        "재현하는지**를 본다. 차단 항목이 0이 되면 스킬이 마커를 찍고, 그때 통과한다.\n\n"
-        "게이트를 건너뛸 이유가 있으면 사용자에게 확인받아라. 마커를 손으로 찍지 마라.\n"
-        % (why, branch, head[:8], stat)
-    )
-    return 2
+    up = remote_tip(top, branch)
+    if not up:
+        return block("`%s`가 원격에 없다(추적 ref 없음) — 리뷰한 커밋을 먼저 푸시한다(따로 호출)." % branch, branch, sha)
+    if up != sha:
+        return block("원격 `%s`(%s)가 리뷰한 커밋(%s)과 다르다 — PR은 원격 브랜치로 만들어진다. 리뷰한 커밋을 푸시했는가, "
+                     "원격에 다른 커밋이 올라가 있지 않은가." % (branch, up[:8], sha[:8]), branch, sha)
+    return 0
 
 
 if __name__ == "__main__":
