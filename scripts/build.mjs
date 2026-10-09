@@ -485,8 +485,13 @@ if (WATCH) {
   const { watch } = await import('node:fs')
   console.log('\n  변경 감시 중… (Ctrl+C로 종료)')
   let t
+  // 같은 프로세스 안의 run()은 잠금으로 못 막는다 — 잠금 파일의 pid가 자기 것이라 「살아 있는 남」으로 기다리다
+  // 같은 TMP·`.dist.lock.<pid>`를 나눠 쓴다. 빌드가 120ms보다 길면 겹칠 수 있으니 차례로 잇는다
+  let chain = Promise.resolve()
   watch(SRC, { recursive: true }, () => {
     clearTimeout(t)
-    t = setTimeout(() => run().catch(e => console.error(`\n  ❌ ${e.message}\n  (감시는 계속된다)`)), 120)
+    t = setTimeout(() => {
+      chain = chain.then(run).catch(e => console.error(`\n  ❌ ${e.message}\n  (감시는 계속된다)`))
+    }, 120)
   })
 }
