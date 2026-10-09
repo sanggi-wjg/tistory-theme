@@ -368,14 +368,39 @@ PARENT_CASES = [
     ("WT-f 저장소 밖 cwd + --head", "HEAD", None, G + " --repo o/r --head wt", 2),
 ]
 
+# 이슈 #101 — 마커 기록을 PR 생성과 한 호출에 묶었다. 훅은 실행 **전에** 판정하므로 그 기록은 판정에 안 쓰이고
+# 묶인 명령은 통째로 안 돈다. 막는 것은 같지만(rc 2) 안내가 「리뷰하라」로 나가면 원인을 틀리게 짚는다.
+# (이름, 저장소 상태, 명령, 메시지에 있어야 할 것, 없어야 할 것). 저장소 상태: "reviewed"(마커 == HEAD) · "none".
+BUNDLED = "통째로 실행되지 않았다"
+REVIEW_FIRST = "스킬을 먼저 실행하라"
+MARK = "git rev-parse HEAD > " + MARKER
+MSG_CASES = [
+    ("마커 기록 && PR(리뷰됨)", "reviewed", MARK + " && " + G + " --fill", [BUNDLED, "같다"], [REVIEW_FIRST]),
+    ("마커 기록 && push && PR(마커 없음)", "none", MARK + " && git push -u origin main && " + G + " --fill",
+     [BUNDLED, "없다"], [REVIEW_FIRST]),
+    ("마커 기록 줄바꿈 PR", "reviewed", MARK + "\n" + G + " --fill", [BUNDLED], [REVIEW_FIRST]),
+    ("붙여 쓴 >경로", "reviewed", "git rev-parse HEAD >" + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
+    (">> 덧붙이기", "reviewed", "git rev-parse HEAD >> " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
+    ("tee로 기록", "reviewed", "git rev-parse HEAD | tee " + MARKER + " && " + G, [BUNDLED], [REVIEW_FIRST]),
+    ("cd && 마커 기록 && PR", "reviewed", "cd . && " + MARK + " && " + G, [BUNDLED], [REVIEW_FIRST]),
+    # 마커 기록이 아니다 — 원래 안내가 그대로 나가야 한다
+    ("push && PR(마커 없음)", "none", "git push && " + G + " --fill", [REVIEW_FIRST], [BUNDLED]),
+    ("마커를 읽기만 한다", "reviewed", "cat " + MARKER + " && " + G, [REVIEW_FIRST], [BUNDLED]),
+    ("마커 이름을 말하기만 한다", "reviewed", 'echo "> ' + MARKER + '" && ' + G, [REVIEW_FIRST], [BUNDLED]),
+]
 
-def run(cmd, root, gh_repo=None):
+
+def run_full(cmd, root, gh_repo=None):
     payload = json.dumps({"tool_input": {"command": cmd}, "cwd": root})
     env = {k: v for k, v in os.environ.items() if k != "GH_REPO"}
     if gh_repo:
         env["GH_REPO"] = gh_repo
     p = subprocess.run([sys.executable, HOOK], input=payload, capture_output=True, text=True, env=env)
-    return p.returncode
+    return p.returncode, p.stderr
+
+
+def run(cmd, root, gh_repo=None):
+    return run_full(cmd, root, gh_repo)[0]
 
 
 def report(ok, want, label, rc, tag=""):
@@ -404,6 +429,13 @@ def main():
         for label, value, want in ENV_CASES:
             rc = run(G + " --fill", reviewed, gh_repo=value)
             fails += report(rc == want, want, label, rc, " (리뷰됨)")
+        # 마커만 기록하는 호출은 PR 생성이 아니다 — 스킬 5단계가 이렇게 찍는다
+        rc = run(MARK, no_marker)
+        fails += report(rc == 0, 0, "마커 기록 단독", rc, " (마커 없음)")
+        for label, state, cmd, must, must_not in MSG_CASES:
+            rc, err = run_full(cmd, reviewed if state == "reviewed" else no_marker)
+            miss = [s for s in must if s not in err] + ["¬" + s for s in must_not if s in err]
+            fails += report(rc == 2 and not miss, 2, label, rc, " (안내%s)" % (" — " + ", ".join(miss) if miss else ""))
         # `push -u <URL> x`면 branch.x.remote가 이름이 아니라 URL이다 — `-R`이 같은 저장소면 열려야 한다(코드 리뷰)
         p_url, url_repo = make_repo(None)
         try:

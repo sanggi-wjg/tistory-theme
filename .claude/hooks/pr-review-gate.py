@@ -31,6 +31,8 @@ PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는�
 - 인자 속 명령 치환은 `cat`만(`--body "$(cat <<'EOF' … EOF)"`). heredoc 태그는 따옴표를 쳐야 한다 —
   따옴표 없는 heredoc 본문의 `$( … )`는 PR 생성 **전에** 실행된다.
 - `cd X;`·줄바꿈은 안 된다 — `cd`가 실패해도 다음 줄의 PR 생성이 원래 디렉터리에서 돈다.
+- 같은 호출이 마커에 **쓰면**(리다이렉션·`tee`) 모양 판정보다 먼저 그 사실을 안내한다(이슈 #101). 막는 것은 같다 —
+  안내가 「리뷰하라」면 리뷰를 마친 사람에게 원인을 틀리게 짚는다. 리뷰 여부는 훅이 알 수 없어 HEAD·마커만 보여 준다.
 
 **왜 이렇게 좁은가.** 첫 판은 `cwd`의 HEAD·마커만 읽어, 세션이 메인 체크아웃에 있고 `cd <워크트리> && …`로
 PR을 열면 메인의 것으로 판정했다 — 메인 마커가 메인 HEAD와 같기만 하면 리뷰 안 된 워크트리 브랜치가 통과했다.
@@ -644,17 +646,74 @@ def checkout_of(branch, top):
     return None
 
 
-def block(why, branch="?", sha="", stat=""):
-    sys.stderr.write(
-        "PR 생성이 게이트에 막혔다. %s\n\n"
-        "브랜치: %s (커밋 %s)\n%s\n\n"
-        "`/pr-review-gate` 스킬을 먼저 실행하라. 리뷰는 `npm run check`와 보는 축이 다르다 —\n"
-        "린트는 규칙의 **존재**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을\n"
-        "재현하는지**를 본다. 차단 항목이 0이 되면 스킬이 마커를 찍고, 그때 통과한다.\n\n"
-        "게이트를 건너뛸 이유가 있으면 사용자에게 확인받아라. 마커를 손으로 찍지 마라.\n"
-        % (why, branch, sha[:8] or "?", stat)
-    )
+REVIEW_FIRST = (
+    "`/pr-review-gate` 스킬을 먼저 실행하라. 리뷰는 `npm run check`와 보는 축이 다르다 —\n"
+    "린트는 규칙의 **존재**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을\n"
+    "재현하는지**를 본다. 차단 항목이 0이 되면 스킬이 마커를 찍고, 그때 통과한다.\n\n"
+    "게이트를 건너뛸 이유가 있으면 사용자에게 확인받아라. 마커를 손으로 찍지 마라.\n")
+
+
+def block(why, branch="?", sha="", stat="", footer=REVIEW_FIRST):
+    sys.stderr.write("PR 생성이 게이트에 막혔다. %s\n\n브랜치: %s (커밋 %s)\n%s\n\n%s"
+                     % (why, branch, sha[:8] or "?", stat, footer))
     return 2
+
+
+REDIRECT = re.compile(r"(?:\d+|&)?>>?\|?[ \t]*")  # `>` `>>` `>|` `2>` `&>` — 대상은 붙여 써도 띄어 써도 된다
+
+
+def marker_writes(lx):
+    """맨 위 단순 명령 중 리뷰 마커 파일에 **쓰는** 것이 있는가 — 리다이렉션 대상이나 `tee`의 인자.
+
+    이름을 언급만 하는 것(`cat 마커`·`echo "> 마커"`)은 아니다. 리다이렉션은 따옴표를 가린 `full`에서 찾는다 —
+    따옴표 속 `>`는 글자다. 대상 낱말은 같은 자리의 `clean`에서 읽어 따옴표를 벗긴다.
+    """
+    name = os.path.basename(MARKER)
+    for seg, a, b in split_top(lx)[0]:
+        if name not in seg:
+            continue
+        w = words_of(seg)
+        if w and command_word(w) == "tee" and any(
+                os.path.basename(x) == name for x in w[command_index(w) + 1:] if not x.startswith("-")):
+            return True
+        for m in REDIRECT.finditer(lx.full, a, b):
+            target = words_of(re.match(r"\S*", lx.clean[m.end():b]).group(0))
+            if target and os.path.basename(target[0]) == name:
+                return True
+    return False
+
+
+def bundled_marker(lx, cwd):
+    """마커 기록을 PR 생성과 묶은 호출의 안내(이슈 #101). 리뷰를 했는지는 이 호출로 알 수 없다 —
+    「리뷰하라」로 안내하면 원인을 틀리게 짚는다(2026-09-15 실제로 겪었다). 지금의 HEAD·마커를 보여 주고 가리게 한다."""
+    targets = cd_targets(lx, cwd)
+    d = targets[0] if targets and os.path.isdir(targets[0]) else cwd
+    top = git("-C", d, "rev-parse", "--show-toplevel")
+    sha = git("-C", top, "rev-parse", "HEAD") if top else ""
+    branch = (git("-C", top, "rev-parse", "--abbrev-ref", "HEAD") if top else "") or "?"
+    reviewed = ""
+    if top:  # 빈 top이면 훅 프로세스의 cwd에서 읽게 된다
+        try:
+            with open(os.path.join(top, MARKER), encoding="utf-8") as f:
+                reviewed = f.read().strip()
+        except OSError:
+            pass
+    if not sha:
+        state = "(HEAD를 읽지 못했다)"
+    elif not reviewed:
+        state = "%s에 마커가 없다." % top
+    elif reviewed == sha:
+        state = "%s의 마커가 HEAD(%s)와 같다 — 이 호출 전에 이미 찍혀 있었다." % (top, sha[:8])
+    else:
+        state = "%s의 마커(%s)가 HEAD(%s)와 다르다." % (top, reviewed[:8], sha[:8])
+    why = ("이 호출이 리뷰 마커(`%s`)를 기록하면서 PR을 연다. 훅은 명령을 **실행하기 전에** 판정하므로 "
+           "이 호출의 마커 기록은 판정에 쓰이지 않고, 막힌 호출은 통째로 실행되지 않았다(마커 기록·푸시 포함).\n"
+           "지금: %s" % (MARKER, state))
+    footer = ("리뷰를 했는지는 이 메시지로 알 수 없다. `_workspace/pr-review.md` 맨 위 SHA가 지금 HEAD와 같고 "
+              "그 리뷰가 차단 0이면\n마커만 **따로** 찍고, 푸시 같은 나머지도 따로 낸 뒤, PR 생성만 단독으로 다시 낸다. "
+              "다르면 그 뒤의 커밋을\n리뷰한다(`/pr-review-gate` 「게이트 오작동 흐름」). 리뷰하지 않았으면 그 스킬부터다. "
+              "마커를 손으로 찍지 마라.\n")
+    return block(why, branch, sha, "", footer)
 
 
 SIMPLE = ("PR 생성은 그 호출의 유일한 명령으로 쓴다 — push·commit은 따로 호출하고, 워크트리면 세션을 옮기거나"
@@ -672,6 +731,9 @@ def main():
     cwd = os.path.normpath(payload.get("cwd") or os.getcwd())
     if not has_pr(command, 0, lx, bases=[cwd] + cd_targets(lx, cwd)):
         return 0
+    # 마커 기록은 PR 생성과 다른 명령이라 아래 모양 판정에서 어차피 막힌다 — 안내만 다르다(이슈 #101)
+    if marker_writes(lx):
+        return bundled_marker(lx, cwd)
 
     d, opts, why = shape(lx, cwd)
     if d is None:
