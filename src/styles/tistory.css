@@ -215,8 +215,12 @@
   min-width: 0;
 }
 
+/* 하위 목록은 basis 100%로 다음 줄에 혼자 서되, **줄일 수 있게(shrink 1)** 둔다.
+   위 .sub_category_list의 왼쪽 마진 3px이 basis 바깥에 더해져, shrink 0이던 때는
+   하위 줄이 트리 상자 오른쪽으로 3px 넘쳤다 — 배지가 상위 배지와 어긋났다(이슈 #122).
+   shrink가 그 마진만큼 폭을 깎아 들이므로 마진 값을 여기 다시 적지 않는다. */
 .side-category li.has-toggle > ul {
-  flex: 0 0 100%;
+  flex: 0 1 100%;
 }
 
 .cat-toggle {
