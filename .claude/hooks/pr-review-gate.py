@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PR 생성 전 코드리뷰 게이트 — PreToolUse(Bash) 훅.
 
-PR 생성 명령을 가로채, **지금 HEAD에 대한 리뷰가 끝났는지**만 본다.
+PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는지**만 본다.
 끝나 있으면 통과시키고, 아니면 exit 2로 막고 무엇을 하라고 알려 준다.
 
 왜 훅인가 — 이 저장소의 사이클은 CLAUDE.md에 적혀 있지만, 적혀 있는 것은
@@ -13,20 +13,39 @@ PR 생성 명령을 가로채, **지금 HEAD에 대한 리뷰가 끝났는지**�
 찍는 순간 "이 커밋을 읽었고 문제가 없다"는 뜻이 되고, 그 문장이 거짓이면
 게이트는 있는 것이 없는 것보다 나쁘다 — 다음 사람이 초록불을 믿는다.
 
+**어느 커밋·어느 마커인가** (이슈 #111). 마커는 체크아웃(워크트리)마다 하나다.
+- 명령 안에서 PR 생성 앞에 `cd`가 있으면 그 디렉터리를 따라간다(앞줄의 `cd`, 상대 경로,
+  따옴표 친 경로 포함). 없으면 훅 입력의 `cwd`.
+- `--head <브랜치>`(`-H`, `소유자:브랜치`)가 있으면 PR이 될 커밋은 **그 브랜치의 끝**이고,
+  마커는 그 브랜치가 체크아웃된 워크트리의 것을 읽는다. 어디에도 체크아웃돼 있지 않으면
+  위에서 정한 체크아웃의 마커다.
+첫 판은 `cwd`의 HEAD·마커만 읽었다. 세션이 메인 체크아웃에 있고 `cd <워크트리> && …`로 PR을
+열면 **메인의** HEAD·마커로 판정해, 메인 마커가 메인 HEAD와 같기만 하면 리뷰하지 않은
+워크트리 브랜치가 통과했다 — 게이트가 열리는 방향이다.
+
+**정하지 못하면 막는다.** `cd "$WT"`·`cd -`·`` cd `…` ``처럼 셸이 돌아야 알 수 있는 대상,
+없는 디렉터리, 로컬에 없는 `--head` 브랜치. 입력을 못 읽는 경우(아래 `main`)와 다르다 —
+그건 게이트가 사고를 만들지 않으려고 열어 두지만, 이건 **PR 생성이 확실한데 무엇을 여는지
+모르는** 경우라 열면 바로 위조 경로가 된다.
+
 ⚠ **명령문 어디에나 있는 문자열을 잡으면 안 된다.** 첫 판에서 정확히 그
 사고를 냈다 — 훅을 설명하는 문서를 heredoc으로 쓰는 명령이 게이트에 막혔다.
 명령을 **실행 위치**에서만 본다: 따옴표 안과 heredoc 본문을 걷어낸 뒤,
 줄머리나 셸 구분자 바로 뒤에 오는 것만 명령으로 친다.
 
-⚠ **알려진 한계 하나** — `strip_heredocs`는 따옴표 상태를 추적하지 않는다.
-따옴표 안의 `<< 단어`를 heredoc 여는 줄로 오인해서, 뒤따르는 줄들을
-종료 태그까지 걷어낸다. 그 안에 PR 생성 명령이 있으면 못 본다.
-"여러 줄 명령 + 앞줄 따옴표 안의 `<<` + 뒤에 PR 생성"이 겹쳐야 하므로
-지금은 파서를 세우지 않고 조건만 적어 둔다. 겹치는 명령을 쓰게 되면 그때 판단한다.
+⚠ **알려진 한계** —
+- `strip_heredocs`는 따옴표 상태를 추적하지 않는다. 따옴표 안의 `<< 단어`를 heredoc 여는
+  줄로 오인해서, 뒤따르는 줄들을 종료 태그까지 걷어낸다. 그 안에 PR 생성 명령이 있으면 못 본다.
+  "여러 줄 명령 + 앞줄 따옴표 안의 `<<` + 뒤에 PR 생성"이 겹쳐야 하므로 조건만 적어 둔다.
+- `cd`는 구분자로 나눈 토막의 **첫 명령**일 때만 따른다. 서브셸 `( cd x )`가 닫힌 뒤에도
+  그 디렉터리에 있다고 본다 — 실제보다 **다른 체크아웃**을 볼 수 있다. 그 체크아웃의 마커가
+  그 체크아웃의 HEAD와 같아야 열리므로, 틀린 쪽은 대개 막히는 방향이다.
+- `git -C`·`GH_REPO`·`--repo`는 보지 않는다.
 """
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -35,6 +54,9 @@ import sys
 # 첫 판이 이걸 빠뜨렸다 — 게이트가 **열리는** 방향의 결함이라 가장 나쁘다.
 CMD = re.compile(r"(?:^|[;&|(\n])\s*(?:\w+=\S*\s+)*gh\s+pr\s+" + "create" + r"\b")
 HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
+# 셸 구분자. 따옴표를 같은 길이의 공백으로 가린 문자열에서 찾으므로 위치가 원문과 맞는다.
+SEP = re.compile(r"&&|\|\||[;|&()\n]")
+ENV = re.compile(r"^\w+=")
 MARKER = ".claude/.pr-review-ok"
 
 
@@ -62,8 +84,12 @@ def strip_heredocs(command):
 
 
 def strip_quoted(command):
-    """따옴표로 감싼 구간을 지운다. `grep "gh pr …"` 같은 언급을 걸러낸다."""
-    return re.sub(r"'[^']*'|\"[^\"]*\"", " ", command)
+    """따옴표로 감싼 구간을 **같은 길이의** 공백으로 가린다.
+
+    `grep "gh pr …"` 같은 언급을 걸러낸다. 길이를 지키는 것은 가린 문자열에서 찾은
+    구분자 위치로 원문을 잘라 `cd "경로"`의 따옴표 친 경로를 되살리기 위해서다.
+    """
+    return re.sub(r"'[^']*'|\"[^\"]*\"", lambda m: " " * len(m.group(0)), command)
 
 
 def git(*args):
@@ -76,6 +102,84 @@ def git(*args):
         return ""
 
 
+def segments(text, masked, end):
+    """`end` 앞까지를 셸 구분자로 나눈 원문 토막들."""
+    out, last = [], 0
+    for m in SEP.finditer(masked, 0, end):
+        out.append(text[last:m.start()])
+        last = m.end()
+    out.append(text[last:end])
+    return out
+
+
+def words(seg):
+    """토막을 셸 단어로. 환경변수 접두는 흘린다. 못 나누면 None."""
+    try:
+        w = shlex.split(seg, posix=True)
+    except ValueError:
+        return None
+    while w and ENV.match(w[0]):
+        w = w[1:]
+    return w
+
+
+def follow_cd(text, masked, start, cwd):
+    """PR 생성 앞의 `cd`를 따라간 디렉터리. 못 풀면 (None, 이유)."""
+    d = cwd
+    for seg in segments(text, masked, start):
+        w = words(seg)
+        if w is None:
+            return None, "PR 생성 앞 명령을 셸 단어로 나누지 못했다: %r" % seg.strip()
+        if not w or w[0] not in ("cd", "pushd"):
+            continue
+        arg = w[1] if len(w) > 1 else "~"
+        if arg == "-" or "$" in arg or "`" in arg:
+            return None, "`%s %s`의 대상은 셸이 돌아야 안다" % (w[0], arg)
+        d = os.path.normpath(os.path.join(d, os.path.expanduser(arg)))
+    if not os.path.isdir(d):
+        return None, "`cd` 대상 디렉터리가 없다: %s" % d
+    return d, None
+
+
+def head_branch(text, masked, start):
+    """PR 생성 명령의 `--head` 값(소유자 접두는 뗀다). 없으면 None."""
+    nxt = SEP.search(masked, start + 1)
+    w = words(text[start:nxt.start() if nxt else len(text)].lstrip(";&|(\n")) or []
+    for i, t in enumerate(w):
+        v = None
+        if t in ("--head", "-H") and i + 1 < len(w):
+            v = w[i + 1]
+        elif t.startswith("--head="):
+            v = t[len("--head="):]
+        if v:
+            return v.split(":")[-1]
+    return None
+
+
+def checkout_of(branch, top):
+    """그 브랜치가 체크아웃된 워크트리 경로. 없으면 None."""
+    path = None
+    for line in git("-C", top, "worktree", "list", "--porcelain").split("\n"):
+        if line.startswith("worktree "):
+            path = line[len("worktree "):]
+        elif line == "branch refs/heads/" + branch:
+            return path
+    return None
+
+
+def block(why, branch, sha, stat):
+    sys.stderr.write(
+        "PR 생성이 게이트에 막혔다. %s\n\n"
+        "브랜치: %s (커밋 %s)\n%s\n\n"
+        "`/pr-review-gate` 스킬을 먼저 실행하라. 리뷰는 `npm run check`와 보는 축이 다르다 —\n"
+        "린트는 규칙의 **존재**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을\n"
+        "재현하는지**를 본다. 차단 항목이 0이 되면 스킬이 마커를 찍고, 그때 통과한다.\n\n"
+        "게이트를 건너뛸 이유가 있으면 사용자에게 확인받아라. 마커를 손으로 찍지 마라.\n"
+        % (why, branch, sha[:8] or "?", stat)
+    )
+    return 2
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -83,48 +187,54 @@ def main():
         return 0  # 입력을 못 읽으면 막지 않는다. 게이트가 사고를 만들면 안 된다
 
     command = (payload.get("tool_input") or {}).get("command") or ""
-    if not CMD.search(strip_quoted(strip_heredocs(command))):
+    text = strip_heredocs(command)
+    masked = strip_quoted(text)
+    found = CMD.search(masked)
+    if not found:
         return 0
 
-    root = payload.get("cwd") or os.getcwd()
-    try:
-        os.chdir(root)
-    except OSError:
-        return 0
+    cwd = payload.get("cwd") or os.getcwd()
+    d, why = follow_cd(text, masked, found.start(), cwd)
+    if d is None:
+        return block("PR이 어느 체크아웃의 커밋인지 정하지 못했다 — %s. 워크트리에서 열려면 세션을 "
+                     "그 워크트리로 옮기거나(EnterWorktree) `cd`에 경로를 그대로 쓴다." % why,
+                     "?", "", "")
+    top = git("-C", d, "rev-parse", "--show-toplevel")
+    if not top:
+        if d == os.path.normpath(cwd):
+            return 0  # cwd가 저장소가 아니다 — 첫 판부터의 동작
+        return block("`cd` 대상이 git 저장소가 아니다: %s." % d, "?", "", "")
 
-    head = git("rev-parse", "HEAD")
-    if not head:
-        return 0  # 저장소가 아니다
+    branch = head_branch(text, masked, found.start())
+    if branch:
+        sha = git("-C", top, "rev-parse", "--verify", "-q", "refs/heads/%s^{commit}" % branch)
+        if not sha:
+            return block("`--head %s` 브랜치가 로컬에 없어 무엇이 PR이 되는지 확인할 수 없다." % branch,
+                         branch, "", "")
+        where = checkout_of(branch, top) or top
+    else:
+        sha = git("-C", top, "rev-parse", "HEAD")
+        if not sha:
+            return 0  # 커밋이 없는 저장소
+        branch = git("-C", top, "rev-parse", "--abbrev-ref", "HEAD") or "?"
+        where = top
 
     try:
-        with open(os.path.join(root, MARKER), encoding="utf-8") as f:
+        with open(os.path.join(where, MARKER), encoding="utf-8") as f:
             reviewed = f.read().strip()
     except OSError:
         reviewed = ""
 
-    if reviewed == head:
+    if reviewed == sha:
         return 0
 
-    branch = git("rev-parse", "--abbrev-ref", "HEAD") or "?"
-    stat = git("diff", "--stat", "main...HEAD") or "(main과의 차이를 못 읽었다)"
+    stat = git("-C", where, "diff", "--stat", "main..." + sha) or "(main과의 차이를 못 읽었다)"
     if reviewed:
-        why = "마커는 %s에 찍혀 있는데 HEAD는 %s다 — 리뷰 뒤에 커밋이 더 쌓였다." % (
-            reviewed[:8],
-            head[:8],
-        )
+        why = "%s의 마커는 %s에 찍혀 있는데 PR이 될 커밋은 %s다 — 리뷰 뒤에 커밋이 더 쌓였거나 다른 브랜치의 마커다." % (
+            where, reviewed[:8], sha[:8])
     else:
-        why = "이 저장소에 리뷰 마커가 없다 — 이 브랜치는 아직 리뷰되지 않았다."
-
-    sys.stderr.write(
-        "PR 생성이 게이트에 막혔다. %s\n\n"
-        "브랜치: %s (HEAD %s)\n%s\n\n"
-        "`/pr-review-gate` 스킬을 먼저 실행하라. 리뷰는 `npm run check`와 보는 축이 다르다 —\n"
-        "린트는 규칙의 **존재**를 보고, 리뷰는 그 규칙이 이 변경에서 **실제 조건을\n"
-        "재현하는지**를 본다. 차단 항목이 0이 되면 스킬이 마커를 찍고, 그때 통과한다.\n\n"
-        "게이트를 건너뛸 이유가 있으면 사용자에게 확인받아라. 마커를 손으로 찍지 마라.\n"
-        % (why, branch, head[:8], stat)
-    )
-    return 2
+        why = "%s에 리뷰 마커가 없다 — 이 브랜치는 아직 리뷰되지 않았다." % where
+    return block(why, branch, sha, stat)
 
 
 if __name__ == "__main__":
