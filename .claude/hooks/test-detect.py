@@ -10,16 +10,17 @@
   `npm run check`의 결과가 게이트 상태에 따라 달라지는 검사는 검사가 아니다.
   그래서 마커 세 상태(없음 · HEAD와 같음 · 다름)를 각각 만들어 본다.
 
-⚠ 이슈 #111에서 더한 셋 — 전부 **옛 훅에 돌려 새는 것을 확인한** 케이스다(41건 실패, 30건이 열리는 방향).
-  - `BLOCK` 뒤쪽 9개: 탐지 구멍. 주석 속 `don't`·`\\"`가 PR 명령까지 가렸고, `<<<`를 heredoc으로 봤고,
-    `then`·`command`·경로 gh·`gh pr new`·`pr`과 동사 사이 플래그를 명령으로 못 봤다.
+⚠ 이슈 #111에서 더한 셋 — 옛 훅에 돌리면 59건 실패, 그중 49건이 막아야 할 것을 통과시킨다.
+  - `BLOCK` 뒤쪽 17개: 탐지 구멍. 주석 속 `don't`·`\\"`가 PR 명령까지 가렸고, `<<<`·하이픈 태그를 잘못 봤고,
+    `then`·`command`·경로 gh·`gh pr new`·`pr`과 동사 사이 플래그·래퍼(`timeout`·`xargs`·`sudo -u`·`env -i`)
+    뒤를, 큰따옴표 속 `$( … )`·백틱(셸이 실행한다)을 명령으로 못 봤다.
   - `REVIEWED_CASES`: 마커 == HEAD인 저장소. 같은 명령 안에서 HEAD를 움직이거나(`git commit -am x && …`)
     다른 커밋을 원격에 올리면 리뷰한 커밋으로 판정하고 다른 것이 PR이 된다 — 막아야 한다.
     실제로 쓰는 모양은 **열려야** 한다 — 막히면 게이트를 우회하고 싶어진다.
   - `WT_CASES`·`PARENT_CASES`: 세션 cwd는 메인, 명령의 `cd`·`--head`가 워크트리 브랜치를 PR로 연다.
     워크트리 경로에 공백을 넣어 따옴표 친 `cd` 경로도 본다. 고치는 동안 내 판들이 M·O·Q·R·T에서 다시
-    열렸고(리뷰 게이트에서 찾음), V~f는 빌트인 코드 리뷰가 손으로 짚은 것이다 — 「따라가는 형태」를
-    넓힐 때마다 샜다. 그래서 훅은 모르면 막는다.
+    열렸고(리뷰 게이트에서 찾음), V~f는 빌트인 코드 리뷰 1차가 손으로, g~o는 2차가 실행해서 짚은 것이다 —
+    「따라가는 형태」를 넓힐 때마다 샜다. 그래서 훅은 **허용 목록** 밖을 막는다(P·S도 그래서 막힌다).
 """
 import json
 import os
@@ -68,6 +69,15 @@ BLOCK = [
     ("역슬래시 gh", "\\" + G + " --fill"),
     ("경로 gh", "/usr/bin/" + G + " --fill"),
     ("pr과 create 사이 플래그", "gh pr -R o/r " + "create --fill"),
+    # 2차 코드 리뷰가 실행해 확인한 것 — 큰따옴표 속 $( )·백틱은 셸이 실행한다, 래퍼, 하이픈 heredoc 태그
+    ("큰따옴표 속 $( )", 'url="$(' + G + ' --fill)"'),
+    ("echo 속 $( )", 'echo "PR: $(' + G + ' --fill)"'),
+    ("백틱", "url=`" + G + " --fill`"),
+    ("timeout 래퍼", "timeout 60 " + G + " --fill"),
+    ("xargs 래퍼", "echo | xargs " + G + " --fill"),
+    ("sudo -u 래퍼", "sudo -u me " + G + " --fill"),
+    ("env -i 래퍼", "env -i PATH=/usr/bin " + G + " --fill"),
+    ("하이픈 heredoc 태그", "cat <<END-X\nhi\nEND-X\n" + G + " --fill"),
 ]
 
 PASS = [
@@ -107,12 +117,14 @@ WT_CASES = [
     # 서브셸 안의 cd는 닫히면 끝난다 — PR은 메인 체크아웃의 브랜치다. 서브셸을 안 따지면
     # 리뷰된 워크트리의 마커로 판정해 메인의 미리뷰 브랜치가 열렸다
     ("WT-O 닫힌 서브셸의 cd · 메인 미리뷰", None, "HEAD", '(cd "<WT>" && git push) && ' + G, 2),
-    ("WT-P 서브셸 안의 cd 뒤 PR · 리뷰됨", None, "HEAD", '(cd "<WT>" && ' + G + ")", 0),
+    # P·S는 셸로는 리뷰된 워크트리에서 도는 것이 맞지만 막는다 — 허용 목록 밖의 구조(서브셸·묶음)다.
+    # 「따라가는 형태」를 넓힐 때마다 샜다(서브셸이 닫힌 뒤·함수 본문·case 패턴). 맨 앞 cd 한 줄로 쓴다.
+    ("WT-P 서브셸 안의 cd 뒤 PR(허용 목록 밖)", None, "HEAD", '(cd "<WT>" && ' + G + ")", 2),
     # 조건·반복·eval 안의 cd는 돌았는지 셸만 안다 — 막는다. 메인이 리뷰돼 있어도 막혀야 한다
     ("WT-Q 조건 안의 cd", "HEAD", "HEAD", 'if true; then cd "<WT>"; fi; ' + G, 2),
     ("WT-R eval 안의 cd", "HEAD", "HEAD", "eval cd /tmp && " + G, 2),
     # 중괄호 묶음은 서브셸이 아니다 — cd가 남는다
-    ("WT-S { cd; } 묶음 · 리뷰됨", None, "HEAD", '{ cd "<WT>"; } && ' + G, 0),
+    ("WT-S { cd; } 묶음(허용 목록 밖)", None, "HEAD", '{ cd "<WT>"; } && ' + G, 2),
     # $( … ) 안의 구분자는 PR 명령의 끝이 아니다
     ("WT-T $(…;…) 뒤 --head · 미리뷰", "HEAD", None, G + " --body $(cat f; echo x) --head wt", 2),
     ("WT-U builtin cd 워크트리 · 미리뷰", "HEAD", None, 'builtin cd "<WT>" && ' + G, 2),
@@ -127,6 +139,16 @@ WT_CASES = [
     ("WT-c 붙은 -Hwt", "HEAD", None, G + " -Hwt --fill", 2),
     ("WT-d -H=wt", "HEAD", None, G + " -H=wt --fill", 2),
     ("WT-e 붙은 -Hwt · 리뷰됨", None, "HEAD", G + " -Hwt --fill", 0),
+    # 2차 코드 리뷰가 실행해 확인한 것 — 안 도는 cd(키워드·연산자가 앞줄 끝에), PR 생성 둘, --head 둘
+    ("WT-g then\\n cd", None, "HEAD", 'if false; then\n  cd "<WT>"\nfi\n' + G, 2),
+    ("WT-h case 패턴 뒤 cd", None, "HEAD", 'case x in nope) cd "<WT>";; esac; ' + G, 2),
+    ("WT-i 함수 본문 cd", None, "HEAD", 'f() {\n cd "<WT>"\n}\n' + G, 2),
+    ("WT-j do\\n cd", None, "HEAD", 'while false\ndo\n cd "<WT>"\ndone\n' + G, 2),
+    ("WT-k &&\\n cd", None, "HEAD", 'false &&\n cd "<WT>"\n' + G, 2),
+    ("WT-l PR 생성 둘 — 둘째가 미리뷰", "HEAD", None, G + " --fill && " + G + " --head wt", 2),
+    ("WT-m PR 생성 둘 — 둘째가 cd 뒤", "HEAD", None, G + ' --fill; cd "<WT>" && ' + G + " --fill", 2),
+    ("WT-n --head 둘(gh는 마지막을 쓴다)", None, "HEAD", G + " --head wt --head main", 2),
+    ("WT-o cd || exit 1 · 리뷰됨", None, "HEAD", 'cd "<WT>" || exit 1\n' + G, 0),
 ]
 
 # 리뷰를 마친 저장소(마커 == HEAD)에서 — (이름, 명령, 기대 rc).
@@ -146,6 +168,21 @@ REVIEWED_CASES = [
     ("실사용 — URL 원격 푸시", "git push https://github.com/o/r.git main && " + G, 0),
     ("실사용 — 앞줄 주석의 아포스트로피", "# don't forget\n" + G + " --fill", 0),
     ("실사용 — 줄 이음", G + " --base main \\\n  --title t \\\n  --fill", 0),
+    # 2차 코드 리뷰가 실행해 확인한 것 — HEAD를 움직이는 명령이 키워드·래퍼·경로·전역 옵션 뒤에 숨는다
+    ("if 조건의 git commit", "if git commit -qam x; then " + G + "; fi", 2),
+    ("경로 git commit", "/usr/bin/git commit -qam x && " + G, 2),
+    ("timeout git commit", "timeout 60 git commit -qam x && " + G, 2),
+    ("env git commit", "env git commit -qam x && " + G, 2),
+    ("git --git-dir 옵션 뒤 commit", "git --git-dir .git commit -qam x && " + G, 2),
+    ("git bisect", "git bisect start HEAD HEAD~ && " + G, 2),
+    ("git stash branch", "git stash branch x && " + G, 2),
+    ("gh pr checkout", "gh pr checkout 3 && " + G, 2),
+    ("$( ) 속 git commit", 'x="$(git commit -qam x)" && ' + G, 2),
+    # 2차 코드 리뷰 — 막으면 안 되는 실사용 모양
+    ("실사용 — cd . || exit 1", "cd . || exit 1; " + G + " --fill", 0),
+    ("실사용 — cd -P .", "cd -P . && " + G + " --fill", 0),
+    ("실사용 — 같은 이름 refspec", "git push -u origin main:main && " + G + " --fill", 0),
+    ("실사용 — HEAD:현재 브랜치", "git push -u origin HEAD:main && " + G + " --fill", 0),
 ]
 
 # cwd가 저장소가 아닌데 --head를 준다 — 무엇이 PR이 될지 이 저장소로 확인할 수 없다(코드 리뷰)
