@@ -23,7 +23,7 @@
 // 같은 ❔로 내면 그것이 위조된 통과 신호다(docs/HARNESS.md 「핵심 위험」, 2026-10-09 코드 리뷰).
 //
 // `--self-test`: 라이브 페이지에 각 조건을 깨는 CSS를 주입해 **기준(주입 없음)과 다른 실패**가 나오는지
-// 라이트에서 1440·390 둘 다 본다. 이미 실패하는 항목(⑤ — #122)은 「주입하니 실패」가 아무 증거도 아니라서다.
+// 라이트에서 1440·390 둘 다 본다. 기준에서 이미 실패하는 항목(⑤가 #122를 고쳐 배포하기 전까지 그랬다)은 「주입하니 실패」가 아무 증거도 아니라서다.
 
 import { spawn } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
