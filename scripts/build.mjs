@@ -8,15 +8,28 @@
 //
 //   node scripts/build.mjs
 //   node scripts/build.mjs --watch
+//
+// ⚠ 동시 실행(이슈 #100). 예전에는 `rm(dist)`부터 하고 그 자리에 파일을 하나씩 썼다 — 두 빌드가 겹치면 서로의
+// 산출물을 지우며 ENOTEMPTY·ENOENT로 죽었고(12회 중 4회), 빌드 하나만 돌아도 그동안 dist/style.css를 읽는 쪽은
+// 파일이 **없는** 순간을 만났다(10/10). 막는 것이 「한 번에 한 곳에서만」이라는 산문뿐이었다. 지금은
+//   · 잠금 `.dist.lock`(pid) — 다른 빌드가 쥐고 있으면 기다리고, 그 pid가 죽었으면 치운다
+//   · 임시 폴더 `.dist.tmp-<pid>`에 빌드한 뒤 dist/로 **파일마다 rename**(원자 교체)하고 새 빌드에 없는 옛 파일을 지운다 —
+//     읽는 쪽은 옛 파일 아니면 새 파일을 온전히 본다. 없음·잘림이 없다
+//   · 실패하면 dist/를 지운다 — 옛 산출물이 남으면 다음 린트·프리뷰가 그것을 읽고 통과한다
+// `scripts/test-build-lock.mjs`(npm run check)가 실제로 겹쳐 돌려 이 셋을 본다.
 
-import { readFile, writeFile, mkdir, readdir, rm, cp, stat } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { readFile, writeFile, mkdir, readdir, rm, cp, stat, rename } from 'node:fs/promises'
+import { existsSync, linkSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 const ROOT = process.cwd()
 const SRC = path.join(ROOT, 'src')
 const DIST = path.join(ROOT, 'dist')
 const WATCH = process.argv.includes('--watch')
+const LOCK = path.join(ROOT, '.dist.lock')
+const LOCK_TIMEOUT_MS = Number(process.env.LOCK_TIMEOUT_MS) || 120_000
+const TMP = path.join(ROOT, `.dist.tmp-${process.pid}`)
+let OUT = TMP   // 이번 실행이 쓰는 곳. run()이 끝나면 DIST로 옮긴다
 
 // 순서가 곧 특이도 순서다. 임의로 바꾸지 않는다.
 const CSS_ORDER = ['tokens', 'base', 'layout', 'content', 'tistory', 'components']
@@ -86,7 +99,7 @@ async function placeholderVars() {
     svg.push(`  --ph-${slug}-svg: url("data:image/svg+xml;base64,${Buffer.from(motif, 'utf8').toString('base64')}");`)
     for (const theme of ['light', 'dark']) {
       const out = `ph-${slug}-${theme}.v${version}.webp`
-      await cp(path.join(dir, bySlug[slug][theme]), path.join(DIST, 'images', out))
+      await cp(path.join(dir, bySlug[slug][theme]), path.join(OUT, 'images', out))
       phCount++
       ;(theme === 'light' ? light : dark).push(`  --ph-${slug}: url("${PLACEHOLDER_BASE}${out}");`)
     }
@@ -305,8 +318,8 @@ async function buildJs() {
   try {
     ({ build } = await import('esbuild'))
   } catch {
-    console.error('\n  ❌ esbuild가 없다. 먼저 의존성을 설치하라:\n\n     npm install\n')
-    process.exit(1)
+    // exit하지 않고 던진다 — run()이 잠금을 풀고 dist/를 지우게
+    throw new Error('esbuild가 없다. 먼저 의존성을 설치하라:\n\n     npm install')
   }
   const r = await build({
     entryPoints: [entry],
@@ -316,24 +329,116 @@ async function buildJs() {
   return r.outputFiles[0].text
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+let held = false
+
+function alive(pid) {
+  try { process.kill(pid, 0); return true } catch (e) { return e.code === 'EPERM' }
+}
+
+/** `.dist.lock`을 쥔다. 파일은 pid를 다 쓴 뒤 link로 만든다 — 빈 잠금(쓰는 중)을 「죽은 잠금」으로 오인하지 않게.
+ *  알려진 한계: 죽은 잠금을 둘이 동시에 치우면 늦은 쪽이 먼저 쥔 쪽의 새 잠금을 지울 수 있다(크래시 뒤에만 생긴다). */
+async function acquire() {
+  const start = Date.now()
+  const mine = `${LOCK}.${process.pid}`
+  writeFileSync(mine, String(process.pid))
+  try {
+    for (;;) {
+      try { linkSync(mine, LOCK); held = true; return } catch (e) { if (e.code !== 'EEXIST') throw e }
+      let pid = NaN
+      try { pid = Number(readFileSync(LOCK, 'utf8').trim()) } catch { continue }  // 그 사이 풀렸다
+      if (!Number.isInteger(pid) || pid <= 0 || !alive(pid)) {
+        console.warn(`  [잠금] 죽은 프로세스(pid ${pid})의 ${path.basename(LOCK)}을 치운다`)
+        try { unlinkSync(LOCK) } catch {}
+        continue
+      }
+      if (Date.now() - start > LOCK_TIMEOUT_MS) {
+        throw new Error(`다른 빌드(pid ${pid})가 dist/를 쓰는 중이다 — ${LOCK_TIMEOUT_MS / 1000}초 기다렸다.\n` +
+                        `     그 프로세스가 없는데도 이렇다면 ${path.basename(LOCK)}을 지운다`)
+      }
+      await sleep(100)
+    }
+  } finally {
+    rmSync(mine, { force: true })
+  }
+}
+
+function release() {
+  if (!held) return
+  held = false
+  try { if (readFileSync(LOCK, 'utf8').trim() === String(process.pid)) unlinkSync(LOCK) } catch {}
+}
+
+// Ctrl+C·kill로 끝나도 잠금과 임시 폴더를 남기지 않는다
+process.on('exit', () => { release(); rmSync(TMP, { recursive: true, force: true }) })
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => process.exit(130))
+
+/** from의 파일을 to로 하나씩 rename(같은 파일시스템이라 원자적이다)하고, from에 없던 to의 파일을 지운다. */
+async function publish(from, to) {
+  const fresh = new Set()
+  const move = async (rel) => {
+    await mkdir(path.join(to, rel), { recursive: true })
+    for (const e of await readdir(path.join(from, rel), { withFileTypes: true })) {
+      const r = path.join(rel, e.name)
+      if (e.isDirectory()) { await move(r); fresh.add(r); continue }
+      try {
+        await rename(path.join(from, r), path.join(to, r))
+      } catch (err) {
+        if (err.code !== 'EISDIR' && err.code !== 'ENOTEMPTY' && err.code !== 'ENOTDIR') throw err
+        await rm(path.join(to, r), { recursive: true, force: true })  // 같은 이름의 폴더가 있었다
+        await rename(path.join(from, r), path.join(to, r))
+      }
+      fresh.add(r)
+    }
+  }
+  const prune = async (rel) => {
+    for (const e of await readdir(path.join(to, rel), { withFileTypes: true })) {
+      const r = path.join(rel, e.name)
+      if (fresh.has(r)) { if (e.isDirectory()) await prune(r); continue }
+      await rm(path.join(to, r), { recursive: true, force: true })
+    }
+  }
+  await move('')
+  await prune('')
+}
+
 async function run() {
-  await rm(DIST, { recursive: true, force: true })
-  await mkdir(path.join(DIST, 'images'), { recursive: true })
+  await acquire()
+  try {
+    await rm(TMP, { recursive: true, force: true })
+    OUT = TMP
+    await buildInto()
+    await publish(TMP, DIST)
+  } catch (e) {
+    // 옛 산출물을 남기지 않는다 — 실패 뒤 `npm run lint`·프리뷰가 그것을 읽고 통과하면 위조된 통과 신호다
+    await rm(DIST, { recursive: true, force: true })
+    throw new Error(e.message + '\n     (dist/를 지웠다 — 실패한 빌드 뒤에 옛 산출물을 남기지 않는다)')
+  } finally {
+    await rm(TMP, { recursive: true, force: true })
+    release()
+  }
+  report()
+}
+
+let summary = null
+
+async function buildInto() {
+  await mkdir(path.join(OUT, 'images'), { recursive: true })
 
   // skin.html은 치환자가 있으므로 어떤 변환도 하지 않는다.
   // HTML 파서는 <s_list_rep>를 알 수 없는 태그로 보고 재배치하거나 제거할 수 있다.
   const skin = await readIf(path.join(SRC, 'skin.html'))
-  if (skin) await writeFile(path.join(DIST, 'skin.html'), skin)
+  if (skin) await writeFile(path.join(OUT, 'skin.html'), skin)
   else console.warn('  [건너뜀] src/skin.html 없음')
 
   const xml = await readIf(path.join(SRC, 'index.xml'))
-  if (xml) await writeFile(path.join(DIST, 'index.xml'), xml)
+  if (xml) await writeFile(path.join(OUT, 'index.xml'), xml)
 
   const css = await buildCss()
-  if (css) await writeFile(path.join(DIST, 'style.css'), css)
+  if (css) await writeFile(path.join(OUT, 'style.css'), css)
 
   const js = await buildJs()
-  if (js) await writeFile(path.join(DIST, 'images', 'script.js'), js)
+  if (js) await writeFile(path.join(OUT, 'images', 'script.js'), js)
 
   // 용량 예산(결정 51). 조용히 커지는 것을 막는다 — 넘으면 무엇을 뺄지 정하고 예산을 고친다.
   const cssBytes = css ? Buffer.byteLength(css) : 0
@@ -346,10 +451,16 @@ async function run() {
   // 스킨 미리보기 이미지가 있으면 스킨 **루트**로 복사한다.
   // 티스토리는 여기서 찾는다 — images/ 아래가 아니다.
   const prev = path.join(SRC, 'preview')
-  if (existsSync(prev)) await cp(prev, DIST, { recursive: true })
+  if (existsSync(prev)) await cp(prev, OUT, { recursive: true })
 
+  summary = { skin, css, js, xml, cssBytes, jsBytes }
+}
+
+// 보고는 dist/로 옮긴 뒤 dist/를 보고 한다 — 실제로 올라갈 것을 센다
+function report() {
+  const { skin, css, js, xml, cssBytes, jsBytes } = summary
   const uploads = existsSync(path.join(DIST, 'images'))
-    ? (await readdir(path.join(DIST, 'images'))).length : 0
+    ? readdirSync(path.join(DIST, 'images')).length : 0
   console.log(`\n  dist/  skin.html ${skin ? '✓' : '—'}  style.css ${css ? (cssBytes / 1024).toFixed(1) + 'KB' : '—'}  script.js ${js ? (jsBytes / 1024).toFixed(1) + 'KB' : '—'}` +
               `  index.xml ${xml ? '✓' : '—'}  images/ ${uploads}개` +
               `  preview ${existsSync(path.join(DIST, 'preview.gif')) ? '✓' : '—'}`)
