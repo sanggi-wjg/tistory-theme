@@ -62,7 +62,8 @@ PR을 열면 메인의 것으로 판정했다 — 메인 마커가 메인 HEAD�
 
 남은 것은 일부러 감싸야 생기는 모양이거나 훅이 원리적으로 못 보는 곳이다.
 - 사용자 프로필의 함수·별칭, 셸 이름을 바꾼 사본(`/tmp/x -c …`), 셸이 아닌 실행기(python `subprocess`·
-  `npm run`·`make`) 안의 PR 생성. 경로가 변수인 스크립트(`bash "$X"`).
+  `npm run`·`make`) 안의 PR 생성. 경로가 변수인 스크립트(`bash "$X"`), 표준 입력으로 먹이는 스크립트
+  (`bash < x.sh`·`cat x.sh | bash`), shebang도 `.sh`도 없이 실행하는 파일, `gh api -F query=@파일`.
 - 판정과 PR 생성 사이에 다른 프로세스가 브랜치·원격을 바꾸는 경우(동시 작업).
 - 저장소에 원격이 여럿일 때 gh가 고르는 기본 저장소(`gh repo set-default`) — 훅은 브랜치의 원격으로 판정한다.
 - 웹 UI·`curl`로 여는 PR. 훅을 지나지 않거나 문자열 검사로 못 본다.
@@ -300,7 +301,8 @@ WRAPPERS = {"env", "command", "exec", "sudo", "nohup", "time", "timeout", "nice"
 def command_index(w):
     """환경변수 접두와 래퍼(`env`·`timeout 60`·`sudo -u x` …)를 건너뛴 명령 낱말의 위치."""
     i = 0
-    while i < len(w) and (re.match(r"^\w+=", w[i]) or w[i] in WRAPPERS or w[i].startswith("-") or w[i].isdigit()):
+    while i < len(w) and (re.match(r"^\w+=", w[i]) or w[i] in WRAPPERS or w[i].startswith("-")
+                          or re.fullmatch(r"\d+(?:\.\d+)?[smhd]?", w[i])):  # `timeout 5m`
         i += 1
     return i
 
@@ -329,7 +331,7 @@ def body_subs(body):
     return Lexed('"' + body.replace('"', '\\"') + '"').subs
 
 
-SHELL_VALUE_OPTS = {"-o", "+o", "-O", "+O", "--rcfile", "--init-file"}
+SHELL_VALUE_LONG = {"--rcfile", "--init-file"}
 
 
 def script_path(w):
@@ -348,7 +350,8 @@ def script_path(w):
         while j < len(w) and w[j][:1] in "-+" and w[j] not in ("-", "--"):
             if not w[j].startswith("--") and ("c" in w[j][1:] or "s" in w[j][1:]):
                 return None  # -c는 shell_script가, -s(표준 입력)는 셸에 먹이는 heredoc이 본다
-            j += 2 if w[j] in SHELL_VALUE_OPTS else 1
+            # 값을 받는 `-o`·`-O`는 묶음 끝에 와도 다음 낱말이 값이다(`bash -euo pipefail x.sh`)
+            j += 2 if w[j] in SHELL_VALUE_LONG or (not w[j].startswith("--") and w[j][-1] in "oO") else 1
         j += 1 if j < len(w) and w[j] == "--" else 0
         return (w[j], False) if j < len(w) else None
     if "/" in w[i]:
@@ -357,7 +360,8 @@ def script_path(w):
 
 
 def read_script(path, need_shebang, bases):
-    """스크립트 본문. 경로를 못 풀거나(`$`), 없거나, 셸 스크립트가 아니면 None — PR 생성이 확실하지 않으니 막지 않는다."""
+    """(실제 경로, 스크립트 본문). 경로를 못 풀거나(`$`), 없거나, 셸 스크립트가 아니면 None —
+    PR 생성이 확실하지 않으니 막지 않는다."""
     if "$" in path or "`" in path:
         return None
     path = os.path.expanduser(path)
@@ -381,13 +385,13 @@ def read_script(path, need_shebang, bases):
                     argv = [a for a in argv[1:] if not a.startswith("-")]
                 if not argv or argv[0].rsplit("/", 1)[-1] not in SHELLS:
                     continue
-        return text
+        return os.path.realpath(f), text
     return None
 
 
 API_VALUE = {"-X", "--method", "-f", "--raw-field", "-F", "--field", "-H", "--header", "--input", "-q", "--jq",
              "-t", "--template", "--cache", "-p", "--preview", "--hostname"}
-PULLS = re.compile(r"/?repos/[^/]+/[^/]+/pulls/?(?:\?.*)?")
+PULLS = re.compile(r"(?:https?://[^/]+(?:/api/v3)?)?/?repos/[^/]+/[^/]+/pulls/?(?:\?.*)?")
 
 
 def is_api_pr(w):
@@ -427,8 +431,12 @@ def is_api_pr(w):
     return False
 
 
-def has_pr(command, depth=0, lx=None, bases=()):
-    """이 명령 어딘가에서 PR 생성이 도는가. 모르면 참. bases: 상대 경로 스크립트를 찾을 디렉터리들."""
+def has_pr(command, depth=0, lx=None, bases=(), seen=frozenset()):
+    """이 명령 어딘가에서 PR 생성이 도는가. 모르면 참.
+
+    bases: 상대 경로 스크립트를 찾을 디렉터리들. seen: 이미 연 스크립트 — 자기를 `source`하는 스크립트가
+    깊이 한도에 닿아 「모르면 참」으로 막히지 않게 한 번만 본다.
+    """
     if depth > 8:
         return True
     lx = lx or Lexed(command)
@@ -445,19 +453,23 @@ def has_pr(command, depth=0, lx=None, bases=()):
         if is_pr_words(w) or is_api_pr(w):
             return True
         script = shell_script(w)
-        if script is not None and has_pr(script, depth + 1, bases=bases):
+        if script is not None and has_pr(script, depth + 1, bases=bases, seen=seen):
             return True
         found = script_path(w)
-        text = found and read_script(found[0], found[1], bases)
-        if text is not None and has_pr(text, depth + 1, bases=bases):
-            return True
+        read = found and read_script(found[0], found[1], bases)
+        if read and read[0] not in seen:
+            # 스크립트 안의 상대 경로는 그 스크립트의 디렉터리(`cd "$(dirname "$0")"`)나 안의 `cd <리터럴>` 대상일 수 있다
+            inner = list(bases) + [os.path.dirname(read[0])]
+            inner += cd_targets(Lexed(read[1]), bases[0] if bases else inner[-1])
+            if has_pr(read[1], depth + 1, bases=inner, seen=seen | {read[0]}):
+                return True
         fed = command_word(w) in SHELLS  # 명령 낱말이 셸일 때만 — `--label sh`는 아니다
         for pos, quoted, body in lx.docs:
-            if a <= pos < b and fed and has_pr(body, depth + 1, bases=bases):
+            if a <= pos < b and fed and has_pr(body, depth + 1, bases=bases, seen=seen):
                 return True
-    if any(has_pr(s, depth + 1, bases=bases) for s in lx.subs):
+    if any(has_pr(s, depth + 1, bases=bases, seen=seen) for s in lx.subs):
         return True
-    return any(has_pr(s, depth + 1, bases=bases)
+    return any(has_pr(s, depth + 1, bases=bases, seen=seen)
                for _p, quoted, body in lx.docs if not quoted for s in body_subs(body))
 
 
@@ -596,8 +608,11 @@ def remote_tip(top, remote, name):
 
     추적 ref는 마지막 fetch·push 때의 값이다 — 그 뒤 남이 원격 브랜치를 밀면 낡은 값으로 통과했고, 다른 곳에서
     푸시해 추적 ref가 없으면 푸시했는데도 막았다(이슈 #114). 원격을 못 읽으면 PR 생성도 못 하므로 막는다.
+
+    ⚠ 제한 시간은 `.claude/settings.json`의 훅 timeout(15초)보다 **짧아야** 한다. 훅이 먼저 죽으면 종료 코드 2로
+    끝나지 않으니 차단이 아니다(실측은 안 했다) — 느린 네트워크가 곧 게이트 우회가 된다. 여기서 끊고 막는다.
     """
-    ok, out = git_ok("-C", top, "ls-remote", remote, "refs/heads/" + name, timeout=20)
+    ok, out = git_ok("-C", top, "ls-remote", remote, "refs/heads/" + name, timeout=8)
     sha = next((ln.split("\t", 1)[0] for ln in out.splitlines() if ln.endswith("\trefs/heads/" + name)), "")
     return ok, sha
 
@@ -698,7 +713,8 @@ def main():
     # PR이 열릴 저장소 — `--repo`, 없으면 훅 프로세스 환경의 GH_REPO. 판정한 원격과 같아야 한다(이슈 #114)
     target = opts["repo"] or os.environ.get("GH_REPO", "")
     if target:
-        mine = slug(git("-C", top, "config", "remote.%s.url" % remote))
+        # `push -u <URL> wt`이면 branch.wt.remote가 이름이 아니라 URL이다
+        mine = slug(git("-C", top, "config", "remote.%s.url" % remote)) or slug(remote)
         if not mine or slug(target) != mine:
             return block("PR을 `%s`에 연다 — 판정한 원격 `%s`(%s)와 다른 저장소다. 그 저장소의 브랜치는 여기서 "
                          "대조할 수 없다." % (target, remote, mine or "주소를 못 읽음"), branch, sha)

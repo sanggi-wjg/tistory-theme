@@ -20,6 +20,8 @@
 
 ⚠ 이슈 #114에서 「알려진 한계」 중 고칠 수 있는 넷에 케이스 25개를 더했다 — 스크립트 파일 속 PR 생성, `gh api`,
   `--repo`·`GH_REPO`, 낡은 추적 ref. 옛 훅에 돌려 16건 실패(15건이 막아야 할 것을 통과)를 확인하고 고쳤다.
+  리뷰에서 7개를 더 더했다(자기를 source하는 스크립트의 오탐, `-euo pipefail`, 스크립트 안의 `cd`·자기 디렉터리,
+  `timeout 5m`, 전체 URL `gh api`, URL로 `push -u`한 브랜치) — 첫 커밋의 훅에 돌려 7건 모두 실패를 확인했다.
 """
 import json
 import os
@@ -69,6 +71,10 @@ def write_scripts(d):
     files = {
         "pr.sh": G + " --fill\n",
         "outer.sh": "echo start\nsource pr.sh\n",
+        "sub/pr2.sh": G + " --fill\n",
+        "outer-cd.sh": "cd sub && bash pr2.sh\n",
+        "sub/rel.sh": 'cd "$(dirname "$0")"\nbash pr2.sh\n',
+        "self.sh": "[ -n \"$DONE\" ] || { DONE=1; source self.sh; }\necho hi\n",
         "mention.sh": 'echo "' + G + ' 는 게이트가 막는다"\n',
         "pr-run": "#!/usr/bin/env bash\nset -e\n" + G + " --fill\n",
         "tool.py": "#!/usr/bin/env python3\nimport subprocess\nsubprocess.run('" + G + "'.split())\n",
@@ -260,6 +266,12 @@ REVIEWED_CASES = [
     ("스크립트가 source한 스크립트", "bash outer.sh", 2),
     ("cd 뒤 상대 경로 스크립트", "cd sub && bash ../pr.sh", 2),
     ("스크립트 속 언급만", "bash mention.sh", 0),
+    ("자기를 source하는 스크립트(깊이 한도로 막지 않는다)", "bash self.sh", 0),
+    # 코드 리뷰 — 묶음 끝의 -o, 스크립트 안의 cd·자기 디렉터리, 단위 붙은 timeout
+    ("bash -euo pipefail pr.sh", "bash -euo pipefail pr.sh", 2),
+    ("스크립트 안의 cd 뒤 스크립트", "bash outer-cd.sh", 2),
+    ("스크립트 디렉터리 기준 상대 경로", "bash sub/rel.sh", 2),
+    ("timeout 5m bash pr.sh", "timeout 5m bash pr.sh", 2),
     ("python 실행 파일(셸 아님)", "./tool.py", 0),
     ("없는 스크립트", "bash nope.sh", 0),
     # 이슈 #114 — gh api로 여는 PR
@@ -267,6 +279,7 @@ REVIEWED_CASES = [
     ("gh api -X POST pulls --input", "gh api -X POST 'repos/{owner}/{repo}/pulls' --input b.json", 2),
     ("gh api graphql createPullRequest",
      "gh api graphql -f query='mutation { create" + "PullRequest(input: {}) { clientMutationId } }'", 2),
+    ("gh api 전체 URL pulls(POST)", "gh api https://api.github.com/repos/o/r/pulls -f title=t", 2),
     ("gh api pulls 목록", "gh api repos/o/r/pulls --jq '.[].number'", 0),
     ("gh api -X GET pulls -f state", "gh api -X GET repos/o/r/pulls -f state=closed", 0),
     ("gh api pulls/5/comments POST", "gh api repos/o/r/pulls/5/comments -f body=x", 0),
@@ -391,6 +404,17 @@ def main():
         for label, value, want in ENV_CASES:
             rc = run(G + " --fill", reviewed, gh_repo=value)
             fails += report(rc == want, want, label, rc, " (리뷰됨)")
+        # `push -u <URL> x`면 branch.x.remote가 이름이 아니라 URL이다 — `-R`이 같은 저장소면 열려야 한다(코드 리뷰)
+        p_url, url_repo = make_repo(None)
+        try:
+            sh("-C", url_repo, "switch", "-q", "-c", "x")
+            sh("-C", url_repo, "commit", "-q", "--allow-empty", "-m", "x")
+            sh("-C", url_repo, "push", "-q", "-u", os.path.join(p_url, "o", "r.git"), "x")
+            write_marker(url_repo, head_of(url_repo))
+            rc = run(G + " -R o/r --fill", url_repo)
+            fails += report(rc == 0, 0, "URL로 push -u한 브랜치 + -R 이 저장소", rc, " (리뷰됨)")
+        finally:
+            shutil.rmtree(p_url, ignore_errors=True)
         cases = [(c[:5], c[5] if len(c) > 5 else "pushed", False) for c in WT_CASES]
         cases += [(c, "pushed", True) for c in PARENT_CASES]
         for (label, mm, wm, cmd, want), remote, in_parent in cases:
