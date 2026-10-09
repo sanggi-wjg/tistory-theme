@@ -162,10 +162,22 @@ def head_branch(text, masked, start):
     명령의 끝은 명령 구분자(`&&` `||` `;` `|` `&` 줄바꿈)까지다 — **괄호에서 끊지 않는다.**
     첫 판은 `SEP`로 끊어서 `--body $(cat f) --head wt`의 `--head`를 못 보고 cwd의 HEAD로
     판정했다(test-detect WT-M — 게이트가 열리는 방향). 값은 가린 문자열에서 위치를 찾고
-    원문에서 셸 단어로 읽는다(`--head "wt"`).
+    원문에서 셸 단어로 읽는다(`--head "wt"`). 따옴표 없는 `$( … )` **안의** 구분자도 끝이 아니다
+    — 괄호 깊이가 0일 때만 끊는다(WT-T `--body $(cat f; echo x) --head wt`).
     """
-    end = re.compile(r"&&|\|\||[;|&\n]").search(masked, start + 1)
-    stop = end.start() if end else len(masked)
+    stop, depth = len(masked), 0
+    for m in re.finditer(r"&&|\|\||[;|&\n()]", masked[start + 1:]):
+        t = m.group(0)
+        if t == "(":
+            depth += 1
+        elif t == ")":
+            depth -= 1
+            if depth < 0:  # PR 명령을 감싼 서브셸이 닫힌다
+                stop = start + 1 + m.start()
+                break
+        elif depth == 0:
+            stop = start + 1 + m.start()
+            break
     for m in re.finditer(r"(?<!\S)(?:--head(?:=|\s+)|-H\s+)", masked[:stop]):
         if m.start() < start:
             continue
