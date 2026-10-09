@@ -37,9 +37,11 @@ PR 생성 명령을 가로채, **PR이 될 커밋에 대한 리뷰가 끝났는�
 - `strip_heredocs`는 따옴표 상태를 추적하지 않는다. 따옴표 안의 `<< 단어`를 heredoc 여는
   줄로 오인해서, 뒤따르는 줄들을 종료 태그까지 걷어낸다. 그 안에 PR 생성 명령이 있으면 못 본다.
   "여러 줄 명령 + 앞줄 따옴표 안의 `<<` + 뒤에 PR 생성"이 겹쳐야 하므로 조건만 적어 둔다.
-- `cd`는 구분자로 나눈 토막의 **첫 명령**일 때만 따른다. 서브셸 `( cd x )`가 닫힌 뒤에도
-  그 디렉터리에 있다고 본다 — 실제보다 **다른 체크아웃**을 볼 수 있다. 그 체크아웃의 마커가
-  그 체크아웃의 HEAD와 같아야 열리므로, 틀린 쪽은 대개 막히는 방향이다.
+- `cd`는 구분자로 나눈 토막의 **첫 낱말**일 때만 따른다 — `then cd x`·`do cd x`처럼 앞에 다른
+  낱말이 붙으면 못 본다. 서브셸 `( … )`은 괄호로 추적하지만 `{ …; }`·함수·`eval`은 모른다.
+  **틀린 체크아웃을 보면 열릴 수도 있다** — 그 체크아웃이 리뷰를 마쳤으면 그쪽 마커로 통과한다.
+  첫 판의 머리말은 「대개 막히는 방향」이라고 적었는데 서브셸에서 정확히 반대가 났다(WT-O).
+  이런 명령이 필요하면 `--head <브랜치>`를 쓴다 — 그러면 디렉터리가 아니라 브랜치로 판정한다.
 - `git -C`·`GH_REPO`·`--repo`는 보지 않는다.
 """
 import json
@@ -103,12 +105,12 @@ def git(*args):
 
 
 def segments(text, masked, end):
-    """`end` 앞까지를 셸 구분자로 나눈 원문 토막들."""
+    """`end` 앞까지를 셸 구분자로 나눈 (원문 토막, 그 뒤 구분자) 목록. 마지막 구분자는 ""."""
     out, last = [], 0
     for m in SEP.finditer(masked, 0, end):
-        out.append(text[last:m.start()])
+        out.append((text[last:m.start()], m.group(0)))
         last = m.end()
-    out.append(text[last:end])
+    out.append((text[last:end], ""))
     return out
 
 
@@ -124,18 +126,26 @@ def words(seg):
 
 
 def follow_cd(text, masked, start, cwd):
-    """PR 생성 앞의 `cd`를 따라간 디렉터리. 못 풀면 (None, 이유)."""
-    d = cwd
-    for seg in segments(text, masked, start):
+    """PR 생성 앞의 `cd`를 따라간 디렉터리. 못 풀면 (None, 이유).
+
+    서브셸 `( … )` 안의 `cd`는 닫히면 끝난다 — 여는 괄호에서 디렉터리를 쌓고 닫는 괄호에서
+    되돌린다. 첫 판은 이걸 안 따져서 `(cd <리뷰된 워크트리> && git push) && <PR 생성>`을
+    그 워크트리의 마커로 판정해 메인 체크아웃의 미리뷰 브랜치를 열었다(test-detect WT-O).
+    """
+    d, stack = cwd, []
+    for seg, sep in segments(text, masked, start):
         w = words(seg)
         if w is None:
             return None, "PR 생성 앞 명령을 셸 단어로 나누지 못했다: %r" % seg.strip()
-        if not w or w[0] not in ("cd", "pushd"):
-            continue
-        arg = w[1] if len(w) > 1 else "~"
-        if arg == "-" or "$" in arg or "`" in arg:
-            return None, "`%s %s`의 대상은 셸이 돌아야 안다" % (w[0], arg)
-        d = os.path.normpath(os.path.join(d, os.path.expanduser(arg)))
+        if w and w[0] in ("cd", "pushd"):
+            arg = w[1] if len(w) > 1 else "~"
+            if arg == "-" or "$" in arg or "`" in arg:
+                return None, "`%s %s`의 대상은 셸이 돌아야 안다" % (w[0], arg)
+            d = os.path.normpath(os.path.join(d, os.path.expanduser(arg)))
+        if sep == "(":
+            stack.append(d)
+        elif sep == ")" and stack:
+            d = stack.pop()
     if not os.path.isdir(d):
         return None, "`cd` 대상 디렉터리가 없다: %s" % d
     return d, None
