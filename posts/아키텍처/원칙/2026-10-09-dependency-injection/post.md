@@ -390,6 +390,8 @@ class BodyWithoutDiTest :
     )
 ```
 
+![DI 없이: 다리를 바꾸려면 HumanBody를 고쳐야 한다](assets/di-without.gif)
+
 ---
 
 ## DI로 구현하면
@@ -399,11 +401,9 @@ class BodyWithoutDiTest :
 
 둘 중 하나만 해서는 소용없다. 인터페이스를 만들어도 HumanBody 안에서 `OrganicLeg()`를 직접 만들면, 새 다리가 생길 때마다 여전히 HumanBody를 고쳐야 한다. 다형성은 갈아 끼울 부품을 만들고, 의존성 주입은 갈아 끼울 자리를 만든다.
 
-> **[애니메이션 자리] DI 없이 vs DI로** — 왼쪽: HumanBody 안에서 부품이 생겨나 그대로 고정된다. 오른쪽: 밖에 놓인 부품들이 HumanBody의 빈 자리로 끼워진다. 글 전체의 핵심 장면.
+![DI로: 다리를 바꿔 끼워도 HumanBody 코드는 그대로다](assets/di-with.gif)
 
 ### 다형성: 신체 부위를 부품처럼 교체할 수 있음
-
-> **[애니메이션 자리 · 선택] 부품 교체** — NoLeg → BionicLeg → ArchotechLeg로 바꿔 끼울 때마다 HumanBody는 그대로이고 결과(CRAWL → WALK_FAST → WALK_SUPER_FAST)만 바뀐다. 위 장면과 겹치면 뺀다.
 
 HumanBody가 아는 건 `Leg`가 `move()`를 할 수 있다는 것뿐이다. 어떤 다리인지는 모른다. 그래서 어떤 다리를 끼워도 HumanBody 코드는 그대로다.
 
@@ -433,7 +433,7 @@ runner.move()  // (WALK_FAST, WALK_SUPER_FAST)
 
 ### 어댑터: 규격이 다른 바퀴 다리도 끼울 수 있음
 
-> **[애니메이션 자리] 어댑터** — WheelLeg(spin)가 Leg 자리에 맞지 않아 튕겨 나온다 → WheelLegAdapter로 감싸면 끼워진다.
+![어댑터: WheelLeg를 감싸면 Leg 자리에 끼워진다](assets/di-adapter.gif)
 
 이제 `Leg`라는 규격이 생겼으니 어댑터를 쓸 수 있다. `WheelLeg`는 고칠 수 없지만, `WheelLeg`를 감싸서 `Leg` 규격에 맞추는 클래스는 우리가 만들 수 있다.
 

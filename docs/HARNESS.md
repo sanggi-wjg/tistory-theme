@@ -17,7 +17,7 @@ CLAUDE.md는 세션마다 통째로 맥락에 실리므로 기록이 아니라 �
 | 스킬 | `.claude/skills/` | 조율 `tistory-skin-orchestrator` · 만들고 보기 `skin-build`·`skin-preview`·`skin-qa-check` · PR 앞 `pr-review-gate` · 배포 `skin-deploy`·`seo-verify-live` · 실측 `blog-census` · 레퍼런스 `tistory-substitutions` · 글 도식 `blog-animation` |
 | Claude Code 훅 | `.claude/hooks/`, `.claude/settings.json` | `pr-review-gate.py` — PR 생성 명령을 리뷰 마커(`.claude/.pr-review-ok`)의 SHA가 HEAD와 같을 때만 통과시킨다. `test-detect.py`가 그 탐지기를 지킨다(`npm run test:hooks`) |
 | 검사 사슬 | `package.json`의 `check` | 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰. 커밋 전 필수(CLAUDE.md 「작업 방식」 4번) |
-| CI | `.github/workflows/` | `check.yml` — PR·`main` 푸시마다 `npm run check`, `main` 보호 규칙의 필수 검사 · `release.yml` — `v*` 태그에서 `dist/` zip 릴리즈(결정 47) |
+| CI | `.github/workflows/` | `check.yml` — PR·`main` 푸시마다 `npm run check`, `main` 보호 규칙의 필수 검사 · `release.yml` — `v*` 태그에서 `dist/` zip 릴리즈(결정 47) · `.github/dependabot.yaml` — 워크플로 액션을 매주 월요일 PR 하나로 올린다(npm 제외) |
 
 각 에이전트·스킬이 무엇을 맡는지는 그 파일의 frontmatter `description`이 정본이다 — 여기에 옮겨 적지 않는다.
 
@@ -46,6 +46,7 @@ CLAUDE.md는 세션마다 통째로 맥락에 실리므로 기록이 아니라 �
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |---|---|---|---|
+| 2026-10-09 | **Dependabot 버전 업데이트** — `github-actions` 생태계만, 매주 월요일 09:00(KST), 액션 전부를 PR 하나로. 없어진 옵션 `reviewers`와 저장소에 없는 라벨 `github-actions`를 빼고 기본 라벨에 맡겼다. npm은 넣지 않았다 | `.github/dependabot.yaml` | 사용자 요청(2026-10-09). npm은 `highlight.js`가 번들되어 판이 오르면 라이브 `script.js`가 바뀌고 배포·릴리즈(결정 47)로 이어진다 — npm 보안 업데이트는 저장소 설정이 따로 연다(#117·#118). Dependabot PR은 로컬 훅인 `/pr-review-gate`를 거치지 않고 CI `check`만 탄다 |
 | 2026-10-09 | 린트 **`BND012`** — 공지 본문 그릇 `.notice-body`가 `skin.html`에서부터 `contents_style`을 다는가. `test-syntax-checks.py`에 기준선 1·켜지는 변이 2(클래스 빼기·그릇 개명). 프리뷰 공지 픽스처를 **두 경우 한 건씩**으로 — 1번은 래퍼 없이, 2번은 티스토리 래퍼를 안쪽에 달아. 배포 체크리스트 공지 항목에 래퍼 모양·겹친 본문 루트 확인 | `skills/skin-qa-check/scripts/lint.py`·`test-syntax-checks.py`·`SKILL.md`, `skills/skin-preview/scripts/render.py`, `skills/skin-deploy/SKILL.md` | 이슈 #97, 결정 62 「넷째」. `notice.js`가 첫 페인트 뒤에 클래스를 붙여 공지 아래가 48px 밀렸는데, 프리뷰는 로컬 `script.js`가 페인트 전에 끝나 이 밀림을 그리지 않는다 — `script.js`를 붙잡는 브라우저 단계는 미뤄 둔 상태다. 원인이 「마크업에 클래스가 있는가」 하나라 그 단계 없이 원인 쪽에서 고정했다. 픽스처가 래퍼 없는 경우만 그려서 `notice.js`의 다른 경로(안쪽 래퍼)는 프리뷰에서 한 번도 돈 적이 없었다 |
 | 2026-10-08 | 글 원고를 블로그 카테고리 구조로 정리 — 올린 글은 `posts/<카테고리>/<하위>/<YYYY-MM-DD>-<슬러그>/`에 두고 **커밋**하며, 초안은 `posts/_drafts/`에 두고 `.gitignore`(`/posts/_drafts`)로 막는다. 첫 글 「락 순서를 맞춰 MySQL 데드락 피하기」를 커밋. `blog-animation`이 안내하던 `posts/assets/` 경로를 글 폴더의 `assets/`로 고침. 같은 스킬의 「올린 GIF가 움직이는지 미확인」을 라이브 실측으로 바꿈(원본과 바이트·프레임 수 동일) | `.gitignore`, `posts/`, `skills/blog-animation/` | 사용자 요청(2026-10-08) — 첫 글을 올린 뒤 원고 정리. 저장소가 공개인데 `posts/`가 무시 목록에 없었고, 원고 6개가 **커밋 직전까지 스테이지에 올라 있었다**(초안에 회사 코드 클래스 이름이 들어 있다). 스테이지에서 내리고, 이미 블로그에 공개된 글만 저장소에 넣기로 했다(사용자 결정) |
 | 2026-10-08 | `blog-animation` 코드 리뷰(PR #104) 반영 — 계약 검사를 **찍을 프레임 시각 전부**로(CSS·SMIL도 매 프레임), 예시 둘을 템플릿 엔진 위에 다시 얹고 `test-contract.mjs`가 엔진 동일성을 대조, 변이 3개 추가(늦은 CSS 애니메이션·늦은 SMIL·나타나기 구간의 난수). 글자 이스케이프, 캡처 모드 폭 제한 해제, `--theme`·`--fps`·`--stills` 값 검사, `pathToFileURL`, ffmpeg 한 번 디코드·실패 시 프레임 폴더 정리. 데드락 예시의 롤백 캡션·`aria-label`이 「B가 작아서」로 읽히던 것을 고침 | `skills/blog-animation/` | 고친 계약 검사가 CSS·SMIL을 마지막 그림 하나에서만 세어 늦은 단계의 애니메이션을 **통과시켰다** — 고치기 전 검사기에 새 변이를 돌려 실제로 통과하는 것을 확인했다. 예시가 엔진을 복사해 템플릿과 이미 갈라져 있었다(`--ok` 화살촉 없음) |
