@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>좋은 엔지니어 썸네일</title>
+<style>
+  /* 색은 데드락·Git Worktree 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「좋은 엔지니어 되기: 핵심 원칙과 실천 방안」의 대표이미지(= og:image) (2026-10-10).
+// 글의 결론 — 「배우고, 적용하고, 끊임없이 개선한다」 — 을 고리 하나로.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png thumbnail.html
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function text(x, y, s, style) {
+  return '<text x="' + x + '" y="' + y + '" style="' + style + '">' + esc(s) + '</text>';
+}
+function defs() {
+  return '<defs><marker id="mm" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="28" markerHeight="28" orient="auto">' +
+    '<path d="M0,0 L10,5 L0,10 z" style="fill:var(--mute)"/></marker></defs>';
+}
+
+// 고리 — 가운데 (CX,CY), 반지름 R 위에 마디 셋. 각도가 커지는 쪽(시계 방향)으로 돈다
+function diagram() {
+  var out = [], CX = 1180, CY = 520, R = 215, NR = 100;
+  var nodes = [['배우기', -90, '--a'], ['적용하기', 30, '--ok'], ['개선하기', 150, '--b']];
+  var gap = 2 * Math.asin((NR + 14) / (2 * R)) * 180 / Math.PI; // 마디 테두리에서 띄울 각도
+  function pt(deg) { var t = deg * Math.PI / 180; return [CX + R * Math.cos(t), CY + R * Math.sin(t)]; }
+
+  // 화살표를 먼저 — 마디가 끝을 덮지 않게 gap만큼 비운다
+  nodes.forEach(function (n, i) {
+    var a1 = n[1] + gap, a2 = nodes[(i + 1) % 3][1] + (i === 2 ? 360 : 0) - gap - 4;
+    var p1 = pt(a1), p2 = pt(a2);
+    out.push('<path d="M' + p1[0] + ',' + p1[1] + ' A' + R + ',' + R + ' 0 0 1 ' + p2[0] + ',' + p2[1] + '"' +
+      ' marker-end="url(#mm)" style="fill:none;stroke:var(--mute);stroke-width:6;stroke-linecap:round"/>');
+  });
+  nodes.forEach(function (n) {
+    var p = pt(n[1]);
+    out.push('<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + NR + '" style="fill:var(' + n[2] + '-soft);stroke:var(' + n[2] + ');stroke-width:5"/>');
+    out.push(text(p[0], p[1] + 14, n[0], 'fill:var(' + n[2] + ');font-size:40px;font-weight:800;text-anchor:middle'));
+  });
+  out.push(text(CX, CY + 11, '반복', 'fill:var(--mute);font-size:30px;font-weight:700;text-anchor:middle'));
+  return out.join('');
+}
+
+var out = defs() + '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+out += text(130, 360, '기록', 'fill:var(--mute);font-size:36px;font-weight:600');
+out += text(124, 480, '좋은 엔지니어', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+out += text(124, 600, '되기', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+out += text(130, 680, '핵심 원칙과 실천 방안', 'fill:var(--ink-body);font-size:44px;font-weight:700');
+out += diagram();
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
