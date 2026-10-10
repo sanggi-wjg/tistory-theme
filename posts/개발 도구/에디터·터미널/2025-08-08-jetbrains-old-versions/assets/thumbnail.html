@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>JetBrains 과거 버전 썸네일</title>
+<style>
+  /* 색은 Git Worktree 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「[Mac] 맥 환경, Jetbrains IDE 과거 버전 삭제」의 대표이미지(= og:image) (2026-10-10).
+// 오른쪽은 글의 ②번 방법 — ~/Library/Application Support/JetBrains에 버전마다 쌓인 폴더 중 옛 것만 지운다.
+// 왼쪽 부제는 ①번 방법(Help 메뉴 항목 이름).
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png thumbnail.html
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+// ✓·✕는 글리프 대신 선으로 — 글꼴에 따라 모양이 바뀌지 않게
+function check(cx, cy, r, col) {
+  return '<path d="M' + (cx - r) + ',' + cy + ' L' + (cx - r * 0.3) + ',' + (cy + r * 0.7) + ' L' + (cx + r) + ',' + (cy - r * 0.7) + '"' +
+    ' style="fill:none;stroke:var(' + col + ');stroke-width:6;stroke-linecap:round;stroke-linejoin:round"/>';
+}
+function cross(cx, cy, r, col) {
+  var st = ' style="stroke:var(' + col + ');stroke-width:6;stroke-linecap:round"';
+  return '<line x1="' + (cx - r) + '" y1="' + (cy - r) + '" x2="' + (cx + r) + '" y2="' + (cy + r) + '"' + st + '/>' +
+    '<line x1="' + (cx + r) + '" y1="' + (cy - r) + '" x2="' + (cx - r) + '" y2="' + (cy + r) + '"' + st + '/>';
+}
+
+// 터미널 창 — 폴더 목록
+function diagram() {
+  var out = [], X = 860, Y = 225, W = 630, H = 550;
+  out.push(rect(X, Y, W, H, '--surface', '--hair-strong', 4, 22));
+  ['#ff5f57', '#febc2e', '#28c840'].forEach(function (c, i) {
+    out.push('<circle cx="' + (X + 34 + i * 28) + '" cy="' + (Y + 32) + '" r="9" fill="' + c + '"/>');
+  });
+  out.push('<path d="M' + (X + 4) + ',' + (Y + 62) + ' H' + (X + W - 4) + '" style="stroke:var(--hair);stroke-width:3"/>');
+  out.push(text(X + 32, Y + 118, '~/Library/Application Support/JetBrains', 'fill:var(--mute);font-size:22px', 'mono'));
+
+  var rows = [
+    ['DataGrip2025.1', 0], ['DataGrip2025.2', 1],
+    ['IntelliJIdea2025.1', 0], ['IntelliJIdea2025.2', 1],
+    ['PyCharm2025.1', 0], ['PyCharm2025.2', 1],
+  ];
+  rows.forEach(function (r, i) {
+    var y = Y + 150 + i * 62, keep = r[1], tx = X + 52;
+    if (!keep) out.push(rect(X + 24, y, W - 48, 52, '--err-soft', '--err-soft', 0, 12));
+    out.push(text(tx, y + 37, r[0] + '/', 'fill:var(' + (keep ? '--ink' : '--err') + ');font-size:30px;font-weight:700', 'mono'));
+    // 지울 폴더는 취소선 — 글자 폭은 고정폭이라 글자 수로 잰다
+    if (!keep) out.push('<line x1="' + (tx - 6) + '" y1="' + (y + 27) + '" x2="' + (tx + (r[0].length + 1) * 18 + 6) + '" y2="' + (y + 27) + '"' +
+      ' style="stroke:var(--err);stroke-width:4;stroke-linecap:round"/>');
+    out.push(keep ? check(X + W - 62, y + 26, 13, '--ok') : cross(X + W - 62, y + 26, 11, '--err'));
+  });
+  return out.join('');
+}
+
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+out += text(130, 360, '개발 도구 · macOS', 'fill:var(--mute);font-size:36px;font-weight:600');
+out += text(124, 475, 'JetBrains IDE', 'fill:var(--ink);font-size:88px;font-weight:800;letter-spacing:-2px');
+out += text(124, 590, '과거 버전 지우기', 'fill:var(--ink);font-size:88px;font-weight:800;letter-spacing:-2px');
+out += text(130, 670, 'Delete Leftover IDE Directories…', 'fill:var(--ink-body);font-size:28px;font-weight:700', 'mono');
+out += diagram();
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
