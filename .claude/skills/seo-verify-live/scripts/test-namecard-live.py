@@ -90,7 +90,22 @@ BUNDLE_MUTANTS = [
      lambda s: s.replace('E.jsx("a",{className:"tt_desc",', 'E.jsx("a",pp),E.jsx("i",{'), "drift"),
     ("같은 이름의 함수가 다른 스코프에 또 있다(고를 수 없다)",
      lambda s: 'function q(){function _8(){return E.jsx("b",{className:"x"})}}' + s, "missing"),
+    # ↓ 클래스·태그는 그대로이고 자리(부모)만 옮겨진 경우 — 집합 대조만으로는 「같다」였다(#134)
+    ("설명(tt_desc)이 tt_cont 밖, 카드 바로 아래로 옮겨졌다", lambda s: move_desc(s), "drift"),
+    ("구독 버튼이 배지 줄(tt_link) 안으로 들어갔다",
+     lambda s: s.replace('E.jsx("span",{className:"tt_img_area_reply tt_ico_arrow2"})]})',
+                         'E.jsx("span",{className:"tt_img_area_reply tt_ico_arrow2"}),'
+                         'E.jsxs("button",{className:"tt_btn_subscribe",children:[]})]})'), "drift"),
 ]
+
+
+def move_desc(s):
+    """설명 a.tt_desc를 tt_cont의 children에서 빼 tt_wrap_thumb 앞(tt_box_namecard 바로 아래)에 둔다."""
+    desc = ('E.jsx("a",{className:"tt_desc",href:(d=e==null?void 0:e.blogUrl)!=null?d:"#none",'
+            'children:(c=e==null?void 0:e.description)!=null?c:""}),')
+    assert s.count(desc) == 1, "COMPONENT에서 tt_desc 호출을 못 찾았다 — 실물을 갱신했으면 여기도 맞춘다"
+    s = s.replace(desc, "")
+    return s.replace('E.jsx("a",{className:"tt_wrap_thumb"', desc + 'E.jsx("a",{className:"tt_wrap_thumb"')
 
 # (이름, 픽스처 함수) — 프리뷰 쪽이 실물과 갈리는 경우
 def _no_creator(follower=False, creator=False):
@@ -101,9 +116,19 @@ def _typo(follower=False, creator=False):
     return RENDER.namecard_box(follower=follower, creator=creator).replace("tt_desc", "tt_dsc")
 
 
+def _thumb_inside(follower=False, creator=False):
+    """썸네일 a.tt_wrap_thumb를 tt_cont 안으로 — 클래스는 그대로, 자리만 다르다."""
+    h = RENDER.namecard_box(follower=follower, creator=creator)
+    i = h.index('<a class="tt_wrap_thumb"')
+    j = h.index("</a>", i) + len("</a>")
+    thumb, h = h[i:j], h[:i] + h[j:]
+    return h.replace('<div class="tt_cont">', '<div class="tt_cont">' + thumb, 1)
+
+
 FIXTURE_MUTANTS = [
     ("픽스처가 크리에이터 배지 줄을 한 번도 안 그린다", _no_creator),
     ("픽스처 클래스 오타(tt_desc → tt_dsc)", _typo),
+    ("픽스처의 썸네일이 tt_cont 안에 있다(자리만 다르다)", _thumb_inside),
 ]
 
 
@@ -151,6 +176,14 @@ def main():
     problems, n = V.namecard_drift(BUNDLE, fixtures())
     check(problems == [] and n >= 15, "같다고 판정한다 (서명 %d종, 갈림 %s)" % (n, problems))
     check(V.bundle_component(BUNDLE).startswith("function _8("), "미끼 `{Namecard:…}`가 아니라 앱 표를 따라간다")
+    edges = V.bundle_edges(V.bundle_component(BUNDLE))
+    fx_edges = set().union(*(V.fixture_edges(h) for h in fixtures()))
+    # 짝이 비어 있으면 「자리」 대조는 늘 같다고 나온다 — 개수와 대표 짝을 못박는다
+    check(len(edges) == 16 and edges == fx_edges and "div.tt_cont > a.tt_desc" in edges
+          and "a.tt_link > strong.tt_tit_g" in edges, "부모-자식 짝 16개가 픽스처와 같다 (%d / %d)" % (len(edges), len(fx_edges)))
+    p, _ = V.namecard_drift(BUNDLE.replace('"tt_tit_g"', '"tt_tit_badge"'), fixtures())
+    check(p is not None and not any("자리" in x for x in p),
+          "이름이 바뀐 원소는 「자리가 다르다」로 두 번 나오지 않는다")
 
     print("② 번들 변이")
     for name, mut, want in BUNDLE_MUTANTS:

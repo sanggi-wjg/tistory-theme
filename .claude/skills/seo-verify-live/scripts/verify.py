@@ -1108,31 +1108,32 @@ def bundle_component(js, app="Namecard"):
     return found[0] if len(found) == 1 else None
 
 
-def bundle_signatures(src):
-    """컴포넌트 소스의 jsx 호출 → {"태그.클래스.클래스", …}. 클래스는 정렬한다(순서는 상태가 아니다).
+def bundle_nodes(src):
+    """컴포넌트 소스의 jsx 호출마다 (호출 위치, props 객체의 닫는 괄호 위치 또는 -1, 서명 또는 None).
 
-    `className`이 문자열 리터럴이 아니면 `태그.{동적}` — 조건부 클래스로 바뀐 것도 갈림으로 잡혀야 한다.
-    태그가 문자열이 아니라 다른 컴포넌트(`E.jsx(Xy,{…})`)면 `<Xy>` — 카드가 하위 컴포넌트로 쪼개지면
-    그 안의 클래스가 이 소스에 없어 대조가 헐거워지므로, 그 사실 자체를 갈림으로 낸다.
-    className이 없는 원소(svg·path)는 세지 않는다 — 픽스처와 상대 시트가 보는 것은 클래스다.
+    서명은 `태그.클래스.클래스`(클래스 정렬 — 순서는 상태가 아니다). className이 없는 원소(svg·path)는 None —
+    픽스처와 상대 시트가 보는 것은 클래스다. 그 밖의 경우:
+    - `className`이 문자열 리터럴이 아니면 `태그.{동적}` — 조건부 클래스로 바뀐 것도 갈림으로 잡혀야 한다.
+    - props가 객체 리터럴이 아니면(`E.jsx("a",p)`) 클래스를 알 수 없어 `태그.{동적}` — 건너뛰면 그 원소가
+      대조에서 조용히 빠진다.
+    - 태그가 문자열이 아니라 다른 컴포넌트(`E.jsx(Xy,{…})`)면 `<Xy>` — 카드가 하위 컴포넌트로 쪼개지면
+      그 안의 클래스가 이 소스에 없어 대조가 헐거워지므로, 그 사실 자체를 갈림으로 낸다.
+    `E.jsx("a",{…})`와 esbuild식 `(0,E.jsx)("a",{…})` 둘 다 읽는다.
     """
-    out = set()
-    # `E.jsx("a",{…})`와 esbuild식 `(0,E.jsx)("a",{…})` 둘 다. props가 객체 리터럴이 아니면(`E.jsx("a",p)`)
-    # 클래스를 알 수 없으므로 `{동적}`으로 남긴다 — 건너뛰면 그 원소가 대조에서 조용히 빠진다.
+    nodes = []
     for m in re.finditer(r"\.jsxs?\)?\(\s*(?:\"([\w-]+)\"|([\w$.]+))\s*,\s*(\{)?", src or ""):
         tag, comp = m.group(1), m.group(2)
+        end = js_match(src, m.end() - 1) if m.group(3) else -1
         if comp:
-            out.add("<%s>" % comp)
+            nodes.append((m.start(), end, "<%s>" % comp))
             continue
         if not m.group(3):
-            out.add("%s.{동적}" % tag)
+            nodes.append((m.start(), -1, "%s.{동적}" % tag))
             continue
-        start = m.end() - 1
-        end = js_match(src, start)
         if end == -1:
-            out.add("%s.{잘림}" % tag)
+            nodes.append((m.start(), -1, "%s.{잘림}" % tag))
             continue
-        i, depth, cls = start + 1, 0, None
+        i, depth, sig = m.end(), 0, None
         while i < end:
             c = src[i]
             if c in "\"'`":
@@ -1145,12 +1146,33 @@ def bundle_signatures(src):
             elif depth == 0 and src.startswith("className", i) and src[i - 1] in "{,":
                 v = re.match(r"className\s*:\s*(?:\"([^\"\\]*)\"|'([^'\\]*)')\s*[,}]", src[i:end + 1])
                 cls = (v.group(1) if v.group(1) is not None else v.group(2)).split() if v else None
-                if cls is None:
-                    out.add("%s.{동적}" % tag)
+                sig = ".".join([tag] + sorted(cls)) if cls else ("%s.{동적}" % tag if cls is None else None)
                 break
             i += 1
-        if cls:
-            out.add(".".join([tag] + sorted(cls)))
+        nodes.append((m.start(), end, sig))
+    return nodes
+
+
+def bundle_signatures(src):
+    """컴포넌트 소스의 jsx 원소 서명 집합 — {"태그.클래스.클래스", …}. 서명 규칙은 `bundle_nodes`."""
+    return {sig for _, _, sig in bundle_nodes(src) if sig}
+
+
+def bundle_edges(src):
+    """{"부모서명 > 자식서명", …}. 부모는 **가장 가까운, 서명이 있는** 조상이다 — 그 jsx 호출의 props 객체
+    안에 자식 호출이 있으면 조상이다(`children`·조건식 `a&&E.jsx(…)`·삼항 모두 props 안이다). 조상이 없으면 `^`.
+    서명 없는 원소(svg)는 건너뛴다 — 픽스처의 클래스 없는 그릇 div와 짝을 맞추려는 것이다(#134).
+    """
+    nodes = bundle_nodes(src)
+    out = set()
+    for pos, _, sig in nodes:
+        if not sig:
+            continue
+        parent, best = "^", -1
+        for p2, end2, s2 in nodes:
+            if s2 and p2 < pos < end2 and p2 > best:
+                parent, best = s2, p2
+        out.add("%s > %s" % (parent, sig))
     return out
 
 
@@ -1164,8 +1186,50 @@ def fixture_signatures(html):
     return out
 
 
+class _ClassEdges(HTMLParser):
+    """픽스처 HTML의 class 있는 원소마다 「가장 가까운 class 있는 조상 > 자기」. 규칙은 `bundle_edges`와 같다."""
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack, self.edges = [], set()
+
+    def _sig(self, tag, attrs):
+        cls = (dict(attrs).get("class") or "").split()
+        return ".".join([tag] + sorted(cls)) if cls else None
+
+    def _parent(self):
+        return next((s for _, s in reversed(self.stack) if s), "^")
+
+    def handle_starttag(self, tag, attrs):
+        sig = self._sig(tag, attrs)
+        if sig:
+            self.edges.add("%s > %s" % (self._parent(), sig))
+        if tag not in self.VOID:
+            self.stack.append((tag, sig))
+
+    def handle_startendtag(self, tag, attrs):
+        sig = self._sig(tag, attrs)
+        if sig:
+            self.edges.add("%s > %s" % (self._parent(), sig))
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.stack[i][0] == tag:
+                del self.stack[i:]
+                break
+
+
+def fixture_edges(html):
+    """프리뷰 픽스처 HTML → {"부모서명 > 자식서명", …}."""
+    p = _ClassEdges()
+    p.feed(html or "")
+    p.close()
+    return p.edges
+
+
 def namecard_drift(bundle_js, fixture_htmls):
-    """(갈림 문장 목록, 번들 서명 수). 컴포넌트를 못 찾으면 (None, 0).
+    """(갈림 문장 목록, 번들 서명 수). 컴포넌트를 못 찾으면 (None, 0). 원소 집합과 그 자리(부모)를 둘 다 본다.
 
     픽스처는 상태 넷(구독 여부 × 크리에이터 여부)의 **합집합**으로 본다 — 번들 컴포넌트는 조건 분기를
     전부 담고 있어서다. 한쪽에만 있는 서명이 갈림이다: 번들에만 있으면 픽스처가 그리지 않는 원소(다크
@@ -1185,6 +1249,24 @@ def namecard_drift(bundle_js, fixture_htmls):
         out.append("번들에만 있다: " + ", ".join(only_live))
     if only_fx:
         out.append("프리뷰 픽스처에만 있다: " + ", ".join(only_fx))
+    # 자리(부모)도 본다(#134) — 집합만 보면 클래스가 그대로인 채 다른 부모로 옮겨진 원소를 놓친다.
+    # 위에서 이미 한쪽에만 있다고 낸 원소가 걸린 짝은 빼고, **양쪽에 다 있는** 원소끼리의 짝만 견준다 —
+    # 이름 하나 바뀐 것이 「자리도 다르다」로 두 번 나오지 않게.
+    common = live & fx
+    fx_edges = set()
+    for h in fixture_htmls:
+        fx_edges |= fixture_edges(h)
+    live_edges = bundle_edges(src)
+
+    def both(edge):
+        parent, child = edge.split(" > ")
+        return child in common and (parent == "^" or parent in common)
+
+    moved_live = sorted(e for e in live_edges - fx_edges if both(e))
+    moved_fx = sorted(e for e in fx_edges - live_edges if both(e))
+    if moved_live or moved_fx:
+        out.append("자리(부모)가 다르다 — 번들: %s / 프리뷰: %s" % (
+            ", ".join(moved_live) or "(없음)", ", ".join(moved_fx) or "(없음)"))
     return out, len(live)
 
 
@@ -1201,7 +1283,7 @@ def bundle_url_of(doc, base):
 
 
 def verify_namecard_bundle(base, home_doc):
-    """V019 — 프리뷰 Namecard 픽스처가 라이브 번들의 Namecard 컴포넌트와 같은 원소·클래스인가(#131).
+    """V019 — 프리뷰 Namecard 픽스처가 라이브 번들의 Namecard 컴포넌트와 같은 원소·클래스·자리인가(#131·#134).
 
     예외로 멈추면 미검증으로 남긴다 — 뒤의 검사와 리포트까지 잃지 않게(V018과 같다).
     """
@@ -1244,7 +1326,7 @@ def _verify_namecard_bundle(base, home_doc):
         tail = ("render.py TISTORY_NAMECARD_BUNDLE과 같은 번들이다" if pinned == url else
                 "번들 해시는 render.py TISTORY_NAMECARD_BUNDLE(%s)과 다르지만 카드 마크업은 같다 — 상수를 %s 로 "
                 "갱신해 두라" % (pinned, url))
-        info("V019 — 프리뷰 Namecard 픽스처가 라이브 번들 컴포넌트와 같은 원소·클래스 %d종이다. %s." % (n, tail))
+        info("V019 — 프리뷰 Namecard 픽스처가 라이브 번들 컴포넌트와 같은 원소·클래스 %d종, 같은 자리다. %s." % (n, tail))
 
 
 class _NamecardAncestry(HTMLParser):
