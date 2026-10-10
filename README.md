@@ -19,7 +19,7 @@ Node 20+(`.nvmrc`·CI는 26)와 Python 3이 필요하다 (파이썬 스크립트
 
 ```bash
 npm install
-npm run check   # 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰 → 프리뷰 검사
+npm run check   # 빌드 → 린트 → CSS 구문 → 테스트 → 프리뷰 → 프리뷰 검사 → 빌드 잠금 검사
 open _preview/index.html
 ```
 

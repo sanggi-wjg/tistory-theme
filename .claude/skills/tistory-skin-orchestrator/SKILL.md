@@ -135,8 +135,9 @@ node -p 'require("./package.json").scripts.check.split("&&").map(s=>s.trim()).jo
   | while IFS= read -r c; do printf '== %s → ' "$c"; sh -c "$c" >/dev/null 2>&1 && echo ok || echo FAIL; done
 ```
 
-`FAIL`이 난 단계만 따로 다시 돌려 내용을 본다. 빌드가 실패하면 `dist/`는 지워졌거나 반쯤 쓰인 상태다 — `build.mjs`는
-지우고 나서 쓰고, 용량 예산 초과는 새 CSS·JS를 쓴 **뒤에** 던진다. 뒤 단계 결과를 그대로 믿지 말고 빌드부터 고친다.
+`FAIL`이 난 단계만 따로 다시 돌려 내용을 본다. 빌드가 실패하면 `dist/`는 **통째로 지워진다** — `build.mjs`는 임시
+폴더(`.dist.tmp-<pid>`)에 빌드해 성공했을 때만 옮기고, 용량 예산 초과를 포함해 실패하면 옛 산출물을 남기지 않으려고
+`dist/`를 지운다. 그래서 뒤 단계의 `FAIL`은 대개 「`dist/`가 없다」는 같은 원인이다 — 뒤 단계 결과를 읽지 말고 빌드부터 고친다.
 마지막 체크포인트는 `npm run check` 한 번이 통과해야 끝난다.
 
 **diff 지문** — 검증 시작과 끝에 `{ git diff HEAD; git status --porcelain; } | shasum`을 적는다. 둘이 다르면 검증 중에

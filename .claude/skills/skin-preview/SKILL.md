@@ -28,9 +28,9 @@ open _preview/index.html
 
 | 타입 | body_id | 확인할 것 |
 |---|---|---|
-| `index` | `tt-body-index` | 홈 그리드. 카드 12개 중 2개가 대표이미지 없음(실제 비율) |
+| `index` | `tt-body-index` | 홈 그리드. 최근 12편 — 대표이미지 없는 카드가 `data/posts.json`의 `hasThumbnail` 그대로 섞인다(2026-09-14 데이터로 1개) |
 | `page` | `tt-body-page` | 글 본문. 인라인 오염·코드블록·표·figure가 모두 들어 있다 |
-| `category` | `tt-body-category` | 목록 2단. 20개 중 17개 썸네일 |
+| `category` | `tt-body-category` | 목록 2단. 20편 — 썸네일 유무는 `hasThumbnail` 그대로(2026-09-14 데이터로 17개) |
 | `search` | `tt-body-search` | 검색 결과 |
 | `tag` | `tt-body-tag` | 태그 목록 |
 | `archive` | `tt-body-archive` | 보관함 |

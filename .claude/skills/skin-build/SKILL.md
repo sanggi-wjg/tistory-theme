@@ -37,7 +37,7 @@ src/
 │   └── components.css 카드 · 목차 · 코드블록 · 사이드바
 ├── js/
 │   ├── index.js       진입점
-│   ├── toc.js  code.js  theme.js  lightbox.js  progress.js  tables.js  links.js  inline-fix.js
+│   └── *.js           기능별 모듈(toc · toc-sheet · code · theme · lightbox · notice · heading-anchor · category · cat-chips · cards · paging · progress · tables · links · inline-fix · util). 실행 순서는 index.js의 boot()가 정본
 └── assets/
     ├── placeholders/      기본 이미지 WebP 30장 (상위 14 + 기본값 1) × (light · dark). 빌드가 읽는 것은 이것뿐
     ├── placeholders-src/  원본 — 승인된 삽화 SVG 30장(결 3). AI 이미지는 같은 이름 .png로 덮어쓴다. `npm run placeholders`가 800×500 WebP로 변환. 규칙은 docs/placeholder-image-brief.md
