@@ -5,7 +5,9 @@
 // 나타나기 구간에만 섞인 난수를 놓쳤다(2026-10-08 코드 리뷰) — 검사를 고치면 이걸 다시 돌린다.
 // 예시는 템플릿의 엔진을 글자 그대로 써야 한다 — 엔진을 고쳐도 예시에서 출발한 장면에 안 닿는 것을 막는다.
 //
-//   node .claude/skills/blog-animation/scripts/test-contract.mjs
+// 변이는 **계약 위반으로** 실패해야 잡힌 것이다 — 그냥 0이 아닌 종료면 Chrome이 안 떠도 여덟 개가 전부 「잡힘」이 된다.
+//
+//   node .claude/skills/blog-animation/scripts/test-contract.mjs   (npm run test:anim — npm run check·CI가 돈다, 이슈 #105)
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -55,9 +57,10 @@ for (const [name, [from, to]] of Object.entries(MUTATIONS)) {
   const f = join(work, `${name}.html`);
   writeFileSync(f, src.replace(from, to));
   const r = check(f);
-  const caught = r.status !== 0;
+  const caught = r.status !== 0 && r.stderr.includes('계약 위반');
   if (!caught) bad++;
-  console.log(`${caught ? '✓' : '✗'} 변이 잡힘   「${name}」${caught ? '' : ' — 계약 위반인데 통과했다'}`);
+  console.log(`${caught ? '✓' : '✗'} 변이 잡힘   「${name}」${caught ? ''
+    : r.status === 0 ? ' — 계약 위반인데 통과했다' : ' — 계약 위반이 아닌 이유로 실패했다: ' + (r.stderr || r.stdout).trim()}`);
 }
 rmSync(work, { recursive: true, force: true });
 process.exit(bad ? 1 : 0);

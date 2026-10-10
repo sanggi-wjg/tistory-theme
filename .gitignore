@@ -4,6 +4,13 @@ dist/
 # 로컬 프리뷰 — 매 실행마다 10개 HTML이 생성된다
 _preview/
 
+# 빌드·프리뷰 동시 실행 잠금과 빌드 임시 폴더(이슈 #100) — 실행 중에만 있다
+/.dist.lock
+/.dist.lock.*
+/.dist.tmp-*
+/.preview.lock
+/.preview.lock.*
+
 # 하네스 중간 산출물 — 사후 추적용이지만 저장소에는 넣지 않는다
 _workspace/
 _workspace_*/
@@ -20,6 +27,7 @@ backup/
 
 # 블로그 글 초안 — 저장소가 공개이고 초안에는 회사 코드 이야기가 들어갈 수 있다. 블로그에 올린 글(posts/<카테고리>/…)은 커밋한다
 /posts/_drafts
+/posts/**/_drafts/
 
 .DS_Store
 *.log

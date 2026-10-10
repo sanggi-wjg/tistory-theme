@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+import time
 from urllib.parse import quote
 
 ROOT = os.getcwd()
@@ -52,25 +53,72 @@ REACT_BOX_EMPTY = '<div data-tistory-react-app="Comment"></div>'
 #
 # .tt_ico_cross(구독 버튼의 +)는 index.css가 CDN 상대경로로 스프라이트를 가져오므로 프리뷰에도
 # 뜬다 — 다크에서 --sprite-invert로 반전되는지까지 여기서 보인다(결정 53).
-# 재현하지 못하는 것:
-# 구독 중 상태 .tt_btn_subscribe.type2도 없다 — 로그인 상태에서만 나오는 클래스다.
-NAMECARD_BOX = (
-    '<!-- 티스토리 React가 렌더링: Namecard (소스에는 빈 div뿐이다) -->'
-    '<div data-tistory-react-app="Namecard" data-preview="티스토리 React가 런타임에 그린다">'
-    '<div class="tt_box_namecard">'
-    '<div class="tt_cont">'
-    '<a class="tt_tit_cont" href="/">상쾌한기분</a>'
-    '<a class="tt_desc" href="/">오늘도 상쾌한기분</a>'
-    '<button type="button" class="tt_btn_subscribe">'
-    '<span class="tt_txt_g">구독하기</span>'
-    '<span class="tt_img_area_reply tt_ico_cross"></span>'
-    '</button>'
-    '</div>'
-    '<a class="tt_wrap_thumb" href="/">'
-    '<span class="tt_thumb_g" style="background-image:url(https://placehold.co/200x200/eeeeee/999999?text=logo);'
-    'display:block;width:100%;height:100%;background-size:cover"></span>'
-    '</a>'
-    '</div></div>')
+#
+# **두 상태를 나눠 그린다**(이슈 #89). 티스토리 번들(`static/pc/dist/index.js` @e0a0fbc의 Namecard 컴포넌트)에서
+# 조건과 마크업을 그대로 옮겼다 — 둘 다 이 블로그를 로그아웃·주인으로 보면 나오지 않아 라이브로는 못 잰다.
+#   · 구독 버튼은 방문자가 블로그 멤버가 아닐 때(`isMember === false`)만 나온다 — 주인으로 로그인하면 버튼이 없다.
+#     구독 중(`isFollower`)이면 `button.tt_btn_subscribe.type2` > 「구독중」 + `.tt_ico_check`.
+#   · `a.tt_link`(이름 아래 배지 줄, 안에 `strong.tt_tit_g`)는 블로그가 티스토리 「분야 크리에이터」
+#     (`storyCreator`)일 때만 나온다. 이 블로그는 `/namecard` 응답에서 `storyCreator: null`(2026-10-10).
+# page·page_bare = 로그아웃 방문자(구독하기), page_toc = 구독 중 + 크리에이터 배지 줄.
+# 재현하지 못하는 것: 버튼이 아예 없는 주인 화면(isMember), 실제 크리에이터 블로그의 분야 이름.
+#
+# ⚠ 이 마크업의 정본은 번들이다. seo-verify-live의 V019가 라이브 홈이 싣는 번들에서 Namecard 컴포넌트를
+#   잘라 원소·클래스 집합을 아래 namecard_box 네 상태의 합집합과 대조한다(#131) — 갈리면 경고.
+#   이 상수는 옮겨 온 번들이다. 해시가 바뀌어도 카드 마크업이 같으면 V019가 info로 갱신을 알려 준다.
+TISTORY_NAMECARD_BUNDLE = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
+                           "userblog-e0a0fbc3d954de73ca693c3069846962dc20e7eb/static/pc/dist/index.js")
+_NC_SVG = (
+    '<svg fill="none" height="15" viewBox="0 0 14 15" width="14" xmlns="http://www.w3.org/2000/svg">'
+    '<path clip-rule="evenodd" d="M14 7.50006C14 11.366 10.866 14.5001 6.99997 14.5001C3.13398 14.5001 0 11.366 0 '
+    '7.50006C0 3.63407 3.13398 0.5 6.99997 0.5C10.866 0.5 14 3.63407 14 7.50006Z" fill="#C5F220" fill-rule="evenodd"></path>'
+    '<path clip-rule="evenodd" d="M5.62497 8.77088C5.70206 9.43979 6.25464 9.85446 7.11558 9.85446C7.93802 9.85446 '
+    '8.3877 9.49327 8.3877 8.95817C8.3877 8.42307 8.10506 8.31603 7.23126 8.14213L6.13897 7.92806C4.76404 7.6739 '
+    '4.17295 7.01837 4.17295 6.04182C4.17295 4.75755 5.22658 3.84778 6.99999 3.84778C8.69614 3.84778 9.72412 4.6906 '
+    '9.82694 6.13547H8.32347C8.2336 5.50664 7.74525 5.13205 6.89717 5.13205C6.0876 5.13205 5.67634 5.46655 5.67634 '
+    '5.93479C5.67634 6.29598 5.92056 6.51006 6.82008 6.68396L7.91229 6.88455C9.24872 7.1388 9.89125 7.76755 9.89125 '
+    '8.82435C9.89125 10.1889 8.83754 11.1521 7.05135 11.1521C5.30375 11.1521 4.17295 10.2424 4.10864 8.77088H5.62497Z" '
+    'fill="black" fill-rule="evenodd"></path>'
+    '</svg>')
+
+
+def namecard_box(follower=False, creator=False):
+    link = ('<a class="tt_link" href="https://notice.tistory.com/2648">'
+            '<div class="tt_wrap_svg">' + _NC_SVG + '</div>'
+            '<strong class="tt_tit_g">IT 분야 크리에이터</strong>'
+            '<span class="tt_img_area_reply tt_ico_arrow2"></span></a>') if creator else ''
+    button = ('<button type="button" class="tt_btn_subscribe type2">'
+              '<span class="tt_txt_g">구독중</span>'
+              '<span class="tt_img_area_reply tt_ico_check"></span>'
+              '</button>') if follower else (
+              '<button type="button" class="tt_btn_subscribe">'
+              '<span class="tt_txt_g">구독하기</span>'
+              '<span class="tt_img_area_reply tt_ico_cross"></span>'
+              '</button>')
+    return (
+        '<!-- 티스토리 React가 렌더링: Namecard (소스에는 빈 div뿐이다) -->'
+        '<div data-tistory-react-app="Namecard" data-preview="티스토리 React가 런타임에 그린다">'
+        '<div class="tt_box_namecard">'
+        '<div class="tt_cont">'
+        '<a class="tt_tit_cont" href="/">상쾌한기분</a>'
+        + link +
+        '<a class="tt_desc" href="/">오늘도 상쾌한기분</a>'
+        + button +
+        '</div>'
+        '<a class="tt_wrap_thumb" href="/">'
+        '<span class="tt_thumb_g" style="background-image:url(https://placehold.co/200x200/eeeeee/999999?text=logo);'
+        'display:block;width:100%;height:100%;background-size:cover"></span>'
+        '</a>'
+        '</div></div>')
+
+
+NAMECARD_BOX = namecard_box()
+
+
+def namecard_states():
+    """번들의 Namecard 컴포넌트가 그릴 수 있는 상태 전부(구독 여부 × 크리에이터 배지). V019가 이 합집합을
+    번들과 대조하고 test:namecard-live도 이것을 쓴다 — 상태를 더하면(주인 화면 등) **여기에** 더한다."""
+    return [namecard_box(follower=f, creator=c) for f in (False, True) for c in (False, True)]
 
 # 티스토리 **phocus 이미지 뷰어**의 흉내(프리뷰 전용). 라이브는 티스토리 `static/pc/dist/index.js`가
 # DOMContentLoaded에 `span[data-phocus] > img`마다 click을 **직접** 걸고(타깃 단계), `body.with-phocus`는
@@ -292,11 +340,11 @@ def scan_orphan_areas(skin):
 # 우리보다 뒤에 온다. 뒤에 오는 쪽은 특이도가 같으면 이긴다 — 그 조건을 재현해야
 # `.hljs` 접두가 정말 필요한지 눈으로 확인된다. 여기 순서를 바꾸지 말 것.
 TISTORY_CONTENT_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
-                       "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/style/content.css")
+                       "userblog-e0a0fbc3d954de73ca693c3069846962dc20e7eb/static/style/content.css")
 # ↑ 해시는 티스토리가 배포할 때마다 바뀐다. seo-verify-live의 V017이 라이브 홈과 대조해 알려 준다
 #   (2026-08-27: d748cfd5… → 626ea186…, 내용은 34,426B 동일. 2026-10-06: 호스트까지 바뀌어
 #   tistory1.daumcdn.net/tistory_admin/…626ea186… → edge.daumcdn.net/tistory/tistory-admin/…542bd84…,
-#   V017 바이트 대조로 내용 34,426B 동일 확인).
+#   V017 바이트 대조로 내용 34,426B 동일 확인. 2026-10-10: 542bd84… → e0a0fbc…, 34,426B 동일).
 TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/"
                     "styles/atom-one-light.min.css")
 # 티스토리 **React 앱**들의 시트다 — 댓글(Comment)과 프로필 카드(Namecard)가 같은
@@ -317,16 +365,18 @@ TISTORY_HLJS_CSS = ("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/
 # 이 시트는 클래스 스코프 규칙뿐이다 — bare 요소 선택자 0개(2026-09-10 실측 59,563B)라
 # 실어도 다른 화면을 흔들지 않는다.
 TISTORY_INDEX_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
-                     "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/pc/dist/index.css")
+                     "userblog-e0a0fbc3d954de73ca693c3069846962dc20e7eb/static/pc/dist/index.css")
 # ↑ 2026-10-06 content.css와 같이 갱신했다(626ea186… → 542bd84…, V017 바이트 대조로 59,563B 동일).
+#   2026-10-10 다시 같이 갱신했다(542bd84… → e0a0fbc…, 59,563B 동일).
 # 티스토리 **툴바** 시트 — 위 TOOLBAR_BOX의 위치(position:fixed)와 1260px 이하 숨김이 여기서 온다.
 # 라이브 <head>에서도 우리 style.css 뒤에 온다(2026-10-06 실측). 이 시트가 빠지면 툴바 픽스처는
 # 화면 맨 아래에 평범한 버튼 두 개로 떨어져 헤더와 겹치지 않는다 — 결정 59의 결함이 다시 숨는다.
 # 클래스 스코프 규칙뿐이다(244개 규칙, bare 요소 선택자 0개 — .tistorytoolbar·.menu_toolbar 등).
 # 2026-10-06 라이브 head는 content.css·index.css·tistory.css 셋 다 같은 배포(edge.daumcdn.net/…/542bd84…)에서
-# 받는다 — 위 두 상수도 같은 날 그 값으로 갱신했다.
+# 받는다 — 위 두 상수도 같은 날 그 값으로 갱신했다. 2026-10-10에는 셋 다 e0a0fbc…로 옮겨 같이 갱신했다
+# (tistory.css 28,327B 동일 — V017 바이트 대조). Namecard 번들 TISTORY_NAMECARD_BUNDLE도 같은 배포다.
 TISTORY_TOOLBAR_CSS = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
-                       "userblog-542bd84ce37260cece1e68a465e3c63534629c86/static/style/tistory.css")
+                       "userblog-e0a0fbc3d954de73ca693c3069846962dc20e7eb/static/style/tistory.css")
 
 # 네트워크가 없으면 위 네 시트(content.css · atom-one-light · index.css · tistory.css)가 조용히
 # 빠지고 프리뷰는 다시 거짓말을 한다.
@@ -846,7 +896,8 @@ def handle_group(name, attrs, inner, ctx, page, posts):
             # <div id="entry{글번호}Comment">로 감싼다 (2026-09-10 라이브 실측).
             # 둘 다 우리 마크업이 아니라 서버가 끼우는 것이라, 재현하지 않으면
             # .entry-main의 마지막 자식이 무엇인지도 실물과 달라진다.
-            return (NAMECARD_BOX + '<div id="entry179Comment">'
+            nc = namecard_box(follower=True, creator=True) if page == "page_toc" else NAMECARD_BOX
+            return (nc + '<div id="entry179Comment">'
                     + R(inner, {**ctx, "comment_group": REACT_BOX_EMPTY if page == "page_bare"
                                 else REACT_BOX % "댓글"}) + '</div>')
         return R(inner)
@@ -1011,7 +1062,93 @@ def values(text, ctx):
     return VALUE_RE.sub(sub, text)
 
 
+# ── 동시 실행 (이슈 #100) ──────────────────────────────────────────────
+# 예전에는 각 페이지를 `open(path, "w")`로 그 자리에 다시 썼다 — 렌더 둘이 겹치거나 렌더 중에 다른 쪽(test:notice·
+# gen-preview·브라우저)이 읽으면 **잘린 파일**을 봤다(겹친 5회에 18번). 막는 것이 산문 규칙뿐이었다. 지금은 잠금
+# `.preview.lock`(pid)으로 줄을 세우고, 파일마다 임시 파일에 쓴 뒤 os.replace로 원자 교체한다. scripts/build.mjs와
+# 같은 방식이다. `--page`로 일부만 그릴 수 있어 _preview/를 통째로 바꾸지 않는다.
+# scripts/test-build-lock.mjs(npm run check)가 실제로 겹쳐 돌려 본다.
+LOCK = os.path.join(ROOT, ".preview.lock")
+
+
+def _alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+
+
+def acquire_lock():
+    """`.preview.lock`을 쥔다. pid를 다 쓴 파일을 link로 만든다 — 빈 잠금을 죽은 잠금으로 오인하지 않게.
+    알려진 한계: 죽은 잠금을 둘이 동시에 치우면 늦은 쪽이 새 잠금을 지울 수 있다(크래시 뒤에만 생긴다)."""
+    timeout = float(os.environ.get("LOCK_TIMEOUT_MS") or 120000) / 1000
+    start, mine = time.time(), "%s.%d" % (LOCK, os.getpid())
+    with open(mine, "w") as f:
+        f.write(str(os.getpid()))
+    try:
+        while True:
+            try:
+                os.link(mine, LOCK)
+                return
+            except FileExistsError:
+                pass
+            try:
+                pid = int(open(LOCK).read().strip())
+            except FileNotFoundError:
+                continue  # 그 사이 풀렸다
+            except ValueError:
+                pid = 0
+            if pid <= 0 or not _alive(pid):
+                sys.stderr.write("  [잠금] 죽은 프로세스(pid %d)의 .preview.lock을 치운다\n" % pid)
+                try:
+                    os.unlink(LOCK)
+                except FileNotFoundError:
+                    pass
+                continue
+            if time.time() - start > timeout:
+                sys.stderr.write("❌ 다른 프리뷰 렌더(pid %d)가 _preview/를 쓰는 중이다 — %g초 기다렸다.\n"
+                                 "   그 프로세스가 없는데도 이렇다면 .preview.lock을 지운다\n" % (pid, timeout))
+                sys.exit(1)
+            time.sleep(0.1)
+    finally:
+        try:
+            os.unlink(mine)
+        except FileNotFoundError:
+            pass
+
+
+def release_lock():
+    try:
+        if open(LOCK).read().strip() == str(os.getpid()):
+            os.unlink(LOCK)
+    except OSError:
+        pass
+
+
+def write_atomic(path, text):
+    """임시 파일에 다 쓴 뒤 os.replace — 읽는 쪽은 옛 파일 아니면 새 파일을 온전히 본다."""
+    tmp = "%s.tmp-%d" % (path, os.getpid())
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
 def main():
+    acquire_lock()
+    try:
+        render_all()
+    finally:
+        release_lock()
+
+
+def render_all():
     ap = argparse.ArgumentParser()
     ap.add_argument("--page", default=",".join(PAGE_TYPES), help="쉼표 구분 페이지 타입")
     ap.add_argument("--src", default=os.path.join(SRC, "skin.html"))
@@ -1087,7 +1224,7 @@ def main():
                              "스크롤 복귀가 굴러가는지 프리뷰가 재현하지 않는다(결정 60)\n")
         os.makedirs(os.path.join(OUT, "pages"), exist_ok=True)
         path = os.path.join(OUT, "pages", page + ".html")
-        open(path, "w", encoding="utf-8").write(out)
+        write_atomic(path, out)
         made.append(path)
 
     idx = ["<title>프리뷰</title><style>body{font:15px/1.7 system-ui;padding:40px;max-width:640px;"
@@ -1100,7 +1237,7 @@ def main():
     for p in made:
         n = os.path.basename(p)[:-5]
         idx.append('<a href="pages/%s.html">%s <small>(%s)</small></a>' % (n, n, PAGE_TYPES[n]))
-    open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write("\n".join(idx))
+    write_atomic(os.path.join(OUT, "index.html"), "\n".join(idx))
 
     print("\n%d개 페이지 생성 → _preview/" % len(made))
     print("열기: open _preview/index.html")

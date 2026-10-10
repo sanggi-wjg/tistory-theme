@@ -10,6 +10,7 @@
   python3 .claude/skills/seo-verify-live/scripts/verify.py --base ... --save-baseline
   python3 .claude/skills/seo-verify-live/scripts/verify.py --base ... --compare
   python3 .claude/skills/seo-verify-live/scripts/verify.py --base ... --json
+  python3 .claude/skills/seo-verify-live/scripts/verify.py --base ... --protected-path /300
 """
 import argparse
 import html as htmllib
@@ -21,6 +22,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from html.parser import HTMLParser
 
 UA_PC = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
          "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
@@ -1010,7 +1012,342 @@ def verify_tistory_sheets(base, home_doc, post_doc):
                  "있다. 프리뷰가 그 시트를 우리 뒤에 싣는 것은 더 엄격한 조건이라 해롭지 않다.")
 
 
+# ─────────────────────── 프로필 카드(Namecard) ───────────────────────
+#
+# V017은 Namecard의 **시트**(index.css)를 대조한다. 카드의 **마크업**은 시트가 아니라 스크립트 번들
+# (`static/pc/dist/index.js`)의 React 컴포넌트가 만든다 — 프리뷰 픽스처(`render.py` `namecard_box`)와 린트
+# TIS005의 marker는 그 컴포넌트에서 옮긴 것이다(#89). 번들이 클래스를 바꾸면 픽스처·TIS005가 같이 낡은 채
+# 통과한다(결정 42 부류, #131). 그래서 V019가 라이브 번들의 Namecard 컴포넌트를 픽스처와 대조한다.
+
+NAMECARD_BUNDLE_PATH = "/static/pc/dist/index.js"
+
+
+def js_skip_string(s, i):
+    """s[i]가 따옴표(", ', `)일 때 그 문자열 바로 다음 인덱스. 닫히지 않으면 len(s)."""
+    q, i = s[i], i + 1
+    while i < len(s):
+        if s[i] == "\\":
+            i += 2
+            continue
+        if s[i] == q:
+            return i + 1
+        i += 1
+    return len(s)
+
+
+def js_match(s, i):
+    """s[i]의 여는 괄호(`(` `[` `{`)에 짝인 닫는 괄호의 인덱스. 문자열 안의 괄호는 건너뛴다. 못 찾으면 -1.
+
+    ⚠ 정규식 리터럴과 템플릿 안의 `${` 중첩은 모른다 — 압축된 번들의 컴포넌트 하나를 자르는 데만 쓴다.
+       짝이 틀어지면 -1이 나와 V019가 미검증으로 물러난다(통과로 읽히지 않는다).
+    """
+    close = {"(": ")", "[": "]", "{": "}"}
+    stack = []
+    while i < len(s):
+        c = s[i]
+        if c in "\"'`":
+            i = js_skip_string(s, i)
+            continue
+        if c in close:
+            stack.append(close[c])
+        elif c in ")]}":
+            if not stack or stack.pop() != c:
+                return -1
+            if not stack:
+                return i
+        i += 1
+    return -1
+
+
+def bundle_component(js, app="Namecard"):
+    """번들에서 `data-tistory-react-app="<app>"`에 물리는 컴포넌트의 소스. 못 찾으면 None.
+
+    번들은 앱 이름 → 컴포넌트 표(`{Comment:g8,Namecard:_8,…}`)로 그릇을 채운다(2026-10-10 @e0a0fbc).
+    `Comment:`가 같이 있는 표만 믿는다 — `Namecard:` 키는 다른 객체에도 우연히 있을 수 있다.
+    정의는 `function X(){…}`이거나 `X=(…)=>{…}`다. 둘 다 아니면 None — 대조기가 낡은 것이다.
+    """
+    name = None
+    for m in re.finditer(r"\{[^{}]*?(?<![\w$])%s:([\w$]+)[^{}]*\}" % re.escape(app), js or ""):
+        if re.search(r"(?<![\w$])Comment:", m.group(0)):
+            name = m.group(1)
+            break
+    if not name:
+        return None
+    n = re.escape(name)
+    found = []
+    for d in re.finditer(r"(?<![\w$.])function\s+%s\s*\(" % n, js):
+        p = js_match(js, d.end() - 1)
+        b = p + 1 if p != -1 else -1
+        while 0 <= b < len(js) and js[b].isspace():
+            b += 1
+        if 0 <= b < len(js) and js[b] == "{":
+            e = js_match(js, b)
+            if e != -1:
+                found.append(js[d.start():e + 1])
+    for d in re.finditer(r"(?<![\w$.])%s\s*=(?![=>])\s*" % n, js):
+        i = d.end()
+        if i < len(js) and js[i] == "(":
+            i = js_match(js, i) + 1
+            if i == 0:
+                continue
+        else:
+            a = re.match(r"[\w$]+", js[i:])
+            if not a:
+                continue
+            i += a.end()
+        arrow = re.match(r"\s*=>\s*", js[i:])
+        if not arrow:
+            continue
+        b = i + arrow.end()
+        if b < len(js) and js[b] in "{(":
+            e = js_match(js, b)
+            if e != -1:
+                found.append(js[d.start():e + 1])
+    # 압축기는 짧은 이름을 다른 스코프에서 다시 쓴다. 정의가 둘 이상이면 어느 것이 앱 표의 그것인지
+    # 여기서는 가리지 못한다 — 아무거나 고르면 엉뚱한 컴포넌트와 대조하고 통과할 수 있어 None(미검증)으로 물러난다.
+    return found[0] if len(found) == 1 else None
+
+
+def bundle_signatures(src):
+    """컴포넌트 소스의 jsx 호출 → {"태그.클래스.클래스", …}. 클래스는 정렬한다(순서는 상태가 아니다).
+
+    `className`이 문자열 리터럴이 아니면 `태그.{동적}` — 조건부 클래스로 바뀐 것도 갈림으로 잡혀야 한다.
+    태그가 문자열이 아니라 다른 컴포넌트(`E.jsx(Xy,{…})`)면 `<Xy>` — 카드가 하위 컴포넌트로 쪼개지면
+    그 안의 클래스가 이 소스에 없어 대조가 헐거워지므로, 그 사실 자체를 갈림으로 낸다.
+    className이 없는 원소(svg·path)는 세지 않는다 — 픽스처와 상대 시트가 보는 것은 클래스다.
+    """
+    out = set()
+    # `E.jsx("a",{…})`와 esbuild식 `(0,E.jsx)("a",{…})` 둘 다. props가 객체 리터럴이 아니면(`E.jsx("a",p)`)
+    # 클래스를 알 수 없으므로 `{동적}`으로 남긴다 — 건너뛰면 그 원소가 대조에서 조용히 빠진다.
+    for m in re.finditer(r"\.jsxs?\)?\(\s*(?:\"([\w-]+)\"|([\w$.]+))\s*,\s*(\{)?", src or ""):
+        tag, comp = m.group(1), m.group(2)
+        if comp:
+            out.add("<%s>" % comp)
+            continue
+        if not m.group(3):
+            out.add("%s.{동적}" % tag)
+            continue
+        start = m.end() - 1
+        end = js_match(src, start)
+        if end == -1:
+            out.add("%s.{잘림}" % tag)
+            continue
+        i, depth, cls = start + 1, 0, None
+        while i < end:
+            c = src[i]
+            if c in "\"'`":
+                i = js_skip_string(src, i)
+                continue
+            if c in "([{":
+                depth += 1
+            elif c in ")]}":
+                depth -= 1
+            elif depth == 0 and src.startswith("className", i) and src[i - 1] in "{,":
+                v = re.match(r"className\s*:\s*(?:\"([^\"\\]*)\"|'([^'\\]*)')\s*[,}]", src[i:end + 1])
+                cls = (v.group(1) if v.group(1) is not None else v.group(2)).split() if v else None
+                if cls is None:
+                    out.add("%s.{동적}" % tag)
+                break
+            i += 1
+        if cls:
+            out.add(".".join([tag] + sorted(cls)))
+    return out
+
+
+def fixture_signatures(html):
+    """프리뷰 픽스처 HTML → {"태그.클래스.클래스", …}. 그릇 div(class 없음)·svg는 세지 않는다."""
+    out = set()
+    for m in re.finditer(r"<([a-zA-Z][\w-]*)\b([^>]*)>", html or ""):
+        c = re.search(r'(?:^|\s)class\s*=\s*["\']([^"\']*)["\']', m.group(2))
+        if c and c.group(1).split():
+            out.add(".".join([m.group(1).lower()] + sorted(c.group(1).split())))
+    return out
+
+
+def namecard_drift(bundle_js, fixture_htmls):
+    """(갈림 문장 목록, 번들 서명 수). 컴포넌트를 못 찾으면 (None, 0).
+
+    픽스처는 상태 넷(구독 여부 × 크리에이터 여부)의 **합집합**으로 본다 — 번들 컴포넌트는 조건 분기를
+    전부 담고 있어서다. 한쪽에만 있는 서명이 갈림이다: 번들에만 있으면 픽스처가 그리지 않는 원소(다크
+    덮어쓰기가 프리뷰에서 매칭될 상대가 없다), 픽스처에만 있으면 실물에 없는 원소(죽은 덮어쓰기를 살아
+    있다고 보여 준다).
+    """
+    src = bundle_component(bundle_js)
+    if src is None:
+        return None, 0
+    live = bundle_signatures(src)
+    fx = set()
+    for h in fixture_htmls:
+        fx |= fixture_signatures(h)
+    out = []
+    only_live, only_fx = sorted(live - fx), sorted(fx - live)
+    if only_live:
+        out.append("번들에만 있다: " + ", ".join(only_live))
+    if only_fx:
+        out.append("프리뷰 픽스처에만 있다: " + ", ".join(only_fx))
+    return out, len(live)
+
+
+def bundle_url_of(doc, base):
+    """라이브 문서가 싣는 티스토리 번들(`static/pc/dist/index.js`) URL. 없으면 None.
+
+    `index-legacy.js`(nomodule)는 같은 디렉터리의 다른 파일이라 경로 끝까지 맞춘다.
+    """
+    for tag in re.findall(r"<script\b[^>]*>", doc or "", re.I):
+        s = re.search(r'(?:^|\s)src\s*=\s*["\']([^"\']+)["\']', tag, re.I)
+        if s and urllib.parse.urlparse(s.group(1)).path.endswith(NAMECARD_BUNDLE_PATH):
+            return urllib.parse.urljoin(base + "/", htmllib.unescape(s.group(1)))
+    return None
+
+
+def verify_namecard_bundle(base, home_doc):
+    """V019 — 프리뷰 Namecard 픽스처가 라이브 번들의 Namecard 컴포넌트와 같은 원소·클래스인가(#131).
+
+    예외로 멈추면 미검증으로 남긴다 — 뒤의 검사와 리포트까지 잃지 않게(V018과 같다).
+    """
+    try:
+        _verify_namecard_bundle(base, home_doc)
+    except Exception as e:
+        unverified("V019", "Namecard 번들 대조가 예외로 멈췄다 (%s: %s)." % (type(e).__name__, e), RENDER_PY)
+
+
+def _verify_namecard_bundle(base, home_doc):
+    url = bundle_url_of(home_doc, base)
+    if not url:
+        unverified("V019", "라이브 홈에서 티스토리 번들(%s) 링크를 찾지 못했다 — 경로가 바뀌었다면 "
+                   "Namecard 컴포넌트를 어디서 받는지부터 다시 봐야 한다." % NAMECARD_BUNDLE_PATH, base + "/")
+        return
+    mod = load_renderer()
+    if mod is None:
+        unverified("V019", "프리뷰 렌더러(render.py)를 불러오지 못했다.", RENDER_PY)
+        return
+    if not hasattr(mod, "namecard_states"):
+        unverified("V019", "render.py에 namecard_states가 없어 픽스처 상태를 모으지 못했다.", RENDER_PY)
+        return
+    fixtures = mod.namecard_states()
+    status, js, _ = fetch(url)
+    if status != 200 or not js:
+        unverified("V019", "티스토리 번들을 받지 못했다 (HTTP %s)." % status, url)
+        return
+    problems, n = namecard_drift(js, fixtures)
+    if problems is None:
+        unverified("V019", "번들에서 Namecard 컴포넌트를 찾지 못했다(앱 표 `{Comment:…,Namecard:…}`나 정의 모양이 "
+                   "바뀌었다). 대조기(verify.py bundle_component)를 번들에 맞춰 고친 뒤 다시 돌린다 — 그동안 "
+                   "픽스처·TIS005가 낡았는지 알 수 없다.", url)
+        return
+    if problems:
+        warn("V019", "프리뷰 Namecard 픽스처가 라이브 번들과 갈렸다 — %s. 티스토리가 카드 마크업을 바꿨다면 "
+             "render.py namecard_box, data/tistory-hardcoded-colors.json namecardRules(TIS005), "
+             "src/styles/tistory.css의 Namecard 덮어쓰기를 같이 고친다(결정 53, #89)." % " / ".join(problems), url)
+    else:
+        pinned = preview_sheet_url("TISTORY_NAMECARD_BUNDLE")
+        tail = ("render.py TISTORY_NAMECARD_BUNDLE과 같은 번들이다" if pinned == url else
+                "번들 해시는 render.py TISTORY_NAMECARD_BUNDLE(%s)과 다르지만 카드 마크업은 같다 — 상수를 %s 로 "
+                "갱신해 두라" % (pinned, url))
+        info("V019 — 프리뷰 Namecard 픽스처가 라이브 번들 컴포넌트와 같은 원소·클래스 %d종이다. %s." % (n, tail))
+
+
+class _NamecardAncestry(HTMLParser):
+    """Namecard 그릇마다 조상들의 (태그, class 목록). 닫는 태그를 빼먹은 HTML도 가장 가까운 같은 태그까지 닫는다.
+
+    ⚠ 브라우저의 트리 구성 규칙(표 안의 엇나간 `</div>` 무시 등)은 흉내 내지 않는다 — 그런 마크업에서는
+       안·밖 판정이 브라우저와 갈릴 수 있다. 의심되면 SKILL.md 「V020 손 절차」로 실물 DOM을 본다.
+    """
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack, self.hits = [], []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if a.get("data-tistory-react-app") == "Namecard":
+            self.hits.append(list(self.stack))
+        if tag not in self.VOID:
+            self.stack.append((tag, (a.get("class") or "").split()))
+
+    def handle_startendtag(self, tag, attrs):
+        if dict(attrs).get("data-tistory-react-app") == "Namecard":
+            self.hits.append(list(self.stack))
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.stack[i][0] == tag:
+                del self.stack[i:]
+                break
+
+
+def namecard_ancestry(doc):
+    """문서의 Namecard 그릇마다 조상 (태그, class 목록)들의 목록. 그릇이 없으면 []."""
+    p = _NamecardAncestry()
+    p.feed(doc or "")
+    p.close()
+    return p.hits
+
+
+def verify_namecard_protected(base, path):
+    """V020 — 예외로 멈추면 미검증으로 남긴다(V018·V019와 같다). 본문은 `_verify_namecard_protected`."""
+    try:
+        _verify_namecard_protected(base, path)
+    except Exception as e:
+        unverified("V020", "보호글 Namecard 대조가 예외로 멈췄다 (%s: %s)." % (type(e).__name__, e), base + "/")
+
+
+def protected_url(base, path):
+    """`--protected-path` → URL. 절대 URL이면 그대로, 경로면 base에 붙인다. 한글 경로는 퍼센트 인코딩한다
+    (urllib는 비ASCII URL에서 예외를 내고, fetch는 그것을 「못 받았다」로 삼켜 이유가 사라진다)."""
+    u = urllib.parse.urlsplit(path)
+    if not u.netloc:
+        u = urllib.parse.urlsplit(base + (path if path.startswith("/") else "/" + path))
+    return urllib.parse.urlunsplit(u._replace(path=urllib.parse.quote(u.path, safe="/%"),
+                                              query=urllib.parse.quote(u.query, safe="=&%")))
+
+
+def _verify_namecard_protected(base, path):
+    """V020 — 보호글 페이지에 Namecard가 주입되는가, 되면 `.entry-main` 안인가(#130).
+
+    우리 덮어쓰기는 전부 `.entry-main [data-tistory-react-app="Namecard"] .tt_box_namecard`로 시작한다
+    (TIS005 접두). 그런데 보호글 영역(`<s_article_protected>` → `section.protected`)에는 `<s_rp>`도
+    `.entry-main`도 없다. 티스토리가 거기에도 카드를 넣는데 `.entry-main` 밖이면 규칙이 하나도 매칭되지
+    않아 다크에서 라이트 전용 #f7f7f7 판으로 뜬다(#59와 같은 모양). 보호글은 목록에서 찾을 수 없어
+    (2026-10-10: 홈 1~25쪽·글 번호 1~299 어디에도 없었다) 경로를 `--protected-path`로 받는다.
+    경로가 없으면 **미검증**이다 — 재지 않은 자리를 통과로 적지 않는다.
+
+    로그아웃 화면만 본다. 비밀번호를 넣은 뒤의 화면은 이 스크립트가 못 연다 — SKILL.md 「V020」의
+    손 절차로 본다.
+    """
+    if not path:
+        unverified("V020", "보호글 경로(--protected-path)가 없어 보호글에 Namecard가 주입되는지 재지 못했다. "
+                   "보호글이 생기면 그 경로로 다시 돌린다(#130).", base + "/")
+        return
+    url = protected_url(base, path)
+    status, doc, _ = fetch(url)
+    if status != 200 or not doc:
+        unverified("V020", "보호글을 받지 못했다 (HTTP %s)." % status, url)
+        return
+    # class **토큰**으로 본다 — `\bprotected\b`는 하이픈을 경계로 읽어 `post-protected-note`에도 맞는다
+    if not any("protected" in c.split() for c in
+               re.findall(r'<section\b[^>]*?\sclass\s*=\s*["\']([^"\']*)["\']', doc, re.I)):
+        unverified("V020", "이 페이지에 보호글 영역(section.protected)이 없다 — 보호가 풀렸거나 스킨이 다르다. "
+                   "Namecard 위치를 보호글 조건에서 잰 것이 아니다.", url)
+        return
+    hits = namecard_ancestry(doc)
+    if not hits:
+        info("V020 — 보호글(로그아웃)에 Namecard 그릇이 없다 — 덮어쓰기가 닿을 상대가 없어 문제없다. "
+             "비밀번호를 넣은 뒤 화면은 따로 본다(SKILL.md 「V020」).")
+        return
+    outside = [h for h in hits if not any("entry-main" in cls for _, cls in h)]
+    if outside:
+        trail = " > ".join(tag + "".join("." + c for c in cls) for tag, cls in outside[0]) or "(조상 없음)"
+        warn("V020", "보호글에 Namecard가 `.entry-main` 밖에 주입된다(%d개 중 %d개, 조상: %s). TIS005 접두가 "
+             "`.entry-main`으로 시작해 덮어쓰기가 하나도 매칭되지 않는다 — 다크에서 #f7f7f7 판으로 뜬다(#59)."
+             % (len(hits), len(outside), trail), url)
+    else:
+        info("V020 — 보호글(로그아웃)의 Namecard %d개가 모두 `.entry-main` 안이다 — 덮어쓰기가 닿는다." % len(hits))
+
+
 # ────────────────────────────── baseline ──────────────────────────────
+
 
 def compare_baseline(stats, base):
     if not os.path.exists(BASELINE):
@@ -1158,6 +1495,9 @@ def main():
                          "집거나 못 찾을 때만 쓴다.")
     ap.add_argument("--category", default=None,
                     help="검증에 쓸 상위 카테고리 이름 (예: 경제).")
+    ap.add_argument("--protected-path", default=None,
+                    help="보호글의 경로 (예: /300). V020이 보호글에 Namecard가 어디 주입되는지 잰다 — "
+                         "보호글은 목록에서 찾을 수 없어 자동 선택이 없다. 없으면 V020은 미검증.")
     args = ap.parse_args()
 
     base = args.base.rstrip("/")
@@ -1202,6 +1542,11 @@ def main():
         unverified("V018", "홈을 받지 못해 페이징 픽스처를 대조하지 못했다.", base + "/")
     verify_platform_assets(base)
     verify_tistory_sheets(base, home_doc, post_doc)
+    if home_doc:
+        verify_namecard_bundle(base, home_doc)
+    else:
+        unverified("V019", "홈을 받지 못해 Namecard 번들을 대조하지 못했다.", base + "/")
+    verify_namecard_protected(base, args.protected_path)
 
     if args.compare:
         compare_baseline(stats, base)
