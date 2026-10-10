@@ -33,7 +33,7 @@ description: "블로그 글에 넣을 설명용 애니메이션을 HTML(SVG + t�
 원본 HTML과 GIF는 **글 폴더의 `assets/`**에 둔다 — 나중에 캡션·속도를 고쳐 다시 구울 원본이다. 글 폴더는 블로그 카테고리를
 그대로 따른다: 올린 글은 `posts/<카테고리>/<하위 카테고리>/<YYYY-MM-DD>-<영문 슬러그>/`, 올리기 전 초안은 `posts/_drafts/`.
 아래 명령의 `<글>`이 그 폴더다(예: `posts/데이터베이스/MySQL/2026-10-08-lock-order-deadlock`).
-**올린 글은 커밋하고 초안은 커밋하지 않는다** — `.gitignore`의 `/posts/_drafts`. 저장소가 공개인데 초안에는 회사 코드 이야기가
+**올린 글은 커밋하고 초안은 커밋하지 않는다** — `.gitignore`의 `/posts/_drafts`·`/posts/**/_drafts/`(카테고리 폴더 안의 `_drafts/`도 막는다, `npm run test:gitignore`). 저장소가 공개인데 초안에는 회사 코드 이야기가
 들어갈 수 있다. 블로그에 올라간 내용만 저장소에 들어온다. 초안 단계의 애니메이션 원본은 이 컴퓨터에만 있다.
 
 ```bash
