@@ -60,7 +60,7 @@ jobs:
 
       - run: npm ci
 
-      # 빌드 → 린트 → 테스트 7종 → 프리뷰. 통과한 dist/ 만 릴리즈에 붙는다
+      # check.yml과 같은 사슬(package.json의 check가 정본). 통과한 dist/ 만 릴리즈에 붙는다
       - run: npm run check
 
       - name: dist/ 를 zip 으로

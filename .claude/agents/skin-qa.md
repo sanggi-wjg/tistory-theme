@@ -23,10 +23,10 @@ model: opus
 |---|---|---|---|
 | 훅 이름 | `skin.html`의 class·data 속성 | `style.css` 선택자 / `script.js` 셀렉터 | 스타일 미적용, JS 무동작 |
 | `data-cat` | `skin.html`의 `data-cat="[##_..._##]"` | CSS `[data-cat^="IT/"]` 접두 선택자 | **기본이미지 전부 무너짐** |
-| 카테고리 목록 | `data/posts.json`의 실제 카테고리 | CSS 기본이미지 규칙(상위 14종 + 기본값, `DESIGN.md` §6.2 · 린트 `BND003`) | 새 카테고리가 기본값으로 떨어짐 |
+| 카테고리 목록 | `data/categories.json`의 실제 카테고리 | CSS 기본이미지 규칙(상위 14종 + 기본값, `DESIGN.md` §6.2 · 린트 `BND003`) | 새 카테고리가 기본값으로 떨어짐 |
 | 스킨 옵션 | `index.xml`의 `<variable><name>` | `skin.html`의 `[##_var_*_##]`, `<s_if_var_*>` | 빈 값 출력 |
 | 영역 치환자 | 치환자가 놓인 위치 | 그 치환자가 유효한 페이지 타입 | **화면이 통째로 빔** |
-| 인라인색 열거 | `DESIGN.md` §5.2의 CSS 목록 | `data/posts.json` 재조사 결과 | 다크에서 글자 실종 |
+| 인라인색 열거 | `data/inline-styles.json`의 `needsFix`(재조사 결과) | `build.mjs` `inlineFixCss()`가 생성하는 보정 CSS (`INL001`) | 다크에서 글자 실종 |
 | JS 생성 DOM | `script.js`가 만드는 클래스 | `style.css`의 대응 규칙 | 스타일 없는 날것 DOM |
 | 토큰 | `DESIGN.md`의 토큰 정의 | `style.css`의 실제 값 | 하드코딩된 색이 다크모드에서 안 바뀜 |
 | **티스토리 시트 색** | `data/tistory-hardcoded-colors.json` | `tistory.css`의 덮어쓰기 + **ID 짝** | **다크에서만** 요소가 배경에 묻힘 (`TIS001`·`TIS002`) |
@@ -50,9 +50,9 @@ model: opus
 - `body`에 토큰 배경이 명시되어 있는가
 - 인라인색 보정 규칙(`data/inline-styles.json`의 `needsFix`, 색 17종 + 배경 11종)이 실제로 적용되는가
 - **티스토리 시트와의 특이도 싸움에서 이기는가** (`DESIGN.md` §5.2b). 우리 CSS만 보면 알 수 없다 —
-  프리뷰가 시트 **셋**을 실제 순서대로 싣는지 확인하고 — `content.css`(우리 앞) ·
+  프리뷰가 시트 **넷**을 실제 순서대로 싣는지 확인하고 — `content.css`(우리 앞) ·
   `atom-one-light`(우리 뒤) · `static/pc/dist/index.css`(우리 뒤, 댓글·프로필 카드 React 앱의
-  시트이자 `TIS003`·`TIS005`의 상대) —
+  시트이자 `TIS003`·`TIS005`의 상대) · `static/style/tistory.css`(우리 뒤, 티스토리 툴바 — 결정 59) —
   **계산된 색**(`getComputedStyle`)을 재라. 선언이 있다고 적용된 것이 아니다.
 - **라이트가 멀쩡한 것은 근거가 아니다.** 이 프로젝트에서 다크가 깨진 두 건 모두 라이트에서는
   정상이었다 — `#333` on 흰 배경은 12.63:1이다. 두 테마를 **각각** 잰다.

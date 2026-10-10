@@ -10,7 +10,7 @@ Node 20+(`.nvmrc`·CI는 26) · Python 3. 처음 한 번 `npm install`.
 | `npm run watch` | 변경 감시 빌드 |
 | `npm run lint` | 정적 검증. 오류가 있으면 exit 1 |
 | `npm run preview` | 빌드 후 `_preview/`에 12개 페이지 렌더 |
-| `npm run check` | 빌드 → 린트 → CSS 구문(`test:css`) → 테스트 → 프리뷰 → 프리뷰를 읽는 검사(`test:notice`). **커밋 전에 통과해야 한다** |
+| `npm run check` | 빌드 → 린트 → CSS 구문(`test:css`) → 테스트 → 프리뷰 → 프리뷰를 읽는 검사(`test:notice`) → 빌드·렌더 동시 실행 검사(`test:build-lock`). **커밋 전에 통과해야 한다** |
 | `npm run preview:images` | 관리 화면용 미리보기 이미지 4종 재생성 (macOS + Chrome 필요) |
 | `npm run icons` | 파비콘·블로그 아이콘 재생성 → `src/assets/brand/` (결정 49) |
 
@@ -72,8 +72,9 @@ python3 .claude/skills/seo-verify-live/scripts/verify.py \
   --base https://<블로그> --save-baseline        # 배포 전 상태를 기준선으로
 ```
 
-기준선을 찍는 명령은 **오류를 내고 exit 1로 끝나는 것이 정상이다** — 라이브가 아직 이전 스킨이라서다.
-단 `V014`가 뜨면 기준선이 저장되지 않은 것이니 원인을 고치고 다시 찍는다.
+기준선을 찍는 명령이 **`V009` 하나로 exit 1을 내는 것은 정상이다** — CSS를 바꾼 배포면 라이브가 아직 이전 빌드라서다.
+그 밖의 오류(`V003`·`V010` 등)는 이미 라이브에 생긴 문제이니 배포 전에 원인부터 본다(이슈 #142).
+`V014`가 뜨면 기준선이 저장되지 않은 것이니 원인을 고치고 다시 찍는다.
 
 스킨 편집기에 이 순서로 올린다.
 
