@@ -250,7 +250,7 @@ class HumanBody {
 }
 ```
 
-요구사항이 이것뿐이라면 이 코드가 정답이다. 여기서 굳이 `Arm`, `Leg` 인터페이스부터 만들고 구현체를 나누지 마라. 올지 안 올지 모르는 미래를 위해 지금 비용을 태우는 일이다. KISS(Keep It Simple, Stupid), YAGNI(You Aren't Gonna Need It) 원칙대로 실무에서 필요 없는 추상화는 하지 않는다. 추상화는 요구사항이 실제로 왔을 때 현 시점에 필요한지 판단하여 진행한다.
+요구사항이 이것뿐이라면 이 코드가 정답이다. 여기서 굳이 `Arm`, `Leg` 인터페이스부터 만들고 구현체를 나누지 마라. 올지 안 올지 모르는 미래를 위해 지금 비용을 태우는 일이다. KISS(Keep It Simple, Stupid), YAGNI(You Aren't Gonna Need It) 원칙대로 실무에서 필요 없는 추상화는 하지 않는다. 추상화는 미래에 요구사항이 추가로 왔을 때 현 시점에 필요한지 판단하여 진행한다.
 
 ### 2단계: 추가 요구사항
 추가 요구사항이 들어온다. 팔다리를 잃었거나, 생체공학 의수, 의족을 단 사람, 초월공학 부위를 단 사람도 다룰 수 있어야 한다.
@@ -388,8 +388,6 @@ class BodyWithoutDiTest :
     )
 ```
 
----
-
 ## DI로 구현하면
 
 3단계의 문제는 두 가지로 모인다. 바퀴 다리를 끼울 **규격**이 없다는 것, 그리고 HumanBody가 부위를 **직접 만든다**는 것이다. 그래서 두 가지를 한다.
@@ -503,6 +501,8 @@ every { mockLeg.move() } returns MoveType.CRAWL
 ```kotlin
 // DI 없이: 두 다리가 모두 LegType.WHEEL이라 moveOf를 stub하면 양쪽이 같이 바뀌고,
 // anyConstructed는 WheelLeg로 만든 모든 객체에 걸린다. 왼쪽·오른쪽을 구분해 고장 낼 수 없다
+mockkConstructor(WheelLeg::class)
+every { anyConstructed<WheelLeg>().spin() } returns MoveType.WHEEL
 
 // DI 없이: 호출 순서에 기대면 가능은 하다. 첫 호출(왼쪽)은 멀쩡하고 두 번째 호출(오른쪽)은 고장 난다
 // 왼쪽이 먼저 불린다는 내부 구현을 테스트가 알아야 하고, move()의 호출 순서가 바뀌면 테스트가 깨진다
@@ -593,4 +593,4 @@ class ProfileImageService(
 ```
 
 받는 쪽은 인터페이스만 알고, 어떤 구현이 들어올지는 스프링이 정한다. HumanBody가 `Leg`만 알고 `main()`이 다리를 골라 끼우던 것과 같은 구조다.
-스프링에서 의존성 주입을 어떻게 활용하는지는 다음 글에서 더 자세히 다룰 예정이다. 많관부.
+스프링에서 의존성 주입을 어떻게 활용하는지는 다음 글에서 더 자세히 다룰 예정이다.
