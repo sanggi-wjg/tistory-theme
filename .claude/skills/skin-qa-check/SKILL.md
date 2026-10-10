@@ -31,7 +31,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py   # TIS005 (
 python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py       # TOK007
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
-python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·BND004·BND010③·BND011·BND012·DOC001·test:codes
+python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·SYN003·BND004·BND010③·BND011·BND012·DOC001·test:codes
 ```
 
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다
@@ -73,6 +73,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·
 | `BND012` | **공지 본문 그릇 `.notice-body`가 `skin.html`에서부터 `contents_style`을 다는가 (오류).** `[##_notice_rep_desc_##]`가 티스토리 본문 래퍼를 달고 오는지 모른다(라이브에 공지가 없다). 첫 판은 `notice.js`가 없을 때 붙였는데 그러면 첫 페인트 뒤에 본문 시트가 걸려 공지마다 문단 여백(24px)만큼 아래가 밀렸다 — 프리뷰 공지 2건에 48px, 3페이지 × 4폭 전부(이슈 #97). 이 밀림은 `script.js`를 붙잡아야 보여서 프리뷰·검사 어디에도 안 나온다. 원인이 「마크업에 클래스가 있는가」 하나라 정적으로 고정한다. `notice.js`는 안쪽 래퍼가 있을 때만 바깥 것을 뗀다(hooks.md §5.7). 주석은 벗기고 보고, `.notice-body`를 못 찾으면 오류다. `test-syntax-checks.py`에 기준선 1·켜지는 변이 2 |
 | `SYN001` | **CSS 구문 (오류).** `npm run test:css` — `scripts/check-css.mjs`가 `css-tree`로 `src/styles/*.css`와 `dist/style.css`를 파싱한다: 파싱 오류, 모르는 속성 이름(`colr:`), `var()`가 없는 값의 문법 오류(`display: flx`), 그리고 **괄호 균형**(EOF가 열린 블록을 닫아 주므로 파서만으로는 파일 끝의 `{` 누락을 못 본다 — 따로 센다). 2026-08-27 하네스 리뷰에서 괄호 하나·속성 오타가 린트 45종을 전부 통과했다. lint.py가 아니라 node가 내는 코드라 `test-lint-codes.py`의 `DOC_ONLY_OK`에 등재 |
 | `SYN002` | **`skin.html` 태그 균형 (오류).** 닫히지 않은 태그, 여는 태그 없는 닫는 태그, 엇갈린 중첩을 줄 번호로. `<s_*>` 그룹 치환자도 요소로 센다. 브라우저는 복구해 그리므로 에러가 없고, 복구된 트리는 CSS·레이아웃이 조용히 어긋난다 |
+| `SYN003` | **`src/index.xml` 문서 형식 (오류).** XML로 파싱되는가(CDATA 안의 `]]>`, CDATA 밖의 맨 `<`·`&`, 빠진 닫는 태그)와 루트가 `<skin>`인가. 빌드는 이 파일을 바이트 그대로 옮기고 다른 검사는 `<variable>`을 정규식으로만 읽어, `</information>`을 지워도 `npm run check`가 통과했다. 깨진 것은 스킨 편집기에 올릴 때에야 드러나는데, 올릴 때마다 스킨 설정이 초기화되므로(결정 1) 라이브에서 시험할 수 없다. dist가 아니라 src를 본다 (이슈 #147) |
 | `TOK001~005` | 토큰 우회 색 리터럴, 다크 블록 안 색 직접 지정, `prefers-color-scheme` 누락, body 배경 |
 | `TOK006` | 토큰의 **정의 ↔ 참조** 대조. 정의 없는 `var(--오타)`는 오류(선언 전체가 무효가 되어 상속값으로 떨어진다 — 에러는 안 난다), 참조가 하나도 없는 토큰은 정보. **`src`가 아니라 빌드 산출물까지 합쳐서 본다** — `scripts/build.mjs`가 생성하는 인라인색 보정이 `var(--link)`·`var(--error)`를 **문자열로** 쓰기 때문에 `src` grep에는 안 잡힌다. 결정 44가 "`--error`에는 살아 있는 사용처가 없다"를 세 문서에 적었다가 정정한 것이 정확히 이 구멍이었다. `dist/style.css`가 없으면 아예 돌지 않는다 |
 | `TOK007` | **`dist/style.css`가 가리키는 `images/` 파일이 실재하는가 (오류).** 기본 이미지가 `data:` 인라인에서 **업로드 WebP 30장**으로 바뀌면서(결정 5·6 개정) 새 구멍이 생겼다 — **변수는 정의돼 있는데 파일이 없다.** 업로드 누락·파일명 버전 불일치(`.v1` → `.v2`)·빌드의 복사 실패가 전부 같은 얼굴이고, CSS는 `url()`이 404여도 **에러를 내지 않는다** — 카드에 점격자만 남는다. 파일이 테마별로 나뉘어 있어 **라이트는 멀쩡한데 다크만 비는** 것도 가능하다. `TOK006`은 원리적으로 못 본다 — 변수의 정의↔참조만 보므로 `--ph-db: url("./images/없는파일.webp")`는 양쪽 다 멀쩡하다. `dist`가 없으면 아예 돌지 않고, 참조가 0개면 «판정하지 않았다»를 정보로 남긴다(검사가 꺼진 것과 통과한 것은 다르다 — 결정 40). **절대 URL도 경로에 `images/<파일>`이 있으면 본다** — `PLACEHOLDER_BASE`를 CDN으로 바꿔도(미결 1의 탈출구) 파일은 `dist/images/`에 그대로 있어야 하므로 접두사가 검사를 끄지 못한다 (`test-image-refs.py` 5케이스) |

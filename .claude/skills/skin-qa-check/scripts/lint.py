@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 
 ROOT = os.getcwd()
@@ -103,6 +104,34 @@ def lint_html_balance(skin):
     for m in p.problems:
         err("SYN002", m + ". 브라우저는 복구해 그리지만 복구된 트리는 CSS·레이아웃이 조용히 어긋난다.",
             "src/skin.html")
+
+
+# ─────────────────────────── 0b. index.xml 문서 형식 (SYN003) ───────────────────────────
+
+def lint_index_xml(xml):
+    """src/index.xml이 올바른 XML이고 루트가 <skin>인가 — SYN003.
+
+    이슈 #147: 빌드는 이 파일을 파싱하지 않고 바이트 그대로 dist/로 옮기고, 린트·프리뷰는
+    <variable>을 정규식으로만 읽는다. `</information>`을 지워도 `npm run check`가 초록불이었다.
+    깨진 것은 스킨 편집기에 올릴 때에야 드러나는데, 이 파일은 올릴 때마다 스킨 설정이
+    초기화되므로(결정 1) 라이브에서 시험해 볼 수 있는 파일이 아니다.
+
+    dist가 아니라 src를 본다 — dist는 그 사본이라, src를 망가뜨려도 낡은 dist가 남아 있으면
+    통과해 버린다(티스토리 시트 검사들이 src만 보는 것과 같은 이유).
+    """
+    if xml is None:
+        return
+    try:
+        root = ET.fromstring(xml.encode("utf-8"))
+    except ET.ParseError as e:
+        line, col = e.position
+        err("SYN003", "index.xml이 올바른 XML이 아니다 — %d행 %d열: %s. "
+            "CDATA 안의 `]]>`, CDATA 밖의 맨 `<`·`&`, 빠진 닫는 태그를 본다." % (line, col + 1, e),
+            "src/index.xml")
+        return
+    if root.tag != "skin":
+        err("SYN003", "index.xml의 루트가 <%s>다. 티스토리 스킨 정보는 <skin>으로 감싼다." % root.tag,
+            "src/index.xml")
 
 
 # ─────────────────────────── 1. 치환자 유효성 ───────────────────────────
@@ -1550,6 +1579,7 @@ def main():
     wl = json.load(open(os.path.join(ROOT, "data", "substitutions.json"), encoding="utf-8"))
 
     lint_html_balance(skin)
+    lint_index_xml(xml)
     lint_substitutions(skin, xml, wl)
     lint_area_scope(skin)
     lint_boundaries(skin, css, js)
