@@ -86,8 +86,8 @@ BUNDLE_MUTANTS = [
      lambda s: s.replace("function _8(){", "const _8=()=>{"), "same"),
     ("esbuild식 호출 (0,E.jsx)(…)로 바뀌었다(대조기가 따라가야 한다)",
      lambda s: s.replace("E.jsxs(", "(0,E.jsxs)(").replace("E.jsx(", "(0,E.jsx)("), "same"),
-    ("props가 변수로 넘어간다(클래스를 알 수 없다)",
-     lambda s: s.replace('E.jsx("a",{className:"tt_desc",', 'E.jsx("a",pp),E.jsx("i",{'), "drift"),
+    ("props가 변수로 넘어간다(클래스도 자식도 알 수 없다 → 집합 갈림 + 자리 미검증)",
+     lambda s: s.replace('E.jsx("a",{className:"tt_desc",', 'E.jsx("a",pp),E.jsx("i",{'), "unshaped"),
     ("같은 이름의 함수가 다른 스코프에 또 있다(고를 수 없다)",
      lambda s: 'function q(){function _8(){return E.jsx("b",{className:"x"})}}' + s, "missing"),
     # ↓ 클래스·태그는 그대로이고 자리·순서만 달라진 경우 — 집합 대조만으로는 「같다」였다(#134)
@@ -97,6 +97,7 @@ BUNDLE_MUTANTS = [
      lambda s: move_desc_into_wrapper(s), "drift"),
     ("tt_cont 클래스가 조건식이 됐고 그 안의 이름이 밖으로 나갔다(부모 이름이 바뀌어도 이동을 놓치지 않는다)",
      lambda s: move_title_out(s.replace('className:"tt_cont"', 'className:"tt_cont".concat(z)')), "drift+move"),
+    ("구독 버튼이 배지 줄(tt_link — 크리에이터 상태에만 있는 부모) 안으로 옮겨졌다", lambda s: button_into_link(s), "drift+move"),
     # ↓ 대조기가 자리를 확정할 수 없는 모양 — 거짓 경고 대신 미검증
     ("원소를 변수로 먼저 만들어 children에 넘긴다(소스 위치 ≠ DOM 위치)", lambda s: hoist_desc(s), "unshaped"),
     # props 짝이 깨지면 컴포넌트를 자르는 단계에서 먼저 실패한다 — `{잘림}`까지 가지 않고 통째로 미검증이다.
@@ -142,6 +143,16 @@ def move_title_out(s):
     head = 'E.jsxs("div",{className:"tt_box_namecard",children:['
     assert rest.count(head) == 1
     return rest.replace(head, head + title + ",", 1)
+
+
+def button_into_link(s):
+    """「구독하기」 버튼을 tt_cont의 삼항에서 빼(그 자리는 null) tt_link의 children 끝으로 옮긴다 — 복사가 아니라 이동."""
+    btn, rest = _cut_call(s, 'E.jsxs("button",{className:"tt_btn_subscribe","data-tiara-action-name":"프로필영역 구독 버튼_클릭",'
+                             '"data-tiara-copy":"구독하기"')
+    rest = rest.replace(':))]}),', ':null))]}),', 1) if ':))]}),' in rest else rest.replace('):)', '):null)', 1)
+    arrow = 'E.jsx("span",{className:"tt_img_area_reply tt_ico_arrow2"})'
+    assert rest.count(arrow) == 1
+    return rest.replace(arrow, arrow + "," + btn, 1)
 
 
 def hoist_desc(s):
@@ -237,11 +248,51 @@ def main():
     check(len(paths) == 16 and paths == fx_paths and "div.tt_cont > a.tt_desc" in paths
           and "a.tt_link > div.tt_wrap_svg" in paths and "^ > div.tt_box_namecard" in paths,
           "자리 16개가 픽스처와 같다 (%d / %d)" % (len(paths), len(fx_paths)))
-    check(orders.get("div.tt_box_namecard") == [["div.tt_cont", "a.tt_wrap_thumb"]]
-          and len(orders.get("div.tt_cont", [[]])[0]) == 5, "형제 순서를 읽는다 (%s)" % orders.get("div.tt_box_namecard"))
-    p, _, why = V.namecard_drift(BUNDLE.replace('"tt_tit_g"', '"tt_tit_badge"'), fixtures())
-    check(p is not None and len(p) == 2 and not any("자리" in x or "순서" in x for x in p) and why is None,
-          "이름이 바뀐 원소는 집합 갈림 두 줄로만 나오고 자리·순서로 또 나오지 않는다 (%s)" % p)
+    check(orders.get("^ > div.tt_box_namecard") == [["div.tt_cont", "a.tt_wrap_thumb"]]
+          and len(orders.get("div.tt_box_namecard > div.tt_cont", [[]])[0]) == 5,
+          "형제 순서를 읽는다 (%s)" % sorted(orders))
+    # 이름만 바뀐 것은 ①(집합) 두 줄로만 — 잎·중간·뿌리 셋 다. 부모 이름 하나로 자식 전부가 「자리」로 또 나오면
+    # 진짜 이동이 그 소음에 묻힌다(2차 코드 리뷰)
+    for what, old, new in (("잎(tt_tit_g)", '"tt_tit_g"', '"tt_tit_badge"'),
+                           ("중간(tt_cont)", 'className:"tt_cont"', 'className:"tt_cont_v2"'),
+                           ("뿌리(tt_box_namecard)", '"tt_box_namecard"', '"tt_box_nc"')):
+        p, _, why = V.namecard_drift(BUNDLE.replace(old, new), fixtures())
+        check(p is not None and len(p) == 2 and not any("자리" in x or "순서" in x for x in p) and why is None,
+              "이름만 바뀐 %s는 집합 갈림 두 줄로만 나온다 (%s)" % (what, p))
+    # {잘림} — bundle_component 단계에서 먼저 걸러져 실물로는 닿지 않는 가지라 컴포넌트 자르기를 건너뛰고 직접 부른다
+    real_bc = V.bundle_component
+    V.bundle_component = lambda js, app="Namecard": js
+    try:
+        p, _, why = V.namecard_drift('E.jsxs("div",{className:"tt_box_namecard",children:[E.jsx("a",{className:"tt_desc"',
+                                     fixtures())
+    finally:
+        V.bundle_component = real_bc
+    check(why is not None and "props를 끝까지" in why,
+          "props 짝을 못 맞춘 원소({잘림})가 있으면 자리를 미검증으로 돌린다 (%s)" % why)
+    # 그릇 div 안의 형제 순서 — 번들·픽스처 둘 다 그릇이 있고 픽스처만 순서를 바꾼 경우
+    wrapped = move_desc_into_wrapper(BUNDLE)
+
+    def wrap_swap(follower=False, creator=False):
+        h = RENDER.namecard_box(follower=follower, creator=creator)
+        i, j = h.index('<a class="tt_desc"'), h.index("</button>") + len("</button>")
+        desc_end = h.index("</a>", i) + len("</a>")
+        desc, btn = h[i:desc_end], h[desc_end:j]
+        return h[:i] + "<div>" + btn + desc + "</div>" + h[j:]
+    p, _, why = V.namecard_drift(wrapped, fixtures(wrap_swap))
+    check(p and any("순서" in x for x in p), "그릇 div 안의 형제 순서도 본다 (%s)" % p)
+    # .map()으로 그리는 목록 — 번들은 호출 하나, 픽스처는 같은 원소 여럿. 거짓 「순서」 경고가 나면 안 된다
+    t = {"label": "", "sig": None}
+    tree = [dict(t, sig="ul.x", label="ul.x", parent=None, children=[1, 2]),
+            dict(t, sig="li.y", label="li.y", parent=0, children=[]),
+            dict(t, sig="li.z", label="li.z", parent=0, children=[])]
+    ftree = [dict(t, sig="ul.x", label="ul.x", parent=None, children=[1, 2, 3]),
+             dict(t, sig="li.y", label="li.y", parent=0, children=[]),
+             dict(t, sig="li.y", label="li.y", parent=0, children=[]),
+             dict(t, sig="li.z", label="li.z", parent=0, children=[])]
+    common = {"ul.x", "li.y", "li.z"}
+    lo, fo = V.tree_orders(tree, common), V.tree_orders(ftree, common)
+    check(all(any(V.is_subsequence(seq, l) for l in lo[k]) for k, seqs in fo.items() for seq in seqs),
+          "연달아 같은 원소(.map 목록)는 하나로 접어 순서를 본다 (%s / %s)" % (lo, fo))
 
     print("② 번들 변이")
     for name, mut, want in BUNDLE_MUTANTS:
@@ -251,7 +302,8 @@ def main():
         elif why:
             got = "unshaped"
         elif p and want == "drift+move":
-            got = "drift+move" if any("자리" in x for x in p) else "drift"
+            moved = "a.tt_tit_cont" if "tt_tit_cont" in name or "이름이" in name else "button.tt_btn_subscribe"
+            got = "drift+move" if any("자리" in x and (moved + " ") in x.split("/")[0] + " " for x in p) else "drift"
         else:
             got = "drift" if p else "same"
         check(got == want, "%s → %s (기대 %s)%s%s" % (name, got, want, " " + "; ".join(p) if p else "",

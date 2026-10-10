@@ -1154,11 +1154,6 @@ def bundle_nodes(src):
     return nodes
 
 
-def bundle_signatures(src):
-    """컴포넌트 소스의 jsx 원소 서명 집합 — {"태그.클래스.클래스", …}. 서명 규칙은 `bundle_nodes`."""
-    return {n[2] for n in bundle_nodes(src) if n[2]}
-
-
 def bundle_tree(src):
     """번들 컴포넌트 → 원소 목록 [{"label", "sig", "parent"(인덱스 또는 None), "children"(인덱스 목록)}].
 
@@ -1227,39 +1222,47 @@ def fixture_tree(html):
     return p.nodes
 
 
-def fixture_signatures(html):
-    """프리뷰 픽스처 HTML → {"태그.클래스.클래스", …}. 자리 대조와 **같은 파서**(`fixture_tree`)에서 뽑는다."""
-    return {n["sig"] for n in fixture_tree(html) if n["sig"]}
+def node_path(tree, i, common):
+    """원소 i의 길 — 「가장 가까운 **공통** 조상 > 사이의 원소들 > 자기」. 조상이 없으면 `^`부터.
+
+    사이의 원소는 이렇게 적는다.
+    - 클래스 없는 원소는 태그(`div`) — 새 그릇 div가 끼면 길이 달라진다.
+    - 클래스는 있는데 공통이 아닌 원소(한쪽에서 이름이 바뀌었거나 한쪽에만 있다)는 `*` — 이름은 ①(집합)이 이미
+      냈으므로 길에서는 「클래스 있는 무언가」로만 본다. 그래서 부모 이름만 바뀐 것은 자리 갈림으로 또 나오지
+      않고, 이름이 바뀐 채 자식이 그 **밖으로** 나간 것은 `*`가 빠져 길이 달라져 잡힌다(#134 코드 리뷰).
+    자기 자신도 같은 규칙으로 적는다(공통 서명이면 서명).
+    """
+    def label(n):
+        return n["sig"] if n["sig"] in common else ("*" if n["sig"] else n["label"])
+    hops, p = [], tree[i]["parent"]
+    while p is not None and tree[p]["sig"] not in common:
+        hops.append(label(tree[p]))
+        p = tree[p]["parent"]
+    head = tree[p]["sig"] if p is not None else "^"
+    return " > ".join([head] + hops[::-1] + [label(tree[i])])
 
 
 def tree_paths(tree, common):
-    """원소마다 「가장 가까운 **공통** 조상 > 사이의 원소들 > 자기」. 조상이 없으면 `^`부터.
-
-    공통(양쪽에 다 있는 서명)이 아닌 조상은 길에 남는다 — 클래스 없는 그릇 div가 새로 끼었거나, 부모의
-    이름이 바뀌었는데 자식이 그 밖으로 옮겨진 것이 둘 다 길이 달라져 잡힌다(#134 코드 리뷰). 공통인 원소만
-    시작점으로 쓴다 — 한쪽에만 있는 원소는 위에서 이미 갈림으로 나왔다.
-    """
-    out = set()
-    for n in tree:
-        if n["sig"] not in common:
-            continue
-        hops, p = [], n["parent"]
-        while p is not None and tree[p]["sig"] not in common:
-            hops.append(tree[p]["label"])
-            p = tree[p]["parent"]
-        head = tree[p]["sig"] if p is not None else "^"
-        out.add(" > ".join([head] + hops[::-1] + [n["sig"]]))
-    return out
+    """공통 서명을 가진 원소마다 `node_path`. 한쪽에만 있는 원소는 위에서 이미 갈림으로 나왔다."""
+    return {node_path(tree, i, common) for i, n in enumerate(tree) if n["sig"] in common}
 
 
 def tree_orders(tree, common):
-    """{부모 서명: [자식 서명 순서, …]} — 공통 서명끼리만. 같은 부모 서명이 여럿이면 순서 목록이 여럿이다."""
+    """{부모의 길: [자식 서명 순서, …]} — 자식은 공통 서명끼리만, 부모는 공통 서명이거나 클래스 없는 그릇이다
+    (그릇 div 안의 형제 순서도 봐야 한다). 같은 서명이 연달아 오면 하나로 접는다 — 번들에서 `.map()`으로
+    그리는 목록은 jsx 호출 하나지만 픽스처에는 여러 개로 그려진다.
+    """
     out = {}
-    for n in tree:
-        if n["sig"] in common:
-            seq = [tree[c]["sig"] for c in n["children"] if tree[c]["sig"] in common]
-            if len(seq) > 1:
-                out.setdefault(n["sig"], []).append(seq)
+    for i, n in enumerate(tree):
+        if n["sig"] and n["sig"] not in common:
+            continue
+        seq = []
+        for c in n["children"]:
+            sig = tree[c]["sig"]
+            if sig in common and (not seq or seq[-1] != sig):
+                seq.append(sig)
+        if len(seq) > 1:
+            out.setdefault(node_path(tree, i, common), []).append(seq)
     return out
 
 
@@ -1280,7 +1283,8 @@ def namecard_drift(bundle_js, fixture_htmls):
     ③ **형제 순서** — 상태마다 픽스처의 자식 순서가 번들 자식 순서의 부분열이어야 한다(번들은 삼항의 두 갈래를
        나란히 담으므로 부분열로 본다). 썸네일이 왼쪽으로 옮겨진 것 같은 좌우 반전이 여기서 잡힌다.
     ②③은 번들 트리를 확정할 수 있을 때만 — 뿌리가 둘 이상이면(원소를 변수로 먼저 만들어 `children`에 넘겼다)
-    소스 위치가 DOM 위치가 아니고, `{잘림}` 원소는 자식을 품지 못한다. 그때는 이유를 돌려 미검증으로 남긴다.
+    소스 위치가 DOM 위치가 아니고, `{잘림}` 원소는 자식을 품지 못하며, props를 변수로 넘긴 원소는 자식을 모른다.
+    그때는 이유를 돌려 미검증으로 남긴다.
     """
     src = bundle_component(bundle_js)
     if src is None:
@@ -1298,11 +1302,17 @@ def namecard_drift(bundle_js, fixture_htmls):
 
     roots = [n["label"] for n in btree if n["parent"] is None]
     cut = sorted(n["label"] for n in btree if n["label"].endswith(".{잘림}"))
+    # props가 객체 리터럴이 아닌 호출(`E.jsx("a",pp)`)은 자식이 어디서 오는지 모른다
+    opaque = sorted(n["label"] for n in btree if n["end"] == -1 and n["label"].endswith(".{동적}"))
+    # 원인부터 묻는다 — 잘리거나 불투명한 원소는 자식을 품지 못해 뿌리를 여럿 만들기도 한다
+    if cut:
+        return out, len(live), "props를 끝까지 읽지 못한 원소가 있다(%s) — 그 자식들의 자리를 확정할 수 없다" % ", ".join(cut)
+    if opaque:
+        return out, len(live), ("props를 변수로 넘기는 원소가 있다(%s) — 그 자식이 어디서 오는지 몰라 자리를 확정할 수 "
+                                "없다" % ", ".join(opaque))
     if len(roots) > 1:
         return out, len(live), ("번들 컴포넌트의 최상위 원소가 %d개다(%s) — 원소를 변수로 먼저 만들어 넘기면 소스 위치가 "
                                 "DOM 위치가 아니라 자리를 확정할 수 없다" % (len(roots), ", ".join(roots)))
-    if cut:
-        return out, len(live), "props를 끝까지 읽지 못한 원소가 있다(%s) — 그 자식들의 자리를 확정할 수 없다" % ", ".join(cut)
 
     common = live & fx
     live_paths = tree_paths(btree, common)
