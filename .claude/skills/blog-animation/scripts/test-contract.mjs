@@ -9,7 +9,7 @@
 //
 //   node .claude/skills/blog-animation/scripts/test-contract.mjs   (npm run test:anim — npm run check·CI가 돈다, 이슈 #105)
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync, rmSync, chmodSync, statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +32,14 @@ const MUTATIONS = {
   '나타나기 구간의 난수': ["var o = (s.fresh === 'lockA' || s.fresh === 'lockB') ? appear : 1;", "var o = (s.fresh === 'lockA' || s.fresh === 'lockB') ? (p < 0.33 ? Math.random() : 1) : 1;"],
 };
 
-const check = (file) => spawnSync('node', [render, file, '--check'], { encoding: 'utf8' });
+// render-gif는 Chrome·CDP가 멈추거나 죽으면 Chrome을 다시 띄우고 stderr에 ↻를 남긴다(이슈 #135). 다시 띄운 횟수를
+// 모아 끝에 적는다 — 재시도가 조용히 실패를 삼키면 「가끔 느리다」가 「늘 멈춘다」로 자라도 아무도 모른다
+let retries = 0;
+const check = (file, env) => {
+  const r = spawnSync('node', [render, file, '--check'], { encoding: 'utf8', env: env ? { ...process.env, ...env } : process.env });
+  retries += (r.stderr.match(/^↻ /gm) || []).length;
+  return r;
+};
 const work = mkdtempSync(join(tmpdir(), 'anim-contract-'));
 let bad = 0;
 
@@ -62,5 +69,37 @@ for (const [name, [from, to]] of Object.entries(MUTATIONS)) {
   console.log(`${caught ? '✓' : '✗'} 변이 잡힘   「${name}」${caught ? ''
     : r.status === 0 ? ' — 계약 위반인데 통과했다' : ' — 계약 위반이 아닌 이유로 실패했다: ' + (r.stderr || r.stdout).trim()}`);
 }
+// ── 다시 띄우기가 실제로 동작하는가 — 처음 N번은 바로 죽는 가짜 Chrome으로 본다(이슈 #135).
+// 멈춤(무응답)은 재현에 10초씩 걸려 여기서는 「뜨기 전에 끝났다」로 같은 갈래(InfraError → 다시 띄움)를 지난다
+const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const which = (n) => (process.env.PATH || '').split(':').map((d) => join(d, n)).find((f) => { try { return statSync(f).isFile(); } catch { return false; } });
+const realChrome = process.env.CHROME || (existsSync(MAC_CHROME) ? MAC_CHROME
+  : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].map(which).find(Boolean));
+const flaky = join(work, 'flaky-chrome.sh');
+writeFileSync(flaky, '#!/bin/sh\nn=$(cat "$FLAKY_COUNTER" 2>/dev/null || echo 0)\necho $((n+1)) > "$FLAKY_COUNTER"\n'
+  + '[ "$n" -lt "$FLAKY_FAIL_FIRST" ] && exit 3\nexec "$FLAKY_REAL" "$@"\n');
+chmodSync(flaky, 0o755);
+const flakyRun = (failFirst, tag) => {
+  const counter = join(work, `count-${tag}`);
+  const before = retries;
+  const r = check(template, { CHROME: flaky, FLAKY_COUNTER: counter, FLAKY_FAIL_FIRST: String(failFirst), FLAKY_REAL: realChrome });
+  return { r, launches: Number(readFileSync(counter, 'utf8')), retried: retries - before };
+};
+{
+  const { r, launches, retried } = flakyRun(1, 'once');
+  const ok = r.status === 0 && launches === 2 && retried === 1;
+  if (!ok) bad++;
+  console.log(`${ok ? '✓' : '✗'} 다시 띄움   첫 Chrome이 죽어도 두 번째로 통과한다 (띄움 ${launches}회 · ↻ ${retried})${ok ? '' : '\n    ' + (r.stderr || r.stdout).trim()}`);
+}
+{
+  const { r, launches, retried } = flakyRun(99, 'always');
+  const ok = r.status !== 0 && launches === 3 && retried === 2 && !r.stderr.includes('계약 위반') && r.stderr.includes('3번 띄워도');
+  if (!ok) bad++;
+  console.log(`${ok ? '✓' : '✗'} 다시 띄움   매번 죽으면 3번에서 멈추고 계약 위반으로 읽히지 않는다 (띄움 ${launches}회 · ↻ ${retried})${ok ? '' : '\n    ' + (r.stderr || r.stdout).trim()}`);
+}
+// 위 두 검사의 ↻(1 + 2)는 일부러 낸 것이다 — 나머지에서 난 것만 보고한다
+const unplanned = retries - 3;
+console.log(unplanned ? `↻ 계획에 없던 Chrome 재시작 ${unplanned}회 — 통과는 했지만 Chrome·CDP가 멈췄다는 뜻이다. 늘면 이슈 #135를 다시 본다`
+  : '✓ 계획에 없던 Chrome 재시작 0회');
 rmSync(work, { recursive: true, force: true });
 process.exit(bad ? 1 : 0);
