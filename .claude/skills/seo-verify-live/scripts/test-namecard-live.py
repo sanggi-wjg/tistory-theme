@@ -57,7 +57,9 @@ if RENDER is None:
 
 
 def fixtures(box=None):
-    box = box or RENDER.namecard_box
+    """기본은 V019가 쓰는 것과 같은 render.namecard_states() — 상태 목록을 두 곳에 베끼지 않는다."""
+    if box is None:
+        return RENDER.namecard_states()
     return [box(follower=f, creator=c) for f in (False, True) for c in (False, True)]
 
 
@@ -82,6 +84,12 @@ BUNDLE_MUTANTS = [
      lambda s: s.replace("Namecard:_8,Menubar", "ProfileCard:_8,Menubar"), "missing"),
     ("컴포넌트가 화살표 함수가 됐다(대조기가 따라가야 한다)",
      lambda s: s.replace("function _8(){", "const _8=()=>{"), "same"),
+    ("esbuild식 호출 (0,E.jsx)(…)로 바뀌었다(대조기가 따라가야 한다)",
+     lambda s: s.replace("E.jsxs(", "(0,E.jsxs)(").replace("E.jsx(", "(0,E.jsx)("), "same"),
+    ("props가 변수로 넘어간다(클래스를 알 수 없다)",
+     lambda s: s.replace('E.jsx("a",{className:"tt_desc",', 'E.jsx("a",pp),E.jsx("i",{'), "drift"),
+    ("같은 이름의 함수가 다른 스코프에 또 있다(고를 수 없다)",
+     lambda s: 'function q(){function _8(){return E.jsx("b",{className:"x"})}}' + s, "missing"),
 ]
 
 # (이름, 픽스처 함수) — 프리뷰 쪽이 실물과 갈리는 경우
@@ -187,6 +195,20 @@ def main():
     check(len(u) == 1 and not i, "보호글을 못 받았다 → 미검증")
     w, u, i = run_v020("/300", PROTECTED % ('<div class="entry-main"></div>', NC))
     check(len(w) == 1, "앞에 닫힌 .entry-main이 있어도 카드가 그 밖이면 경고")
+    w, u, i = run_v020("/300", PROTECTED.replace('class="protected"', 'class="post-protected-note"') % ("", NC))
+    check(len(u) == 1 and not w and not i, "section class가 protected 토큰이 아니다(post-protected-note) → 미검증")
+
+    def boom(url, *a, **k):
+        raise ValueError("boom")
+    V.fetch = boom
+    V.UNVERIFIED.clear()
+    V.verify_namecard_protected("https://blog.example", "/300")
+    check(len([x for x in V.UNVERIFIED if x["code"] == "V020"]) == 1, "예외가 나도 리포트를 잃지 않는다 → 미검증")
+    check(V.protected_url("https://blog.example", "/entry/보호 글")
+          == "https://blog.example/entry/%EB%B3%B4%ED%98%B8%20%EA%B8%80", "한글 경로를 퍼센트 인코딩한다")
+    check(V.protected_url("https://blog.example", "https://blog.example/300") == "https://blog.example/300",
+          "절대 URL은 그대로 쓴다")
+    check(V.protected_url("https://blog.example", "300") == "https://blog.example/300", "앞 / 없는 경로")
 
     if fails:
         print("\n✗ %d개 실패" % len(fails))

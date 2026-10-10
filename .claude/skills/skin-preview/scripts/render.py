@@ -114,6 +114,12 @@ def namecard_box(follower=False, creator=False):
 
 NAMECARD_BOX = namecard_box()
 
+
+def namecard_states():
+    """번들의 Namecard 컴포넌트가 그릴 수 있는 상태 전부(구독 여부 × 크리에이터 배지). V019가 이 합집합을
+    번들과 대조하고 test:namecard-live도 이것을 쓴다 — 상태를 더하면(주인 화면 등) **여기에** 더한다."""
+    return [namecard_box(follower=f, creator=c) for f in (False, True) for c in (False, True)]
+
 # 티스토리 **phocus 이미지 뷰어**의 흉내(프리뷰 전용). 라이브는 티스토리 `static/pc/dist/index.js`가
 # DOMContentLoaded에 `span[data-phocus] > img`마다 click을 **직접** 걸고(타깃 단계), `body.with-phocus`는
 # 그 핸들러가 끝난 **직후의 마이크로태스크**에서 붙인다(2026-10-06 이벤트 추적). 신뢰된(마우스) 클릭은
