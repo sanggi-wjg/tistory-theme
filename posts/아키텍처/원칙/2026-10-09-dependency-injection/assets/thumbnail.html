@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의존성 주입 썸네일</title>
+<style>
+  /* 색은 di-with.html과 같다 — 글 속 애니메이션과 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 대표이미지(= og:image). 시안 셋 중 B(제목 + 도식)로 정했다(2026-10-10) — a·c는 비교용으로 남긴다.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx, extra) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx || 20) + '"' + (extra || '') +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function curve(d, col, dash, w) {
+  return '<path d="' + d + '" fill="none"' + (dash ? ' stroke-dasharray="16 12"' : '') + ' stroke-linecap="round"' +
+    ' style="stroke:var(' + col + ');stroke-width:' + (w || 6) + '" marker-end="url(#m' + col.slice(2) + ')"/>';
+}
+function pill(cx, cy, s, fill, stroke, col, size, cls) {
+  var w = s.length * size * (cls ? 0.62 : 0.95) + size * 1.4, h = size * 1.9;
+  return rect(cx - w / 2, cy - h / 2, w, h, fill, stroke, 4, h / 2) +
+    text(cx, cy + size * 0.36, s, 'fill:var(' + col + ');font-size:' + size + 'px;font-weight:800;text-anchor:middle', cls);
+}
+function defs() {
+  return '<defs>' + ['--a', '--b', '--err', '--ok', '--hair-strong'].map(function (c) {
+    return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="30" markerHeight="30" orient="auto">' +
+      '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+  }).join('') + '</defs>';
+}
+
+// 부품 하나 — 이름만 (「: Leg」 표시는 뺐다, 사용자 결정 2026-10-10)
+function part(x, y, w, h, name, fill, stroke, col, sw) {
+  return rect(x, y, w, h, fill, stroke, sw || 4, 18) +
+    text(x + w / 2, y + h / 2 + 13, name, 'fill:var(' + col + ');font-size:36px;font-weight:800;text-anchor:middle');
+}
+
+// 도식 — 가운데 (800,500) 기준. mode: 'di'(Leg 자리에 밖에서 끼운다) | 'nodi'(안에서 정해져 있다)
+function diagram(mode) {
+  var di = mode === 'di', out = [];
+  var BX = 200, BY = 200, BW = 720, BH = 600;          // HumanBody
+  var SY = 570, SW = 290, SH = 170, SL = 250, SR = 580; // 다리 자리
+  var PX = 1060, PW = 380, PH = 150, PY = [230, 425, 620]; // 밖의 부품
+
+  // HumanBody
+  out.push(rect(BX, BY, BW, BH, '--surface', di ? '--ok' : '--err', 5, 28));
+  out.push(text(BX + BW / 2, BY + 72, 'HumanBody', 'fill:var(--ink);font-size:48px;font-weight:800;text-anchor:middle'));
+  out.push(rect(250, 310, 620, 200, '--bg', '--hair', 3, 16));
+  if (di) {
+    out.push(text(292, 395, 'leftLeg:  Leg', 'fill:var(--ink-body);font-size:38px;white-space:pre', 'mono'));
+    out.push(text(292, 455, 'rightLeg: Leg', 'fill:var(--ink-body);font-size:38px;white-space:pre', 'mono'));
+  } else {
+    out.push(text(282, 370, 'when (type) {', 'fill:var(--ink-body);font-size:30px;white-space:pre', 'mono'));
+    out.push(text(282, 422, '  ORGANIC -> WALK', 'fill:var(--ink-body);font-size:30px;white-space:pre', 'mono'));
+    out.push(text(282, 474, '  WHEEL -> WheelLeg()', 'fill:var(--err);font-size:30px;font-weight:700;white-space:pre', 'mono'));
+  }
+
+  // 선 — HumanBody 위, 자리·부품 아래에 그린다(화살촉이 상자에 덮이지 않게)
+  if (di) {
+    out.push(curve('M1058,500 C980,500 990,700 884,700', '--hair-strong', true, 5));
+    out.push(curve('M1058,695 C990,695 990,722 884,722', '--hair-strong', true, 5));
+    out.push(curve('M1058,305 C950,305 990,655 884,655', '--ok', false, 7));
+  } else {
+    out.push(curve('M1058,305 C1000,305 990,420 942,420', '--err', true, 6));
+  }
+
+  // 다리 자리
+  if (di) {
+    out.push(part(SL, SY, SW, SH, 'OrganicLeg', '--surface', '--ink-body', '--ink'));
+    out.push('<rect x="' + SR + '" y="' + SY + '" width="' + SW + '" height="' + SH + '" rx="18" stroke-dasharray="16 10"' +
+      ' style="fill:var(--a-soft);stroke:var(--a);stroke-width:4"/>');
+    out.push(text(SR + SW / 2, SY + 80, 'Leg', 'fill:var(--a);font-size:44px;font-weight:800;text-anchor:middle'));
+    out.push(text(SR + SW / 2, SY + 128, 'rightLeg', 'fill:var(--a);font-size:28px;text-anchor:middle', 'mono'));
+  } else {
+    [[SL, 'ORGANIC'], [SR, 'WHEEL']].forEach(function (p) {
+      out.push(rect(p[0], SY, SW, SH, '--err-soft', '--err', 4, 18));
+      out.push(text(p[0] + SW / 2, SY + 72, 'LegType', 'fill:var(--mute);font-size:28px;text-anchor:middle', 'mono'));
+      out.push(text(p[0] + SW / 2, SY + 122, p[1], 'fill:var(--err);font-size:38px;font-weight:800;text-anchor:middle', 'mono'));
+    });
+  }
+
+  // 밖의 부품 — 같은 Leg 규격
+  out.push(part(PX, PY[0], PW, PH, 'BionicLeg', di ? '--ok-soft' : '--surface', di ? '--ok' : '--hair-strong', di ? '--ok' : '--mute', di ? 6 : 4));
+  out.push(part(PX, PY[1], PW, PH, 'ArchotechLeg', '--surface', '--hair-strong', '--mute'));
+  out.push(part(PX, PY[2], PW, PH, 'WheelLegAdapter', '--surface', '--hair-strong', '--mute'));
+
+  if (!di) out.push(pill(955, 420, '✕', '--err-soft', '--err', '--err', 34));
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(-810,-500)">' + inner + '</g>';
+}
+
+var out = defs() + '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+
+if (v === 'a') {
+  // 글자 없는 판 — Leg 자리에 밖에서 만든 다리를 끼운다
+  out += place(diagram('di'), 800, 500, 1);
+} else if (v === 'b') {
+  // 제목 + 도식
+  out += text(130, 370, '객체지향', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, '의존성 주입과', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 610, '다형성', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += place(diagram('di'), 1100, 500, 0.6);
+} else {
+  // 전후 비교 — 안에서 정한다 vs 밖에서 받는다
+  [['nodi', 450, '안에서 정하면', '--err'], ['di', 1150, '밖에서 받으면', '--ok']].forEach(function (p) {
+    out += rect(p[1] - 330, 160, 660, 680, '--surface', '--hair', 3, 28);
+    out += place(diagram(p[0]), p[1], 440, 0.5);
+    out += text(p[1], 770, p[2], 'fill:var(' + p[3] + ');font-size:44px;font-weight:800;text-anchor:middle');
+  });
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>

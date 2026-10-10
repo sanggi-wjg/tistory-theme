@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>예제 코드 UML</title>
+<style>
+  /* 색은 blog-animation 템플릿과 같은 값이다 — 글 안의 애니메이션과 한 벌로 보이게 */
+  :root {
+    --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
+    --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+  }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  svg { display: block; }
+  .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<svg id="scene" role="img"
+  aria-label="HumanBody가 Head, Torso, Arm 두 개, Leg 두 개를 인터페이스로 가진다. Arm 구현은 OrganicArm, NoArm, BionicArm, ArchotechArm이고 Leg 구현은 OrganicLeg, NoLeg, BionicLeg, ArchotechLeg, WheelLegAdapter다. WheelLegAdapter는 Leg를 구현하지 않은 WheelLeg를 감싼다. Leg는 MoveType을 돌려준다."></svg>
+<script>
+(function () {
+  var W = 1140, H = 690;
+  var svg = document.getElementById('scene');
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  var out = [];
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function text(x, y, s, style, cls) {
+    out.push('<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>');
+  }
+  function rect(x, y, w, h, fill, stroke, dash) {
+    out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6" style="fill:' + fill +
+      ';stroke:' + stroke + ';stroke-width:1.5"' + (dash ? ' stroke-dasharray="5 4"' : '') + '/>');
+  }
+  function line(x1, y1, x2, y2, color, dash, marker) {
+    out.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" style="stroke:' + color + ';stroke-width:1.5"' +
+      (dash ? ' stroke-dasharray="6 4"' : '') + (marker ? ' marker-end="url(#' + marker + ')"' : '') + '/>');
+  }
+
+  // 클래스 상자: 머리(스테레오타입·이름) + 칸(멤버 줄 목록)들
+  // kind: 'interface' | 'enum' | 'class' | 'other'(규격이 다른 클래스)
+  function cls(x, y, w, name, kind, sections) {
+    var stereo = kind === 'interface' ? '«interface»' : kind === 'enum' ? '«enum»' : null;
+    var headH = stereo ? 44 : 30;
+    var h = headH;
+    sections = sections || [];
+    sections.forEach(function (sec) { h += sec.length * 18 + 12; });
+    var color = kind === 'interface' ? 'var(--a)' : kind === 'other' ? 'var(--b)' : 'var(--hair-strong)';
+    var head = kind === 'interface' ? 'var(--a-soft)' : kind === 'other' ? 'var(--b-soft)' : 'var(--surface)';
+    rect(x, y, w, h, 'var(--surface)', color);
+    // 머리 칸만 옅은 면을 칠한다 (아래 모서리는 직각으로 덮는다)
+    out.push('<path d="M' + (x + 6) + ',' + y + ' H' + (x + w - 6) + ' Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + 6) +
+      ' V' + (y + headH) + ' H' + x + ' V' + (y + 6) + ' Q' + x + ',' + y + ' ' + (x + 6) + ',' + y + ' Z" style="fill:' + head + ';stroke:none"/>');
+    rect(x, y, w, h, 'none', color);
+    var nameColor = kind === 'interface' ? 'var(--a)' : kind === 'other' ? 'var(--b)' : 'var(--ink)';
+    if (stereo) {
+      text(x + w / 2, y + 17, stereo, 'fill:var(--mute);font-size:11px;text-anchor:middle');
+      text(x + w / 2, y + 35, name, 'fill:' + nameColor + ';font-size:14px;font-weight:700;text-anchor:middle');
+    } else {
+      text(x + w / 2, y + 20, name, 'fill:' + nameColor + ';font-size:14px;font-weight:700;text-anchor:middle');
+    }
+    var cy = y + headH;
+    sections.forEach(function (sec) {
+      line(x, cy, x + w, cy, color);
+      sec.forEach(function (m, i) {
+        text(x + 10, cy + 19 + i * 18, m, 'fill:var(--ink-body);font-size:12px', 'mono');
+      });
+      cy += sec.length * 18 + 12;
+    });
+    return { x: x, y: y, w: w, h: h, cx: x + w / 2, bottom: y + h, right: x + w };
+  }
+
+  // 구현 묶음: 인터페이스 아래로 세로 버스를 내리고, 빈 삼각형은 인터페이스를 가리킨다
+  function realizeBus(iface, boxes) {
+    var bx = iface.x + 14;
+    var top = iface.bottom;
+    var last = boxes[boxes.length - 1];
+    var lastMid = last.y + 16;
+    out.push('<polygon points="' + bx + ',' + top + ' ' + (bx - 8) + ',' + (top + 14) + ' ' + (bx + 8) + ',' + (top + 14) +
+      '" style="fill:var(--surface);stroke:var(--a);stroke-width:1.5"/>');
+    line(bx, top + 14, bx, lastMid, 'var(--a)', true);
+    boxes.forEach(function (b) { line(bx, b.y + 16, b.x, b.y + 16, 'var(--a)', true); });
+  }
+
+  // 합성: HumanBody 쪽에 채운 마름모
+  function compose(fromX, fromY, toX, toY, mult) {
+    var ang = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+    var rad = ang * Math.PI / 180;
+    line((fromX + Math.cos(rad) * 20).toFixed(1), (fromY + Math.sin(rad) * 20).toFixed(1), toX, toY, 'var(--ink)');
+    out.push('<g transform="translate(' + fromX + ',' + fromY + ') rotate(' + ang.toFixed(2) + ')">' +
+      '<polygon points="0,0 10,-6 20,0 10,6" style="fill:var(--ink);stroke:var(--ink);stroke-width:1;stroke-linejoin:round"/></g>');
+    // 개수는 선이 지나가지 않는 쪽에 둔다 — 선이 오른쪽에서 내려오면 왼쪽에
+    var lx = fromX > toX + 20 ? toX - 16 : toX + 8;
+    text(lx, toY - 8, mult, 'fill:var(--mute);font-size:12px;font-weight:600', 'mono');
+  }
+
+  out.push('<defs>' +
+    '<marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">' +
+    '<path d="M0,0 L10,5 L0,10" style="fill:none;stroke:var(--ink-body);stroke-width:1.5"/></marker>' +
+    '</defs>');
+  out.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="12" style="fill:var(--bg);stroke:var(--hair)"/>');
+
+  // ── HumanBody
+  var body = cls(270, 24, 340, 'HumanBody', 'class', [
+    ['- head: Head', '- torso: Torso', '- leftArm: Arm', '- rightArm: Arm', '- leftLeg: Leg', '- rightLeg: Leg'],
+    ['+ getManipulation(): Double', '+ move(): Pair<MoveType, MoveType>']
+  ]);
+
+  // ── 인터페이스
+  var IY = 300;
+  var head = cls(30, IY, 150, 'Head', 'interface');
+  var torso = cls(200, IY, 150, 'Torso', 'interface');
+  var arm = cls(380, IY, 220, 'Arm', 'interface', [['+ getManipulation(): Double']]);
+  var leg = cls(630, IY, 220, 'Leg', 'interface', [['+ move(): MoveType']]);
+
+  // ── 합성 (HumanBody → 인터페이스)
+  compose(330, body.bottom, head.cx, IY, '1');
+  compose(395, body.bottom, torso.cx, IY, '1');
+  compose(485, body.bottom, arm.cx, IY, '2');
+  compose(550, body.bottom, leg.cx, IY, '2');
+
+  // ── 구현체
+  var SY = 410, STEP = 44;
+  function impl(col, i, name) { return cls(col.x + 28, SY + i * STEP, col.w - 28, name, 'class'); }
+  realizeBus(head, [impl(head, 0, 'OrganicHead')]);
+  realizeBus(torso, [impl(torso, 0, 'OrganicTorso')]);
+  realizeBus(arm, ['OrganicArm', 'NoArm', 'BionicArm', 'ArchotechArm'].map(function (n, i) { return impl(arm, i, n); }));
+  var legImpls = ['OrganicLeg', 'NoLeg', 'BionicLeg', 'ArchotechLeg'].map(function (n, i) { return impl(leg, i, n); });
+  var adapter = cls(leg.x + 28, SY + 4 * STEP, leg.w - 28, 'WheelLegAdapter', 'class', [['- adaptee: WheelLeg'], ['+ move(): MoveType']]);
+  realizeBus(leg, legImpls.concat([adapter]));
+
+  // ── WheelLeg: Leg를 구현하지 않는다. 어댑터가 감싼다
+  var wheel = cls(925, adapter.y, 190, 'WheelLeg', 'other', [['+ spin(): MoveType']]);
+  line(adapter.right, adapter.y + 16, wheel.x - 2, adapter.y + 16, 'var(--ink-body)', false, 'open');
+  text((adapter.right + wheel.x) / 2, adapter.y + 34, 'adaptee', 'fill:var(--mute);font-size:11px;text-anchor:middle', 'mono');
+
+  // ── MoveType: Leg가 돌려준다 (의존)
+  var move = cls(925, IY, 190, 'MoveType', 'enum', [['WALK', 'CRAWL', 'WALK_FAST', 'WALK_SUPER_FAST', 'WHEEL']]);
+  line(leg.right, IY + 28, move.x - 2, IY + 28, 'var(--ink-body)', true, 'open');
+
+  // ── 범례
+  var LX = 30, LY = 540;
+  text(LX, LY, '범례', 'fill:var(--ink);font-size:12px;font-weight:700');
+  out.push('<polygon points="' + LX + ',' + (LY + 20) + ' ' + (LX + 9) + ',' + (LY + 15) + ' ' + (LX + 18) + ',' + (LY + 20) + ' ' + (LX + 9) + ',' + (LY + 25) +
+    '" style="fill:var(--ink)"/>');
+  line(LX + 18, LY + 20, LX + 48, LY + 20, 'var(--ink)');
+  text(LX + 58, LY + 24, '가진다 (합성) — 숫자는 개수', 'fill:var(--ink-body);font-size:12px');
+  line(LX + 9, LY + 46, LX + 48, LY + 46, 'var(--a)', true);
+  out.push('<polygon points="' + LX + ',' + (LY + 46) + ' ' + (LX + 12) + ',' + (LY + 40) + ' ' + (LX + 12) + ',' + (LY + 52) +
+    '" style="fill:var(--surface);stroke:var(--a);stroke-width:1.5"/>');
+  text(LX + 58, LY + 50, '구현한다 (삼각형이 인터페이스 쪽)', 'fill:var(--ink-body);font-size:12px');
+  line(LX, LY + 72, LX + 46, LY + 72, 'var(--ink-body)', false, 'open');
+  text(LX + 58, LY + 76, '감싼다 (참조)', 'fill:var(--ink-body);font-size:12px');
+  line(LX, LY + 98, LX + 46, LY + 98, 'var(--ink-body)', true, 'open');
+  text(LX + 58, LY + 102, '돌려준다 (의존)', 'fill:var(--ink-body);font-size:12px');
+
+  svg.innerHTML = out.join('');
+})();
+</script>
+</body>
+</html>

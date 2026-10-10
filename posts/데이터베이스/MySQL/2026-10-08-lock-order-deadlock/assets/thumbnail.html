@@ -22,9 +22,9 @@
 <body>
 <svg id="s" viewBox="0 0 1600 1000"></svg>
 <script>
-// 글 대표이미지(= og:image). 시안 셋 중 A(글자 없음)로 정했다(2026-10-09) — b·c는 비교용으로 남긴다.
-// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=a'
-var v = new URLSearchParams(location.search).get('v') || 'a';
+// 글 대표이미지(= og:image). 처음엔 A(글자 없음)였다가(2026-10-09) 제목을 넣은 B로 바꿨다(2026-10-10) — a·c는 비교용으로 남긴다.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var v = new URLSearchParams(location.search).get('v') || 'b';
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 function text(x, y, s, style, cls) {
@@ -100,12 +100,10 @@ if (v === 'a') {
   // 글자 없는 판 — 데드락 고리 하나
   out += place(diagram('deadlock'), 800, 500, 1);
 } else if (v === 'b') {
-  // 문구 + 도식
-  out += text(130, 350, 'MySQL 8.0 · InnoDB', 'fill:var(--mute);font-size:36px;font-weight:600', 'mono');
-  out += text(124, 470, '락 순서를 맞춰', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
-  out += text(124, 590, '데드락 피하기', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
-  out += rect(130, 650, 470, 70, '--err-soft', '--err', 4, 35);
-  out += text(365, 697, 'ERROR 1213 (40001)', 'fill:var(--err);font-size:32px;font-weight:700;text-anchor:middle', 'mono');
+  // 제목 + 도식 — 의존성 주입 글 썸네일과 같은 배치(2026-10-10)
+  out += text(130, 370, 'MySQL 8.0 · InnoDB', 'fill:var(--mute);font-size:36px;font-weight:600', 'mono');
+  out += text(124, 490, '락 순서를 맞춰', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 610, '데드락 피하기', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
   out += place(diagram('deadlock'), 1190, 500, 0.56);
 } else {
   // 전후 비교 — 제각각 순서 vs 정렬

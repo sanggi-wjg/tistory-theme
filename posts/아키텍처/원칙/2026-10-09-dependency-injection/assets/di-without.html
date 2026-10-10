@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DI 없이</title>
+<style>
+  /* 바탕·글자 회색은 DESIGN.md 토큰이다. --a·--b·--err·--ok와 옅은 면(-soft)은 이 그림용으로 따로 정했다 —
+     라이트에서 각 색 글자가 자기 옅은 면 위 4.5:1을 넘도록 토큰보다 어둡게 잡았다(SKILL.md 「그리기 규칙」) */
+  :root {
+    --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
+    --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  :root[data-theme="dark"] {
+    --page: #0a0a0a; --bg: #121212; --surface: #1a1a1a;
+    --hair: #2e2e2e; --hair-strong: #454545;
+    --ink: #ededed; --ink-body: #b0b0b0; --mute: #8f8f8f;
+    --a: #3291ff; --a-soft: #10233f;
+    --b: #f7b955; --b-soft: #3a2a0e;
+    --err: #ff6166; --err-soft: #3d1416;
+    --ok: #50e3c2; --ok-soft: #0f2e27;
+  }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; padding: 16px; }
+  .stage { max-width: 760px; margin: 0 auto; }
+  svg { display: block; width: 100%; height: auto; }
+  .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .controls { display: flex; gap: 12px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--ink-body); }
+  .controls input[type=range] { flex: 1; }
+  .controls button, .controls select { font: inherit; padding: 4px 10px; }
+  /* 캡처 모드: 조작 막대를 숨기고 장면만 남긴다 (render-gif.mjs가 body.capture를 확인한다) */
+  /* 캡처 모드에서는 판 폭 제한을 푼다 — W를 바꿔도 .stage가 760에 묶여 작게 찍히지 않게 */
+  body.capture { padding: 0; }
+  body.capture .stage { max-width: none; }
+  body.capture .controls { display: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- aria-label에는 장면 전체를 한 문장으로. GIF로 구우면 사라지지만 HTML로 볼 때를 위해 둔다 -->
+  <svg id="scene" viewBox="0 0 760 400" role="img" aria-label="DI 없이: HumanBody가 OrganicLeg 두 개를 안에서 직접 만든다. 바퀴 다리 WheelLeg를 끼우려 하지만 자리가 없어 튕겨 나오고, 결국 HumanBody 코드에 분기를 추가해 고친다."></svg>
+  <div class="controls">
+    <button id="play" type="button">일시정지</button>
+    <input id="scrub" type="range" min="0" step="0.01">
+    <span id="clock" class="mono">0.0s</span>
+    <select id="theme"><option value="light">라이트</option><option value="dark">다크</option></select>
+  </div>
+</div>
+<script>
+(function () {
+  var W = 760, H = 400;   // viewBox와 같아야 한다
+
+  // ════════════════════════════════════════════════════════════
+  // 장면 — 여기부터 바꾼다
+  // ════════════════════════════════════════════════════════════
+
+  // 처음 상태. 매 프레임 여기서 출발해 단계를 다시 쌓는다 (그래서 render(t)가 t만의 함수가 된다)
+  // wheel: null(없음) → 'out'(밖에 대기) → 'bump'(다가갔다 튕겨 나옴) → 'rest'(밖에 남음)
+  function initial() {
+    return { legs: false, wheel: null, edit: false, fresh: null };
+  }
+
+  // 단계마다 새로 시작하는 값. 엔진이 각 단계의 fn 직전에 부른다 — 「그 단계에서만 보이는 것」을 여기서 지운다
+  function eachStep(s) { s.fresh = null; if (s.wheel === 'bump') s.wheel = 'rest'; }
+
+  // 단계: d = 기준 박자(초), cap = 아래 캡션, tone = 'err' | 'ok' | 생략, fn = 상태를 바꾼다.
+  // fn에서 s.fresh를 세우면 그 단계 동안 draw()가 p(0→1)로 나타나기 효과를 줄 수 있다.
+  var STEPS = [
+    { d: 2.0, cap: 'HumanBody가 다리를 안에서 직접 만든다', fn: function (s) { s.legs = true; s.fresh = 'legs'; } },
+    { d: 1.6, cap: '바퀴 다리로 바꿔 달라는 요구가 들어온다', fn: function (s) { s.wheel = 'out'; s.fresh = 'wheel'; } },
+    { d: 2.2, cap: '끼울 자리가 없다 — 다리는 HumanBody 안에 고정돼 있다', tone: 'err', fn: function (s) { s.wheel = 'bump'; } },
+    { d: 3.0, cap: '다리를 바꾸려면 HumanBody 코드를 고쳐야 한다', tone: 'err', fn: function (s) { s.edit = true; s.fresh = 'edit'; } }
+  ];
+
+  // 판 배치
+  var BX = 60, BY = 52, BW = 380, BH = 278;        // HumanBody
+  var CX = 80, CY = 98, CW = 340;                  // 안쪽 코드 칸
+  var LY = 236, LW = 140, LH = 50;                 // 다리 칸
+  var LEGS = [{ x: 90, label: 'leftLeg' }, { x: 270, label: 'rightLeg' }];
+  var WX = 580, WY = 226, WW = 140, WH = 50;       // 밖의 WheelLeg (쉬는 자리)
+
+  function lerp(a, b, k) { return a + (b - a) * k; }
+
+  // 자물쇠: 다리가 HumanBody 안에 고정돼 있음을 보인다
+  function lock(x, y, o) {
+    return '<g style="opacity:' + o + '">' +
+      '<rect x="' + x + '" y="' + (y + 6) + '" width="12" height="9" rx="2" style="fill:var(--mute)"/>' +
+      '<path d="M' + (x + 2.5) + ',' + (y + 6) + ' V' + (y + 4) + ' a3.5,3.5 0 0 1 7,0 V' + (y + 6) + '" style="fill:none;stroke:var(--mute);stroke-width:1.6"/></g>';
+  }
+
+  function draw(r, t) {
+    var s = r.s, p = r.p, out = [];
+    var appear = ease(p * 3);
+    out.push(title('DI 없이 — 부품을 안에서 만든다'));
+
+    // HumanBody
+    var edited = s.edit;
+    out.push(box(BX, BY, BW, BH, 'var(--surface)', edited ? 'var(--err)' : 'var(--hair-strong)'));
+    out.push(text(BX + BW / 2, BY + 26, 'HumanBody', 'fill:var(--ink);font-size:15px;font-weight:700;text-anchor:middle'));
+
+    // 안쪽 코드 칸 — 다리를 만드는 줄이 HumanBody 안에 있다
+    var codeH = edited ? 98 : 72;
+    out.push(box(CX, CY, CW, codeH, 'var(--bg)', 'var(--hair)'));
+    if (s.legs) {
+      var lo = s.fresh === 'legs' ? appear : 1;
+      out.push('<g style="opacity:' + lo + '">');
+      out.push(text(CX + 14, CY + 28, 'leftLeg  = OrganicLeg()', 'fill:var(--ink-body);font-size:13px;white-space:pre', 'mono'));
+      out.push(text(CX + 14, CY + 52, 'rightLeg = OrganicLeg()', 'fill:var(--ink-body);font-size:13px;white-space:pre', 'mono'));
+      out.push('</g>');
+    }
+    if (edited) {
+      var eo = s.fresh === 'edit' ? appear : 1;
+      out.push(box(CX + 6, CY + 62, CW - 12, 28, 'var(--err-soft)', 'var(--err)', eo));
+      out.push(text(CX + 14, CY + 81, 'LegType.WHEEL -> WheelLeg().spin()', 'fill:var(--err);font-size:13px;font-weight:700;font-variant-ligatures:none;opacity:' + eo, 'mono'));
+      // 「수정」 표시
+      out.push(box(BX + BW - 64, BY + 10, 52, 22, 'var(--err)', 'var(--err)', eo));
+      out.push(text(BX + BW - 38, BY + 26, '수정', 'fill:#ffffff;font-size:12px;font-weight:700;text-anchor:middle;opacity:' + eo));
+    }
+
+    // 다리 칸 — 안에서 만들어져 고정된다
+    if (s.legs) {
+      var gy = s.fresh === 'legs' ? lerp(LY - 34, LY, ease(p * 2)) : LY;   // 코드 칸에서 아래로 생겨난다
+      var go = s.fresh === 'legs' ? appear : 1;
+      LEGS.forEach(function (L) {
+        out.push(box(L.x, gy, LW, LH, 'var(--surface)', 'var(--ink-body)', go));
+        out.push(text(L.x + LW / 2, gy + 22, 'OrganicLeg', 'fill:var(--ink);font-size:14px;font-weight:700;text-anchor:middle;opacity:' + go));
+        out.push(text(L.x + LW / 2, gy + 39, L.label, 'fill:var(--mute);font-size:11px;text-anchor:middle;opacity:' + go, 'mono'));
+        out.push(lock(L.x + LW - 18, gy - 8, s.fresh === 'legs' ? ease(p * 3 - 1.5) : 1));
+      });
+    }
+
+    // 밖의 WheelLeg
+    if (s.wheel) {
+      var wx = WX, wo = s.fresh === 'wheel' ? appear : 1;
+      if (s.wheel === 'bump') {
+        if (p < 0.45) wx = lerp(WX, BX + BW + 6, ease(p / 0.45));
+        else if (p < 0.8) wx = lerp(BX + BW + 6, WX, ease((p - 0.45) / 0.35));
+      }
+      out.push(box(wx, WY, WW, WH, 'var(--b-soft)', 'var(--b)', wo));
+      out.push(text(wx + WW / 2, WY + 22, 'WheelLeg', 'fill:var(--b);font-size:14px;font-weight:700;text-anchor:middle;opacity:' + wo));
+      out.push(text(wx + WW / 2, WY + 39, '.spin()', 'fill:var(--b);font-size:11px;text-anchor:middle;opacity:' + wo, 'mono'));
+
+      // 부딪힌 자리에 ✕
+      if (s.wheel === 'bump' && p >= 0.45) {
+        var xo = ease((p - 0.45) * 5);
+        var cx = BX + BW + 2, cy = WY + WH / 2;
+        out.push('<g style="opacity:' + xo + ';stroke:var(--err);stroke-width:3;stroke-linecap:round">' +
+          '<line x1="' + (cx - 9) + '" y1="' + (cy - 9) + '" x2="' + (cx + 9) + '" y2="' + (cy + 9) + '"/>' +
+          '<line x1="' + (cx + 9) + '" y1="' + (cy - 9) + '" x2="' + (cx - 9) + '" y2="' + (cy + 9) + '"/></g>');
+      }
+    }
+
+    out.push(caption(r.step));
+    return out;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 엔진 — 보통은 손대지 않는다
+  // ════════════════════════════════════════════════════════════
+
+  // 실제 재생은 기준 박자의 SLOW배. 처음 컷은 사용자가 "빠르다"고 해 1.5로 맞췄다(2026-10-08)
+  var SLOW = 1.5;
+  STEPS.forEach(function (st) { st.d *= SLOW; });
+  var TOTAL = STEPS.reduce(function (n, st) { return n + st.d; }, 0);
+
+  function stateAt(t) {
+    var s = initial(), acc = 0;
+    for (var i = 0; i < STEPS.length; i++) {
+      eachStep(s);
+      STEPS[i].fn(s);
+      if (t < acc + STEPS[i].d || i === STEPS.length - 1) {
+        return { s: s, step: STEPS[i], p: Math.max(0, Math.min(1, (t - acc) / STEPS[i].d)) };
+      }
+      acc += STEPS[i].d;
+    }
+  }
+
+  function ease(p) { p = Math.max(0, Math.min(1, p)); return p * p * (3 - 2 * p); }
+  // 글자는 innerHTML로 들어가므로 이스케이프한다 — 'WHERE id < 10' 같은 캡션이 태그로 읽혀 조용히 잘린다
+  function esc(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function text(x, y, str, style, cls) {
+    return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(str) + '</text>';
+  }
+  function box(x, y, w, h, fill, stroke, o) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" style="fill:' + fill +
+      ';stroke:' + stroke + ';stroke-width:1.5;opacity:' + (o == null ? 1 : o) + '"/>';
+  }
+  // 점선의 흐름도 t로 민다 — CSS 애니메이션을 쓰면 GIF에 안 찍힌다
+  function arrow(x1, y1, x2, y2, color, opts) {
+    opts = opts || {};
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+      ' style="stroke:var(' + color + ');stroke-width:' + (opts.w || 2) + ';opacity:' + (opts.o == null ? 1 : opts.o) + '"' +
+      (opts.dash ? ' stroke-dasharray="6 5" stroke-dashoffset="' + (-(opts.t || 0) * 18 / SLOW).toFixed(1) + '"' : '') +
+      ' marker-end="url(#m' + color.slice(2) + ')"/>';
+  }
+  function title(str) {
+    return text(W / 2, 30, str, 'fill:var(--ink);font-size:15px;font-weight:700;text-anchor:middle');
+  }
+  function caption(step) {
+    var tone = step.tone;
+    var f = tone === 'err' ? '--err-soft' : tone === 'ok' ? '--ok-soft' : '--surface';
+    var c = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--hair';
+    var tc = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--ink';
+    return '<rect x="20" y="' + (H - 50) + '" width="' + (W - 40) + '" height="36" rx="8" style="fill:var(' + f + ');stroke:var(' + c + ')"/>' +
+      text(W / 2, H - 27, step.cap, 'fill:var(' + tc + ');font-size:14px;font-weight:' + (tone ? 700 : 500) + ';text-anchor:middle');
+  }
+  function defs() {
+    return '<defs>' + ['--a', '--b', '--err', '--ok', '--mute'].map(function (c) {
+      return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+        '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+    }).join('') + '</defs>';
+  }
+
+  function render(t) {
+    var r = stateAt(t);
+    var bg = '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="12" style="fill:var(--bg);stroke:var(--hair)"/>';
+    document.getElementById('scene').innerHTML = defs() + bg + draw(r, t).join('');
+  }
+
+  // ── 캡처 계약: render-gif.mjs가 이 셋과 body.capture를 확인한다
+  window.__total = TOTAL;
+  window.__render = render;
+  window.__size = [W, H];
+
+  var q = new URLSearchParams(location.search);
+  var root = document.documentElement, themeSel = document.getElementById('theme');
+  root.dataset.theme = q.get('theme') || 'light';   // 라이트가 기본 (사용자 결정 2026-10-08)
+  themeSel.value = root.dataset.theme;
+  themeSel.onchange = function () { root.dataset.theme = themeSel.value; };
+
+  if (q.has('capture')) {
+    document.body.classList.add('capture');
+    render(parseFloat(q.get('t') || '0'));
+    return;
+  }
+
+  var scrub = document.getElementById('scrub'), clock = document.getElementById('clock'), btn = document.getElementById('play');
+  scrub.max = TOTAL.toFixed(2);
+  var playing = true, t = 0, last = null;
+  btn.onclick = function () { playing = !playing; btn.textContent = playing ? '일시정지' : '재생'; last = null; };
+  scrub.oninput = function () { t = parseFloat(scrub.value); render(t); clock.textContent = t.toFixed(1) + 's'; };
+  function tick(now) {
+    if (playing) {
+      if (last != null) t = (t + (now - last) / 1000) % TOTAL;
+      last = now;
+      render(t);
+      scrub.value = t; clock.textContent = t.toFixed(1) + 's';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
