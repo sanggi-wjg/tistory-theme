@@ -90,13 +90,65 @@ BUNDLE_MUTANTS = [
      lambda s: s.replace('E.jsx("a",{className:"tt_desc",', 'E.jsx("a",pp),E.jsx("i",{'), "drift"),
     ("같은 이름의 함수가 다른 스코프에 또 있다(고를 수 없다)",
      lambda s: 'function q(){function _8(){return E.jsx("b",{className:"x"})}}' + s, "missing"),
-    # ↓ 클래스·태그는 그대로이고 자리(부모)만 옮겨진 경우 — 집합 대조만으로는 「같다」였다(#134)
+    # ↓ 클래스·태그는 그대로이고 자리·순서만 달라진 경우 — 집합 대조만으로는 「같다」였다(#134)
     ("설명(tt_desc)이 tt_cont 밖, 카드 바로 아래로 옮겨졌다", lambda s: move_desc(s), "drift"),
-    ("구독 버튼이 배지 줄(tt_link) 안으로 들어갔다",
-     lambda s: s.replace('E.jsx("span",{className:"tt_img_area_reply tt_ico_arrow2"})]})',
-                         'E.jsx("span",{className:"tt_img_area_reply tt_ico_arrow2"}),'
-                         'E.jsxs("button",{className:"tt_btn_subscribe",children:[]})]})'), "drift"),
+    ("썸네일(tt_wrap_thumb)이 tt_cont 앞으로 갔다(좌우 반전 — 부모는 그대로)", lambda s: thumb_first(s), "drift"),
+    ("설명·구독 버튼이 클래스 없는 그릇 div에 새로 싸였다",
+     lambda s: move_desc_into_wrapper(s), "drift"),
+    ("tt_cont 클래스가 조건식이 됐고 그 안의 이름이 밖으로 나갔다(부모 이름이 바뀌어도 이동을 놓치지 않는다)",
+     lambda s: move_title_out(s.replace('className:"tt_cont"', 'className:"tt_cont".concat(z)')), "drift+move"),
+    # ↓ 대조기가 자리를 확정할 수 없는 모양 — 거짓 경고 대신 미검증
+    ("원소를 변수로 먼저 만들어 children에 넘긴다(소스 위치 ≠ DOM 위치)", lambda s: hoist_desc(s), "unshaped"),
+    # props 짝이 깨지면 컴포넌트를 자르는 단계에서 먼저 실패한다 — `{잘림}`까지 가지 않고 통째로 미검증이다.
+    # 어느 쪽이든 거짓 경고·거짓 통과가 아니면 된다.
+    ("props 짝이 깨졌다(닫히지 않은 템플릿 문자열)",
+     lambda s: s.replace('E.jsxs("div",{className:"tt_cont",', 'E.jsxs("div",{x:`', 1), "missing"),
 ]
+
+
+DESC = ('E.jsx("a",{className:"tt_desc",href:(d=e==null?void 0:e.blogUrl)!=null?d:"#none",'
+        'children:(c=e==null?void 0:e.description)!=null?c:""}),')
+THUMB_HEAD = 'E.jsx("a",{className:"tt_wrap_thumb"'
+
+
+def _cut_call(s, head):
+    """s에서 head로 시작하는 jsx 호출 하나(뒤 쉼표 포함하지 않음)를 잘라 (호출, 나머지)를 돌려준다."""
+    i = s.index(head)
+    j = V.js_match(s, i + len(head) - len(head.split("(", 1)[1]) - 1)
+    return s[i:j + 1], s[:i] + s[j + 1:]
+
+
+def thumb_first(s):
+    """tt_box_namecard의 children [tt_cont, tt_wrap_thumb] → [tt_wrap_thumb, tt_cont]."""
+    thumb, rest = _cut_call(s, THUMB_HEAD)
+    rest = rest.replace(",]})}", "]})}", 1) if ",]})}" in rest else rest
+    head = 'E.jsxs("div",{className:"tt_box_namecard",children:['
+    assert rest.count(head) == 1
+    return rest.replace(head, head + thumb + ",", 1)
+
+
+def move_desc_into_wrapper(s):
+    """tt_desc와 그 뒤 구독 버튼 삼항을 클래스 없는 E.jsxs("div",{children:[…]})로 싼다."""
+    assert s.count(DESC) == 1
+    i = s.index(DESC)
+    tail = s.index(']}),E.jsx("a",{className:"tt_wrap_thumb"', i)   # tt_cont children 배열의 끝
+    return s[:i] + 'E.jsxs("div",{children:[' + s[i:tail] + ']})' + s[tail:]
+
+
+def move_title_out(s):
+    """a.tt_tit_cont를 tt_cont 밖, tt_box_namecard 바로 아래 맨 앞으로."""
+    title, rest = _cut_call(s, 'E.jsx("a",{className:"tt_tit_cont"')
+    rest = rest.replace("children:[,", "children:[", 1)
+    head = 'E.jsxs("div",{className:"tt_box_namecard",children:['
+    assert rest.count(head) == 1
+    return rest.replace(head, head + title + ",", 1)
+
+
+def hoist_desc(s):
+    """tt_desc를 컴포넌트 앞에서 변수로 만들고 children에는 변수만 넘긴다 — DOM 자리는 그대로다."""
+    assert s.count(DESC) == 1
+    s = s.replace(DESC, "xd,")
+    return s.replace("return ne.useEffect(", "var xd=" + DESC[:-1] + ";return ne.useEffect(", 1)
 
 
 def move_desc(s):
@@ -173,27 +225,41 @@ def main():
             fails.append(name)
 
     print("① 라이브 실물 ↔ 지금 픽스처")
-    problems, n = V.namecard_drift(BUNDLE, fixtures())
-    check(problems == [] and n >= 15, "같다고 판정한다 (서명 %d종, 갈림 %s)" % (n, problems))
+    problems, n, why = V.namecard_drift(BUNDLE, fixtures())
+    check(problems == [] and n >= 15 and why is None, "같다고 판정한다 (서명 %d종, 갈림 %s, %s)" % (n, problems, why))
     check(V.bundle_component(BUNDLE).startswith("function _8("), "미끼 `{Namecard:…}`가 아니라 앱 표를 따라간다")
-    edges = V.bundle_edges(V.bundle_component(BUNDLE))
-    fx_edges = set().union(*(V.fixture_edges(h) for h in fixtures()))
-    # 짝이 비어 있으면 「자리」 대조는 늘 같다고 나온다 — 개수와 대표 짝을 못박는다
-    check(len(edges) == 16 and edges == fx_edges and "div.tt_cont > a.tt_desc" in edges
-          and "a.tt_link > strong.tt_tit_g" in edges, "부모-자식 짝 16개가 픽스처와 같다 (%d / %d)" % (len(edges), len(fx_edges)))
-    p, _ = V.namecard_drift(BUNDLE.replace('"tt_tit_g"', '"tt_tit_badge"'), fixtures())
-    check(p is not None and not any("자리" in x for x in p),
-          "이름이 바뀐 원소는 「자리가 다르다」로 두 번 나오지 않는다")
+    btree = V.bundle_tree(V.bundle_component(BUNDLE))
+    common = {n["sig"] for n in btree if n["sig"]}
+    paths = V.tree_paths(btree, common)
+    fx_paths = set().union(*(V.tree_paths(V.fixture_tree(h), common) for h in fixtures()))
+    orders = V.tree_orders(btree, common)
+    # 길·순서가 비어 있으면 자리·순서 대조는 늘 같다고 나온다 — 개수와 대표값을 못박는다
+    check(len(paths) == 16 and paths == fx_paths and "div.tt_cont > a.tt_desc" in paths
+          and "a.tt_link > div.tt_wrap_svg" in paths and "^ > div.tt_box_namecard" in paths,
+          "자리 16개가 픽스처와 같다 (%d / %d)" % (len(paths), len(fx_paths)))
+    check(orders.get("div.tt_box_namecard") == [["div.tt_cont", "a.tt_wrap_thumb"]]
+          and len(orders.get("div.tt_cont", [[]])[0]) == 5, "형제 순서를 읽는다 (%s)" % orders.get("div.tt_box_namecard"))
+    p, _, why = V.namecard_drift(BUNDLE.replace('"tt_tit_g"', '"tt_tit_badge"'), fixtures())
+    check(p is not None and len(p) == 2 and not any("자리" in x or "순서" in x for x in p) and why is None,
+          "이름이 바뀐 원소는 집합 갈림 두 줄로만 나오고 자리·순서로 또 나오지 않는다 (%s)" % p)
 
     print("② 번들 변이")
     for name, mut, want in BUNDLE_MUTANTS:
-        p, _ = V.namecard_drift(mut(BUNDLE), fixtures())
-        got = "missing" if p is None else ("drift" if p else "same")
-        check(got == want, "%s → %s (기대 %s)%s" % (name, got, want, " " + "; ".join(p) if p else ""))
+        p, _, why = V.namecard_drift(mut(BUNDLE), fixtures())
+        if p is None:
+            got = "missing"
+        elif why:
+            got = "unshaped"
+        elif p and want == "drift+move":
+            got = "drift+move" if any("자리" in x for x in p) else "drift"
+        else:
+            got = "drift" if p else "same"
+        check(got == want, "%s → %s (기대 %s)%s%s" % (name, got, want, " " + "; ".join(p) if p else "",
+                                                      " [" + why + "]" if why else ""))
 
     print("③ 픽스처 변이")
     for name, box in FIXTURE_MUTANTS:
-        p, _ = V.namecard_drift(BUNDLE, fixtures(box))
+        p, _, _ = V.namecard_drift(BUNDLE, fixtures(box))
         check(bool(p), "%s → %s" % (name, "; ".join(p) if p else "갈림 없음"))
 
     print("④ verify_namecard_bundle 끝까지")
@@ -204,6 +270,9 @@ def main():
     bad = BUNDLE.replace('"tt_tit_g"', '"tt_tit_badge"')
     w, u, i = run_v019(home_with(OTHER), {OTHER: (200, bad, OTHER)})
     check(len(w) == 1 and not i, "마크업이 바뀌었다 → 경고, 「같다」 info 없음")
+    w, u, i = run_v019(home_with(OTHER), {OTHER: (200, hoist_desc(BUNDLE), OTHER)})
+    check(not w and len(u) == 1 and len(i) == 1 and "자리·형제 순서도 같다" not in i[0],
+          "자리를 확정할 수 없는 번들 → 집합만 대조했다는 미검증, 「자리도 같다」를 말하지 않는다")
     w, u, i = run_v019(home_with(OTHER), {OTHER: (None, "", OTHER)})
     check(not w and len(u) == 1 and not i, "번들을 못 받았다 → 미검증")
     w, u, i = run_v019("<html><head></head></html>", {})

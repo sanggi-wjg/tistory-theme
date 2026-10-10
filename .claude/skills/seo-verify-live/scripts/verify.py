@@ -1109,15 +1109,16 @@ def bundle_component(js, app="Namecard"):
 
 
 def bundle_nodes(src):
-    """컴포넌트 소스의 jsx 호출마다 (호출 위치, props 객체의 닫는 괄호 위치 또는 -1, 서명 또는 None).
+    """컴포넌트 소스의 jsx 호출마다 (호출 위치, props 객체의 닫는 괄호 위치 또는 -1, 서명 또는 None, 태그).
 
-    서명은 `태그.클래스.클래스`(클래스 정렬 — 순서는 상태가 아니다). className이 없는 원소(svg·path)는 None —
-    픽스처와 상대 시트가 보는 것은 클래스다. 그 밖의 경우:
+    서명은 `태그.클래스.클래스`(클래스 정렬 — 순서는 상태가 아니다). className이 없는 원소(svg·path·그릇 div)는
+    서명이 None이다 — 집합 대조는 클래스만 보지만, 자리 대조는 그 태그를 길에 남긴다(`namecard_drift`). 그 밖의 경우:
     - `className`이 문자열 리터럴이 아니면 `태그.{동적}` — 조건부 클래스로 바뀐 것도 갈림으로 잡혀야 한다.
     - props가 객체 리터럴이 아니면(`E.jsx("a",p)`) 클래스를 알 수 없어 `태그.{동적}` — 건너뛰면 그 원소가
       대조에서 조용히 빠진다.
     - 태그가 문자열이 아니라 다른 컴포넌트(`E.jsx(Xy,{…})`)면 `<Xy>` — 카드가 하위 컴포넌트로 쪼개지면
       그 안의 클래스가 이 소스에 없어 대조가 헐거워지므로, 그 사실 자체를 갈림으로 낸다.
+    - props의 짝을 못 맞추면 `태그.{잘림}`(그 원소는 자식을 품을 수 없어 자리 대조를 미검증으로 돌린다).
     `E.jsx("a",{…})`와 esbuild식 `(0,E.jsx)("a",{…})` 둘 다 읽는다.
     """
     nodes = []
@@ -1125,13 +1126,13 @@ def bundle_nodes(src):
         tag, comp = m.group(1), m.group(2)
         end = js_match(src, m.end() - 1) if m.group(3) else -1
         if comp:
-            nodes.append((m.start(), end, "<%s>" % comp))
+            nodes.append((m.start(), end, "<%s>" % comp, "<%s>" % comp))
             continue
         if not m.group(3):
-            nodes.append((m.start(), -1, "%s.{동적}" % tag))
+            nodes.append((m.start(), -1, "%s.{동적}" % tag, tag))
             continue
         if end == -1:
-            nodes.append((m.start(), -1, "%s.{잘림}" % tag))
+            nodes.append((m.start(), -1, "%s.{잘림}" % tag, tag))
             continue
         i, depth, sig = m.end(), 0, None
         while i < end:
@@ -1149,69 +1150,68 @@ def bundle_nodes(src):
                 sig = ".".join([tag] + sorted(cls)) if cls else ("%s.{동적}" % tag if cls is None else None)
                 break
             i += 1
-        nodes.append((m.start(), end, sig))
+        nodes.append((m.start(), end, sig, tag))
     return nodes
 
 
 def bundle_signatures(src):
     """컴포넌트 소스의 jsx 원소 서명 집합 — {"태그.클래스.클래스", …}. 서명 규칙은 `bundle_nodes`."""
-    return {sig for _, _, sig in bundle_nodes(src) if sig}
+    return {n[2] for n in bundle_nodes(src) if n[2]}
 
 
-def bundle_edges(src):
-    """{"부모서명 > 자식서명", …}. 부모는 **가장 가까운, 서명이 있는** 조상이다 — 그 jsx 호출의 props 객체
-    안에 자식 호출이 있으면 조상이다(`children`·조건식 `a&&E.jsx(…)`·삼항 모두 props 안이다). 조상이 없으면 `^`.
-    서명 없는 원소(svg)는 건너뛴다 — 픽스처의 클래스 없는 그릇 div와 짝을 맞추려는 것이다(#134).
+def bundle_tree(src):
+    """번들 컴포넌트 → 원소 목록 [{"label", "sig", "parent"(인덱스 또는 None), "children"(인덱스 목록)}].
+
+    부모는 **그 jsx 호출의 props 객체 안에 든** 가장 안쪽 호출이다(`children`·조건식 `a&&E.jsx(…)`·삼항이
+    전부 props 안이다). 호출은 소스 순서로 오므로 열린 props 범위의 스택 하나로 찾는다. label은 서명이
+    있으면 서명, 없으면 태그(svg·그릇 div)다.
     """
-    nodes = bundle_nodes(src)
-    out = set()
-    for pos, _, sig in nodes:
-        if not sig:
-            continue
-        parent, best = "^", -1
-        for p2, end2, s2 in nodes:
-            if s2 and p2 < pos < end2 and p2 > best:
-                parent, best = s2, p2
-        out.add("%s > %s" % (parent, sig))
+    out, stack = [], []
+    for pos, end, sig, tag in bundle_nodes(src):
+        while stack and out[stack[-1]]["end"] < pos:
+            stack.pop()
+        parent = stack[-1] if stack else None
+        out.append({"label": sig or tag, "sig": sig, "parent": parent, "children": [], "end": end})
+        if parent is not None:
+            out[parent]["children"].append(len(out) - 1)
+        if end != -1:
+            stack.append(len(out) - 1)
     return out
 
 
-def fixture_signatures(html):
-    """프리뷰 픽스처 HTML → {"태그.클래스.클래스", …}. 그릇 div(class 없음)·svg는 세지 않는다."""
-    out = set()
-    for m in re.finditer(r"<([a-zA-Z][\w-]*)\b([^>]*)>", html or ""):
-        c = re.search(r'(?:^|\s)class\s*=\s*["\']([^"\']*)["\']', m.group(2))
-        if c and c.group(1).split():
-            out.add(".".join([m.group(1).lower()] + sorted(c.group(1).split())))
-    return out
+class _FixtureTree(HTMLParser):
+    """픽스처 HTML → `bundle_tree`와 같은 모양의 원소 목록. `data-tistory-react-app` 그릇은 **경계**다 —
+    그릇은 티스토리 서버 HTML이고 번들 컴포넌트는 그 안만 그리므로, 그릇 안의 첫 원소가 뿌리가 된다.
 
-
-class _ClassEdges(HTMLParser):
-    """픽스처 HTML의 class 있는 원소마다 「가장 가까운 class 있는 조상 > 자기」. 규칙은 `bundle_edges`와 같다."""
+    ⚠ 브라우저의 암묵적 닫기(`<p>` 안의 `<div>` 등)는 흉내 내지 않는다 — 픽스처는 우리가 쓰는 마크업이라
+       그런 모양을 쓰지 않는다.
+    """
     VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.stack, self.edges = [], set()
+        self.nodes, self.stack = [], []   # stack: (태그, 원소 인덱스 또는 None=경계)
 
-    def _sig(self, tag, attrs):
-        cls = (dict(attrs).get("class") or "").split()
-        return ".".join([tag] + sorted(cls)) if cls else None
-
-    def _parent(self):
-        return next((s for _, s in reversed(self.stack) if s), "^")
+    def _open(self, tag, attrs, void):
+        a = dict(attrs)
+        if a.get("data-tistory-react-app") is not None:
+            if not void:
+                self.stack.append((tag, None))
+            return
+        cls = (a.get("class") or "").split()
+        sig = ".".join([tag] + sorted(cls)) if cls else None
+        parent = self.stack[-1][1] if self.stack else None
+        self.nodes.append({"label": sig or tag, "sig": sig, "parent": parent, "children": []})
+        if parent is not None:
+            self.nodes[parent]["children"].append(len(self.nodes) - 1)
+        if not void:
+            self.stack.append((tag, len(self.nodes) - 1))
 
     def handle_starttag(self, tag, attrs):
-        sig = self._sig(tag, attrs)
-        if sig:
-            self.edges.add("%s > %s" % (self._parent(), sig))
-        if tag not in self.VOID:
-            self.stack.append((tag, sig))
+        self._open(tag, attrs, tag in self.VOID)
 
     def handle_startendtag(self, tag, attrs):
-        sig = self._sig(tag, attrs)
-        if sig:
-            self.edges.add("%s > %s" % (self._parent(), sig))
+        self._open(tag, attrs, True)
 
     def handle_endtag(self, tag):
         for i in range(len(self.stack) - 1, -1, -1):
@@ -1220,54 +1220,112 @@ class _ClassEdges(HTMLParser):
                 break
 
 
-def fixture_edges(html):
-    """프리뷰 픽스처 HTML → {"부모서명 > 자식서명", …}."""
-    p = _ClassEdges()
+def fixture_tree(html):
+    p = _FixtureTree()
     p.feed(html or "")
     p.close()
-    return p.edges
+    return p.nodes
+
+
+def fixture_signatures(html):
+    """프리뷰 픽스처 HTML → {"태그.클래스.클래스", …}. 자리 대조와 **같은 파서**(`fixture_tree`)에서 뽑는다."""
+    return {n["sig"] for n in fixture_tree(html) if n["sig"]}
+
+
+def tree_paths(tree, common):
+    """원소마다 「가장 가까운 **공통** 조상 > 사이의 원소들 > 자기」. 조상이 없으면 `^`부터.
+
+    공통(양쪽에 다 있는 서명)이 아닌 조상은 길에 남는다 — 클래스 없는 그릇 div가 새로 끼었거나, 부모의
+    이름이 바뀌었는데 자식이 그 밖으로 옮겨진 것이 둘 다 길이 달라져 잡힌다(#134 코드 리뷰). 공통인 원소만
+    시작점으로 쓴다 — 한쪽에만 있는 원소는 위에서 이미 갈림으로 나왔다.
+    """
+    out = set()
+    for n in tree:
+        if n["sig"] not in common:
+            continue
+        hops, p = [], n["parent"]
+        while p is not None and tree[p]["sig"] not in common:
+            hops.append(tree[p]["label"])
+            p = tree[p]["parent"]
+        head = tree[p]["sig"] if p is not None else "^"
+        out.add(" > ".join([head] + hops[::-1] + [n["sig"]]))
+    return out
+
+
+def tree_orders(tree, common):
+    """{부모 서명: [자식 서명 순서, …]} — 공통 서명끼리만. 같은 부모 서명이 여럿이면 순서 목록이 여럿이다."""
+    out = {}
+    for n in tree:
+        if n["sig"] in common:
+            seq = [tree[c]["sig"] for c in n["children"] if tree[c]["sig"] in common]
+            if len(seq) > 1:
+                out.setdefault(n["sig"], []).append(seq)
+    return out
+
+
+def is_subsequence(short, long):
+    it = iter(long)
+    return all(x in it for x in short)
 
 
 def namecard_drift(bundle_js, fixture_htmls):
-    """(갈림 문장 목록, 번들 서명 수). 컴포넌트를 못 찾으면 (None, 0). 원소 집합과 그 자리(부모)를 둘 다 본다.
+    """(갈림 문장 목록, 번들 서명 수, 자리 대조를 못 한 이유 또는 None). 컴포넌트를 못 찾으면 (None, 0, None).
 
-    픽스처는 상태 넷(구독 여부 × 크리에이터 여부)의 **합집합**으로 본다 — 번들 컴포넌트는 조건 분기를
-    전부 담고 있어서다. 한쪽에만 있는 서명이 갈림이다: 번들에만 있으면 픽스처가 그리지 않는 원소(다크
-    덮어쓰기가 프리뷰에서 매칭될 상대가 없다), 픽스처에만 있으면 실물에 없는 원소(죽은 덮어쓰기를 살아
-    있다고 보여 준다).
+    셋을 본다.
+    ① **원소 집합** — 픽스처는 상태 넷(구독 여부 × 크리에이터 여부)의 **합집합**으로 본다. 번들 컴포넌트는 조건
+       분기를 전부 담고 있어서다. 번들에만 있으면 픽스처가 그리지 않는 원소(다크 덮어쓰기가 프리뷰에서 매칭될
+       상대가 없다), 픽스처에만 있으면 실물에 없는 원소(죽은 덮어쓰기를 살아 있다고 보여 준다).
+    ② **자리** — 양쪽에 다 있는 원소의 「가장 가까운 공통 조상 > 사이 원소 > 자기」 길(#134). 집합만 보면 클래스가
+       그대로인 채 다른 부모로 옮겨지거나 클래스 없는 그릇이 새로 낀 것을 놓친다.
+    ③ **형제 순서** — 상태마다 픽스처의 자식 순서가 번들 자식 순서의 부분열이어야 한다(번들은 삼항의 두 갈래를
+       나란히 담으므로 부분열로 본다). 썸네일이 왼쪽으로 옮겨진 것 같은 좌우 반전이 여기서 잡힌다.
+    ②③은 번들 트리를 확정할 수 있을 때만 — 뿌리가 둘 이상이면(원소를 변수로 먼저 만들어 `children`에 넘겼다)
+    소스 위치가 DOM 위치가 아니고, `{잘림}` 원소는 자식을 품지 못한다. 그때는 이유를 돌려 미검증으로 남긴다.
     """
     src = bundle_component(bundle_js)
     if src is None:
-        return None, 0
-    live = bundle_signatures(src)
-    fx = set()
-    for h in fixture_htmls:
-        fx |= fixture_signatures(h)
+        return None, 0, None
+    btree = bundle_tree(src)
+    ftrees = [fixture_tree(h) for h in fixture_htmls]
+    live = {n["sig"] for n in btree if n["sig"]}
+    fx = {n["sig"] for t in ftrees for n in t if n["sig"]}
     out = []
     only_live, only_fx = sorted(live - fx), sorted(fx - live)
     if only_live:
         out.append("번들에만 있다: " + ", ".join(only_live))
     if only_fx:
         out.append("프리뷰 픽스처에만 있다: " + ", ".join(only_fx))
-    # 자리(부모)도 본다(#134) — 집합만 보면 클래스가 그대로인 채 다른 부모로 옮겨진 원소를 놓친다.
-    # 위에서 이미 한쪽에만 있다고 낸 원소가 걸린 짝은 빼고, **양쪽에 다 있는** 원소끼리의 짝만 견준다 —
-    # 이름 하나 바뀐 것이 「자리도 다르다」로 두 번 나오지 않게.
+
+    roots = [n["label"] for n in btree if n["parent"] is None]
+    cut = sorted(n["label"] for n in btree if n["label"].endswith(".{잘림}"))
+    if len(roots) > 1:
+        return out, len(live), ("번들 컴포넌트의 최상위 원소가 %d개다(%s) — 원소를 변수로 먼저 만들어 넘기면 소스 위치가 "
+                                "DOM 위치가 아니라 자리를 확정할 수 없다" % (len(roots), ", ".join(roots)))
+    if cut:
+        return out, len(live), "props를 끝까지 읽지 못한 원소가 있다(%s) — 그 자식들의 자리를 확정할 수 없다" % ", ".join(cut)
+
     common = live & fx
-    fx_edges = set()
-    for h in fixture_htmls:
-        fx_edges |= fixture_edges(h)
-    live_edges = bundle_edges(src)
-
-    def both(edge):
-        parent, child = edge.split(" > ")
-        return child in common and (parent == "^" or parent in common)
-
-    moved_live = sorted(e for e in live_edges - fx_edges if both(e))
-    moved_fx = sorted(e for e in fx_edges - live_edges if both(e))
+    live_paths = tree_paths(btree, common)
+    fx_paths = set()
+    for t in ftrees:
+        fx_paths |= tree_paths(t, common)
+    moved_live, moved_fx = sorted(live_paths - fx_paths), sorted(fx_paths - live_paths)
     if moved_live or moved_fx:
-        out.append("자리(부모)가 다르다 — 번들: %s / 프리뷰: %s" % (
+        out.append("자리가 다르다 — 번들: %s / 프리뷰: %s" % (
             ", ".join(moved_live) or "(없음)", ", ".join(moved_fx) or "(없음)"))
-    return out, len(live)
+
+    live_orders = tree_orders(btree, common)
+    bad = {}   # 부모마다 첫 위반 하나만 — 상태 넷이 같은 위반을 네 줄로 늘어놓지 않게
+    for t in ftrees:
+        for parent, seqs in tree_orders(t, common).items():
+            for seq in seqs:
+                if parent in live_orders and parent not in bad and not any(
+                        is_subsequence(seq, l) for l in live_orders[parent]):
+                    bad[parent] = "%s 안: 프리뷰 %s / 번들 %s" % (
+                        parent, " → ".join(seq), " → ".join(live_orders[parent][0]))
+    if bad:
+        out.append("형제 순서가 다르다 — " + "; ".join(bad[k] for k in sorted(bad)))
+    return out, len(live), None
 
 
 def bundle_url_of(doc, base):
@@ -1311,12 +1369,15 @@ def _verify_namecard_bundle(base, home_doc):
     if status != 200 or not js:
         unverified("V019", "티스토리 번들을 받지 못했다 (HTTP %s)." % status, url)
         return
-    problems, n = namecard_drift(js, fixtures)
+    problems, n, unshaped = namecard_drift(js, fixtures)
     if problems is None:
         unverified("V019", "번들에서 Namecard 컴포넌트를 찾지 못했다(앱 표 `{Comment:…,Namecard:…}`나 정의 모양이 "
                    "바뀌었다). 대조기(verify.py bundle_component)를 번들에 맞춰 고친 뒤 다시 돌린다 — 그동안 "
                    "픽스처·TIS005가 낡았는지 알 수 없다.", url)
         return
+    if unshaped:
+        unverified("V019", "Namecard 원소의 자리·형제 순서를 대조하지 못했다 — %s. 원소 집합 대조만 했다. "
+                   "대조기(verify.py bundle_tree)를 번들에 맞춰 고친다." % unshaped, url)
     if problems:
         warn("V019", "프리뷰 Namecard 픽스처가 라이브 번들과 갈렸다 — %s. 티스토리가 카드 마크업을 바꿨다면 "
              "render.py namecard_box, data/tistory-hardcoded-colors.json namecardRules(TIS005), "
@@ -1326,7 +1387,8 @@ def _verify_namecard_bundle(base, home_doc):
         tail = ("render.py TISTORY_NAMECARD_BUNDLE과 같은 번들이다" if pinned == url else
                 "번들 해시는 render.py TISTORY_NAMECARD_BUNDLE(%s)과 다르지만 카드 마크업은 같다 — 상수를 %s 로 "
                 "갱신해 두라" % (pinned, url))
-        info("V019 — 프리뷰 Namecard 픽스처가 라이브 번들 컴포넌트와 같은 원소·클래스 %d종, 같은 자리다. %s." % (n, tail))
+        info("V019 — 프리뷰 Namecard 픽스처가 라이브 번들 컴포넌트와 같은 원소·클래스 %d종이다%s. %s." % (
+            n, "" if unshaped else "(자리·형제 순서도 같다)", tail))
 
 
 class _NamecardAncestry(HTMLParser):

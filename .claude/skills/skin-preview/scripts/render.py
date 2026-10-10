@@ -64,7 +64,7 @@ REACT_BOX_EMPTY = '<div data-tistory-react-app="Comment"></div>'
 # 재현하지 못하는 것: 버튼이 아예 없는 주인 화면(isMember), 실제 크리에이터 블로그의 분야 이름.
 #
 # ⚠ 이 마크업의 정본은 번들이다. seo-verify-live의 V019가 라이브 홈이 싣는 번들에서 Namecard 컴포넌트를
-#   잘라 원소·클래스 집합과 부모-자식 짝을 아래 namecard_states()의 합집합과 대조한다(#131·#134) — 갈리면 경고.
+#   잘라 원소·클래스 집합, 자리(공통 조상까지의 길), 형제 순서를 아래 namecard_states()와 대조한다(#131·#134) — 갈리면 경고.
 #   이 상수는 옮겨 온 번들이다. 해시가 바뀌어도 카드 마크업이 같으면 V019가 info로 갱신을 알려 준다.
 TISTORY_NAMECARD_BUNDLE = ("https://edge.daumcdn.net/tistory/tistory-admin/userblog/"
                            "userblog-e0a0fbc3d954de73ca693c3069846962dc20e7eb/static/pc/dist/index.js")
