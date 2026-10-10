@@ -19,6 +19,15 @@ const html = args.find((a) => !a.startsWith('--') && !isFlagValue(a));
 function isFlagValue(a) { const i = args.indexOf(a); return i > 0 && ['--out', '--fps', '--theme', '--scale', '--stills'].includes(args[i - 1]); }
 function opt(name, dflt) { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : dflt; }
 
+// 환경변수 CHROME → macOS 앱 → PATH의 리눅스 이름들. CI(ubuntu 러너)는 google-chrome이 깔려 있다(이슈 #105)
+const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const onPath = (name) => (process.env.PATH || '').split(':').map((d) => join(d, name)).find(isFile);
+function isFile(f) { try { return statSync(f).isFile(); } catch { return false; } }
+const CHROME = process.env.CHROME || (existsSync(MAC_CHROME) ? MAC_CHROME
+  : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].map(onPath).find(Boolean));
+// test-contract의 가짜 Chrome이 진짜 Chrome을 이어 부를 때 쓴다 — 찾는 규칙을 두 곳에 두지 않으려고
+if (args.includes('--print-chrome')) { console.log(CHROME || ''); process.exit(CHROME ? 0 : 1); }
+
 if (!html) {
   console.error('사용: node render-gif.mjs <html> [--out x.gif] [--fps 12] [--theme light|dark] [--scale 1.5] [--stills t1,t2] [--check]');
   process.exit(2);
@@ -38,12 +47,6 @@ if (STILL_TS.some(Number.isNaN)) fail(`--stills는 쉼표로 구분한 초: ${ST
 const CHECK_ONLY = args.includes('--check');
 const OUT = resolve(opt('--out', join(dirname(HTML), basename(HTML, extname(HTML)) + '.gif')));
 
-// 환경변수 CHROME → macOS 앱 → PATH의 리눅스 이름들. CI(ubuntu 러너)는 google-chrome이 깔려 있다(이슈 #105)
-const MAC_CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const onPath = (name) => (process.env.PATH || '').split(':').map((d) => join(d, name)).find(isFile);
-function isFile(f) { try { return statSync(f).isFile(); } catch { return false; } }
-const CHROME = process.env.CHROME || (existsSync(MAC_CHROME) ? MAC_CHROME
-  : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].map(onPath).find(Boolean));
 if (!CHROME || !existsSync(CHROME)) fail(`Chrome이 없다: ${CHROME || MAC_CHROME + ' · PATH의 google-chrome·chromium'} (환경변수 CHROME으로 경로를 준다)`);
 if (typeof WebSocket !== 'function') fail('Node 22 이상이 필요하다 (내장 WebSocket)');
 if (!STILLS && !CHECK_ONLY && spawnSync('ffmpeg', ['-version']).status !== 0) fail('ffmpeg가 없다 — brew install ffmpeg');
@@ -58,19 +61,23 @@ const ATTEMPTS = 3;
 // Chrome은 죽는 중에도 프로필에 쓴다 — 지우기는 재시도하고, 그래도 남으면 임시 폴더라 둔다.
 // 프레임 폴더도 여기서 지운다 — ffmpeg가 실패해 fail()로 나가도 수십 MB가 남지 않게
 let chrome = null, profile = null, work = null;
+// Chrome은 자기 프로세스 그룹의 우두머리로 띄우고(detached) 그룹째 죽인다 — 본체만 죽이면 렌더러·GPU 도우미가
+// 남아 CPU를 잡고, 다시 띄울수록 쌓여 다음 멈춤을 부른다(코드 리뷰 2026-10-10)
 const teardown = () => {
-  try { chrome?.kill('SIGKILL'); } catch {}
+  if (chrome) { try { process.kill(-chrome.pid, 'SIGKILL'); } catch { try { chrome.kill('SIGKILL'); } catch {} } }
   for (const d of [profile, work]) if (d) try { rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); } catch {}
   chrome = profile = work = null;
 };
 process.on('exit', teardown);
+// 그룹을 따로 두었으니 터미널의 Ctrl-C는 Chrome에 닿지 않는다 — 여기서 받아 exit로 돌려 teardown을 태운다
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => process.exit(130));
 
 for (let n = 1; ; n++) {
   try {
     await attempt();
-    break;
+    process.exit(0);
   } catch (e) {
-    if (!(e instanceof InfraError)) throw e;
+    if (!(e instanceof InfraError)) fail(e.message);
     teardown();
     if (n >= ATTEMPTS) fail(`${e.message} — Chrome을 ${ATTEMPTS}번 띄워도 같았다`);
     console.error(`↻ ${e.message} — Chrome을 다시 띄운다 (${n + 1}/${ATTEMPTS})`);
@@ -83,10 +90,18 @@ async function attempt() {
   chrome = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--hide-scrollbars', '--remote-debugging-port=0',
     `--user-data-dir=${profile}`, 'about:blank',
-  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  ], { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
   const pending = new Map();
-  // Chrome이나 탭이 죽으면 기다리던 응답은 영영 오지 않는다 — 시한까지 기다리지 말고 바로 끊는다
-  const dead = (why) => { for (const [id, p] of pending) { pending.delete(id); p.rej(new InfraError(why)); } };
+  // Chrome이나 탭이 죽으면 기다리던 응답은 영영 오지 않는다 — 시한까지 기다리지 말고 바로 끊는다.
+  // 아무것도 기다리지 않을 때 죽어도 잊지 않는다(deadWhy) — 다음 호출·로드 대기가 10초를 허비하지 않게
+  let deadWhy = null;
+  const waiters = new Set();
+  const dead = (why) => {
+    deadWhy ??= why;
+    for (const [id, p] of pending) { pending.delete(id); p.rej(new InfraError(why)); }
+    for (const rej of waiters) rej(new InfraError(why));
+    waiters.clear();
+  };
   chrome.on('exit', (code, sig) => dead(`Chrome이 끝났다 (${code ?? sig})`));
 
   const wsUrl = await new Promise((res, rej) => {
@@ -106,16 +121,25 @@ async function attempt() {
   let seq = 0;
   ws.addEventListener('message', (e) => {
     const m = JSON.parse(e.data);
-    if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.rej(new Error(JSON.stringify(m.error))) : p.res(m.result); }
+    if (m.id && pending.has(m.id)) {
+      const p = pending.get(m.id); pending.delete(m.id);
+      if (!m.error) p.res(m.result);
+      // 탭·세션이 사라졌다는 응답은 그 Chrome의 사정이지 페이지 탓이 아니다 — 다시 띄울 일이다
+      else if (/session with given id not found|target closed|no target with given id|inspected target navigated or closed/i.test(m.error.message || ''))
+        p.rej(new InfraError(`CDP 오류: ${m.error.message}`));
+      else p.rej(new Error(`CDP 오류: ${JSON.stringify(m.error)}`));
+    }
     else if (m.method === 'Inspector.targetCrashed') dead('탭의 렌더러가 죽었다');
     else if (m.method === 'Target.detachedFromTarget') dead('탭에서 떨어졌다');
   });
   // 시한은 「멈춤」을 알아보는 장치다. 무거운 여러 개를 함께 돌려도(16개 동시) 가장 느린 호출이 1.3초였고,
-  // 멈출 때는 120초를 기다려도 오지 않았다(2026-10-10 실측, 이슈 #135) — 늘려서 고칠 것이 아니라 다시 띄울 일이다
-  function send(method, params = {}, sessionId) {
+  // 멈출 때는 120초를 기다려도 오지 않았다(2026-10-10 실측, 이슈 #135) — 늘려서 고칠 것이 아니라 다시 띄울 일이다.
+  // 계약 검사 evaluate만은 프레임 수에 비례해 무거워지므로(긴 애니메이션) 따로 길게 준다
+  function send(method, params = {}, sessionId, ms = 10000) {
     return new Promise((res, rej) => {
+      if (deadWhy) return rej(new InfraError(deadWhy));
       const id = ++seq;
-      const timer = setTimeout(() => { pending.delete(id); rej(new InfraError(`CDP ${method} 10초 무응답`)); }, 10000);
+      const timer = setTimeout(() => { pending.delete(id); rej(new InfraError(`CDP ${method} ${ms / 1000}초 무응답`)); }, ms);
       pending.set(id, { res: (v) => { clearTimeout(timer); res(v); }, rej: (e) => { clearTimeout(timer); rej(e); } });
       ws.send(JSON.stringify({ id, method, params, sessionId }));
     });
@@ -123,9 +147,9 @@ async function attempt() {
 
   const { targetId } = await send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
-  const s = (m, p) => send(m, p, sessionId);
-  async function ev(expr) {
-    const r = await s('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });
+  const s = (m, p, ms) => send(m, p, sessionId, ms);
+  async function ev(expr, ms) {
+    const r = await s('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }, ms);
     if (r.exceptionDetails) fail(`페이지 스크립트 오류: ${r.exceptionDetails.exception?.description || r.exceptionDetails.text}`);
     return r.result.value;
   }
@@ -133,11 +157,16 @@ async function attempt() {
   await s('Page.enable');
   await s('Runtime.enable');
   const loaded = new Promise((r, rej) => {
+    if (deadWhy) return rej(new InfraError(deadWhy));
+    const timer = setTimeout(() => rej(new InfraError('페이지가 10초 안에 로드되지 않았다')), 10000);
+    waiters.add(rej);
     ws.addEventListener('message', function on(e) {
-      if (JSON.parse(e.data).method === 'Page.loadEventFired') { ws.removeEventListener('message', on); r(); }
+      if (JSON.parse(e.data).method === 'Page.loadEventFired') { ws.removeEventListener('message', on); clearTimeout(timer); waiters.delete(rej); r(); }
     });
-    setTimeout(() => rej(new InfraError('페이지가 10초 안에 로드되지 않았다')), 10000);
   });
+  // Page.navigate가 먼저 실패해 이 시도를 버리면 loaded는 아무도 기다리지 않는다 — 그 뒤 시한이 터지면
+  // 처리되지 않은 거부로 Node가 **다음 시도 도중에** 프로세스를 죽인다. 여기서 받아 둔다(await는 그대로 거부를 받는다)
+  loaded.catch(() => {});
   // pathToFileURL — 경로의 #·?·공백이 조각·쿼리로 잘리지 않게
   const pageUrl = pathToFileURL(HTML);
   pageUrl.search = `?capture=1&theme=${THEME}&t=0`;
@@ -178,7 +207,7 @@ async function attempt() {
       impure,                       // 같은 t인데 그림이 다른 시점 (Date·Math.random·누적 상태)
       timed, timedT,
       controlsHidden: document.body.classList.contains('capture') };
-  })()`);
+  })()`, 60000);  // 60초 — 프레임 수에 비례한다(템플릿 136프레임에 30ms). 넘으면 멈춤으로 보고 다시 띄운다
   if (!contract.ok) fail('계약 위반: window.__render(t)·window.__total(초)·window.__size([w,h])가 모두 있어야 한다');
   if (!contract.moves) fail(`계약 위반: 프레임 ${contract.frames}장의 그림이 전부 같다 — __render가 t를 읽지 않는다`);
   if (contract.impure.length) fail(`계약 위반: 같은 t인데 그림이 다르다 (t=${contract.impure.slice(0, 5).join(', ')}…) — Date·Math.random·이전 프레임 상태를 쓰지 않는다`);
@@ -186,7 +215,7 @@ async function attempt() {
   if (!contract.controlsHidden) fail('계약 위반: ?capture=1에서 body.capture가 없다 — 조작 막대가 GIF에 찍힌다');
   const [W, H] = contract.size;
   console.log(`✓ 계약: ${contract.total.toFixed(2)}초, ${W}×${H}`);
-  if (CHECK_ONLY) process.exit(0);
+  if (CHECK_ONLY) return;
 
   await s('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: SCALE, mobile: false });
 
@@ -204,7 +233,7 @@ async function attempt() {
       await shot(t, f);
       console.log(f);
     }
-    process.exit(0);
+    return;
   }
 
   // ── 프레임 → GIF
@@ -220,5 +249,4 @@ async function attempt() {
 
   const kb = Math.round(statSync(OUT).size / 1024);
   console.log(`✓ ${OUT}\n  ${n}프레임 · ${FPS}fps · ${contract.total.toFixed(1)}초 · ${Math.round(W * SCALE)}×${Math.round(H * SCALE)} · ${kb}KB`);
-  process.exit(0);
 }
