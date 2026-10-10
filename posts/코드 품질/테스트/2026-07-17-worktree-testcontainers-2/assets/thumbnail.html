@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>worktree 테스트 인프라 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 시리즈 「git worktree 병렬 개발의 테스트 인프라, Testcontainers로 전환하기」의 대표이미지(= og:image).
+// 1편·2편이 같은 파일이다 — EP만 다르다. 1편은 공유 컨테이너(문제), 2편은 worktree별 컨테이너(해결).
+// 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var EP = 2;
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx || 20) + '"' +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function curve(d, col, w) {
+  return '<path d="' + d + '" fill="none" stroke-linecap="round"' +
+    ' style="stroke:var(' + col + ');stroke-width:' + (w || 6) + '" marker-end="url(#m' + col.slice(2) + ')"/>';
+}
+function pill(cx, cy, s, fill, stroke, col, size) {
+  var w = s.length * size * 0.95 + size * 1.4, h = size * 1.9;
+  return rect(cx - w / 2, cy - h / 2, w, h, fill, stroke, 4, h / 2) +
+    text(cx, cy + size * 0.36, s, 'fill:var(' + col + ');font-size:' + size + 'px;font-weight:800;text-anchor:middle');
+}
+function defs() {
+  return '<defs>' + ['--err', '--ok'].map(function (c) {
+    return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="30" markerHeight="30" orient="auto">' +
+      '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+  }).join('') + '</defs>';
+}
+
+// 도식 — 0,0 ~ 820,584. 왼쪽 worktree 셋, 오른쪽 컨테이너
+var W = 820, H = 584;
+var WX = 0, WW = 270, WH = 124, WY = [20, 230, 440];
+var CX = 530, CW = 290;
+var HASH = ['3f9a1c07b2e4', 'a81d5e9c4f30', 'c47b02e6d9a1']; // 예시 — worktree 루트 경로 SHA-256 앞 12자
+function worktree(i) {
+  var y = WY[i], n = 'ABC'[i];
+  return rect(WX, y, WW, WH, '--surface', '--ink-body', 4, 18) +
+    text(WX + 28, y + 54, 'worktree ' + n, 'fill:var(--ink);font-size:34px;font-weight:800') +
+    text(WX + 28, y + 96, 'feature/' + n.toLowerCase(), 'fill:var(--mute);font-size:24px', 'mono');
+}
+function diagram() {
+  var out = [];
+  if (EP === 1) {
+    // 문제 — 셋이 컨테이너 하나를 같이 쓴다
+    var cy = 150, ch = 284, mid = cy + ch / 2;
+    WY.forEach(function (y, i) {
+      var sy = y + WH / 2, ty = mid + (i - 1) * 70;
+      out.push(curve('M' + (WW + 2) + ',' + sy + ' C' + (WW + 130) + ',' + sy + ' ' + (CX - 120) + ',' + ty + ' ' + (CX - 6) + ',' + ty, '--err', 6));
+    });
+    WY.forEach(function (y, i) { out.push(worktree(i)); });
+    out.push(rect(CX, cy, CW, ch, '--err-soft', '--err', 5, 24));
+    out.push(text(CX + CW / 2, cy + 92, 'MySQL', 'fill:var(--err);font-size:44px;font-weight:800;text-anchor:middle'));
+    out.push(text(CX + CW / 2, cy + 142, 'Redis', 'fill:var(--err);font-size:34px;font-weight:700;text-anchor:middle'));
+    out.push(text(CX + CW / 2, cy + 230, 'localhost:3306', 'fill:var(--err);font-size:24px;text-anchor:middle', 'mono'));
+    out.push(pill(CX + CW / 2, cy - 4, '공유', '--surface', '--err', '--err', 28));
+  } else {
+    // 해결 — worktree마다 자기 컨테이너. 라벨 해시가 다르니 reuse가 갈린다
+    WY.forEach(function (y, i) {
+      var sy = y + WH / 2;
+      out.push(curve('M' + (WW + 2) + ',' + sy + ' H' + (CX - 6), '--ok', 6));
+    });
+    WY.forEach(function (y, i) {
+      out.push(worktree(i));
+      out.push(rect(CX, y, CW, WH, '--ok-soft', '--ok', 5, 18));
+      out.push(text(CX + 28, y + 54, 'MySQL', 'fill:var(--ok);font-size:34px;font-weight:800'));
+      out.push(text(CX + 28, y + 96, '#' + HASH[i], 'fill:var(--ok);font-size:24px', 'mono'));
+    });
+  }
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var out = defs() + '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, 'git worktree 병렬 개발', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, 'Testcontainers로', 'fill:var(--ink);font-size:84px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 600, '전환하기', 'fill:var(--ink);font-size:84px;font-weight:800;letter-spacing:-2px');
+  out += pill(186, 680, EP + '편', '--surface', EP === 1 ? '--err' : '--ok', EP === 1 ? '--err' : '--ok', 34);
+  out += place(diagram(), 1170, 500, 0.72);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>OOMKilled 추적기 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 시리즈 「K8s 환경에서 발생한 Spring Boot 컨테이너 OOMKilled 추적기」의 대표이미지(= og:image).
+// 1·2·3편이 같은 파일이다 — EP만 다르다. 세 편이 같은 컨테이너 메모리 막대를 두고, 편마다 들여다보는 곳이 좁혀진다.
+//   1편 막대가 limit을 넘는다 — 어느 레벨의 OOM인가 / 2편 Heap을 확대 — 힙 덤프의 SSLSocketImpl / 3편 원인 설정과 그 뒤
+// 3편 본문은 이 누수를 OOMKilled의 주원인이 아닌 보조 원인 정도로 본다 — 그래서 3편 막대를 「해결」로 그리지 않는다.
+// 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var EP = 2;
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx, extra) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' + (extra || '') +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function pill(cx, cy, s, fill, stroke, col, size, k) {
+  var w = s.length * size * (k || 0.95) + size * 1.4, h = size * 1.9;
+  return rect(cx - w / 2, cy - h / 2, w, h, fill, stroke, 4, h / 2) +
+    text(cx, cy + size * 0.36, s, 'fill:var(' + col + ');font-size:' + size + 'px;font-weight:800;text-anchor:middle');
+}
+function line(x1, y1, x2, y2, col, w, dash) {
+  return '<path d="M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2 + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') +
+    ' stroke-linecap="round" style="stroke:var(' + col + ');stroke-width:' + w + '"/>';
+}
+
+// 도식 — 0,0 ~ 820,584. 위는 컨테이너 메모리 막대(세 편 공통), 아래는 편마다 들여다본 것
+var W = 820, H = 584;
+var BY = 64, BH = 96, LIMIT = 700, CY = 254;
+function memoryBar() {
+  // 1편은 limit을 넘는다. 2·3편은 1편의 초동 조치(MaxRAMPercentage 50 → 45)로 Heap이 줄어 limit 안쪽이다
+  var segs = EP === 1
+    ? [['Heap', 0, 400, '--a'], ['Non-Heap', 400, 630, '--b'], ['OS', 630, 776, '--mute']]
+    : [['Heap', 0, 360, '--a'], ['Non-Heap', 360, 590, '--b'], ['OS', 590, 660, '--mute']];
+  var out = [];
+  out.push(text(0, 40, '컨테이너 메모리', 'fill:var(--mute);font-size:26px;font-weight:600'));
+  segs.forEach(function (s, i) {
+    var soft = s[3] === '--mute' ? '--hair' : s[3] + '-soft', dash = '';
+    if (EP === 2 && s[0] === 'Non-Heap') dash = ' stroke-dasharray="12 8"';
+    out.push(rect(s[1] + 3, BY, s[2] - s[1] - 6, BH, soft, s[3], 4, 14, dash));
+    out.push(text((s[1] + s[2]) / 2 - (EP === 1 && s[0] === 'OS' ? 38 : 0), BY + BH / 2 + 12, s[0],
+      'fill:var(' + s[3] + ');font-size:32px;font-weight:800;text-anchor:middle'));
+  });
+  if (EP === 1) {
+    // limit을 넘은 몫
+    out.push(rect(LIMIT, BY, 776 - 3 - LIMIT, BH, '--err-soft', '--err', 4, 0));
+  }
+  out.push(line(LIMIT, BY - 34, LIMIT, BY + BH + 18, '--err', 5, '12 9'));
+  out.push(text(LIMIT, BY - 44, 'limit', 'fill:var(--err);font-size:26px;font-weight:700;text-anchor:middle', 'mono'));
+  if (EP === 2) out.push(pill(475, BY, '의심', '--surface', '--b', '--b', 24));
+  return out.join('');
+}
+// Heap을 확대하는 두 선
+function zoom() {
+  return line(6, BY + BH + 6, 0, CY, '--hair-strong', 3, '8 8') + line(354, BY + BH + 6, W, CY, '--hair-strong', 3, '8 8');
+}
+
+function ep1() {
+  // 어느 레벨의 OOM인가 — 노드 부족도, Java OOM도 아니고 컨테이너 limit 초과
+  var rows = [
+    ['노드 메모리 부족', 'QoS · Burstable', '아님', 0],
+    ['OutOfMemoryError', 'Java 레벨', '아님', 0],
+    ['OOMKilled', '컨테이너 레벨', '이것', 1]
+  ];
+  var out = [];
+  rows.forEach(function (r, i) {
+    var y = CY + 8 + i * 106, hit = r[3];
+    out.push(rect(0, y, W, 92, hit ? '--err-soft' : '--surface', hit ? '--err' : '--hair-strong', hit ? 5 : 3, 16));
+    out.push(text(32, y + 56, r[0], 'fill:var(' + (hit ? '--err' : '--ink-body') + ');font-size:34px;font-weight:800',
+      r[0] === '노드 메모리 부족' ? '' : 'mono'));
+    out.push(text(W - 150, y + 56, r[1], 'fill:var(' + (hit ? '--err' : '--mute') + ');font-size:24px;text-anchor:end'));
+    out.push(pill(W - 76, y + 46, r[2], hit ? '--err' : '--bg', hit ? '--err' : '--hair-strong', hit ? '--surface' : '--mute', 26));
+  });
+  return out.join('');
+}
+function ep2() {
+  // Heap을 확대한 힙 덤프 — 회수되지 않은 SSLSocketImpl
+  var out = [zoom()];
+  out.push(rect(0, CY, W, H - CY, '--surface', '--hair-strong', 4, 20));
+  out.push(text(32, CY + 50, 'heap dump', 'fill:var(--mute);font-size:24px', 'mono'));
+  out.push(text(W - 32, CY + 50, 'Objects', 'fill:var(--mute);font-size:24px;text-anchor:end', 'mono'));
+  out.push(line(20, CY + 70, W - 20, CY + 70, '--hair', 3));
+  out.push(rect(16, CY + 86, W - 32, 84, '--err-soft', '--err', 4, 14));
+  out.push(text(40, CY + 142, 'SSLSocketImpl', 'fill:var(--err);font-size:36px;font-weight:700', 'mono'));
+  out.push(text(W - 40, CY + 144, '1,856', 'fill:var(--err);font-size:44px;font-weight:800;text-anchor:end', 'mono'));
+  [[CY + 210, 330, 70], [CY + 270, 260, 50]].forEach(function (r) {
+    out.push(rect(40, r[0] - 11, r[1], 22, '--hair', '--hair', 0, 11));
+    out.push(rect(W - 40 - r[2], r[0] - 11, r[2], 22, '--hair', '--hair', 0, 11));
+  });
+  return out.join('');
+}
+function ep3() {
+  // 원인 — maxLifetime이 keepaliveTime보다 짧았다(문서는 그 반대를 요구). 고친 뒤 1,856 → 92
+  var out = [zoom()], X = 300;
+  out.push(rect(0, CY, W, H - CY, '--surface', '--hair-strong', 4, 20));
+  out.push(text(32, CY + 50, 'HikariCP', 'fill:var(--mute);font-size:24px', 'mono'));
+  out.push(text(32, CY + 118, 'maxLifetime', 'fill:var(--ink);font-size:30px;font-weight:700', 'mono'));
+  out.push(rect(X, CY + 92, 220, 34, '--b-soft', '--b', 4, 10));
+  out.push(text(32, CY + 186, 'keepaliveTime', 'fill:var(--ink);font-size:30px;font-weight:700', 'mono'));
+  out.push(rect(X, CY + 160, 420, 34, '--a-soft', '--a', 4, 10));
+  out.push(pill(X + 330, CY + 109, '✕ 역전', '--err-soft', '--err', '--err', 26));
+  out.push(line(20, CY + 236, W - 20, CY + 236, '--hair', 3));
+  out.push(text(32, CY + 292, 'SSLSocketImpl', 'fill:var(--mute);font-size:28px', 'mono'));
+  out.push(text(X + 50, CY + 294, '1,856', 'fill:var(--err);font-size:40px;font-weight:800', 'mono'));
+  out.push(line(X + 46, CY + 280, X + 172, CY + 280, '--err', 4));
+  out.push(text(X + 240, CY + 292, '→', 'fill:var(--mute);font-size:36px;font-weight:700'));
+  out.push(text(X + 310, CY + 294, '92', 'fill:var(--ok);font-size:44px;font-weight:800', 'mono'));
+  return out.join('');
+}
+function diagram() {
+  return memoryBar() + (EP === 1 ? ep1() : EP === 2 ? ep2() : ep3());
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var SUB = ['', 'OOM 레벨 구분과 QoS 확인', '힙 덤프와 논힙 메모리 추적', 'HikariCP 설정과 Socket 누수'];
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, 'K8s · Spring Boot', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, 'OOMKilled', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 610, '추적기', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += pill(186, 690, EP + '편', '--surface', '--err', '--err', 34);
+  out += text(264, 702, SUB[EP], 'fill:var(--ink-body);font-size:34px;font-weight:700');
+  out += place(diagram(), 1170, 500, 0.72);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
