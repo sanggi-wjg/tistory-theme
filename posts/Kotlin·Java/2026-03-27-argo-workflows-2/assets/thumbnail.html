@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Argo Workflows 전환 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 시리즈 「K8s CronJob 기반 Spring Batch, Argo Workflows로 전환하기」의 대표이미지(= og:image).
+// 1~4편이 같은 파일이다 — EP만 다르다. 네 편이 「스케줄러 → 실행」 두 칸을 두고, 편마다 불이 켜지는 칸이 옮겨 간다.
+//   1편 옛 구조(CronJob → 잡마다 Pod) / 2편 Batch API 서버 / 3편 Argo CronWorkflow / 4편 6개월 운영 회고
+// 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var EP = 2;
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx, extra) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' + (extra || '') +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function pill(cx, cy, s, fill, stroke, col, size, k) {
+  var w = s.length * size * (k || 0.95) + size * 1.4, h = size * 1.9;
+  return rect(cx - w / 2, cy - h / 2, w, h, fill, stroke, 4, h / 2) +
+    text(cx, cy + size * 0.36, s, 'fill:var(' + col + ');font-size:' + size + 'px;font-weight:800;text-anchor:middle');
+}
+function line(x1, y1, x2, y2, col, w, dash) {
+  return '<path d="M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2 + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') +
+    ' stroke-linecap="round" style="stroke:var(' + col + ');stroke-width:' + w + '"/>';
+}
+function arrow(x1, y, x2, col) {
+  return line(x1, y, x2 - 14, y, col, 6) +
+    '<path d="M' + (x2 - 20) + ',' + (y - 13) + ' L' + x2 + ',' + y + ' L' + (x2 - 20) + ',' + (y + 13) + ' Z" style="fill:var(' + col + ')"/>';
+}
+
+// 도식 — 0,0 ~ 820,584. 위는 「스케줄러 → 실행」 두 칸(네 편 공통), 아래는 편마다 들여다본 것
+var W = 820, H = 584;
+var TY = 20, TH = 200, SX = 0, SW = 290, EX = 440, EW = 380, PY = 284;
+// 편마다 칸의 색 — on은 불이 켜진 칸
+function tone(on) {
+  if (EP === 1) return { fill: '--err-soft', stroke: '--err', col: '--err', sw: 5 };
+  if (EP === 4) return { fill: '--ok-soft', stroke: '--ok', col: '--ok', sw: 5 };
+  return on ? { fill: '--a-soft', stroke: '--a', col: '--a', sw: 6 } : { fill: '--surface', stroke: '--hair-strong', col: '--mute', sw: 4 };
+}
+function box(x, w, title, sub, t) {
+  return rect(x, TY, w, TH, t.fill, t.stroke, t.sw, 22) +
+    text(x + w / 2, TY + 92, title, 'fill:var(' + t.col + ');font-size:36px;font-weight:800;text-anchor:middle') +
+    text(x + w / 2, TY + 140, sub, 'fill:var(' + t.col + ');font-size:24px;text-anchor:middle', 'mono');
+}
+function topRow() {
+  var out = [], s = tone(EP === 3), e = tone(EP === 2);
+  if (EP === 1) {
+    out.push(box(SX, SW, 'CronJob', 'K8s', s));
+    // 잡마다 Pod — 겹친 카드 셋
+    [[EX + 40, TY + 36], [EX + 20, TY + 18], [EX, TY]].forEach(function (p, i) {
+      out.push(rect(p[0], p[1], EW - 40, TH - 36, i < 2 ? '--surface' : e.fill, e.stroke, e.sw - (i < 2 ? 1 : 0), 22));
+    });
+    out.push(text(EX + (EW - 40) / 2, TY + 74, 'Pod', 'fill:var(--err);font-size:36px;font-weight:800;text-anchor:middle'));
+    out.push(text(EX + (EW - 40) / 2, TY + 122, '잡마다 새로', 'fill:var(--err);font-size:26px;text-anchor:middle'));
+  } else {
+    out.push(box(SX, SW, 'CronWorkflow', 'Argo Workflows', s));
+    out.push(box(EX, EW, 'Batch API 서버', 'Deployment · 상시', e));
+  }
+  var ac = EP === 1 ? '--err' : EP === 4 ? '--ok' : '--ink-body';
+  out.push(arrow(SX + SW + 8, TY + TH / 2, EX - 8, ac));
+  out.push(text((SX + SW + EX) / 2, TY + TH / 2 - 22, EP === 1 ? 'Pod 생성' : 'HTTP',
+    'fill:var(' + ac + ');font-size:24px;font-weight:700;text-anchor:middle', EP === 1 ? '' : 'mono'));
+  return out.join('');
+}
+// 불 켜진 칸을 아래 패널로 확대하는 두 선
+function zoom(x0, x1) {
+  return line(x0 + 6, TY + TH + 6, 0, PY, '--hair-strong', 3, '8 8') + line(x1 - 6, TY + TH + 6, W, PY, '--hair-strong', 3, '8 8');
+}
+function panel() {
+  return rect(0, PY, W, H - PY, '--surface', '--hair-strong', 4, 20);
+}
+
+function ep1() {
+  // 스케줄은 Pod 생성 시각이다 — Spring 기동이 끝나야 잡이 시작된다
+  var out = [zoom(EX, EX + EW - 40), panel()], X0 = 36, XS = 540, X1 = W - 36, BY = PY + 92;
+  out.push(text(X0, PY + 54, 'Pod 한 번', 'fill:var(--mute);font-size:24px;font-weight:600'));
+  out.push(rect(X0, BY, XS - X0 - 8, 76, '--err-soft', '--err', 4, 12));
+  out.push(text((X0 + XS) / 2, BY + 49, 'Spring 기동 30s~1m', 'fill:var(--err);font-size:30px;font-weight:800;text-anchor:middle'));
+  out.push(rect(XS, BY, X1 - XS, 76, '--a-soft', '--a', 4, 12));
+  out.push(text((XS + X1) / 2, BY + 49, 'job 10s', 'fill:var(--a);font-size:30px;font-weight:800;text-anchor:middle', 'mono'));
+  out.push(line(X0, BY + 92, X0, BY + 112, '--ink-body', 4));
+  out.push(text(X0, BY + 150, '09:00 스케줄', 'fill:var(--ink-body);font-size:26px;font-weight:700'));
+  out.push(line(XS, BY + 92, XS, BY + 112, '--err', 4));
+  out.push(text(XS, BY + 150, '실제 시작 30s~1m 뒤', 'fill:var(--err);font-size:26px;font-weight:700'));
+  return out.join('');
+}
+function ep2() {
+  // 실행은 202, 상태 조회는 진행 중 202 · 완료 200. 잡 성격에 따라 실행기를 나눈다
+  var out = [zoom(EX, EX + EW), panel()], X0 = 36, X1 = W - 36;
+  out.push(text(X0, PY + 66, 'POST /jobs/{name}', 'fill:var(--ink);font-size:28px;font-weight:700', 'mono'));
+  out.push(pill(X1 - 46, PY + 56, '202', '--a-soft', '--a', '--a', 26, 0.62));
+  out.push(text(X0, PY + 132, 'GET /executions/{id}', 'fill:var(--ink);font-size:28px;font-weight:700', 'mono'));
+  out.push(pill(X1 - 186, PY + 122, '202', '--a-soft', '--a', '--a', 26, 0.62));
+  out.push(text(X1 - 116, PY + 132, '…', 'fill:var(--mute);font-size:28px;font-weight:700;text-anchor:middle'));
+  out.push(pill(X1 - 46, PY + 122, '200', '--ok-soft', '--ok', '--ok', 26, 0.62));
+  out.push(line(20, PY + 168, W - 20, PY + 168, '--hair', 3));
+  out.push(text(X0, PY + 232, '실행기', 'fill:var(--mute);font-size:26px;font-weight:600'));
+  out.push(rect(170, PY + 192, 290, 60, '--b-soft', '--b', 4, 14));
+  out.push(text(315, PY + 232, 'Heavy  3–5', 'fill:var(--b);font-size:28px;font-weight:700;text-anchor:middle;white-space:pre', 'mono'));
+  out.push(rect(490, PY + 192, 294, 60, '--a-soft', '--a', 4, 14));
+  out.push(text(637, PY + 232, 'Light  5–10', 'fill:var(--a);font-size:28px;font-weight:700;text-anchor:middle;white-space:pre', 'mono'));
+  return out.join('');
+}
+function ep3() {
+  // HTTP Template 셋 — 실행을 걸고, 202면 다시 묻고, 끝나면 COMPLETED인지 본다
+  var out = [zoom(SX, SX + SW), panel()], CW = 210, CY = PY + 52, CHH = 132, xs = [36, 305, 574];
+  var steps = [['trigger', 'POST', '--a'], ['poll', 'GET ↻', '--a'], ['verify', 'COMPLETED', '--ok']];
+  steps.forEach(function (s, i) {
+    var x = xs[i];
+    out.push(rect(x, CY, CW, CHH, s[2] + '-soft', s[2], 4, 18));
+    out.push(text(x + CW / 2, CY + 58, s[0], 'fill:var(' + s[2] + ');font-size:34px;font-weight:800;text-anchor:middle', 'mono'));
+    out.push(text(x + CW / 2, CY + 102, s[1], 'fill:var(' + s[2] + ');font-size:24px;text-anchor:middle', 'mono'));
+    if (i < 2) out.push(arrow(x + CW + 6, CY + CHH / 2, xs[i + 1] - 6, '--ink-body'));
+  });
+  out.push(text(xs[1] + CW / 2, CY + CHH + 56, '202면 다시 묻는다', 'fill:var(--a);font-size:26px;font-weight:700;text-anchor:middle'));
+  return out.join('');
+}
+function ep4() {
+  // 6개월 운영 — 좋았던 둘과 남은 하나
+  var out = [panel()], X0 = 36;
+  var rows = [['✓', '중지 API로 정상 종료', '--ok'], ['✓', 'Graceful shutdown 15분', '--ok'], ['!', '노드 리밸런싱 때 OOM', '--b']];
+  out.push(text(X0, PY + 52, '6개월 운영', 'fill:var(--mute);font-size:24px;font-weight:600'));
+  rows.forEach(function (r, i) {
+    var y = PY + 76 + i * 70;
+    out.push(rect(20, y, W - 40, 58, r[2] + '-soft', r[2], 3, 14));
+    out.push(text(X0 + 20, y + 40, r[0], 'fill:var(' + r[2] + ');font-size:30px;font-weight:800;text-anchor:middle'));
+    out.push(text(X0 + 56, y + 40, r[1], 'fill:var(' + r[2] + ');font-size:28px;font-weight:700'));
+  });
+  return out.join('');
+}
+function diagram() {
+  return topRow() + [null, ep1, ep2, ep3, ep4][EP]();
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var SUB = ['', 'CronJob 문제와 스케줄러 선택', 'Spring Batch REST API 서버 설계', 'Argo Workflows로 스케줄링하기', '전환 후 6개월 운영 회고'];
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, 'K8s · Spring Batch', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, 'CronJob에서', 'fill:var(--ink);font-size:80px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 600, 'Argo Workflows로', 'fill:var(--ink);font-size:80px;font-weight:800;letter-spacing:-2px');
+  out += pill(186, 690, EP + '편', '--surface', '--a', '--a', 34);
+  out += text(264, 701, SUB[EP], 'fill:var(--ink-body);font-size:30px;font-weight:700');
+  out += place(diagram(), 1180, 500, 0.7);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
