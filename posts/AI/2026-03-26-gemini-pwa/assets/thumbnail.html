@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Gemini PWA 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「구글 제미나이(Gemini), 데스크탑 앱처럼 쓰는 방법 - PWA 설치 가이드」의 대표이미지(= og:image).
+// 탭·주소창이 있는 브라우저 → 설치 → 탭도 주소창도 없는 앱 창과 Dock 아이콘. 제품 로고·화면은 흉내 내지 않는다.
+// 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function dots(x, y) {
+  return ['#ff5f57', '#febc2e', '#28c840'].map(function (c, i) {
+    return '<circle cx="' + (x + i * 26) + '" cy="' + y + '" r="8" fill="' + c + '"/>';
+  }).join('');
+}
+function arrow(x1, y, x2, col) {
+  return '<path d="M' + x1 + ',' + y + ' H' + (x2 - 14) + '" stroke-linecap="round" style="stroke:var(' + col + ');stroke-width:6"/>' +
+    '<path d="M' + (x2 - 20) + ',' + (y - 13) + ' L' + x2 + ',' + y + ' L' + (x2 - 20) + ',' + (y + 13) + ' Z" style="fill:var(' + col + ')"/>';
+}
+
+// 도식 — 0,0 ~ 820,584. 위는 브라우저 → 앱 창, 아래는 Dock
+var W = 820, H = 584;
+function diagram() {
+  var out = [], WY = 20, WH = 300;
+  // 브라우저 — 탭 줄과 주소창
+  var BX = 0, BW = 330;
+  out.push(rect(BX, WY, BW, WH, '--surface', '--hair-strong', 4, 18));
+  out.push(dots(BX + 28, WY + 30));
+  [0, 1, 2].forEach(function (i) {
+    out.push(rect(BX + 112 + i * 70, WY + 14, 62, 32, i === 1 ? '--surface' : '--hair', '--hair-strong', 2, 8));
+  });
+  out.push('<path d="M' + (BX + 4) + ',' + (WY + 56) + ' H' + (BX + BW - 4) + '" style="stroke:var(--hair);stroke-width:3"/>');
+  out.push(rect(BX + 20, WY + 72, BW - 40, 40, '--bg', '--hair-strong', 2, 20));
+  out.push(text(BX + 40, WY + 99, 'gemini.google.com', 'fill:var(--mute);font-size:20px', 'mono'));
+  [[150, 220], [194, 170], [238, 200]].forEach(function (r) {
+    out.push(rect(BX + 30, WY + r[0], r[1], 20, '--hair', '--hair', 0, 10));
+  });
+  out.push(text(BX + BW / 2, WY + WH + 46, '브라우저 탭', 'fill:var(--mute);font-size:26px;font-weight:700;text-anchor:middle'));
+
+  out.push(arrow(BX + BW + 14, WY + WH / 2, 474, '--a'));
+  out.push(text((BX + BW + 474) / 2, WY + WH / 2 - 20, '설치', 'fill:var(--a);font-size:26px;font-weight:800;text-anchor:middle'));
+
+  // 앱 창 — 탭도 주소창도 없다
+  var AX = 490, AW = 330;
+  out.push(rect(AX, WY, AW, WH, '--surface', '--a', 6, 18));
+  out.push(dots(AX + 28, WY + 30));
+  out.push(text(AX + AW / 2 + 30, WY + 38, 'Gemini', 'fill:var(--ink);font-size:24px;font-weight:800;text-anchor:middle'));
+  out.push('<path d="M' + (AX + 4) + ',' + (WY + 56) + ' H' + (AX + AW - 4) + '" style="stroke:var(--hair);stroke-width:3"/>');
+  out.push(rect(AX + AW - 230, WY + 86, 200, 52, '--a-soft', '--a-soft', 0, 18));
+  out.push(rect(AX + 30, WY + 158, 240, 84, '--bg', '--hair', 2, 18));
+  out.push(rect(AX + 30, WY + WH - 44, AW - 60, 26, '--bg', '--hair-strong', 2, 13));
+  out.push(text(AX + AW / 2, WY + WH + 46, '앱 창', 'fill:var(--a);font-size:26px;font-weight:800;text-anchor:middle'));
+
+  // Dock — 클릭 한 번
+  var DY = 430, DH = 120, DX = 150, DW = 520, IS = 76, GAP = 22;
+  out.push(rect(DX, DY, DW, DH, '--surface', '--hair-strong', 4, 30));
+  for (var i = 0; i < 5; i++) {
+    var ix = DX + 34 + i * (IS + GAP), on = i === 3;
+    out.push(rect(ix, DY + 18, IS, IS, on ? '--a-soft' : '--hair', on ? '--a' : '--hair', on ? 5 : 0, 18));
+    if (on) {
+      out.push(text(ix + IS / 2, DY + 18 + IS / 2 + 9, 'PWA', 'fill:var(--a);font-size:24px;font-weight:800;text-anchor:middle', 'mono'));
+      out.push('<circle cx="' + (ix + IS / 2) + '" cy="' + (DY + DH - 12) + '" r="5" style="fill:var(--a)"/>');
+    }
+  }
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, 'AI · 데스크탑', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, 'Gemini를', 'fill:var(--ink);font-size:84px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 600, '데스크탑 앱처럼', 'fill:var(--ink);font-size:84px;font-weight:800;letter-spacing:-2px');
+  out += text(130, 680, 'PWA 설치 가이드', 'fill:var(--ink-body);font-size:36px;font-weight:700');
+  out += place(diagram(), 1180, 500, 0.7);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
