@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>타이밍 어택 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「타이밍 어택, 어디까지 막아야 할까?」의 대표이미지(= og:image). 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx, extra) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx || 20) + '"' + (extra || '') +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+
+// 도식 — 0,0 ~ 820,584. == 는 앞에서부터 맞춰 보다 틀리는 순간 멈춘다 → 늦게 틀릴수록 오래 걸린다
+var W = 820, H = 584;
+var SECRET = '7TH2VK';                       // 글 속 SECRET의 첫 여섯 글자
+var CX = 200, CW = 88, CG = 12, CH = 88;     // 칸
+function cells(y, s, stopAt) {
+  var out = [];
+  for (var i = 0; i < s.length; i++) {
+    var x = CX + i * (CW + CG), fill, stroke, col, dash = '';
+    if (stopAt < 0) { fill = '--surface'; stroke = '--ink-body'; col = '--ink'; }
+    else if (i < stopAt) { fill = '--ok-soft'; stroke = '--ok'; col = '--ok'; }
+    else if (i === stopAt) { fill = '--err-soft'; stroke = '--err'; col = '--err'; }
+    else { fill = '--bg'; stroke = '--hair-strong'; col = '--hair-strong'; dash = ' stroke-dasharray="10 8"'; }
+    out.push(rect(x, y, CW, CH, fill, stroke, 4, 14, dash));
+    out.push(text(x + CW / 2, y + CH / 2 + 17, s[i], 'fill:var(' + col + ');font-size:48px;font-weight:700;text-anchor:middle', 'mono'));
+  }
+  return out.join('');
+}
+// 걸린 시간 — 비교한 칸까지의 막대
+function timeBar(y, n, col) {
+  var w = n * (CW + CG) - CG;
+  return '<path d="M' + (CX + 4) + ',' + y + ' H' + (CX + w - 4) + '" stroke-linecap="round" style="stroke:var(' + col + ');stroke-width:12"/>';
+}
+function diagram() {
+  var out = [];
+  out.push(rect(0, 0, W, H, '--surface', '--hair-strong', 4, 28));
+  out.push(text(W / 2, 74, 'request == secret', 'fill:var(--ink);font-size:40px;font-weight:700;text-anchor:middle', 'mono'));
+  out.push('<path d="M40,112 H' + (W - 40) + '" style="stroke:var(--hair);stroke-width:3"/>');
+
+  out.push(text(170, 210, 'secret', 'fill:var(--mute);font-size:30px;text-anchor:end', 'mono'));
+  out.push(cells(150, SECRET, -1));
+
+  out.push(text(170, 340, 'A', 'fill:var(--ink-body);font-size:36px;font-weight:700;text-anchor:end', 'mono'));
+  out.push(cells(280, 'X*****', 0));
+  out.push(timeBar(400, 1, '--mute'));
+
+  out.push(text(170, 494, 'B', 'fill:var(--ink-body);font-size:36px;font-weight:700;text-anchor:end', 'mono'));
+  out.push(cells(434, '7THX**', 3));
+  out.push(timeBar(554, 4, '--err'));
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, '보안', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, '타이밍 어택', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(130, 580, '== 비교부터', 'fill:var(--ink-body);font-size:44px;font-weight:700');
+  out += text(130, 640, '프레임워크 CVE까지', 'fill:var(--ink-body);font-size:44px;font-weight:700');
+  out += place(diagram(), 1120, 500, 0.8);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>

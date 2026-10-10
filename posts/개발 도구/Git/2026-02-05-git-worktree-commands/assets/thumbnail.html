@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Git Worktree 명령어 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「Git Worktree 주요 명령어 정리 (add / list / remove)」의 대표이미지(= og:image). 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 위는 글의 명령 세 줄, 아래는 그 결과 — 원래 폴더와 ../my-feature가 저장소 하나를 같이 쓴다.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+// 한 줄을 조각으로 — [문자열, 색, 굵게?]
+function line(x, y, size, parts) {
+  return '<text x="' + x + '" y="' + y + '" class="mono" style="font-size:' + size + 'px;white-space:pre">' +
+    parts.map(function (p) {
+      return '<tspan style="fill:var(' + p[1] + ')' + (p[2] ? ';font-weight:800' : '') + '">' + esc(p[0]) + '</tspan>';
+    }).join('') + '</text>';
+}
+// 폴더 — 탭이 달린 상자
+function folder(x, y, w, h, name, branch, fill, stroke, col) {
+  return '<path d="M' + x + ',' + (y + 14) + ' Q' + x + ',' + y + ' ' + (x + 14) + ',' + y + ' H' + (x + 110) + ' L' + (x + 132) + ',' + (y + 22) +
+    ' H' + (x + w - 14) + ' Q' + (x + w) + ',' + (y + 22) + ' ' + (x + w) + ',' + (y + 36) + ' V' + (y + h - 14) + ' Q' + (x + w) + ',' + (y + h) + ' ' + (x + w - 14) + ',' + (y + h) +
+    ' H' + (x + 14) + ' Q' + x + ',' + (y + h) + ' ' + x + ',' + (y + h - 14) + ' Z" style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:4"/>' +
+    text(x + 28, y + 82, name, 'fill:var(' + col + ');font-size:30px;font-weight:800', 'mono') +
+    text(x + 28, y + 122, branch, 'fill:var(' + col + ');font-size:24px', 'mono');
+}
+
+// 도식 — 0,0 ~ 820,584
+var W = 820, H = 584;
+function diagram() {
+  var out = [], TH = 270;
+  out.push(rect(0, 0, W, TH, '--surface', '--hair-strong', 4, 22));
+  ['#ff5f57', '#febc2e', '#28c840'].forEach(function (c, i) {
+    out.push('<circle cx="' + (34 + i * 28) + '" cy="32" r="9" fill="' + c + '"/>');
+  });
+  out.push('<path d="M4,62 H' + (W - 4) + '" style="stroke:var(--hair);stroke-width:3"/>');
+  out.push(line(32, 120, 24, [['$ git worktree ', '--mute'], ['add', '--ok', 1], [' -b my-feature ../my-feature main', '--ink-body']]));
+  out.push(line(32, 178, 24, [['$ git worktree ', '--mute'], ['list', '--a', 1]]));
+  out.push(line(32, 236, 24, [['$ git worktree ', '--mute'], ['remove', '--err', 1], [' my-feature', '--ink-body']]));
+
+  // 결과 — 폴더 둘이 저장소 하나를 같이 쓴다
+  var FY = 330, FW = 330, FH = 160;
+  out.push(folder(0, FY, FW, FH, 'my-repo/', 'main', '--surface', '--ink-body', '--ink'));
+  out.push(folder(W - FW, FY, FW, FH, '../my-feature/', 'my-feature', '--ok-soft', '--ok', '--ok'));
+  out.push('<path d="M' + (FW + 8) + ',' + (FY + 90) + ' H' + (W - FW - 8) + '" stroke-dasharray="12 9" stroke-linecap="round" style="stroke:var(--hair-strong);stroke-width:5"/>');
+  out.push(rect(W / 2 - 64, FY + 62, 128, 56, '--surface', '--hair-strong', 3, 28));
+  out.push(text(W / 2, FY + 99, '.git', 'fill:var(--ink-body);font-size:28px;font-weight:800;text-anchor:middle', 'mono'));
+  out.push(text(W / 2, FY + FH + 64, '저장소 하나, 작업 폴더 여럿', 'fill:var(--mute);font-size:28px;font-weight:700;text-anchor:middle'));
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, '개발 도구 · Git', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, 'Git Worktree', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 610, '주요 명령어', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(130, 690, 'add · list · remove', 'fill:var(--ink-body);font-size:34px;font-weight:700', 'mono');
+  out += place(diagram(), 1180, 500, 0.7);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
