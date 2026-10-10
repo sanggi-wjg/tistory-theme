@@ -29,17 +29,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 버전은 로컬 개발 환경과 맞춘다 (2026-08-27 기준 node 26 · python 3.14).
       # 로컬에서 통과한 것이 여기서 다른 이유로 깨지면 안 된다. node는 .nvmrc가 정본이고
       # package.json engines(>=20)가 하한이다.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
 
@@ -51,7 +51,7 @@ jobs:
 
       # 프리뷰 HTML을 남겨 PR에서 렌더 결과를 받아볼 수 있게 한다 (실패해도 남긴다).
       # dist/를 같이 올린다 — 페이지가 ../../dist/style.css 를 참조하므로 _preview/만 받으면 무스타일이다.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: preview-${{ github.sha }}
