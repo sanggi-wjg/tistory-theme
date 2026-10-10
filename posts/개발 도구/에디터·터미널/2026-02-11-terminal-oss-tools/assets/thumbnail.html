@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>터미널 도구 모음 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로. --c(보라)만 이 판에서 네 번째 색으로 더했다 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+    --c: #6b3fa0; --c-soft: #ece3f8;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「터미널 오픈소스 도구 모음: btop, k9s, Mole, Sniffnet」의 대표이미지(= og:image). 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 도구 넷을 2×2 타일로 — 이름, 글의 한 줄 설명, 성격을 보여 주는 작은 그림. 각 도구의 로고는 그리지 않는다.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+
+// 타일 안의 작은 그림 — x,y에서 폭 w, 높이 h
+var GLYPH = {
+  // 리소스 미터 막대
+  btop: function (x, y, w, h, c) {
+    return [0.82, 0.46, 0.68, 0.3].map(function (r, i) {
+      var yy = y + i * 30;
+      return rect(x, yy, w, 18, '--hair', '--hair', 0, 9) + rect(x, yy, w * r, 18, c + '-soft', c, 3, 9);
+    }).join('');
+  },
+  // 리소스 목록 — 상태 점이 붙은 줄
+  k9s: function (x, y, w, h, c) {
+    return [0, 1, 2, 3].map(function (i) {
+      var yy = y + i * 30;
+      return '<circle cx="' + (x + 9) + '" cy="' + (yy + 9) + '" r="8" style="fill:var(' + c + ')"/>' +
+        rect(x + 28, yy, [200, 160, 220, 140][i], 18, i === 0 ? c + '-soft' : '--hair', i === 0 ? c : '--hair', i === 0 ? 3 : 0, 9);
+    }).join('');
+  },
+  // 디스크 사용량 — 쌓은 막대와 비울 몫
+  Mole: function (x, y, w, h, c) {
+    var bw = w, by = y + 22, bh = 70, out = rect(x, by, bw, bh, '--hair', '--hair-strong', 3, 14);
+    out += rect(x, by, bw * 0.42, bh, c + '-soft', c, 3, 14);
+    out += '<rect x="' + (x + bw * 0.42 + 6) + '" y="' + by + '" width="' + (bw * 0.3) + '" height="' + bh + '" rx="14" stroke-dasharray="10 7"' +
+      ' style="fill:var(--surface);stroke:var(' + c + ');stroke-width:3"/>';
+    return out + text(x + bw * 0.42 + 6 + bw * 0.15, by + bh / 2 + 9, '정리', 'fill:var(' + c + ');font-size:26px;font-weight:800;text-anchor:middle');
+  },
+  // 트래픽 — 꺾은선
+  Sniffnet: function (x, y, w, h, c) {
+    var pts = [0.6, 0.3, 0.55, 0.15, 0.5, 0.25, 0.7, 0.35, 0.1, 0.45], d = '';
+    pts.forEach(function (p, i) { d += (i ? ' L' : 'M') + (x + i * w / (pts.length - 1)) + ',' + (y + p * h); });
+    return '<path d="' + d + ' L' + (x + w) + ',' + (y + h) + ' L' + x + ',' + (y + h) + ' Z" style="fill:var(' + c + '-soft)"/>' +
+      '<path d="' + d + '" fill="none" stroke-linejoin="round" style="stroke:var(' + c + ');stroke-width:4"/>';
+  }
+};
+
+// 도식 — 0,0 ~ 820,584. 2×2 타일
+var W = 820, H = 584;
+function diagram() {
+  var tiles = [
+    ['btop', '리소스 모니터', '--a'], ['k9s', 'Kubernetes TUI', '--ok'],
+    ['Mole', '청소·디스크 분석', '--b'], ['Sniffnet', '네트워크 모니터링', '--c']
+  ];
+  var TW = 400, TH = 282, G = 20, out = [];
+  tiles.forEach(function (t, i) {
+    var x = (i % 2) * (TW + G), y = Math.floor(i / 2) * (TH + G);
+    out.push(rect(x, y, TW, TH, '--surface', '--hair-strong', 4, 22));
+    out.push(text(x + 30, y + 62, t[0], 'fill:var(' + t[2] + ');font-size:40px;font-weight:800', 'mono'));
+    out.push(text(x + 30, y + 100, t[1], 'fill:var(--mute);font-size:24px;font-weight:600'));
+    out.push(GLYPH[t[0]](x + 30, y + 132, TW - 60, 110, t[2]));
+  });
+  return out.join('');
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, '개발 도구', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, '터미널', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 610, '오픈소스 도구', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+  out += text(130, 690, 'btop · k9s · Mole · Sniffnet', 'fill:var(--ink-body);font-size:32px;font-weight:700', 'mono');
+  out += place(diagram(), 1180, 500, 0.7);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
