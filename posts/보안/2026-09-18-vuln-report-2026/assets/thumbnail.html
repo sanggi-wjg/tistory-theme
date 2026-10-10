@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>보안 취약점 발견 후기 썸네일</title>
+<style>
+  /* 색은 의존성 주입 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --err: #c00000; --err-soft: #ffe1e1;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 연도별 글 「20XX년 실서비스 보안 취약점 발견 후기」의 대표이미지(= og:image). 두 해가 같은 파일이다 — YEAR만 다르다.
+// 해마다 발견 장면 한 컷: 2025 개발자 도구 네트워크 탭의 평문 암호 쿠키 / 2026 웹에 공개된 문서의 평문 시크릿.
+// 공개 저장소·공개 이미지라 지킨다 — 회사 이름·이니셜·엔드포인트·파라미터는 넣지 않고, 값은 전부 가린다. 특정 서비스 화면을 흉내 내지 않는다.
+// 기본은 b(제목 + 도식), a는 글자 없는 판.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png 'thumbnail.html?v=b'
+var YEAR = 2026;
+var v = new URLSearchParams(location.search).get('v') || 'b';
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx === undefined ? 20 : rx) + '"' +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function pill(cx, cy, s, fill, stroke, col, size, k) {
+  var w = s.length * size * (k || 0.95) + size * 1.4, h = size * 1.9;
+  return rect(cx - w / 2, cy - h / 2, w, h, fill, stroke, 4, h / 2) +
+    text(cx, cy + size * 0.36, s, 'fill:var(' + col + ');font-size:' + size + 'px;font-weight:800;text-anchor:middle');
+}
+function hr(x1, x2, y) {
+  return '<path d="M' + x1 + ',' + y + ' H' + x2 + '" style="stroke:var(--hair);stroke-width:3"/>';
+}
+function dots(x, y) {
+  return ['#ff5f57', '#febc2e', '#28c840'].map(function (c, i) {
+    return '<circle cx="' + (x + i * 28) + '" cy="' + y + '" r="9" fill="' + c + '"/>';
+  }).join('');
+}
+
+// 도식 — 0,0 ~ 820,584
+var W = 820, H = 584;
+// 2025 — 네트워크 탭에서 요청 한 줄을 열었더니 쿠키에 암호가 평문으로
+function devtools() {
+  var out = [];
+  out.push(rect(0, 0, W, H, '--surface', '--hair-strong', 4, 22));
+  ['Elements', 'Console', 'Network', 'Sources'].forEach(function (t, i) {
+    var x = 32 + i * 170, on = t === 'Network';
+    out.push(text(x, 50, t, 'fill:var(' + (on ? '--a' : '--mute') + ');font-size:26px;font-weight:' + (on ? 800 : 500), 'mono'));
+    if (on) out.push('<path d="M' + x + ',66 H' + (x + 132) + '" style="stroke:var(--a);stroke-width:5"/>');
+  });
+  out.push(hr(4, W - 4, 68));
+  out.push(text(32, 112, 'Name', 'fill:var(--mute);font-size:22px', 'mono'));
+  out.push(text(430, 112, 'Status', 'fill:var(--mute);font-size:22px', 'mono'));
+  out.push(text(620, 112, 'Type', 'fill:var(--mute);font-size:22px', 'mono'));
+  out.push(hr(20, W - 20, 128));
+  // 요청 셋 — 이름은 일부러 비운다(막대), 가운데 줄이 열어 본 요청
+  [0, 1, 2].forEach(function (i) {
+    var y = 144 + i * 54, on = i === 1;
+    if (on) out.push(rect(16, y, W - 32, 46, '--a-soft', '--a', 3, 10));
+    out.push(rect(32, y + 15, [220, 180, 250][i], 16, on ? '--a' : '--hair', on ? '--a' : '--hair', 0, 8));
+    out.push(text(430, y + 32, '200', 'fill:var(' + (on ? '--a' : '--ink-body') + ');font-size:24px', 'mono'));
+    out.push(text(620, y + 32, ['fetch', 'xhr', 'fetch'][i], 'fill:var(' + (on ? '--a' : '--ink-body') + ');font-size:24px', 'mono'));
+  });
+  // 열어 본 요청의 헤더
+  var DY = 318;
+  out.push(rect(16, DY, W - 32, H - DY - 18, '--bg', '--hair', 3, 14));
+  out.push(text(40, DY + 48, 'Request Headers', 'fill:var(--ink-body);font-size:24px;font-weight:700', 'mono'));
+  out.push(text(40, DY + 104, 'Cookie:', 'fill:var(--mute);font-size:28px', 'mono'));
+  out.push(text(190, DY + 104, 'id=••••••', 'fill:var(--ink-body);font-size:28px', 'mono'));
+  out.push(rect(176, DY + 128, 296, 56, '--err-soft', '--err', 4, 12));
+  out.push(text(190, DY + 166, 'pw=••••••••', 'fill:var(--err);font-size:28px;font-weight:800', 'mono'));
+  out.push(pill(600, DY + 156, '⚠ 평문', '--err', '--err', '--surface', 28));
+  return out.join('');
+}
+// 2026 — 웹에 공개된 문서에 공용 계정과 시크릿이 평문으로
+function publicDoc() {
+  var out = [];
+  out.push(rect(0, 0, W, H, '--surface', '--hair-strong', 4, 22));
+  out.push(dots(34, 34));
+  out.push(hr(4, W - 4, 66));
+  out.push(pill(W - 120, 34, '🌐 웹에 공개', '--err-soft', '--err', '--err', 22));
+  out.push(text(48, 140, '공용 계정 · 시크릿', 'fill:var(--ink);font-size:40px;font-weight:800'));
+  out.push(rect(48, 168, 260, 16, '--hair', '--hair', 0, 8));
+  var rows = [['계정', '••••@••••.com', 0], ['비밀번호', '••••••••••', 1], ['client_secret', '••••••••••••••••', 1]];
+  rows.forEach(function (r, i) {
+    var y = 236 + i * 96;
+    out.push(hr(48, W - 48, y - 30));
+    out.push(text(48, y + 26, r[0], 'fill:var(--mute);font-size:26px;font-weight:600', r[0] === 'client_secret' ? 'mono' : ''));
+    if (r[2]) out.push(rect(300, y - 14, 420, 58, '--err-soft', '--err', 4, 12));
+    out.push(text(320, y + 26, r[1], 'fill:var(' + (r[2] ? '--err' : '--ink-body') + ');font-size:28px;font-weight:' + (r[2] ? 800 : 500), 'mono'));
+  });
+  out.push(text(48, H - 40, '로그인 없이 누구나 볼 수 있다', 'fill:var(--err);font-size:28px;font-weight:800'));
+  return out.join('');
+}
+function diagram() {
+  return YEAR === 2025 ? devtools() : publicDoc();
+}
+function place(inner, cx, cy, s) {
+  return '<g transform="translate(' + cx + ',' + cy + ') scale(' + s + ') translate(' + (-W / 2) + ',' + (-H / 2) + ')">' + inner + '</g>';
+}
+
+var out = '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+if (v === 'a') {
+  out += place(diagram(), 800, 500, 1.3);
+} else {
+  out += text(130, 370, '보안', 'fill:var(--mute);font-size:36px;font-weight:600');
+  out += text(124, 490, '실서비스 보안', 'fill:var(--ink);font-size:88px;font-weight:800;letter-spacing:-2px');
+  out += text(124, 600, '취약점 발견 후기', 'fill:var(--ink);font-size:88px;font-weight:800;letter-spacing:-2px');
+  out += pill(208, 690, String(YEAR), '--surface', '--err', '--err', 34, 0.62);
+  out += place(diagram(), 1180, 500, 0.7);
+}
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
