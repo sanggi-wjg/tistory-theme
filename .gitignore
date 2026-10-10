@@ -27,6 +27,7 @@ backup/
 
 # 블로그 글 초안 — 저장소가 공개이고 초안에는 회사 코드 이야기가 들어갈 수 있다. 블로그에 올린 글(posts/<카테고리>/…)은 커밋한다
 /posts/_drafts
+/posts/**/_drafts/
 
 .DS_Store
 *.log
