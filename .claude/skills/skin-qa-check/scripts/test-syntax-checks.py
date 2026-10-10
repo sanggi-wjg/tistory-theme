@@ -3,6 +3,7 @@
 
   SYN001  scripts/check-css.mjs   괄호(파일 끝·시작 `}`)·속성 오타·값 오타·@font-face 서술자(오탐 방지·오타)
   SYN002  lint.py                 닫는 태그 삭제·닫지 않는 <div>·자기 닫힘 <div/>
+  SYN003  lint.py                 index.xml 닫는 태그 삭제·CDATA 안 `]]>`·맨 `&`·루트 이름 (이슈 #147)
   BND004  lint.py                 마크업+CSS에서만 개명(접두 공유)
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
   BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
@@ -140,6 +141,37 @@ def c_html_open(root):
 def c_html_selfclose(root):
     edit(root, "src/skin.html", lambda s: s.replace("<main ", "<div class=\"x\"/><main ", 1))
     return bool(lint_codes(root, "SYN002"))
+
+
+# ── SYN003 ──
+# 앵커는 티스토리 스킨 정보 형식의 고정 태그(`</information>`·`<skin>`)와 첫 `<![CDATA[`뿐이다.
+@case("SYN003 기준선 — index.xml이 올바른 XML이다", False)
+def c_xml_base(root):
+    return bool(lint_codes(root, "SYN003"))
+
+
+@case("SYN003 닫는 태그 하나 삭제", True)
+def c_xml_close(root):
+    edit(root, "src/index.xml", lambda s: s.replace("</information>", "", 1))
+    return bool(lint_codes(root, "SYN003"))
+
+
+@case("SYN003 CDATA 안에 `]]>`가 섞이면 잡는다", True)
+def c_xml_cdata(root):
+    edit(root, "src/index.xml", lambda s: s.replace("<![CDATA[", "<![CDATA[a]]>b", 1))
+    return bool(lint_codes(root, "SYN003"))
+
+
+@case("SYN003 CDATA 밖의 맨 `&`", True)
+def c_xml_amp(root):
+    edit(root, "src/index.xml", lambda s: s.replace("<name>", "<name>A & B ", 1))
+    return bool(lint_codes(root, "SYN003"))
+
+
+@case("SYN003 루트가 <skin>이 아니면 잡는다", True)
+def c_xml_root(root):
+    edit(root, "src/index.xml", lambda s: s.replace("<skin>", "<skins>", 1).replace("</skin>", "</skins>", 1))
+    return any("루트" in m for m in lint_codes(root, "SYN003"))
 
 
 # ── BND004 ──
