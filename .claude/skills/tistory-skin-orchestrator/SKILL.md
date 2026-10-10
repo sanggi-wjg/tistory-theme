@@ -137,7 +137,8 @@ node -p 'require("./package.json").scripts.check.split("&&").map(s=>s.trim()).jo
 
 `FAIL`이 난 단계만 따로 다시 돌려 내용을 본다. 빌드가 실패하면 `dist/`는 **통째로 지워진다** — `build.mjs`는 임시
 폴더(`.dist.tmp-<pid>`)에 빌드해 성공했을 때만 옮기고, 용량 예산 초과를 포함해 실패하면 옛 산출물을 남기지 않으려고
-`dist/`를 지운다. 그래서 뒤 단계의 `FAIL`은 대개 「`dist/`가 없다」는 같은 원인이다 — 뒤 단계 결과를 읽지 말고 빌드부터 고친다.
+`dist/`를 지운다. 그 뒤 단계는 `dist/` 없이 돈다 — 실패하는 것도 있지만, 없으면 건너뛰고 **통과하는** 것도 있다(`test:css`는
+`dist/style.css`가 없으면 `src`만 본다). `ok`든 `FAIL`이든 뒤 단계 결과를 읽지 말고 빌드부터 고친다.
 마지막 체크포인트는 `npm run check` 한 번이 통과해야 끝난다.
 
 **diff 지문** — 검증 시작과 끝에 `{ git diff HEAD; git status --porcelain; } | shasum`을 적는다. 둘이 다르면 검증 중에
