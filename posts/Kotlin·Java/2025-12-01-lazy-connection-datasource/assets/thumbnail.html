@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>장애 격리 썸네일</title>
+<style>
+  /* 색은 lock-order-deadlock 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 대표이미지(= og:image). 결과 중심 안 — Oracle이 죽어도 Oracle을 쓰지 않는 잡은 돈다(2026-10-10).
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png thumbnail.html
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function text(x, y, s, style, cls) {
+  return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(s) + '</text>';
+}
+function rect(x, y, w, h, fill, stroke, sw, rx, extra) {
+  return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx || 20) + '"' + (extra || '') +
+    ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:' + sw + '"/>';
+}
+function arrow(x1, y1, x2, y2, col, dash) {
+  return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+    (dash ? ' stroke-dasharray="16 12"' : '') + ' stroke-linecap="round"' +
+    ' style="stroke:var(' + col + ');stroke-width:6"' + (dash ? '' : ' marker-end="url(#m' + col.slice(2) + ')"') + '/>';
+}
+function defs() {
+  return '<defs>' + ['--ok'].map(function (c) {
+    return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="30" markerHeight="30" orient="auto">' +
+      '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+  }).join('') + '</defs>';
+}
+// ✓·✕는 글리프 대신 선으로 — 글꼴에 따라 모양이 바뀌지 않게
+function check(cx, cy, r, col) {
+  return '<path d="M' + (cx - r) + ',' + cy + ' L' + (cx - r * 0.3) + ',' + (cy + r * 0.7) + ' L' + (cx + r) + ',' + (cy - r * 0.7) + '"' +
+    ' style="fill:none;stroke:var(' + col + ');stroke-width:7;stroke-linecap:round;stroke-linejoin:round"/>';
+}
+function cross(cx, cy, r, col, sw) {
+  var st = ' style="stroke:var(' + col + ');stroke-width:' + (sw || 7) + ';stroke-linecap:round"';
+  return '<line x1="' + (cx - r) + '" y1="' + (cy - r) + '" x2="' + (cx + r) + '" y2="' + (cy + r) + '"' + st + '/>' +
+    '<line x1="' + (cx + r) + '" y1="' + (cy - r) + '" x2="' + (cx - r) + '" y2="' + (cy + r) + '"' + st + '/>';
+}
+// DB 원통 — (x,y) 왼쪽 위, e는 뚜껑 타원의 세로 반지름
+function cylinder(x, y, w, h, fill, stroke) {
+  var e = 22, rx = w / 2, st = ' style="fill:var(' + fill + ');stroke:var(' + stroke + ');stroke-width:5"';
+  return '<path d="M' + x + ',' + (y + e) + ' V' + (y + h - e) + ' A' + rx + ',' + e + ' 0 0 0 ' + (x + w) + ',' + (y + h - e) +
+    ' V' + (y + e) + '"' + st + '/>' +
+    '<ellipse cx="' + (x + rx) + '" cy="' + (y + e) + '" rx="' + rx + '" ry="' + e + '"' + st + '/>';
+}
+
+// 도식 — 배치 앱 안의 잡 셋, 오른쪽에 DB 둘
+function diagram() {
+  var out = [];
+  var AX = 850, AY = 250, AW = 400, AH = 500;            // 배치 앱
+  var JX = 880, JW = 340, JH = 96, JY = [350, 470, 610]; // 잡 (Oracle 잡만 한 칸 띄운다)
+  var DX = 1340, DW = 170;                               // DB
+
+  out.push(rect(AX, AY, AW, AH, '--surface', '--ok', 5, 28));
+  out.push(text(AX + 32, AY + 62, 'Batch App', 'fill:var(--ink);font-size:38px;font-weight:800'));
+  out.push(check(AX + AW - 48, AY + 48, 16, '--ok'));
+
+  // 선을 먼저 — 상자가 선 끝을 덮는다
+  out.push(arrow(JX + JW, JY[0] + JH / 2, DX - 10, 405, '--ok'));
+  out.push(arrow(JX + JW, JY[1] + JH / 2, DX - 10, 445, '--ok'));
+  out.push(arrow(JX + JW, JY[2] + JH / 2, DX - 4, JY[2] + JH / 2, '--err', true));
+
+  [['Job 1', 'ok'], ['Job 2', 'ok'], ['Job 3', 'err']].forEach(function (j, i) {
+    var y = JY[i], ok = j[1] === 'ok';
+    out.push(rect(JX, y, JW, JH, ok ? '--ok-soft' : '--err-soft', ok ? '--ok' : '--err', 4, 18));
+    out.push(text(JX + 30, y + JH / 2 + 13, j[0], 'fill:var(' + (ok ? '--ok' : '--err') + ');font-size:38px;font-weight:700', 'mono'));
+    out.push(ok ? check(JX + JW - 46, y + JH / 2, 16, '--ok') : cross(JX + JW - 46, y + JH / 2, 14, '--err'));
+  });
+
+  // 끊긴 선 위의 ✕
+  out.push('<circle cx="1296" cy="' + (JY[2] + JH / 2) + '" r="28" style="fill:var(--bg);stroke:var(--err);stroke-width:4"/>');
+  out.push(cross(1296, JY[2] + JH / 2, 11, '--err', 6));
+
+  out.push(cylinder(DX, 340, DW, 170, '--ok-soft', '--ok'));
+  out.push(text(DX + DW / 2, 448, 'MySQL', 'fill:var(--ok);font-size:34px;font-weight:800;text-anchor:middle'));
+  out.push(cylinder(DX, JY[2] + JH / 2 - 85, DW, 170, '--err-soft', '--err'));
+  out.push(text(DX + DW / 2, JY[2] + JH / 2 + 23, 'Oracle', 'fill:var(--err);font-size:34px;font-weight:800;text-anchor:middle'));
+  return out.join('');
+}
+
+var out = defs() + '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+// 제목 + 도식 — 데드락·의존성 주입 글 썸네일과 같은 배치
+out += text(130, 350, 'Spring Boot · HikariCP', 'fill:var(--mute);font-size:34px;font-weight:600', 'mono');
+out += text(124, 465, '다중 DataSource', 'fill:var(--ink);font-size:84px;font-weight:800;letter-spacing:-2px');
+out += text(124, 575, '장애 격리하기', 'fill:var(--ink);font-size:84px;font-weight:800;letter-spacing:-2px');
+out += text(130, 660, 'LazyConnectionDataSourceProxy', 'fill:var(--ink-body);font-size:30px;font-weight:600', 'mono');
+out += diagram();
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
