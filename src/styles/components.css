@@ -895,6 +895,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 640px 이하 — 제목 2줄, 날짜는 제목 아래(#157). 한 줄에 날짜와 나눠 쓰면 390px에서 제목
+   칸이 205px(약 14자)라 연재 편이 같은 문장으로 잘렸다(K8s 4편 글 끝 4줄 중 3줄). 마크업에
+   제목·날짜를 묶는 그릇이 없어 줄을 그리드로 바꾼다 — 상자는 두 행에 걸쳐 왼쪽에 선다.
+   행 간격은 0이다: 두 줄의 행간(--lh-body-sm)이 이미 띄운다. */
+@media (max-width: 640px) {
+  .related-link {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .related-thumb { grid-row: span 2; }
+
+  .related-text {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
 .related-more {
   display: inline-block;
   margin-top: var(--sp-4);

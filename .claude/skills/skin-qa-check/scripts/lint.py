@@ -1373,6 +1373,156 @@ def lint_hljs_tokens(css):
         info("구문 색: 유채색 자리 전부 --code-* 토큰")
 
 
+# ─────────────────────────── 5c. 읽기 고정값 (TYP001~003) ───────────────────────────
+
+def strip_media(css):
+    """`@media` 블록을 통째로 뺀 나머지 — 화면 폭과 무관하게 늘 걸리는 기본 규칙만 남는다."""
+    out, pos = [], 0
+    for m in re.finditer(r"@media\s*[^{]+\{", css):
+        if m.start() < pos:
+            continue
+        depth, i = 1, m.end()
+        while i < len(css) and depth:
+            depth += {"{": 1, "}": -1}.get(css[i], 0)
+            i += 1
+        out.append(css[pos:m.start()])
+        pos = i
+    out.append(css[pos:])
+    return "".join(out)
+
+
+def css_rules(css):
+    """[(선택자 하나, 선언 블록)] — 가장 안쪽 블록만 잡으므로 `@media` 안의 규칙도 나온다.
+    선택자 목록(`a, b`)은 하나씩 푼다."""
+    out = []
+    for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", css):
+        for sel in m.group(1).split(","):
+            sel = sel.strip()
+            if sel and not sel.startswith("@"):
+                out.append((sel, m.group(2)))
+    return out
+
+
+def last_compound_is(sel, tag):
+    """선택자의 마지막 복합 선택자가 그 태그인가 — `.contents_style h2 code`·`:not(pre) > code`는 참,
+    `code.hljs`나 `.code-wrap`은 거짓이다(태그 뒤에 무엇이 붙으면 다른 대상이라 본다)."""
+    return re.search(r"(^|[\s>+~])%s(:[\w-]+(\([^)]*\))?)*$" % tag, sel) is not None
+
+
+# 화면에 걸리는 640px 문턱으로 인정하는 질의 — 공백을 지우고 비교한다. `print and …`·`… and (hover: hover)`는
+# 폰 화면을 보장하지 않으므로 받지 않는다(코드 리뷰 2026-10-11).
+SCREEN_640 = {"(max-width:640px)", "screenand(max-width:640px)", "onlyscreenand(max-width:640px)"}
+
+
+def lint_reading_fixed(src_css):
+    """되돌려도 아무 검사도 켜지지 않던 읽기 고정값 셋을 본다 (결정 71, 이슈 #157·#165).
+
+    TYP001  인라인 코드에 `word-break: break-all`이 없다. 있으면 안 넘치는 식별자도 한가운데서
+            끊겨 조각마다 상자를 가진다 — 「타이밍 어택」 h2의 `==`가 `=` 상자 둘(라이브 390px 24개 중 5개).
+            기본 규칙만이 아니라 **더 구체적인 선택자**(`.contents_style h2 code` 등)로 되살린 것도 잡는다.
+    TYP002  코드블록·인라인 코드가 `font-variant-ligatures: none`을 선언하고, 그것을 되돌리는 규칙이 없다.
+            없으면 JetBrains Mono의 `calt`가 `!=`를 `≠`로 그린다. `no-common-ligatures`로는 안 꺼지므로
+            `none`만 인정한다. **`font` 단축 속성도 합자를 `normal`로 되돌린다** — 같은 블록에서 단축 뒤에
+            `none`이 다시 오지 않거나, `pre` 밖의 `code`가 `font: inherit`로 문단·소제목의 `normal`을 받으면 잡는다.
+    TYP003  640px 이하에서 「'카테고리'의 다른 글」 제목이 2줄이고 날짜가 아래 줄이다 — 그 질의 안에
+            `.related-text` `-webkit-line-clamp: 2`, `.related-link` `display: grid`, `.related-thumb` `grid-row: span 2`,
+            그리고 기본 `.related-text`가 clamp가 듣는 `display: -webkit-box`·`-webkit-box-orient: vertical`이다.
+            1줄이면 390px 제목 칸 205px에서 연재 편이 같은 문장으로 잘렸다(K8s 4편 글 끝 4줄 중 3줄).
+
+    셋 다 2026-10-11 체크포인트가 «무엇을 되돌려도 `npm run check`가 초록»이라고 재현했다.
+
+    ⚠ **선언이 있는가**만 본다. 그 선언이 화면에서 이기는지는 프리뷰 본문 픽스처(`render.py`의
+      `==`·`!=`·긴 URL 인라인 코드, kotlin 코드블록)를 눈으로 본다 — 이 검사는 되돌림을 막는다.
+      특이도는 재지 않는다. 우회 경로(더 구체적인 선택자·`font` 단축·화면에 안 걸리는 질의)는 코드 리뷰가 낸
+      것만 막았다.
+    src만 본다 — dist는 사본이라 낡은 dist에 옛 규칙이 남으면 통과한다(TIS001과 같은 이유).
+    """
+    if not src_css:
+        return
+    body = strip_comments(src_css)
+    rules = css_rules(body)
+    hit = False
+    WB_ALL = r"(?<![-\w])word-break\s*:\s*break-all"
+    LIG = r"(?<![-\w])font-variant-ligatures\s*:\s*([^;}]+)"
+    LIG_NONE = r"(?<![-\w])font-variant-ligatures\s*:\s*none\b"
+    FONT = r"(?<![-\w])font\s*:\s*([^;}]+)"
+
+    # ── TYP001 ──
+    code_blocks = selector_blocks(body, ".contents_style code")
+    if not code_blocks:
+        hit = True
+        err("TYP001", "`.contents_style code` 규칙을 찾지 못했다 — 인라인 코드의 줄바꿈·합자 규칙이 "
+            "어디로 갔는지 모른다. 선택자를 바꿨다면 이 검사도 같이 옮긴다.", "src/styles/content.css")
+    bad = sorted({sel for sel, blk in rules
+                  if last_compound_is(sel, "code") and not re.search(r"(^|[\s>+~])pre\b", sel)
+                  and re.search(WB_ALL, blk)})
+    if bad:
+        hit = True
+        err("TYP001", "인라인 코드에 `word-break: break-all`이 있다: %s. 한 줄에 들어가는 식별자도 "
+            "한가운데서 끊겨 조각마다 상자를 가진다(소제목의 `==`가 `=` 상자 둘). `normal` + "
+            "`overflow-wrap: anywhere`면 넘칠 때만 끊긴다 (결정 71)." % ", ".join(bad[:4]),
+            "src/styles/content.css")
+
+    # ── TYP002 ──
+    pre_blocks = selector_blocks(body, ".contents_style pre")
+    lack = [name for name, blocks in ((".contents_style pre", pre_blocks), (".contents_style code", code_blocks))
+            if not any(re.search(LIG_NONE, b) for b in blocks)]
+    undo = set()
+    for sel, blk in rules:
+        if not (last_compound_is(sel, "code") or last_compound_is(sel, "pre")):
+            continue
+        for m in re.finditer(LIG, blk):
+            if m.group(1).strip() != "none":
+                undo.add("%s (font-variant-ligatures: %s)" % (sel, m.group(1).strip()))
+        for m in re.finditer(FONT, blk):
+            val = m.group(1).strip()
+            in_pre = re.search(r"(^|[\s>+~])pre\b", sel) and last_compound_is(sel, "code")
+            if val == "inherit":
+                if not in_pre:
+                    undo.add("%s (font: inherit — 부모의 normal을 받는다)" % sel)
+            elif not re.search(LIG_NONE, blk[m.end():]):
+                undo.add("%s (font 단축이 합자를 normal로 되돌린다)" % sel)
+    if lack or undo:
+        hit = True
+        parts = []
+        if lack:
+            parts.append("합자를 끄지 않은 기본 규칙: %s" % ", ".join(lack))
+        if undo:
+            parts.append("합자를 되돌리는 규칙: %s" % ", ".join(sorted(undo)[:4]))
+        err("TYP002", "%s. JetBrains Mono의 `calt`가 `!=`를 `≠`로, `==`를 긴 등호로 그려 원문과 다른 글자가 "
+            "보인다. `font-variant-ligatures: none` — `no-common-ligatures`로는 안 꺼지고, `font` 단축은 "
+            "이 값을 `normal`로 되돌린다 (결정 71)." % ". ".join(parts), "src/styles/content.css")
+
+    # ── TYP003 ──
+    def in_640(sel_name, pattern):
+        return any(re.search(pattern, b)
+                   for q, mbody in media_blocks(body) if re.sub(r"\s+", "", q.lower()) in SCREEN_640
+                   for b in selector_blocks(mbody, sel_name))
+    base = strip_media(body)
+    need = [
+        ("640px 질의 안 `.related-text` `-webkit-line-clamp: 2`",
+         in_640(".related-text", r"(?<![-\w])-webkit-line-clamp\s*:\s*2\b")),
+        ("640px 질의 안 `.related-link` `display: grid`(날짜를 제목 아래 줄로)",
+         in_640(".related-link", r"(?<![-\w])display\s*:\s*grid\b")),
+        ("640px 질의 안 `.related-thumb` `grid-row: span 2`(상자가 두 행에 걸친다)",
+         in_640(".related-thumb", r"(?<![-\w])grid-row\s*:\s*span\s+2\b")),
+        ("기본 `.related-text`의 `display: -webkit-box`·`-webkit-box-orient: vertical`(없으면 clamp가 안 듣는다)",
+         any(re.search(r"(?<![-\w])display\s*:\s*-webkit-box\b", b)
+             and re.search(r"-webkit-box-orient\s*:\s*vertical\b", b)
+             for b in selector_blocks(base, ".related-text"))),
+    ]
+    miss = [name for name, ok in need if not ok]
+    if miss:
+        hit = True
+        err("TYP003", "640px 이하 「'카테고리'의 다른 글」 2줄 규칙이 빠졌다: %s. 한 줄에 날짜와 나눠 쓰면 "
+            "390px에서 제목 칸이 205px라 연재 편이 같은 문장으로 잘린다 (이슈 #157, DESIGN §4 문턱 표). "
+            "질의는 화면에 걸리는 `(max-width: 640px)`만 인정한다." % "; ".join(miss),
+            "src/styles/components.css")
+
+    if not hit:
+        info("읽기 고정값: 인라인 코드 break-all 없음 · 코드 합자 끔(되돌리는 규칙 없음) · 640px 이하 관련 글 2줄 + 날짜 아래")
+
+
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
 
 def lint_robustness(js, skin):
@@ -1605,6 +1755,7 @@ def main():
     lint_tistory_typography(src_css)
     lint_hljs_scope(src_css)
     lint_hljs_tokens(src_css)
+    lint_reading_fixed(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.
