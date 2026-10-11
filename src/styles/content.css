@@ -196,9 +196,9 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* 코드블록 안의 <code>는 인라인 코드 장식을 벗는다. `overflow-wrap`은 pre를 따른다 — 위
-   인라인 규칙의 `anywhere`는 `white-space: pre`에서 효력이 없지만, pre의 값을 바꾸는 날
-   끼어들지 않게 끊어 둔다. `word-break`는 인라인 규칙의 `normal`이 그대로 온다(pre와 같다). */
+/* 코드블록 안의 <code>는 인라인 코드 장식을 벗는다. 줄바꿈 값(`word-break`·`overflow-wrap`)은
+   pre를 따른다 — 인라인 규칙이 바뀌어도 코드블록으로 새지 않게 끊어 둔다. 화면은
+   `white-space: pre`라 무관해 보여도 인쇄는 `pre-wrap`이라 이 값이 1,777자 줄이 접히는 자리를 정한다. */
 .contents_style pre code {
   font: inherit;
   background: none;
@@ -207,6 +207,7 @@
   padding: 0;
   color: inherit;
   white-space: inherit;
+  word-break: inherit;
   overflow-wrap: inherit;
 }
 

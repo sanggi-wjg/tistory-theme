@@ -587,7 +587,7 @@ React 앱이다. 서버 HTML에는 `<div data-tistory-react-app="Comment"></div>
   한가운데서 끊겨 조각마다 상자를 가졌다 — 「타이밍 어택」 첫 `h2`의 `==`가 `=` 상자 둘로 갈렸다(라이브 390px 24개 중
   5개, 1440px에서도 1개). `overflow-wrap: anywhere`는 한 줄을 못 넘는 URL·경로만 끊고, `break-word`와 달리
   min-content에 들어가 표 칸 안에서도 표를 밀지 않는다. 소제목 안의 인라인 코드도 같은 규칙이다. 코드블록 안
-  `<code>`는 `pre`의 `overflow-wrap`을 물려받아 접히지 않는다(§6.3).
+  `<code>`는 `pre`의 줄바꿈 값(`word-break`·`overflow-wrap`)을 물려받아 접히지 않는다(§6.3).
 - **하이픈·공백 뒤에서는 넘치지 않아도 갈린다.** `word-break: normal`에서도 그 자리는 원래 줄바꿈 기회라, 케밥 이름
   (`--ink-body`·`max-lifetime`)이 줄 끝에 오면 하이픈에서 나뉜다(360px에서 `--ink-|body`). 하이픈 줄바꿈만 막고 비상
   줄바꿈은 살리는 CSS 값이 없어 남긴다 — `white-space: nowrap`은 긴 URL까지 막아 페이지를 민다.
