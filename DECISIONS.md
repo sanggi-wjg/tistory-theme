@@ -1743,6 +1743,31 @@ min-content에 들어가 표 칸 안에서도 표를 밀지 않는다. **하이�
 **못 본 것.** 광고 정책 문서와의 대조(광고의 내용·색·크기를 바꾸지 않고 바탕만 준다는 것까지가 근거다). 흰 카드가 다크 페이지에서 얼마나 튀는지의 체감.
 인쇄 — 인쇄 블록은 우리 `.ad`만 지우고 본문 안 광고(애드센스 `.revenue_unit_wrap`·NaverAd)는 원래 지우지 않는다. 이번에 NaverAd만 지우면 기준이 갈라져 손대지 않았다.
 
+
+**결정 73 — 인쇄에서 글 본문 안 광고도 지운다. 인벤토리 애드센스 `ins`만 `!important`다 (2026-10-11).**
+
+이슈 #172 `print-inbody-ads`. 결정 52의 인쇄 블록은 우리 `.ad` 그릇(홈·목록 상하단)만 지웠고, 티스토리가 `.entry-body`에 직접 넣는
+광고는 종이에 찍혔다 — 라이브 print 에뮬레이션(2026-10-11, #159 체크포인트): `.revenue_unit_wrap` 셋이 280·99·280px, NaverAd 카드 291px.
+결정 72에서 NaverAd만 지우면 애드센스와 기준이 갈라져 미뤘던 것을 셋 함께 지운다. **화면에서는 아무것도 바뀌지 않는다** — 전부 `@media print` 안이다.
+
+**정한 것.** 인쇄 블록의 지움 목록에 NaverAd 그릇 `[data-tistory-react-app="NaverAd"]`과 `.revenue_unit_wrap`을 더했다 — 둘 다 그릇에 인라인 `display`가
+없어 보통 선언으로 지워진다. 인벤토리 애드센스 `<ins class="adsbygoogle" style="margin:50px 0; display:block;">`는 그릇 없이 `.entry-body` 직계라
+**인라인 `display:block`을 직접 이겨야 한다** — 시트의 보통 선언은 특이도와 무관하게 인라인을 못 이긴다. `visibility`나 높이 0은 인라인 margin 50px이
+빈칸으로 남고(결정 52의 «자리까지 없앤다»에 어긋난다) 대신 지울 그릇도 없다. 그래서 `ins.adsbygoogle { display: none !important }`를 인쇄 블록 안
+**선택자 하나**에만 둔다 — 「상대가 인라인 style이라 특이도로는 원리적으로 못 이기는 자리」라는 기존 예외 조건(`.tt_category a > img`의 padding, 결정 58)
+그대로이고, 티스토리 `revenue.css`도 빈 애드센스를 `[data-ad-status="unfilled"]`에 `display: none !important`로 지운다. `.entry-body >`로 좁히지 않은 것은
+그 자리가 옮겨도 종이에서는 어디 있든 지울 것이라서다. `!important` 예외는 이로써 넷이다(`agents/skin-style.md`).
+
+**지키는 검사.** 린트 `TIS007` — 조건 없는 인쇄 블록(`print`·`only print`)에서 세 선택자가 정확히 그 이름으로, 같은 블록의 마지막 `display`가 `none`이고
+`ins.adsbygoogle`에는 `!important`가 있는지, 그리고 화면 전용 블록 밖에서 그 그릇을 되살리는 규칙이 없는지. 첫 판의 우회 넷(뒤에서 되살리기·조건 없는
+`!important`·`print and (max-width:1px)`·같은 블록의 두 번째 `display`)을 체크포인트가, 넷(`screen, print`·중첩된 인쇄 블록·홑따옴표 속성값·클래스 없는 `ins`)을
+코드 리뷰가 재현해 막았다 — 맨 위 단계의 조건 없는 인쇄 블록만 받고, 쉼표 질의는 전부가 화면일 때만 화면 전용으로 본다. 패턴에 안 걸리는 범용 선택자(`.entry-body > *`)의
+되살리기는 못 본다. `test-syntax-checks.py`에 기준선 1·변이 8.
+
+**못 본 것.** 라이브 광고 페이지에서의 실제 인쇄 결과 — skin-style이 «라이브 광고 페이지를 헤드리스로 반복해 열면 애드센스 계정에 무효 트래픽을 만들 수 있다»고
+짚어, 이번 확인은 라이브 서버 HTML의 광고 마크업을 옮긴 스크래치 재현으로 했다(본문 래퍼 위 빈칸 0, 남은 광고 0). 애드센스가 광고를 채우면서 `display`를
+`!important`로 다시 쓰면 인라인이 이겨 이 규칙도 진다 — 서버 HTML에서 본 것은 `!important` 없는 `display:block`뿐이다. Safari·Firefox 인쇄.
+
 ---
 
 ## 2. 플랫폼 제약 (사실)

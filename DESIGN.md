@@ -514,6 +514,17 @@ Vercel docs는 `max-width` 래퍼가 없다. 레일을 뷰포트 왼쪽, 목차�
 
 **인쇄에는 스크롤이 없다** — `@media print`에서 코드블록은 `pre-wrap`으로 풀고(줄번호 거터는 끈다 — 접힌 줄과 번호가 어긋난다) 표는 `display: table` + `table-layout: fixed`로 되돌린다. 크롬(레일·목차·진행바·맨위로·떠 있는 목차 버튼과 시트·페이징·이전다음·관련글·메뉴·댓글·방명록·복사 버튼·광고·푸터·티스토리 툴바)은 지운다. 팔레트는 **다크 블록을 `@media not print`로 좁혀** 라이트가 그대로 나가게 한다(결정 52).
 
+**광고는 본문 안 것까지 지운다 (결정 73).** 우리 `.ad` 그릇 밖에서 티스토리가 `.entry-body`에 직접 넣는 셋이다(라이브 서버 HTML
+2026-10-11 — 티스토리·구글 마크업이라 이름이 바뀌면 조용히 다시 찍힌다): 인벤토리 애드센스 `ins.adsbygoogle`, 네이버 텍스트 광고
+그릇 `[data-tistory-react-app="NaverAd"]`(§5.2b, 결정 72), `.revenue_unit_wrap`(애드센스·애드핏). 화면에서는 손대지 않는다.
+- **`display: none`으로 지운다** — 그릇의 margin(인벤토리 50px·`.revenue_unit_wrap` 20px)까지 사라져 지운 자리가 빈칸으로 남지 않는다.
+- **인벤토리 `ins`만 `!important`다.** 그릇 없이 `.entry-body` 직계이고 인라인 `style="margin:50px 0; display:block;"`이 박혀 있어,
+  시트의 보통 선언은 특이도와 무관하게 못 이긴다. `visibility`나 높이 0은 인라인 margin이 빈칸으로 남고 대신 지울 그릇도 없다 —
+  티스토리 `revenue.css`도 빈 애드센스를 `display: none !important`로 지운다. 상대가 인라인 style인 자리라는 기존 예외 조건
+  (카테고리 새 글 점의 `padding` — §5.3, 결정 58)과 같고, 인쇄 블록의 그 선택자 하나로 좁혔다. 선택자는 `.entry-body >` 없이
+  `ins.adsbygoogle` 전부다 — 자리가 옮겨도 놓치지 않고, 종이에서는 어디 있든 지울 것이다. 나머지 둘은 그릇에 인라인 display가
+  없어(우리 뒤에 실리는 `revenue.css`도 그릇에는 display를 걸지 않는다) 목록에 이름만 더했다.
+
 ### 첫 페인트 자리 — JS가 채울 줄은 CSS가 미리 잡는다
 
 `script.js`는 `</body>` 앞에 있고 `index.js`는 DOMContentLoaded를 기다려 돈다. 브라우저는 그사이 이미

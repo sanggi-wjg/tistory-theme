@@ -9,6 +9,7 @@
   BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
   BND012  lint.py                 공지 본문 그릇에서 contents_style을 빼거나 그릇 이름을 바꾸면 잡는다 (이슈 #97)
   TIS006  lint.py                 네이버 광고 카드 바탕 지우기·다크/회색 재정의·한 테마에만·print 질의로·되돌리기(not print 포함)·빈 그릇 장식(가상 요소 포함)을 잡는다 (결정 72)
+  TIS007  lint.py                 인쇄 블록에서 본문 안 광고 그릇을 빼기·ins의 !important 떼기·뒤에서 되살리기·조건 붙은 print 질의로 옮기기를 잡는다 (결정 73)
   TYP001~003 lint.py              인라인 코드 break-all·코드 합자·640px 이하 관련 글 2줄의 값 되돌림·우회 경로를 잡는다 (결정 71)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   DOC002  lint.py                 없는 결정 번호를 가리키면 잡고, 날짜·`36-b`·표로 정의된 결정은 안 잡는다 (이슈 #166)
@@ -463,6 +464,63 @@ def c_tis006_gray(root):
 def c_tis006_shadow(root):
     edit(root, "src/styles/tistory.css", lambda s: s + '\n[data-tistory-react-app="NaverAd"] { box-shadow: 0 0 0 8px; }\n')
     return any("box-shadow" in m for m in lint_codes(root, "TIS006"))
+
+
+# ── TIS007 ──
+# 앵커는 광고 그릇 이름과 `!important` 낱말이다 — 인쇄 블록의 목록 순서·주석을 바꿔도 변이가 같은 곳을 친다.
+@case("TIS007 기준선 — 인쇄 블록이 본문 안 광고 셋을 지운다", False)
+def c_tis007_base(root):
+    return bool(lint_codes(root, "TIS007"))
+
+
+@case("TIS007 인쇄 목록에서 .revenue_unit_wrap을 빼면 잡는다", True)
+def c_tis007_wrap(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(r"\n\s*\.revenue_unit_wrap,", "", s, count=1))
+    return any("revenue_unit_wrap" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 인벤토리 ins의 !important를 떼면(인라인 display에 진다) 잡는다", True)
+def c_tis007_imp(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(
+        r"(ins\.adsbygoogle\s*\{\s*display\s*:\s*none)\s*!\s*important", r"\1", s, count=1))
+    return any("!important" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 뒤의 인쇄 블록이 광고 그릇을 되살리면 잡는다", True)
+def c_tis007_undo(root):
+    edit(root, "src/styles/components.css", lambda s: s + "\n@media print { .entry-body .revenue_unit_wrap { display: block; } }\n")
+    return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 조건 붙은 `print and (…)` 질의로 옮기면 잡는다", True)
+def c_tis007_cond(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(r"@media\s+print\s*\{", "@media print and (max-width: 1px) {", s))
+    return any("조건 없는 인쇄 블록" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 인쇄 목록에서 NaverAd 그릇을 빼면 잡는다", True)
+def c_tis007_naverad(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(r'\n\s*\[data-tistory-react-app="NaverAd"\],', "", s, count=1))
+    return any("NaverAd" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 조건 없는 `!important` 규칙이 클래스 없이 `ins`를 되살리면 잡는다", True)
+def c_tis007_bare(root):
+    edit(root, "src/styles/components.css", lambda s: s + "\n.entry-body > ins { display: block !important; }\n")
+    return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 같은 블록의 두 번째 `display`가 앞의 none을 덮으면 잡는다", True)
+def c_tis007_second(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(
+        r"(ins\.adsbygoogle\s*\{\s*display\s*:\s*none\s*!\s*important\s*;)", r"\1 display: block !important;", s, count=1))
+    return bool(lint_codes(root, "TIS007"))
+
+
+@case("TIS007 `@media screen, print`(종이에도 걸린다) 안에서 되살려도 잡는다", True)
+def c_tis007_list(root):
+    edit(root, "src/styles/components.css", lambda s: s + "\n@media screen, print { .revenue_unit_wrap { display: block; } }\n")
+    return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
 
 
 # ── DOC002 ──

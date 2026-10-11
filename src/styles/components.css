@@ -4,6 +4,7 @@
 
    빌드 순서상 마지막이라 특이도가 가장 높다. 그래도 단일 클래스 위주로 쓴다.
    !important는 쓰지 않는다 — 인라인 스타일 보정 전용이고, 그건 빌드가 생성한다.
+   예외는 인쇄 블록의 `ins.adsbygoogle` 하나다 — 상대가 인라인 display라 특이도로는 못 이긴다(결정 73).
 
    카드의 모든 자식이 인라인 요소(span·strong·time)라는 점에 주의한다.
    markup이 중첩 앵커를 피하려고 카드 전체를 하나의 <a>로 감쌌기 때문에
@@ -2197,7 +2198,8 @@ body.is-lightbox-open { overflow: hidden; }
    `display: none`으로 지우는 것과 `visibility`로 감추는 것은 다르다. 여기서는 자리까지
    없애야 한다 — 감추기만 하면 빈 칸이 페이지를 넘긴다. */
 @media print {
-  /* ⚠ 특이도를 상대와 맞춰 쓴다. `!important`는 인라인 보정 전용이라 여기서 쓰지 않는다.
+  /* ⚠ 특이도를 상대와 맞춰 쓴다. `!important`는 인라인 보정 전용이라 여기서 쓰지 않는다 — 상대가 인라인
+     style인 인벤토리 애드센스 하나만 예외다(아래 「본문 안 광고」).
      `.toc.is-ready`·`.to-top.is-visible`·`.toc-fab.is-visible`·`.toc-sheet[open]`·`.ad:not(:empty)`·
      `.cat-chips:not(:empty)`는 (0,2,0)이라 클래스 하나로는 못 이긴다 — 같은 모양을 그대로 적고 순서로 이긴다
      (이 블록이 CSS_ORDER의 맨 뒤 파일, 그 안에서도 맨 뒤다). 떠 있는 목차 시트(결정 65)는 화면에서는
@@ -2231,11 +2233,27 @@ body.is-lightbox-open { overflow: hidden; }
   .comments,
   .guestbook,
   .entry-main [data-tistory-react-app="Namecard"],
+  [data-tistory-react-app="NaverAd"],
+  .revenue_unit_wrap,
   .menu_toolbar,
   .code-copy,
   .ad,
   .ad:not(:empty),
   .site-footer { display: none; }
+
+  /* 본문 안 광고(결정 73, 이슈 #172) — 우리 `.ad` 밖에서 티스토리가 `.entry-body`에 직접 넣는다(라이브 서버
+     HTML 2026-10-11, 이름은 티스토리·구글 마크업이라 바뀔 수 있다). 위 목록의 둘은 그릇에 인라인 display가 없다:
+     NaverAd 그릇(결정 72 — 빈 채로도 늘 있다)과 `.revenue_unit_wrap`(애드센스·애드핏, 본문 앞 1·뒤 2). 뒤에 실리는
+     티스토리 revenue.css도 그릇에는 display를 걸지 않는다(시트 전문 확인).
+     인벤토리 애드센스 `<ins class="adsbygoogle" style="margin:50px 0; display:block;">`만은 그릇 없이 `.entry-body`
+     직계라 **인라인 `display:block`을 직접 이겨야 한다** — 시트의 보통 선언은 특이도와 무관하게 인라인을 못 이긴다.
+     `visibility`나 높이 0은 인라인 margin 50px이 빈칸으로 남고, 대신 지울 그릇도 없다. 티스토리 revenue.css도 빈
+     애드센스(`[data-ad-status="unfilled"]`)를 `display: none !important`로 지운다. 그래서 `!important`를 인쇄 블록의
+     이 선택자 하나에만 쓴다 — 상대가 인라인 style인 자리라는 기존 예외의 조건 그대로다(`.tt_category a > img`의
+     padding과 같은 부류). `.entry-body >`로 좁히지 않는 것은 그 자리가 옮겨도 놓치지 않으려는 것이다 — 종이에서는
+     어디 있든 애드센스는 지울 것이고, revenue.css가 쓰는 이름도 같다.
+     셋 다 `display: none`이라 margin(50·20px)까지 사라져 지운 자리가 빈칸으로 남지 않는다. */
+  ins.adsbygoogle { display: none !important; }
 
   /* ⚠ `.comments`와 `.guestbook`은 **항상 짝으로** 쓴다(tistory.css 머리말). 한쪽만 적으면
      다른 쪽 페이지에서만 조용히 진다 — 린트 `TIS003`이 그 규칙을 지키지만 `tistory.css`만 본다.
