@@ -1709,12 +1709,39 @@ def lint_naverad_surface(src_css):
 
 # ─────────────────────────── 5f. 인쇄에서 본문 안 광고 (TIS007) ───────────────────────────
 
-# (선택자, 인라인 display를 이겨야 하는가). 이름은 티스토리·구글 마크업이다(라이브 서버 HTML 2026-10-11).
+# (인쇄 블록에서 지울 선택자, 인라인 display를 이겨야 하는가, 되살리는 규칙을 찾을 패턴 — 마지막 복합 선택자에 대고 잰다).
+# 이름은 티스토리·구글 마크업이다(라이브 서버 HTML 2026-10-11). 패턴은 같은 그릇을 다르게 쓰는 모양까지 받는다 —
+# 따옴표 없는·홑따옴표 속성값, 클래스 없이 태그만 쓴 `ins`(코드 리뷰 2026-10-11).
 PRINT_ADS = (
-    ('[data-tistory-react-app="NaverAd"]', False),
-    (".revenue_unit_wrap", False),
-    ("ins.adsbygoogle", True),
+    ('[data-tistory-react-app="NaverAd"]', False, r"\[\s*data-tistory-react-app\s*=\s*(['\"]?)NaverAd\1\s*\]"),
+    (".revenue_unit_wrap", False, r"\.revenue_unit_wrap(?![\w-])"),
+    ("ins.adsbygoogle", True, r"^ins(?![\w-])|\.adsbygoogle(?![\w-])"),
 )
+
+
+def top_media_blocks(css):
+    """**맨 위 단계**의 `@media` 블록만 [(질의, 본문)] — `@media (min-width:99999px) { @media print { … } }`나
+    `@supports (…) { @media print { … } }`처럼 다른 조건 안에 든 블록은 그 조건이 참일 때만 걸리므로 빼고 센다."""
+    out, depth, i = [], 0, 0
+    while i < len(css):
+        c = css[i]
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+        elif depth == 0 and css.startswith("@media", i):
+            k = css.find("{", i)
+            if k == -1:
+                break
+            d, j = 1, k + 1
+            while j < len(css) and d:
+                d += {"{": 1, "}": -1}.get(css[j], 0)
+                j += 1
+            out.append((css[i + 6:k].strip(), css[k + 1:j - 1]))
+            i = j
+            continue
+        i += 1
+    return out
 
 
 def lint_print_ads(src_css):
@@ -1725,24 +1752,24 @@ def lint_print_ads(src_css):
     화면 프리뷰도 못 본다 — 인쇄 블록의 선택자 목록이 유일한 근거다.
 
     둘을 본다:
-      ① **조건 없는 인쇄 블록**(`@media print`·`only print` — `print and (…)`처럼 조건이 붙으면 모든 종이에 걸린다는 보장이 없어
-         받지 않는다) 안에서 각 선택자가 정확히 그 이름으로 `display: none`을 받는다. 같은 블록에 `display`가 여럿이면 **마지막**이
-         `none`이어야 한다. 인벤토리 애드센스 `ins.adsbygoogle`는 그릇 없이 인라인 `display:block`으로 오므로 `!important`까지
-      ② 화면 전용 블록(`screen`·`only screen`·`not print`로 시작) 밖에서 — 즉 종이에도 걸리는 곳에서 — 그 그릇을 겨누는(마지막 복합
-         선택자에 그 이름이 있는) 규칙이 `display`를 `none` 말고 다른 값으로 선언하지 않는다. 뒤에 오는 인쇄 블록이나 조건 없는
-         규칙이 광고를 되살리는 경로다
-    ⚠ 이름이 바뀌어 라이브에 다른 그릇이 오면 이 검사는 모른다. 애드센스가 채우면서 인라인을 `!important`로 다시 쓰는 것도 모른다.
-      특이도는 재지 않는다 — `!important` 짝끼리의 순서 싸움, 더 구체적인 선택자의 `display: none` 아닌 값은 ②가 이름으로만 잡는다.
+      ① **맨 위 단계의 조건 없는 인쇄 블록**(`@media print`·`only print` — `print and (…)`, 다른 `@media`·`@supports` 안에 든 블록은
+         모든 종이에 걸린다는 보장이 없어 받지 않는다) 안에서 각 선택자가 정확히 그 이름으로, 같은 블록의 **마지막** `display`가
+         `none`이다. 인벤토리 애드센스 `ins.adsbygoogle`는 그릇 없이 인라인 `display:block`으로 오므로 `!important`까지
+      ② 화면 전용 블록(쉼표로 나눈 질의 **전부**가 `screen`·`only screen`·`not print`로 시작 — `screen, print`는 종이에도 걸린다) 밖에서
+         그 그릇을 겨누는(마지막 복합 선택자가 `PRINT_ADS`의 패턴에 맞는) 규칙이 `display`를 `none` 말고 다른 값으로 선언하지 않는다
+    ⚠ **못 보는 것** — 라이브에서 그릇 이름이 바뀌는 것, 애드센스가 광고를 채우며 인라인을 `display:block !important`로 다시 쓰는 것
+      (그러면 인라인이 이긴다 — 라이브 광고 페이지를 헤드리스로 여는 측정은 무효 트래픽 위험이라 하지 않았다, 이슈 #176),
+      패턴에 안 걸리는 범용 선택자(`.entry-body > *` 같은 것)의 되살리기, 특이도.
     """
     if not src_css:
         return
     body = strip_comments(src_css)
     norm = lambda q: re.sub(r"\s+", "", q.lower())
-    print_rules = [(re.sub(r"\s+", " ", sel), blk) for q, mbody in media_blocks(body) if norm(q) in ("print", "onlyprint")
+    print_rules = [(re.sub(r"\s+", " ", sel), blk) for q, mbody in top_media_blocks(body) if norm(q) in ("print", "onlyprint")
                    for sel, blk in css_rules(mbody)]
     DISPLAY = r"(?<![-\w])display\s*:\s*([^;}]+)"
     miss, weak = [], []
-    for needle, need_imp in PRINT_ADS:
+    for needle, need_imp, _ in PRINT_ADS:
         hides = []
         for sel, blk in print_rules:
             if sel != needle:
@@ -1754,20 +1781,18 @@ def lint_print_ads(src_css):
             miss.append(needle)
         elif need_imp and not any(re.search(r"!\s*important", d) for d in hides):
             weak.append(needle)
-    paper = strip_media(body, only=lambda q: norm(q).startswith(("screen", "onlyscreen", "notprint")))
-    marks = {'[data-tistory-react-app="NaverAd"]': re.escape('[data-tistory-react-app="NaverAd"]'),
-             ".revenue_unit_wrap": r"\.revenue_unit_wrap(?![\w-])", "ins.adsbygoogle": r"\.adsbygoogle(?![\w-])"}
+    screen_only = lambda q: all(norm(part).startswith(("screen", "onlyscreen", "notprint")) for part in q.split(","))
+    paper = strip_media(body, only=screen_only)
     undo = set()
     for sel, blk in css_rules(paper):
         last = re.split(r"\s*[>+~]\s*|\s+", sel.strip())[-1]
-        for needle, pat in marks.items():
-            if re.search(pat, last):
-                for d in re.findall(DISPLAY, blk):
-                    if not re.match(r"none\b", d.strip()):
-                        undo.add("%s (display: %s)" % (sel, d.strip()))
+        if any(re.search(pat, last) for _, _, pat in PRINT_ADS):
+            for d in re.findall(DISPLAY, blk):
+                if not re.match(r"none\b", d.strip()):
+                    undo.add("%s (display: %s)" % (sel, d.strip()))
     if miss:
-        err("TIS007", "조건 없는 인쇄 블록이 본문 안 광고를 지우지 않는다(마지막 `display`가 `none`인 규칙이 없다): %s. 티스토리가 "
-            "`.entry-body`에 직접 넣는 광고라 우리 `.ad` 규칙이 닿지 않고, 종이에 280px 안팎으로 찍힌다 (결정 73)."
+        err("TIS007", "맨 위 단계의 조건 없는 인쇄 블록이 본문 안 광고를 지우지 않는다(마지막 `display`가 `none`인 규칙이 없다): %s. "
+            "티스토리가 `.entry-body`에 직접 넣는 광고라 우리 `.ad` 규칙이 닿지 않고, 종이에 280px 안팎으로 찍힌다 (결정 73)."
             % ", ".join(miss), "src/styles/components.css")
     if weak:
         err("TIS007", "%s는 인쇄 블록에서 `display: none`인데 `!important`가 없다 — 인라인 `display:block`으로 오는 그릇이라 "

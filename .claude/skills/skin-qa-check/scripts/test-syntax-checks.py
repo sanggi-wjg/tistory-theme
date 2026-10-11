@@ -495,6 +495,31 @@ def c_tis007_cond(root):
     return any("조건 없는 인쇄 블록" in m for m in lint_codes(root, "TIS007"))
 
 
+@case("TIS007 인쇄 목록에서 NaverAd 그릇을 빼면 잡는다", True)
+def c_tis007_naverad(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(r'\n\s*\[data-tistory-react-app="NaverAd"\],', "", s, count=1))
+    return any("NaverAd" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 조건 없는 `!important` 규칙이 클래스 없이 `ins`를 되살리면 잡는다", True)
+def c_tis007_bare(root):
+    edit(root, "src/styles/components.css", lambda s: s + "\n.entry-body > ins { display: block !important; }\n")
+    return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
+
+
+@case("TIS007 같은 블록의 두 번째 `display`가 앞의 none을 덮으면 잡는다", True)
+def c_tis007_second(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(
+        r"(ins\.adsbygoogle\s*\{\s*display\s*:\s*none\s*!\s*important\s*;)", r"\1 display: block !important;", s, count=1))
+    return bool(lint_codes(root, "TIS007"))
+
+
+@case("TIS007 `@media screen, print`(종이에도 걸린다) 안에서 되살려도 잡는다", True)
+def c_tis007_list(root):
+    edit(root, "src/styles/components.css", lambda s: s + "\n@media screen, print { .revenue_unit_wrap { display: block; } }\n")
+    return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
+
+
 # ── DOC001 ──
 @case("DOC001 기준선 — 사본의 문서에 줄번호 인용이 없다", False)
 def c_doc_base(root):
