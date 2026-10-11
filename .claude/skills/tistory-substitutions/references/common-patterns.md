@@ -70,7 +70,8 @@
           <p class="summary">[##_list_rep_summary_##]</p>
         </a>
         <div class="meta">
-          <time>[##_list_rep_regdate_##]</time>
+          <!-- _regdate_는 당일 글에 시각만 낸다 — 세부 치환자로 조립 -->
+          <time>[##_list_rep_date_year_##].[##_list_rep_date_month_##].[##_list_rep_date_day_##]</time>
           <span class="cnt">[##_list_rep_rp_cnt_##]</span>
         </div>
       </article>
