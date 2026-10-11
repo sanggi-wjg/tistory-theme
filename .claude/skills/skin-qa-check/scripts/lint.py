@@ -1375,16 +1375,19 @@ def lint_hljs_tokens(css):
 
 # ─────────────────────────── 5c. 읽기 고정값 (TYP001~003) ───────────────────────────
 
-def strip_media(css):
-    """`@media` 블록을 통째로 뺀 나머지 — 화면 폭과 무관하게 늘 걸리는 기본 규칙만 남는다."""
+def strip_media(css, only=None):
+    """`@media` 블록을 통째로 뺀 나머지 — 기본값은 전부 빼 화면 폭과 무관하게 늘 걸리는 규칙만 남긴다.
+    `only`(질의 문자열 → 참/거짓)를 주면 그 질의의 블록만 뺀다(예: 인쇄 전용 블록)."""
     out, pos = [], 0
-    for m in re.finditer(r"@media\s*[^{]+\{", css):
+    for m in re.finditer(r"@media\s*([^{]+)\{", css):
         if m.start() < pos:
             continue
         depth, i = 1, m.end()
         while i < len(css) and depth:
             depth += {"{": 1, "}": -1}.get(css[i], 0)
             i += 1
+        if only is not None and not only(m.group(1)):
+            continue
         out.append(css[pos:m.start()])
         pos = i
     out.append(css[pos:])
@@ -1588,6 +1591,109 @@ def lint_placeholder_fill(skin, src_css):
             err("BND013", "%s (이슈 #161, DESIGN §6.2)." % ". ".join(parts), "src/styles/components.css")
     if not hit and skin and src_css:
         info("카테고리 삽화: article.entry data-cat · 세 자리 var(--ph-cat) · 단축형 없음 · :has 가드 셋")
+
+# ─────────────────────────── 5e. 네이버 텍스트 광고 카드 (TIS006) ───────────────────────────
+
+NAVERAD = '[data-tistory-react-app="NaverAd"]'
+
+
+def hex_rgb(v):
+    """`#rgb`·`#rrggbb` 리터럴만 읽는다. 그 밖(`var()`·이름·rgb())은 None — 판정 불가로 돌려준다."""
+    m = re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", v.strip())
+    if not m:
+        return None
+    h = m.group(1)
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def contrast(a, b):
+    """WCAG 2 대비비."""
+    def lum(rgb):
+        out = []
+        for c in rgb:
+            c = c / 255
+            out.append(c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4)
+        return 0.2126 * out[0] + 0.7152 * out[1] + 0.0722 * out[2]
+    la, lb = sorted((lum(a), lum(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def lint_naverad_surface(src_css):
+    """네이버 텍스트 광고 카드에 **어느 테마에서든 밝은** 토큰 바탕이 있는가 — TIS006 (결정 72, 이슈 #159).
+
+    티스토리가 글 본문 안(인벤토리 `<ins>` 바로 뒤 — 본문 래퍼 앞 또는 공감 버튼 앞)에
+    `<div data-tistory-react-app="NaverAd">`를 두고 React가 광고 카드를 채운다. 색은 전부 **인라인**(설명 `#333`·
+    배지 `#666`·제목 `#016dd7`)이고 카드에 바탕이 없어, 다크 캔버스가 비치면 설명 줄이 1.57:1로 묻혔다.
+    우리는 광고 색을 건드리지 않고 카드에 바탕만 돌려준다.
+
+    TIS001(시트 리터럴 ↔ 덮어쓰기 선택자 짝)로는 못 본다 — 이 색은 시트가 아니라 광고 서버가 정하는 인라인 값이다.
+    그래서 넷을 본다:
+      ① **기본 규칙**(`@media` 밖)이 카드(`그릇 > div`)에 `background(-color): var(--토큰)`을 선언한다 —
+         인쇄·좁은 폭 질의 안으로 옮기면 화면에서 바탕이 사라진다
+      ② 그 토큰의 **모든 정의**(라이트 `:root`·다크 두 블록)가 hex이고, 그 위에서 설명 줄 `#333`이 4.5:1 이상이다 —
+         누가 다크 블록에서 토큰을 어둡게 재정의하면 여기서 빨간불이다
+      ③ 인쇄 전용 블록 밖에서 그릇 안을 겨누는 규칙이 바탕을 **그 토큰 말고 다른 값**(`transparent`·`none`·다른 토큰)으로
+         선언하지 않는다 — 뒤에 오는 더 구체적인 선택자나 같은 블록의 두 번째 선언이 바탕을 되돌리는 경로다
+      ④ 그릇 **자체**에는 `display` 말고 아무 선언도 없다 — 광고가 안 오면 그릇은 비어 높이 0이어야 하고, 면·여백·그림자·
+         크기 어느 것이든 글 위에 빈 띠를 만든다(인쇄에서 지우는 `display: none`만 허용)
+    ⚠ 특이도는 재지 않는다(인라인 style에 background가 없어 싸움이 없다는 것은 2026-10-11 실측). 화면은 프리뷰
+      `page`(채워진 카드)·`page_toc`(빈 그릇)를 눈으로 본다. 우회 경로는 2026-10-11 체크포인트가 낸 일곱을 막았다.
+    """
+    if not src_css:
+        return
+    body = strip_comments(src_css)
+    card_sel = r"%s\s*>\s*div$" % re.escape(NAVERAD)
+    bg = r"(?<![-\w])background(?:-color)?\s*:\s*([^;}]+)"
+    problems = []
+    tokens = set()
+    for sel, blk in css_rules(strip_media(body)):
+        if re.search(card_sel, sel):
+            for m in re.finditer(bg, blk):
+                t = re.fullmatch(r"var\(\s*(--[\w-]+)\s*\)", m.group(1).strip())
+                if t:
+                    tokens.add(t.group(1))
+    if not tokens:
+        problems.append("기본 규칙(`@media` 밖)이 광고 카드(`%s > div`)에 토큰 바탕 `background-color: var(--…)`을 "
+                        "선언하지 않는다" % NAVERAD)
+    for tok in sorted(tokens):
+        vals = [m.group(1).strip() for m in re.finditer(r"(?<![-\w])%s\s*:\s*([^;}]+)" % re.escape(tok), body)]
+        if not vals:
+            problems.append("`%s` 정의가 없다(선언 전체가 무효가 되어 바탕이 투명으로 돌아간다)" % tok)
+        for v in vals:
+            rgb = hex_rgb(v)
+            if rgb is None:
+                problems.append("`%s: %s`를 판정할 수 없다 — hex 리터럴만 잰다" % (tok, v))
+            elif contrast(rgb, (0x33, 0x33, 0x33)) < 4.5:
+                problems.append("`%s: %s` 위에서 설명 줄 #333이 %.2f:1" % (tok, v, contrast(rgb, (0x33, 0x33, 0x33))))
+    screen = strip_media(body, only=lambda q: "print" in q and "screen" not in q)
+    undo = set()
+    for sel, blk in css_rules(screen):
+        if NAVERAD not in sel or sel.rstrip().endswith(NAVERAD):
+            continue
+        for m in re.finditer(bg, blk):
+            t = re.fullmatch(r"var\(\s*(--[\w-]+)\s*\)", m.group(1).strip())
+            if not (t and t.group(1) in tokens):
+                undo.add("%s (%s)" % (sel, m.group(1).strip()))
+    if undo:
+        problems.append("그릇 안 바탕을 되돌리는 규칙: %s" % ", ".join(sorted(undo)[:4]))
+    box = set()
+    for sel, blk in css_rules(body):
+        if sel.rstrip().endswith(NAVERAD):
+            for m in re.finditer(r"(?<![-\w])([a-z-]+)\s*:", blk):
+                if m.group(1) != "display":
+                    box.add("%s (%s)" % (sel, m.group(1)))
+    if box:
+        problems.append("그릇 자체에 `display` 말고 선언이 있다: %s — 광고가 안 오면 빈 그릇이 글 위에 띠로 뜬다"
+                        % ", ".join(sorted(box)[:4]))
+    if problems:
+        err("TIS006", "네이버 텍스트 광고 카드: %s. 광고 색은 전부 인라인이라, 바탕이 없거나 어두우면 다크에서 "
+            "설명 줄이 묻힌다(1.57:1 실측). 광고 색은 건드리지 않고 테마 공통 밝은 면만 카드에 준다 (결정 72)."
+            % "; ".join(problems), "src/styles/tistory.css")
+    else:
+        info("네이버 텍스트 광고 카드: 토큰 %s — 모든 정의 위 #333 4.5:1 이상, 되돌리는 규칙 없음, 빈 그릇은 선언 없음"
+             % ", ".join(sorted(tokens)))
 
 
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
@@ -1824,6 +1930,8 @@ def main():
     lint_hljs_tokens(src_css)
     lint_reading_fixed(src_css)
     lint_placeholder_fill(skin, src_css)
+
+    lint_naverad_surface(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.
