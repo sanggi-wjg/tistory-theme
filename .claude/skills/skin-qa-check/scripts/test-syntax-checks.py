@@ -571,6 +571,26 @@ def c_tis008_pill(root):
     return any("알약 보정" in m for m in lint_codes(root, "TIS008"))
 
 
+@case("TIS008 토글 없는 줄 예약의 `:has(> li > ul)` 가드를 빼면(하위 없는 블로그에서 영영 빈다) 잡는다", True)
+def c_tis008_guard(root):
+    edit(root, "src/styles/tistory.css", lambda s: s.replace(":only-of-type:has(> li > ul) >", ":only-of-type >", 1))
+    return any(":has(> li > ul)" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 reserve 식의 연산자를 바꾸면(size − gap) 잡는다", True)
+def c_tis008_op(root):
+    edit(root, "src/styles/tokens.css", lambda s: re.sub(
+        r"(--cat-toggle-reserve\s*:\s*calc\(\s*var\(\s*--cat-toggle-size\s*\)\s*)\+", r"\1-", s, count=1))
+    return any("--cat-toggle-reserve" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 오탐 방지 — 다른 컴포넌트의 28px·`html.js` 접두 미리 비우기는 정상", False)
+def c_tis008_ok(root):
+    edit(root, "src/styles/components.css", lambda s: s + "\n.card-x { padding-right: 28px; }\n")
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(r"(?m)^\.js (\.side-category[^{]*:not\(\.cat-tree\))", r"html.js \1", s, count=1))
+    return bool(lint_codes(root, "TIS008"))
+
+
 # ── DOC002 ──
 @case("DOC002 기준선 — 소스·문서가 가리키는 결정이 전부 DECISIONS.md에 있다", False)
 def c_doc002_base(root):

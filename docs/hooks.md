@@ -524,7 +524,7 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 4. **토글 자리도 `html.js` 아래에서 미리 비운다**(결정 74, 이슈 #169). category.js가 단 `.cat-toggle`(폭
    `--cat-toggle-size`)과 토글 없는 줄의 `.cat-tree` padding이 첫 페인트에는 없어, 상위 줄 글 수 배지가 JS 뒤 28px 왼쪽으로
    움직였다. 3번과 **같은 구조 선택자**로, 하위 `ul`을 가진 `li`(토글이 올 줄)의 링크엔 `margin-right`, 아닌 줄엔 `padding-right`를
-   `--cat-toggle-reserve`(= 토글 폭 + `margin-left` `--sp-1`)만큼 준다. 토글이 올 줄의 예약은 목록에 `.cat-tree`가 붙으면 풀리고
+   `--cat-toggle-reserve`(= `--cat-toggle-size` 토글 폭 + `--cat-toggle-gap` 그 `margin-left`)만큼 준다. 토글이 올 줄의 예약은 목록에 `.cat-tree`가 붙으면 풀리고
    실물 토글이 그 자리를 갖는다 — 두 일은 category.js의 같은 동기 실행 안이라 사이에 페인트가 없다. 예약과 상자가 같은 토큰을 쓰는지는
    린트 `TIS008`이 본다. category.js가 실행 중 죽으면 예약만 남아 토글 자리가 빈칸이다(3번과 같은 실패 방향).
 

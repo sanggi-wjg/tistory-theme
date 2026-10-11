@@ -538,8 +538,9 @@ Vercel docs는 `max-width` 래퍼가 없다. 레일을 뷰포트 왼쪽, 목차�
 | 칩 줄 | 1024px 이하 | 빈 `.cat-chips`도 채워진 줄과 **같은 규칙**으로 그린다(`:not(.is-off)`) | `--chip-row-h` 55px |
 | 카테고리 토글 자리 | 모든 폭(레일이 서는 1025px~에서 보인다) | 상위 줄 링크 오른쪽을 토글 자리만큼 비운다 — 토글이 올 줄은 `margin`, 안 올 줄은 `padding`(§5.3, 결정 74) | **가로** `--cat-toggle-reserve` 28px |
 
-- **예약하는 쪽과 실물 쪽이 같은 토큰을 둘 다 `min-height`로 건다** — `.toc-toggle`과 `.entry-aside`,
-  채워진 `.cat-chips`와 빈 `.cat-chips`. 손으로 맞춘 두 숫자는 갈라진다(결정 48의 상수 짝과 같은 부류).
+- **예약하는 쪽과 실물 쪽이 같은 토큰을 건다** — 세로 예약 둘은 둘 다 `min-height`로(`.toc-toggle`과 `.entry-aside`,
+  채워진 `.cat-chips`와 빈 `.cat-chips`), 가로 예약인 카테고리 토글 자리는 실물 `.cat-toggle`의 폭·margin-left와 예약의
+  margin/padding이 같은 토큰 식(`--cat-toggle-reserve`)으로. 손으로 맞춘 두 숫자는 갈라진다(결정 48의 상수 짝과 같은 부류).
   토큰은 실물 선언의 항으로 계산한다 — `--toc-bar-h` = padding `--sp-3`×2 + `--fs-body-sm`×`--lh-body`
   + border 2, `--chip-row-h` = 줄 padding `--sp-3`×2 + 칩(padding 5×2 + border 2 + `--fs-caption`×`--lh-caption`)
   + border-top 1. 그 선언을 바꾸면 토큰 식도 같이 바꾼다(`tokens.css` 주석).
