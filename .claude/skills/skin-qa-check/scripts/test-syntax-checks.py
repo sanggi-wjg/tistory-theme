@@ -8,7 +8,7 @@
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
   BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
   BND012  lint.py                 공지 본문 그릇에서 contents_style을 빼거나 그릇 이름을 바꾸면 잡는다 (이슈 #97)
-  TIS006  lint.py                 네이버 광고 카드 바탕을 지우기·다크 재정의·그릇에 깔기·print 질의로 옮기기·되돌리기·빈 그릇 장식을 잡는다 (결정 72)
+  TIS006  lint.py                 네이버 광고 카드 바탕 지우기·다크/회색 재정의·한 테마에만·print 질의로·되돌리기(not print 포함)·빈 그릇 장식(가상 요소 포함)을 잡는다 (결정 72)
   TYP001~003 lint.py              인라인 코드 break-all·코드 합자·640px 이하 관련 글 2줄의 값 되돌림·우회 경로를 잡는다 (결정 71)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
@@ -426,6 +426,34 @@ def c_tis006_undo(root):
     edit(root, "src/styles/tistory.css", lambda s: s +
          '\n.entry-body [data-tistory-react-app="NaverAd"] > div { background: transparent; }\n')
     return any("되돌리는 규칙" in m for m in lint_codes(root, "TIS006"))
+
+
+@case("TIS006 화면 전용 `@media not print` 안에서 바탕을 되돌려도 잡는다", True)
+def c_tis006_notprint(root):
+    edit(root, "src/styles/tistory.css", lambda s: s +
+         '\n@media not print { .entry-body [data-tistory-react-app="NaverAd"] > div { background: transparent; } }\n')
+    return any("되돌리는 규칙" in m for m in lint_codes(root, "TIS006"))
+
+
+@case("TIS006 카드 규칙을 한 테마(`[data-theme=\"light\"]`)에만 걸면 잡는다", True)
+def c_tis006_theme(root):
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(
+        r'(\[data-tistory-react-app="NaverAd"\]\s*>\s*div\s*\{)', r':root[data-theme="light"] \1', s, count=1))
+    return any("기본 규칙" in m for m in lint_codes(root, "TIS006"))
+
+
+@case("TIS006 빈 그릇의 가상 요소(`::before`)로 띠를 만들면 잡는다", True)
+def c_tis006_pseudo(root):
+    edit(root, "src/styles/tistory.css", lambda s: s +
+         '\n[data-tistory-react-app="NaverAd"]::before { content: ""; display: block; height: 40px; }\n')
+    return any("::before" in m for m in lint_codes(root, "TIS006"))
+
+
+@case("TIS006 토큰을 중간 회색으로 바꾸면(제목·배지 대비 미달) 잡는다", True)
+def c_tis006_gray(root):
+    tok = naverad_token(root)
+    edit(root, "src/styles/tokens.css", lambda s: re.sub(r"(%s\s*:\s*)#[0-9a-fA-F]{3,6}" % re.escape(tok), r"\g<1>#aaaaaa", s, count=1))
+    return any("제목 #016dd7" in m for m in lint_codes(root, "TIS006"))
 
 
 @case("TIS006 빈 그릇에 그림자·크기 같은 다른 선언을 주면 잡는다", True)

@@ -1620,26 +1620,32 @@ def contrast(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
+# 광고 카드에 박혀 오는 인라인 글자색 중 **읽어야 하는** 셋 — 주소 줄 #999는 흰 면 위에서도 2.85인 설계값이라 뺀다.
+NAVERAD_INKS = {"설명 #333": (0x33, 0x33, 0x33), "배지 #666": (0x66, 0x66, 0x66), "제목 #016dd7": (0x01, 0x6d, 0xd7)}
+
+
 def lint_naverad_surface(src_css):
     """네이버 텍스트 광고 카드에 **어느 테마에서든 밝은** 토큰 바탕이 있는가 — TIS006 (결정 72, 이슈 #159).
 
     티스토리가 글 본문 안(인벤토리 `<ins>` 바로 뒤 — 본문 래퍼 앞 또는 공감 버튼 앞)에
-    `<div data-tistory-react-app="NaverAd">`를 두고 React가 광고 카드를 채운다. 색은 전부 **인라인**(설명 `#333`·
+    `<div data-tistory-react-app="NaverAd">`를 두고 React가 광고 카드를 채울 때가 있다. 색은 전부 **인라인**(설명 `#333`·
     배지 `#666`·제목 `#016dd7`)이고 카드에 바탕이 없어, 다크 캔버스가 비치면 설명 줄이 1.57:1로 묻혔다.
     우리는 광고 색을 건드리지 않고 카드에 바탕만 돌려준다.
 
     TIS001(시트 리터럴 ↔ 덮어쓰기 선택자 짝)로는 못 본다 — 이 색은 시트가 아니라 광고 서버가 정하는 인라인 값이다.
     그래서 넷을 본다:
-      ① **기본 규칙**(`@media` 밖)이 카드(`그릇 > div`)에 `background(-color): var(--토큰)`을 선언한다 —
-         인쇄·좁은 폭 질의 안으로 옮기면 화면에서 바탕이 사라진다
-      ② 그 토큰의 **모든 정의**(라이트 `:root`·다크 두 블록)가 hex이고, 그 위에서 설명 줄 `#333`이 4.5:1 이상이다 —
-         누가 다크 블록에서 토큰을 어둡게 재정의하면 여기서 빨간불이다
-      ③ 인쇄 전용 블록 밖에서 그릇 안을 겨누는 규칙이 바탕을 **그 토큰 말고 다른 값**(`transparent`·`none`·다른 토큰)으로
-         선언하지 않는다 — 뒤에 오는 더 구체적인 선택자나 같은 블록의 두 번째 선언이 바탕을 되돌리는 경로다
-      ④ 그릇 **자체**에는 `display` 말고 아무 선언도 없다 — 광고가 안 오면 그릇은 비어 높이 0이어야 하고, 면·여백·그림자·
-         크기 어느 것이든 글 위에 빈 띠를 만든다(인쇄에서 지우는 `display: none`만 허용)
-    ⚠ 특이도는 재지 않는다(인라인 style에 background가 없어 싸움이 없다는 것은 2026-10-11 실측). 화면은 프리뷰
-      `page`(채워진 카드)·`page_toc`(빈 그릇)를 눈으로 본다. 우회 경로는 2026-10-11 체크포인트가 낸 일곱을 막았다.
+      ① **기본 규칙**(`@media` 밖, 테마 도장 `[data-theme…]` 없이)이 카드(`그릇 > div`)에 `background(-color): var(--토큰)`을
+         선언한다 — 인쇄·좁은 폭 질의 안으로 옮기거나 한 테마에만 걸면 다른 쪽에서 바탕이 사라진다
+      ② 그 토큰의 **모든 정의**(라이트 `:root`·다크 두 블록)가 hex이고, 그 위에서 설명 `#333`·배지 `#666`·제목 `#016dd7`이
+         각각 4.5:1 이상이다 — 다크 블록에서 어둡게 재정의하거나 중간 회색으로 바꾸면 빨간불이다
+      ③ 인쇄 전용 블록(`print`·`only print`로 시작하는 질의 — `not print`는 화면이라 본다) 밖에서 그릇 안을 겨누는 규칙이 바탕을
+         **그 토큰 말고 다른 값**(`transparent`·`none`·다른 토큰)으로 선언하지 않는다
+      ④ **마지막 복합 선택자가 그릇인 규칙**(`그릇`·`그릇:empty`·`그릇::before`·`그릇:not(…)`)에는 `display` 말고 아무 선언도 없다 —
+         빈 그릇은 모든 글에 있고(서버 HTML 6/6) 높이 0이어야 한다. 면·여백·그림자·크기·가상 요소 어느 것이든 글 위에 띠를 만든다
+    ⚠ **못 보는 것** — 그릇 이름을 쓰지 않는 범용 선택자(`.entry-body div { background: transparent }` 같은 것)가 카드를 덮는 경로,
+      그리고 특이도. 인라인 style에 background가 없어 지금은 싸움이 없다(2026-10-11 실측)는 것까지가 근거다. 화면은 프리뷰
+      `page`(카드 앞)·`page_toc`(카드 뒤)·`page_bare`(빈 그릇)를 눈으로 본다. 2026-10-11 체크포인트·코드 리뷰가 낸 우회 중
+      위 넷으로 표현되는 것은 막았고, 범용 선택자 경로는 막지 못했다.
     """
     if not src_css:
         return
@@ -1649,14 +1655,14 @@ def lint_naverad_surface(src_css):
     problems = []
     tokens = set()
     for sel, blk in css_rules(strip_media(body)):
-        if re.search(card_sel, sel):
+        if re.search(card_sel, sel) and "[data-theme" not in sel:
             for m in re.finditer(bg, blk):
                 t = re.fullmatch(r"var\(\s*(--[\w-]+)\s*\)", m.group(1).strip())
                 if t:
                     tokens.add(t.group(1))
     if not tokens:
-        problems.append("기본 규칙(`@media` 밖)이 광고 카드(`%s > div`)에 토큰 바탕 `background-color: var(--…)`을 "
-                        "선언하지 않는다" % NAVERAD)
+        problems.append("기본 규칙(`@media` 밖, 테마 도장 없이)이 광고 카드(`%s > div`)에 토큰 바탕 "
+                        "`background-color: var(--…)`을 선언하지 않는다" % NAVERAD)
     for tok in sorted(tokens):
         vals = [m.group(1).strip() for m in re.finditer(r"(?<![-\w])%s\s*:\s*([^;}]+)" % re.escape(tok), body)]
         if not vals:
@@ -1665,11 +1671,15 @@ def lint_naverad_surface(src_css):
             rgb = hex_rgb(v)
             if rgb is None:
                 problems.append("`%s: %s`를 판정할 수 없다 — hex 리터럴만 잰다" % (tok, v))
-            elif contrast(rgb, (0x33, 0x33, 0x33)) < 4.5:
-                problems.append("`%s: %s` 위에서 설명 줄 #333이 %.2f:1" % (tok, v, contrast(rgb, (0x33, 0x33, 0x33))))
-    screen = strip_media(body, only=lambda q: "print" in q and "screen" not in q)
+                continue
+            low = ["%s %.2f" % (name, contrast(rgb, ink)) for name, ink in NAVERAD_INKS.items() if contrast(rgb, ink) < 4.5]
+            if low:
+                problems.append("`%s: %s` 위에서 %s:1" % (tok, v, " · ".join(low)))
+    def print_only(q):
+        n = re.sub(r"\s+", "", q.lower())
+        return n.startswith("print") or n.startswith("onlyprint")
     undo = set()
-    for sel, blk in css_rules(screen):
+    for sel, blk in css_rules(strip_media(body, only=print_only)):
         if NAVERAD not in sel or sel.rstrip().endswith(NAVERAD):
             continue
         for m in re.finditer(bg, blk):
@@ -1680,19 +1690,20 @@ def lint_naverad_surface(src_css):
         problems.append("그릇 안 바탕을 되돌리는 규칙: %s" % ", ".join(sorted(undo)[:4]))
     box = set()
     for sel, blk in css_rules(body):
-        if sel.rstrip().endswith(NAVERAD):
+        last = re.split(r"\s*[>+~]\s*|\s+", sel.strip())[-1]
+        if NAVERAD in last:
             for m in re.finditer(r"(?<![-\w])([a-z-]+)\s*:", blk):
                 if m.group(1) != "display":
                     box.add("%s (%s)" % (sel, m.group(1)))
     if box:
-        problems.append("그릇 자체에 `display` 말고 선언이 있다: %s — 광고가 안 오면 빈 그릇이 글 위에 띠로 뜬다"
+        problems.append("그릇 자체에 `display` 말고 선언이 있다: %s — 빈 그릇이 모든 글 위에 띠로 뜬다"
                         % ", ".join(sorted(box)[:4]))
     if problems:
         err("TIS006", "네이버 텍스트 광고 카드: %s. 광고 색은 전부 인라인이라, 바탕이 없거나 어두우면 다크에서 "
             "설명 줄이 묻힌다(1.57:1 실측). 광고 색은 건드리지 않고 테마 공통 밝은 면만 카드에 준다 (결정 72)."
             % "; ".join(problems), "src/styles/tistory.css")
     else:
-        info("네이버 텍스트 광고 카드: 토큰 %s — 모든 정의 위 #333 4.5:1 이상, 되돌리는 규칙 없음, 빈 그릇은 선언 없음"
+        info("네이버 텍스트 광고 카드: 토큰 %s — 모든 정의 위 #333·#666·#016dd7 4.5:1 이상, 되돌리는 규칙 없음, 빈 그릇은 선언 없음"
              % ", ".join(sorted(tokens)))
 
 
