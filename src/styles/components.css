@@ -498,6 +498,11 @@
    ║   (2026-08-25 개편 반영: 옛 11종 → 새 14종. 살아남은 이름은          ║
    ║    Python · Go · PHP 셋뿐이다.)                                     ║
    ║                                                                    ║
+   ║ ⚠ 카테고리 표가 칠하는 것은 --ph-cat 변수 하나다. 읽는 자리는 홈·    ║
+   ║   목록 카드만이 아니다 — 글 끝 관련 글·이전/다음 상자(.related-thumb ║
+   ║   .postnav-thumb, #161)가 article.entry[data-cat]에서 상속받는다.   ║
+   ║   표를 바꾸면 세 자리가 같이 바뀐다.                                ║
+   ║                                                                    ║
    ║ ⚠ 순서는 사이드바 노출 순이다(DECISIONS.md §3). 상위 14종 중 어느    ║
    ║   이름도 다른 이름의 접두사가 아니라 ^=가 옆 카테고리를 물지 않는다.  ║
    ║                                                                    ║
@@ -542,47 +547,65 @@
                        (라이트 정의 + 다크 재정의, tokens.css와 같은 3블록)
      아래 겹 --ph-*-svg 같은 slug의 모티프 SVG를 data:로 인라인한 **폴백**. WebP가 404·네트워크 실패면
                        브라우저가 그 겹만 none으로 취급해 이것이 드러난다. WebP가 오기 전에도 먼저 그려진다.
-   ⚠ 두 변수 중 하나라도 없으면 선언 전체가 무효 — 둘 다 사라지고 1층 점격자만 남는다. 빌드가 slug마다
-     WebP 한 쌍과 모티프 SVG를 요구하고, 린트 TOK006이 정의 없는 var()를, TOK007이 파일 실재를 본다.
+   두 겹은 아래 카테고리 표가 --ph-cat 하나에 담는다. 이 변수를 읽는 자리가 셋이다 — 홈·목록 카드의
+   ::before, 글 끝 관련 글·이전/다음 글의 상자(#161). 작은 두 상자는 ::before 없이 상자 배경에 바로
+   깐다: 카드의 1층 점격자는 56×35·48×48에서 점 몇 개짜리 얼룩이라 두지 않았고(사이드바 .side-thumb도
+   민 상자다), 그러면 진짜 img가 덮을 층이 상자 배경 하나뿐이라 z-index 장치가 필요 없다.
+   ⚠ longhand로 쓴다. background 단축형에 var(--ph-cat)을 넣으면 치환 뒤 "url(a), url(b) center / cover"가
+     되어 위치·크기가 아래 겹에만 붙는다 — 위 겹 WebP가 왼쪽 위에 원본 크기로 깔린다.
+   ⚠ 표에서 slug를 틀리면 --ph-cat이 계산값 시점에 무효가 되어 var()의 폴백 --ph-default로 떨어진다.
+     --ph-default 쪽 변수가 없으면 선언 전체가 무효 — 1층 점격자(작은 상자는 민 바탕)만 남는다. 빌드가
+     slug마다 WebP 한 쌍과 모티프 SVG를 요구하고, 린트 TOK006이 정의 없는 var()를, TOK007이 파일 실재를 본다.
    ⚠ 폴백은 방문자를 위한 안전망이지 검사를 대신하지 않는다 — 업로드를 빠뜨려도 화면은 옛 도안으로 멀쩡해
      보인다. 배포 후 curl -I 로 30장이 200인지 보는 절차(skin-deploy)는 그대로다. */
 .post .thumb::before {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    var(--ph-default)     center / cover no-repeat,
-    var(--ph-default-svg) center / cover no-repeat;
+}
+
+.post .thumb::before,
+.related-thumb,
+.postnav-thumb {
+  background-image: var(--ph-cat, var(--ph-default), var(--ph-default-svg));
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 /* 대표이미지가 **있으면** 2층을 그리지 않는다 — 로딩 중에도. img는 lazy라 첫 페인트 뒤에
    오는데 그 사이 카테고리 삽화가 보였다가 사진으로 바뀌었다(라이브 실측, 결정 57). 1층 점격자만
    남아 "비어 있음"으로 읽힌다. .thumb-img는 대표이미지가 있을 때만 존재한다(hooks.md §5.2).
-   :has 미지원 브라우저에서는 지금 화면 그대로다 — 나빠지지 않는다. */
+   작은 두 상자도 같다 — 민 --canvas-soft 상자로 남는다.
+   :has 미지원 브라우저에서는 삽화가 img 아래에 깔려 있다가 img가 오면 가려진다 — 나빠지지 않는다. */
 .post .thumb:has(> .thumb-img)::before { display: none; }
+.related-thumb:has(> .related-thumb-img),
+.postnav-thumb:has(> .postnav-thumb-img) { background-image: none; }
 
-/* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3) */
-.post[data-cat="인프라"] .thumb::before,
-.post[data-cat^="인프라/"] .thumb::before    { background-image: var(--ph-infra), var(--ph-infra-svg); }
-.post[data-cat="Kotlin·Java"] .thumb::before { background-image: var(--ph-jvm), var(--ph-jvm-svg); }
-.post[data-cat="Python"] .thumb::before,
-.post[data-cat^="Python/"] .thumb::before { background-image: var(--ph-python), var(--ph-python-svg); }
-.post[data-cat="PHP"] .thumb::before,
-.post[data-cat^="PHP/"] .thumb::before    { background-image: var(--ph-php), var(--ph-php-svg); }
-.post[data-cat="아키텍처"] .thumb::before,
-.post[data-cat^="아키텍처/"] .thumb::before   { background-image: var(--ph-arch), var(--ph-arch-svg); }
-.post[data-cat="데이터베이스"] .thumb::before,
-.post[data-cat^="데이터베이스/"] .thumb::before { background-image: var(--ph-db), var(--ph-db-svg); }
-.post[data-cat="네트워크"] .thumb::before     { background-image: var(--ph-net), var(--ph-net-svg); }
-.post[data-cat="보안"] .thumb::before       { background-image: var(--ph-sec), var(--ph-sec-svg); }
-.post[data-cat="AI"] .thumb::before       { background-image: var(--ph-ai), var(--ph-ai-svg); }
-.post[data-cat="코드 품질"] .thumb::before,
-.post[data-cat^="코드 품질/"] .thumb::before  { background-image: var(--ph-quality), var(--ph-quality-svg); }
-.post[data-cat="Go"] .thumb::before       { background-image: var(--ph-go), var(--ph-go-svg); }
-.post[data-cat="알고리즘"] .thumb::before     { background-image: var(--ph-algo), var(--ph-algo-svg); }
-.post[data-cat="개발 도구"] .thumb::before,
-.post[data-cat^="개발 도구/"] .thumb::before  { background-image: var(--ph-tool), var(--ph-tool-svg); }
-.post[data-cat="기록"] .thumb::before       { background-image: var(--ph-note), var(--ph-note-svg); }
+/* 상위 14종 → --ph-cat. 순서는 사이드바 노출 순 (DECISIONS.md §3). 두 겹을 항상 같이 쓴다.
+   요소를 가리지 않는다 — data-cat은 홈·목록 카드 .post와 글 article.entry 둘에 붙고(hooks.md §2·§4),
+   변수는 상속으로 그 안의 상자에 닿는다. 다크는 --ph-*가 :root에서 재정의되므로 따라온다. */
+[data-cat="인프라"],
+[data-cat^="인프라/"]    { --ph-cat: var(--ph-infra), var(--ph-infra-svg); }
+[data-cat="Kotlin·Java"] { --ph-cat: var(--ph-jvm), var(--ph-jvm-svg); }
+[data-cat="Python"],
+[data-cat^="Python/"]    { --ph-cat: var(--ph-python), var(--ph-python-svg); }
+[data-cat="PHP"],
+[data-cat^="PHP/"]       { --ph-cat: var(--ph-php), var(--ph-php-svg); }
+[data-cat="아키텍처"],
+[data-cat^="아키텍처/"]   { --ph-cat: var(--ph-arch), var(--ph-arch-svg); }
+[data-cat="데이터베이스"],
+[data-cat^="데이터베이스/"] { --ph-cat: var(--ph-db), var(--ph-db-svg); }
+[data-cat="네트워크"]     { --ph-cat: var(--ph-net), var(--ph-net-svg); }
+[data-cat="보안"]       { --ph-cat: var(--ph-sec), var(--ph-sec-svg); }
+[data-cat="AI"]         { --ph-cat: var(--ph-ai), var(--ph-ai-svg); }
+[data-cat="코드 품질"],
+[data-cat^="코드 품질/"]  { --ph-cat: var(--ph-quality), var(--ph-quality-svg); }
+[data-cat="Go"]         { --ph-cat: var(--ph-go), var(--ph-go-svg); }
+[data-cat="알고리즘"]     { --ph-cat: var(--ph-algo), var(--ph-algo-svg); }
+[data-cat="개발 도구"],
+[data-cat^="개발 도구/"]  { --ph-cat: var(--ph-tool), var(--ph-tool-svg); }
+[data-cat="기록"]       { --ph-cat: var(--ph-note), var(--ph-note-svg); }
 
 /* 카테고리 목록에서는 같은 그림이 한 화면에 최대 15번 반복된다. 그 경우만 감춘다.
    대표이미지가 있는 글은 그대로 보인다. */
@@ -858,8 +881,9 @@
 
 .related-link:hover { color: var(--link); }
 
-/* 상자는 항상 있고 img만 대표이미지가 있을 때 존재한다(결정 57). 바탕은 홈 카드 1층과 같은
-   --canvas-soft — 로딩 중이나 대표이미지 없음이나 같은 빈 상자로 읽힌다. */
+/* 상자는 항상 있고 img만 대표이미지가 있을 때 존재한다(결정 57). 대표이미지가 없으면 이 글의
+   카테고리 삽화를 상자 배경에 깐다 — 위 기본이미지 블록의 공용 규칙(--ph-cat, #161). 대표이미지가
+   있으면 로딩 중에도 삽화 없이 민 --canvas-soft 상자다(:has 규칙, 결정 57 ②). */
 .related-thumb {
   display: block;
   flex: none;
@@ -906,7 +930,9 @@
    .postnav-item에는 티스토리가 text_type / thumb_type을 함께 붙이지만 칸을 그 클래스로
    켜고 끄지 않는다 — 상자 .postnav-thumb는 항상 있고 img만 대표이미지가 있을 때 존재한다
    (결정 57, 관련 글·사이드바와 같은 구조). 예전에는 text_type이 1칸으로 접었는데, 그러면
-   상자가 그룹 안에 있어야 해서 대표이미지 없는 줄이 튀는 구조를 이 자리에만 남기게 된다. */
+   상자가 그룹 안에 있어야 해서 대표이미지 없는 줄이 튀는 구조를 이 자리에만 남기게 된다.
+   빈 상자는 관련 글과 같이 이 글의 카테고리 삽화로 채운다(#161) — 이전/다음 글이 같은 카테고리
+   안에서만 움직인다는 실측(hooks.md §4 .entry[data-cat])에 기댄다. */
 .postnav {
   display: grid;
   gap: var(--sp-3);
