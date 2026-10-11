@@ -769,7 +769,9 @@ def item_scope(p, prefix, page=""):
         prefix + "_category": html.escape(p["category"]),
         prefix + "_category_link": "/category/" + p["category"],
         prefix + "_date": "%s. %s. %s. 14:22" % (y, m, dd),
-        prefix + "_simple_date": d, prefix + "_regdate": d,
+        # _regdate는 발행 당일 글이면 날짜 대신 시각만 낸다(#160, 2026-10-11 라이브 `11:09:22`).
+        # 맨 앞 글을 당일 글로 쳐서 그 조건을 재현한다 — 카드가 이 치환자로 돌아가면 홈 첫 카드에 시각이 보인다.
+        prefix + "_simple_date": d, prefix + "_regdate": "11:09:22" if p["_i"] == 0 else d,
         prefix + "_date_year": y, prefix + "_date_month": m, prefix + "_date_day": dd,
         prefix + "_date_hour": "14", prefix + "_date_minute": "22", prefix + "_date_second": "05",
         prefix + "_summary": p["_summary"],

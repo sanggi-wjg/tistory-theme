@@ -76,8 +76,10 @@ def m_guard_in_comment(root):
 
 
 def m_new_decor_no_guard(root):
-    """장식을 새로 더한다. 가드를 잊으면 다음 사람이 같은 실패를 반복한다."""
-    edit(root, CSS, lambda s: s + '\n.post-date::before { content: "작성 "; }\n')
+    """장식을 새로 더한다. 가드를 잊으면 다음 사람이 같은 실패를 반복한다.
+    표본은 치환자 하나만 담은 `.post-cat`이다. 처음엔 `.post-date`였는데 날짜를
+    세부 치환자 셋과 `.`로 조립하면서(#160) 빌 수 없는 요소가 돼 대상에서 빠졌다."""
+    edit(root, CSS, lambda s: s + '\n.post-cat::before { content: "분류 "; }\n')
 
 
 def m_label_in_markup(root):
@@ -119,7 +121,7 @@ CASES = [
     ("홈 카드 가드 삭제",                    m_guard_gone,          "post-rp"),
     ("사이드바 :has() 가드 삭제",            m_side_guard_gone,     "side-rp"),
     ("가드가 주석 안에만 있음",              m_guard_in_comment,    "post-rp"),
-    ("장식만 새로 더함",                     m_new_decor_no_guard,  "post-date"),
+    ("장식만 새로 더함",                     m_new_decor_no_guard,  "post-cat"),
     ("라벨이 마크업에 있으면 대상 아님",     m_label_in_markup,     False),
     ("자손 장식은 잡지 않는다",              m_descendant_decor,    False),
     ("치환자 앞뒤 공백 — 가드가 죽는다",     m_padded_substitution, "post-rp"),

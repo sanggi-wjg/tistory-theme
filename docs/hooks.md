@@ -198,7 +198,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | 썸네일 src | `[##_list_rep_thumbnail_##]` |
 | 제목 | **`[##_list_rep_title_text_##]`** (`_title_`엔 New 아이콘 img가 섞인다) |
 | 요약 | `[##_list_rep_summary_##]` |
-| 날짜 | `[##_list_rep_regdate_##]` |
+| 날짜 | `[##_list_rep_date_year_##].[##_list_rep_date_month_##].[##_list_rep_date_day_##]` — `[##_list_rep_regdate_##]`는 **발행 당일 글이면 시각(`11:09:22`)만** 낸다(#160). 세부 치환자의 당일 동작은 배포 뒤 라이브에서 확인한다 |
 | 댓글 수 | `[##_list_rep_rp_cnt_##]` |
 
 ⚠️ 글 페이지 안에서는 `[##_article_rep_*_##]`를 쓴다. 목록 치환자와 섞으면 빈 화면이 된다.
