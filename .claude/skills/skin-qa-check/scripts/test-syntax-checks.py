@@ -465,7 +465,6 @@ def c_tis006_shadow(root):
     return any("box-shadow" in m for m in lint_codes(root, "TIS006"))
 
 
-# ── DOC001 ──
 # ── DOC002 ──
 @case("DOC002 기준선 — 소스·문서가 가리키는 결정이 전부 DECISIONS.md에 있다", False)
 def c_doc002_base(root):
@@ -494,6 +493,21 @@ def c_doc002_ok(root):
     return bool(lint_codes(root, "DOC002"))
 
 
+@case("DOC002 여러 번호를 한 번에 쓴 참조(`결정 30·N`)의 둘째 번호도 잡는다", True)
+def c_doc002_multi(root):
+    n = 998   # 서식으로 넣는다 — 이 파일도 DOC002의 검사 대상이다
+    edit(root, "docs/hooks.md", lambda s: s + "\n이 규칙은 결정 30·%d을 따른다.\n" % n)
+    return any("「결정 %d」" % n in m for m in lint_codes(root, "DOC002"))
+
+
+@case("DOC002 결정 표에서 행을 지우면 그 번호를 가리키는 곳을 잡는다", True)
+def c_doc002_table(root):
+    edit(root, "DECISIONS.md", lambda s: re.sub(r"^\| 47 \|[^\n]*\n", "", s, count=1, flags=re.M))
+    edit(root, "docs/hooks.md", lambda s: s + "\n버전 규칙은 결정 47이다.\n")
+    return any("결정 47」" in m for m in lint_codes(root, "DOC002"))
+
+
+# ── DOC001 ──
 @case("DOC001 기준선 — 사본의 문서에 줄번호 인용이 없다", False)
 def c_doc_base(root):
     return bool(lint_codes(root, "DOC001"))
