@@ -1872,6 +1872,76 @@ def lint_doc_line_refs(root):
                         "%s %d행" % (rel, i))
 
 
+
+# 결정 번호 참조 — `결정 36-b`의 36은 잡고, `사용자 결정 2026-10-08` 같은 날짜는 안 잡는다.
+DECISION_REF = re.compile(r"결정\s*(\d{1,3})(?!\d|-\d)")
+# 참조를 찾는 파일 — 문서와 코드 주석이 결정을 가리킨다. `posts/`는 블로그 원고라 산문의 「결정」이 섞인다.
+DECISION_REF_EXT = (".md", ".css", ".js", ".mjs", ".py", ".html", ".xml", ".json", ".txt")
+DECISION_REF_SKIP_DIRS = DOC_SKIP_DIRS | {"posts"}
+
+
+def defined_decisions(text):
+    """`DECISIONS.md`가 **정의한** 결정 번호.
+
+    정의 형식이 둘이다 — §1의 표 행(`| # | 결정 | …` 머리를 단 표의 첫 칸, 결정 1~38·46·47)과 굵은 머리
+    `**결정 N — …**`(결정 36·39 이후). 표는 머리 첫 칸이 `#`인 것만 센다: 같은 절의 폭 실측 표(`| 1240 | 24 | …`)는
+    결정이 아니다. §1 밖(§3 카테고리 표·§4 미결 번호)은 결정이 아니라서 보지 않는다.
+    """
+    head = text.split("\n## 2.", 1)[0]
+    found, in_table = set(), False
+    for line in head.split("\n"):
+        if not line.startswith("|"):
+            in_table = False
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if not in_table:
+            in_table = cells[0] == "#"   # 머리 행에서 이 표가 결정 표인지 정한다
+            hdr = in_table
+            continue
+        if hdr and re.fullmatch(r"\d+", cells[0]):
+            found.add(int(cells[0]))
+    found |= {int(n) for n in re.findall(r"^\*\*결정 (\d+)", text, re.M)}
+    return found
+
+
+def lint_decision_refs(root):
+    """소스·문서가 가리키는 `결정 N`이 `DECISIONS.md`에 정의돼 있는가 — DOC002 (이슈 #166).
+
+    2026-10-11 `code-wrap-related-clamp` 체크포인트에서 `content.css` 주석과 `DESIGN.md` 세 곳이 「결정 71」을 가리키는데
+    `DECISIONS.md`는 결정 70에서 끝나 있었고, `npm run check`는 19단계 모두 초록이었다. 결정 번호는 여러 브랜치가 동시에
+    붙이면 겹치고(CLAUDE.md 「번호로 식별하는 목록」), 결정을 적기 전에 코드가 먼저 그 번호를 가리키는 부류도 생긴다 —
+    둘 다 «없는 결정을 가리키는» 같은 모양으로 드러난다.
+
+    ⚠ **번호가 있는가**만 본다. 그 결정이 그 문장의 내용과 맞는지(엉뚱한 번호를 가리키는지)는 모른다.
+      걷어 낸 번호(23·24 — 재사용하지 않는다)를 가리키면 그것도 잡힌다 — 걷은 결정을 아직 근거로 대는 문장이다.
+    """
+    dec = read(os.path.join(root, "DECISIONS.md"))
+    if not dec:
+        return
+    defined = defined_decisions(dec)
+    if not defined:
+        err("DOC002", "`DECISIONS.md`에서 정의된 결정을 하나도 못 찾았다 — 정의 형식(표 `| # | 결정 |`·`**결정 N —`)이 "
+            "바뀌었으면 이 검사도 같이 옮긴다.", "DECISIONS.md")
+        return
+    bad = {}
+    for dirpath, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if d not in DECISION_REF_SKIP_DIRS and not d.startswith("_workspace"))
+        for f in sorted(files):
+            if not f.endswith(DECISION_REF_EXT):
+                continue
+            path = os.path.join(dirpath, f)
+            rel = os.path.relpath(path, root)
+            for i, line in enumerate((read(path) or "").split("\n"), 1):
+                for m in DECISION_REF.finditer(line):
+                    n = int(m.group(1))
+                    if n not in defined:
+                        bad.setdefault(n, []).append("%s %d행" % (rel, i))
+    for n in sorted(bad):
+        err("DOC002", "「결정 %d」을 가리키는데 `DECISIONS.md`에 그 결정이 없다(정의된 최대 %d) — 결정을 먼저 적거나 참조를 "
+            "고친다. 동시 작업이 같은 번호를 집었을 수도 있다: %s%s"
+            % (n, max(defined), ", ".join(bad[n][:4]), " 외 %d곳" % (len(bad[n]) - 4) if len(bad[n]) > 4 else ""),
+            bad[n][0])
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
@@ -1881,9 +1951,17 @@ def main():
     xml = read(os.path.join(SRC, "index.xml"))
     if skin is None:
         # 검사할 대상이 없는 것은 실패가 아니다. 구현 전에도 npm run check가 통과해야
-        # 문서·인프라 변경을 커밋할 수 있다.
-        print("ℹ️  src/skin.html이 없어 검사할 대상이 없다. 아직 구현 전이면 정상이다.")
-        sys.exit(0)
+        # 문서·인프라 변경을 커밋할 수 있다. 다만 문서 규칙(DOC001·DOC002)은 스킨이 없어도 돈다 —
+        # 전에는 여기서 바로 빠져나가 「skin.html이 없어도 돈다」던 SKILL.md 문장이 거짓이었다.
+        lint_doc_line_refs(ROOT)
+        lint_decision_refs(ROOT)
+        if args.json:
+            print(json.dumps({"errors": ERRORS, "warnings": WARNINGS, "info": INFO}, ensure_ascii=False, indent=1))
+        else:
+            for it in ERRORS:
+                print("❌ [%s] %s\n     %s" % (it["code"], it["message"], it["where"]))
+            print("ℹ️  src/skin.html이 없어 스킨 규칙은 건너뛰었다(문서 규칙만 돌았다). 아직 구현 전이면 정상이다.")
+        sys.exit(1 if ERRORS else 0)
 
     # src/styles와 dist/style.css를 모두 읽는다.
     # 인라인 스타일 보정 규칙은 빌드가 data/inline-styles.json에서 생성해
@@ -1947,6 +2025,7 @@ def main():
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.
     lint_doc_line_refs(ROOT)
+    lint_decision_refs(ROOT)
 
     if args.json:
         print(json.dumps({"errors": ERRORS, "warnings": WARNINGS, "info": INFO},
