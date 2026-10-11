@@ -1707,6 +1707,79 @@ def lint_naverad_surface(src_css):
              % ", ".join(sorted(tokens)))
 
 
+# ─────────────────────────── 5f. 인쇄에서 본문 안 광고 (TIS007) ───────────────────────────
+
+# (선택자, 인라인 display를 이겨야 하는가). 이름은 티스토리·구글 마크업이다(라이브 서버 HTML 2026-10-11).
+PRINT_ADS = (
+    ('[data-tistory-react-app="NaverAd"]', False),
+    (".revenue_unit_wrap", False),
+    ("ins.adsbygoogle", True),
+)
+
+
+def lint_print_ads(src_css):
+    """인쇄에서 글 본문 안 광고 셋이 지워지는가 — TIS007 (결정 73, 이슈 #172).
+
+    인쇄 블록은 우리 `.ad` 그릇만 지우고, 티스토리가 `.entry-body`에 직접 넣는 광고는 종이에 찍혔다(라이브 print 에뮬레이션
+    2026-10-11: `.revenue_unit_wrap` 280·99·280px, NaverAd 카드 291px). 셋 다 티스토리 마크업이라 우리 마크업 린트(BND)도,
+    화면 프리뷰도 못 본다 — 인쇄 블록의 선택자 목록이 유일한 근거다.
+
+    둘을 본다:
+      ① **조건 없는 인쇄 블록**(`@media print`·`only print` — `print and (…)`처럼 조건이 붙으면 모든 종이에 걸린다는 보장이 없어
+         받지 않는다) 안에서 각 선택자가 정확히 그 이름으로 `display: none`을 받는다. 같은 블록에 `display`가 여럿이면 **마지막**이
+         `none`이어야 한다. 인벤토리 애드센스 `ins.adsbygoogle`는 그릇 없이 인라인 `display:block`으로 오므로 `!important`까지
+      ② 화면 전용 블록(`screen`·`only screen`·`not print`로 시작) 밖에서 — 즉 종이에도 걸리는 곳에서 — 그 그릇을 겨누는(마지막 복합
+         선택자에 그 이름이 있는) 규칙이 `display`를 `none` 말고 다른 값으로 선언하지 않는다. 뒤에 오는 인쇄 블록이나 조건 없는
+         규칙이 광고를 되살리는 경로다
+    ⚠ 이름이 바뀌어 라이브에 다른 그릇이 오면 이 검사는 모른다. 애드센스가 채우면서 인라인을 `!important`로 다시 쓰는 것도 모른다.
+      특이도는 재지 않는다 — `!important` 짝끼리의 순서 싸움, 더 구체적인 선택자의 `display: none` 아닌 값은 ②가 이름으로만 잡는다.
+    """
+    if not src_css:
+        return
+    body = strip_comments(src_css)
+    norm = lambda q: re.sub(r"\s+", "", q.lower())
+    print_rules = [(re.sub(r"\s+", " ", sel), blk) for q, mbody in media_blocks(body) if norm(q) in ("print", "onlyprint")
+                   for sel, blk in css_rules(mbody)]
+    DISPLAY = r"(?<![-\w])display\s*:\s*([^;}]+)"
+    miss, weak = [], []
+    for needle, need_imp in PRINT_ADS:
+        hides = []
+        for sel, blk in print_rules:
+            if sel != needle:
+                continue
+            decls = re.findall(DISPLAY, blk)
+            if decls and re.match(r"none\b", decls[-1].strip()):
+                hides.append(decls[-1])
+        if not hides:
+            miss.append(needle)
+        elif need_imp and not any(re.search(r"!\s*important", d) for d in hides):
+            weak.append(needle)
+    paper = strip_media(body, only=lambda q: norm(q).startswith(("screen", "onlyscreen", "notprint")))
+    marks = {'[data-tistory-react-app="NaverAd"]': re.escape('[data-tistory-react-app="NaverAd"]'),
+             ".revenue_unit_wrap": r"\.revenue_unit_wrap(?![\w-])", "ins.adsbygoogle": r"\.adsbygoogle(?![\w-])"}
+    undo = set()
+    for sel, blk in css_rules(paper):
+        last = re.split(r"\s*[>+~]\s*|\s+", sel.strip())[-1]
+        for needle, pat in marks.items():
+            if re.search(pat, last):
+                for d in re.findall(DISPLAY, blk):
+                    if not re.match(r"none\b", d.strip()):
+                        undo.add("%s (display: %s)" % (sel, d.strip()))
+    if miss:
+        err("TIS007", "조건 없는 인쇄 블록이 본문 안 광고를 지우지 않는다(마지막 `display`가 `none`인 규칙이 없다): %s. 티스토리가 "
+            "`.entry-body`에 직접 넣는 광고라 우리 `.ad` 규칙이 닿지 않고, 종이에 280px 안팎으로 찍힌다 (결정 73)."
+            % ", ".join(miss), "src/styles/components.css")
+    if weak:
+        err("TIS007", "%s는 인쇄 블록에서 `display: none`인데 `!important`가 없다 — 인라인 `display:block`으로 오는 그릇이라 "
+            "시트의 보통 선언은 특이도와 무관하게 진다. 규칙이 있는데 종이에 그대로 찍힌다 (결정 73)." % ", ".join(weak),
+            "src/styles/components.css")
+    if undo:
+        err("TIS007", "종이에도 걸리는 곳에서 광고 그릇을 되살리는 규칙: %s — 인쇄 블록의 `display: none`을 뒤에서 덮는다 (결정 73)."
+            % ", ".join(sorted(undo)[:4]), "src/styles/components.css")
+    if not miss and not weak and not undo:
+        info("인쇄 본문 광고: NaverAd 그릇 · .revenue_unit_wrap · ins.adsbygoogle(!important) 모두 인쇄에서 지움, 되살리는 규칙 없음")
+
+
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
 
 def lint_robustness(js, skin):
@@ -1943,6 +2016,7 @@ def main():
     lint_placeholder_fill(skin, src_css)
 
     lint_naverad_surface(src_css)
+    lint_print_ads(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.
