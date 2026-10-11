@@ -841,36 +841,48 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 }
 
 /* 2층 — 기본 이미지, 다중 배경 두 겹. 위 겹은 WebP(--ph-*, 라이트 정의 + 다크 재정의),
-   아래 겹은 같은 slug의 모티프 SVG를 data:로 인라인한 폴백(--ph-*-svg). WebP가 404면 아래가 드러난다 */
-.post .thumb::before {
-  content: ""; position: absolute; inset: 0;
-  background:
-    var(--ph-default)     center / cover no-repeat,
-    var(--ph-default-svg) center / cover no-repeat;
+   아래 겹은 같은 slug의 모티프 SVG를 data:로 인라인한 폴백(--ph-*-svg). WebP가 404면 아래가 드러난다.
+   두 겹은 카테고리 표가 --ph-cat 하나에 담고, 읽는 자리가 셋이다 — 카드 ::before, 글 끝 관련 글·이전/다음 상자.
+   longhand로 쓴다: background 단축형에 var(--ph-cat)을 넣으면 위치·크기가 아래 겹에만 붙는다 */
+.post .thumb::before { content: ""; position: absolute; inset: 0; }
+
+.post .thumb::before,
+.related-thumb,
+.postnav-thumb {
+  background-image: var(--ph-cat, var(--ph-default), var(--ph-default-svg));
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
-/* 상위 14종. 순서는 사이드바 노출 순 (DECISIONS.md §3). 두 겹을 항상 같이 쓴다 */
-.post[data-cat="인프라"] .thumb::before,
-.post[data-cat^="인프라/"] .thumb::before        { background-image: var(--ph-infra), var(--ph-infra-svg); }
-.post[data-cat="Kotlin·Java"] .thumb::before    { background-image: var(--ph-jvm), var(--ph-jvm-svg); }
-.post[data-cat="Python"] .thumb::before,
-.post[data-cat^="Python/"] .thumb::before       { background-image: var(--ph-python), var(--ph-python-svg); }
-.post[data-cat="PHP"] .thumb::before,
-.post[data-cat^="PHP/"] .thumb::before          { background-image: var(--ph-php), var(--ph-php-svg); }
-.post[data-cat="아키텍처"] .thumb::before,
-.post[data-cat^="아키텍처/"] .thumb::before       { background-image: var(--ph-arch), var(--ph-arch-svg); }
-.post[data-cat="데이터베이스"] .thumb::before,
-.post[data-cat^="데이터베이스/"] .thumb::before    { background-image: var(--ph-db), var(--ph-db-svg); }
-.post[data-cat="네트워크"] .thumb::before         { background-image: var(--ph-net), var(--ph-net-svg); }
-.post[data-cat="보안"] .thumb::before            { background-image: var(--ph-sec), var(--ph-sec-svg); }
-.post[data-cat="AI"] .thumb::before             { background-image: var(--ph-ai), var(--ph-ai-svg); }
-.post[data-cat="코드 품질"] .thumb::before,
-.post[data-cat^="코드 품질/"] .thumb::before      { background-image: var(--ph-quality), var(--ph-quality-svg); }
-.post[data-cat="Go"] .thumb::before             { background-image: var(--ph-go), var(--ph-go-svg); }
-.post[data-cat="알고리즘"] .thumb::before         { background-image: var(--ph-algo), var(--ph-algo-svg); }
-.post[data-cat="개발 도구"] .thumb::before,
-.post[data-cat^="개발 도구/"] .thumb::before      { background-image: var(--ph-tool), var(--ph-tool-svg); }
-.post[data-cat="기록"] .thumb::before            { background-image: var(--ph-note), var(--ph-note-svg); }
+/* 대표이미지가 있으면 로딩 중에도 2층을 그리지 않는다 (결정 57 ②) */
+.post .thumb:has(> .thumb-img)::before { display: none; }
+.related-thumb:has(> .related-thumb-img),
+.postnav-thumb:has(> .postnav-thumb-img) { background-image: none; }
+
+/* 상위 14종 → --ph-cat. 순서는 사이드바 노출 순 (DECISIONS.md §3). 두 겹을 항상 같이 쓴다.
+   요소를 가리지 않는다 — data-cat은 카드 .post와 글 article.entry에 붙고, 변수는 상속으로 상자에 닿는다 */
+[data-cat="인프라"],
+[data-cat^="인프라/"]       { --ph-cat: var(--ph-infra), var(--ph-infra-svg); }
+[data-cat="Kotlin·Java"]   { --ph-cat: var(--ph-jvm), var(--ph-jvm-svg); }
+[data-cat="Python"],
+[data-cat^="Python/"]      { --ph-cat: var(--ph-python), var(--ph-python-svg); }
+[data-cat="PHP"],
+[data-cat^="PHP/"]         { --ph-cat: var(--ph-php), var(--ph-php-svg); }
+[data-cat="아키텍처"],
+[data-cat^="아키텍처/"]      { --ph-cat: var(--ph-arch), var(--ph-arch-svg); }
+[data-cat="데이터베이스"],
+[data-cat^="데이터베이스/"]   { --ph-cat: var(--ph-db), var(--ph-db-svg); }
+[data-cat="네트워크"]        { --ph-cat: var(--ph-net), var(--ph-net-svg); }
+[data-cat="보안"]           { --ph-cat: var(--ph-sec), var(--ph-sec-svg); }
+[data-cat="AI"]            { --ph-cat: var(--ph-ai), var(--ph-ai-svg); }
+[data-cat="코드 품질"],
+[data-cat^="코드 품질/"]     { --ph-cat: var(--ph-quality), var(--ph-quality-svg); }
+[data-cat="Go"]            { --ph-cat: var(--ph-go), var(--ph-go-svg); }
+[data-cat="알고리즘"]        { --ph-cat: var(--ph-algo), var(--ph-algo-svg); }
+[data-cat="개발 도구"],
+[data-cat^="개발 도구/"]     { --ph-cat: var(--ph-tool), var(--ph-tool-svg); }
+[data-cat="기록"]           { --ph-cat: var(--ph-note), var(--ph-note-svg); }
 
 /* 3층 — 진짜 대표이미지가 있으면 앞의 둘을 덮는다. z-index가 있어야 ::before 위로 온다 */
 .thumb-img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
@@ -882,7 +894,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 - **이미지는 WebP 래스터 30장이다** — `src/assets/placeholders/<slug>-{light,dark}.webp`, **800×500(16:10)**, 장당 **100KB 이하**. 원본은 `src/assets/placeholders-src/<slug>-<theme>.{png,jpg,webp,svg}`에 두고 `npm run placeholders`(`scripts/prep-placeholders.mjs`)가 크롭·변환한다. 배포 때 스킨 편집기 파일업로드 탭으로 `images/`에 올린다. 2026-08-27까지는 SVG 마스크 15장을 `data:` URI로 `style.css`에 인라인했다 — 결정 5·6 개정.
 - **라이트/다크 두 벌이다.** 래스터는 마스크와 달리 색을 토큰에서 받지 못한다. 빌드가 `--ph-<slug>`를 `:root`에서 라이트로 정의하고 `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }`·`:root[data-theme="dark"]`에서 다크로 재정의한다 — `tokens.css`의 3블록과 같은 패턴이라 §7 "미디어쿼리 안에서 색을 처음 정의하지 않는다"와 맞는다. **한 쌍이라도 빠지면 빌드가 멈춘다**(경고가 아니라 오류). 빠진 쪽 테마에서 점격자만 남는데 에러가 없기 때문이다.
 - **WebP가 안 오면 옛 모티프가 드러난다 — 다중 배경 폴백.** 빌드가 `src/assets/motifs/<slug>.svg`를 중간 회색(`#8a8a8a`, 62%)으로 구워 `--ph-<slug>-svg`에 `data:`로 인라인하고(15장 약 8KB, 테마 공통 — 아래 점격자가 토큰을 따르니 테마감은 거기서 난다), 2층은 `var(--ph-x), var(--ph-x-svg)` 두 겹이다. 브라우저는 404·네트워크 실패한 겹만 `none`으로 취급하므로 아래 겹이 보이고, WebP가 오기 전에도 먼저 그려진다. **그래서 `motifs/`와 `scripts/gen-placeholders.py`는 영구 자산이다** — 새 slug를 더하면 모티프도 같이 그린다(없으면 빌드 오류).
-- **두 변수 중 하나라도 없으면 둘 다 사라진다.** `background-image: var(--ph-x), var(--ph-x-svg)`는 한 변수만 비어도 선언 전체가 무효가 되어 1층 점격자만 남는다. 빌드가 slug마다 WebP 한 쌍 + 모티프를 요구하고, 린트 `TOK006`이 정의 없는 `var()`를 잡는다. 마스크 시절의 "단색 판이 카드를 덮는" 실패와 `--ph-fallback`은 사라졌다.
+- **두 변수 중 하나라도 없으면 그 쌍은 통째로 무효다.** 카테고리 쪽 쌍(`--ph-cat: var(--ph-x), var(--ph-x-svg)`)은 한 변수만 비어도 `--ph-cat`이 계산값 시점에 무효가 되어 `var()`의 폴백 `--ph-default`로 떨어진다. 그 기본값 쌍마저 비면 선언 전체가 무효가 되어 1층 점격자(작은 상자는 민 바탕)만 남는다. 빌드가 slug마다 WebP 한 쌍 + 모티프를 요구하고, 린트 `TOK006`이 정의 없는 `var()`를 잡는다. 마스크 시절의 "단색 판이 카드를 덮는" 실패와 `--ph-fallback`은 사라졌다.
 - **폴백은 방문자를 위한 안전망이지 검사를 대신하지 않는다.** 업로드를 빠뜨려도 화면은 옛 도안으로 멀쩡해 보인다 — AI 사진 자리에 선 그림이 뜨니 사람 눈엔 다르지만, 그걸 발견 수단으로 삼지 않는다. 린트 `TOK007`이 배포 전에 `dist/style.css`의 `url(…images/…)` 마다 `dist/images/` 실재를 보고, 배포 후에는 `curl -I`로 30장이 200인지 본다(`skin-deploy`).
 - **파일명에 버전이 박힌다** — `dist/images/ph-<slug>-<theme>.v<N>.webp`, N은 `package.json`의 `placeholderVersion`. 티스토리 CDN이 같은 이름을 오래 캐시하므로 **이미지를 바꾸면 N을 올리고 30장을 다시 올린다.** 이미지가 안 바뀐 배포에서는 올리지 않는다.
 - **접두사 충돌이 없다** — 상위 14종 중 어느 이름도 다른 이름의 접두사가 아니다. `^=`가 옆 카테고리를 물지 않는다.
@@ -890,6 +902,7 @@ ul.tt_category > li > a.link_tit          "분류 전체보기" + span.c_cnt
 - 이름에 `&`가 없어 이스케이프 걱정은 사라졌지만 **`코드 품질`·`개발 도구`에는 공백이 있으므로** 값은 계속 따옴표로 감싼다.
 - **`--ph-*` 변수명은 파일의 slug에서 그대로 나온다** (`arch-light.webp` → `--ph-arch`). 빌드가 이름을 검사하지 않으므로 **slug를 틀리면 변수가 정의되지 않고 카드는 조용히 `--ph-default`로 떨어진다.** 위 블록의 이름이 곧 slug 목록이다.
 - **카테고리를 늘리거나 이름을 바꾸면 이 블록과 이미지 두 장을 같이 고친다.** 린트 `BND003`이 `data/categories.json`과 대조해 빠진 상위를 잡는다.
+- **글 끝 관련 글(`.related-thumb`, 56×35)과 이전/다음 글(`.postnav-thumb`, 48×48)의 빈 상자도 같은 삽화로 채운다**(이슈 #161). 마크업이 `article.entry`에 `data-cat="[##_article_rep_category_##]"`를 달고(`docs/hooks.md` §4), `--ph-cat`이 상속으로 두 상자에 닿는다 — 관련 글은 그 카테고리의 목록이고, 이전/다음 글도 같은 카테고리 안에서만 움직인다(라이브 실측 2026-10-11 — 상위 12개 카테고리 글의 이전/다음 24/24가 같은 카테고리, 하위까지 일치). 카드와 다른 점이 둘이다. ① **`::before` 없이 상자 배경에 바로 깐다** — 카드의 1층 점격자는 이 크기에서 점 몇 개짜리 얼룩이라 두지 않았고(사이드바 `.side-thumb`도 민 상자다), 그러면 진짜 img가 덮을 층이 하나뿐이라 `z-index` 장치가 필요 없다. ② 대표이미지가 있으면 로딩 중에도 삽화 없이 민 `--canvas-soft` 상자다(결정 57 ②, 카드와 같은 `:has(> img)` 규칙). 한 글 안의 상자는 전부 같은 카테고리라 WebP 한 장을 한 번 받는다. 정렬은 결정 57 그대로 — 상자는 그룹 밖, img만 안. **이 사슬 넷은 린트 `BND013`(`lint_placeholder_fill`)이 지킨다** — `--ph-cat`을 읽는 자리 셋(카드 `::before`·`.related-thumb`·`.postnav-thumb`), `background` 단축형 금지, 두 상자의 `:has(> img)` 끄기, `article.entry`의 `data-cat`. 하나만 빠져도 빈 상자나 로딩 중 삽화가 조용히 되살아난다.
 - **`og:image`는 안 바뀐다.** CSS 배경이라 검색·SNS 공유 썸네일은 여전히 티스토리 기본이다(`DECISIONS.md` §3 실측). 이 그림은 **사이트 안에서만** 보인다.
 - **삽화 방향은 확정됐다 — 결 3 · 개념 일러스트, Clockwise 결을 스킨 토큰으로**(2026-08-27 사용자 승인). 규칙과 GPT-image 프롬프트 팩은 [`docs/placeholder-image-brief.md`](./docs/placeholder-image-brief.md)에 있다: 굵은 외곽선 한 굵기, 면 3톤, 뒤판 원 하나, `--link` 파랑 한 요소, 작은 장식 셋, 정면, 사람·글자 없음. 지금 `placeholders-src/`의 SVG 30장은 그 방향의 **승인된 목업**이고 곧 실제 기본 이미지다. AI로 더 풍부하게 만든 그림은 같은 이름의 `.png`로 덮어쓴다(래스터가 SVG를 이긴다). `motifs/`는 폴백이므로 남는다.
 - **카테고리 목록 상단에는 `<s_list_image>` / `[##_list_image_##]`로 카테고리 대표이미지를 배너 1장으로 깐다.** 다만 이 치환자는 관리 화면에서 카테고리 대표이미지를 설정해야 값이 나오고, 없으면 블록째 사라진다 — **기본 이미지를 배너로 대신 쓸지는 미정**이다(`DECISIONS.md` 미결 12).
