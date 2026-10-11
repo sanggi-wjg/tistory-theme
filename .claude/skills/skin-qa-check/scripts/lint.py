@@ -1523,6 +1523,73 @@ def lint_reading_fixed(src_css):
         info("읽기 고정값: 인라인 코드 break-all 없음 · 코드 합자 끔(되돌리는 규칙 없음) · 640px 이하 관련 글 2줄 + 날짜 아래")
 
 
+# ─────────────────────── 5d. 작은 썸네일 상자의 카테고리 삽화 (BND013) ───────────────────────
+
+# 삽화(--ph-cat)를 그리는 세 자리와, 대표이미지가 있으면 그것을 끄는 가드. 선택자는 공백을 하나로 접어 비교한다.
+PH_TARGETS = (".post .thumb::before", ".related-thumb", ".postnav-thumb")
+PH_GUARDS = (
+    (".post .thumb:has(> .thumb-img)::before", r"(?<![-\w])display\s*:\s*none\b"),
+    (".related-thumb:has(> .related-thumb-img)", r"(?<![-\w])background-image\s*:\s*none\b"),
+    (".postnav-thumb:has(> .postnav-thumb-img)", r"(?<![-\w])background-image\s*:\s*none\b"),
+)
+
+
+def lint_placeholder_fill(skin, src_css):
+    """대표이미지 없는 글의 상자를 카테고리 삽화로 채우는 사슬이 이어져 있는가 — BND013 (이슈 #161, 결정 5·57).
+
+    사슬은 넷이고, 어느 고리가 빠져도 화면은 「빈 상자」나 「기본 삽화」로 **조용히** 돌아간다.
+    ① `article.entry`의 `data-cat="[##_article_rep_category_##]"` — 없으면 관련 글·이전/다음이 전부
+       기본 삽화로 떨어진다. BND001은 `data-cat=` 문자열을 파일 전체에서 봐서 홈 카드 `.post` 쪽으로 만족된다.
+    ② 세 자리(`.post .thumb::before`·`.related-thumb`·`.postnav-thumb`)가 `background-image: var(--ph-cat`을 읽는다.
+    ③ 그 세 자리를 겨누는 규칙에 `background` 단축형이 없다 — 단축형은 `background-image`를 되돌리고,
+       `var(--ph-cat)`을 넣으면 치환 뒤 위치·크기가 아래 겹(SVG 폴백)에만 붙어 WebP가 원본 크기로 깔린다.
+    ④ 대표이미지가 있으면 로딩 중에도 삽화를 그리지 않는 `:has()` 가드 셋(결정 57 ②).
+
+    2026-10-11 체크포인트가 «넷 중 무엇을 되돌려도 `npm run check`가 초록»임을 재현했다(M4~M7).
+    ⚠ 선언이 있는가만 본다 — 특이도와 화면에서 이기는지는 프리뷰 `page_toc`(대표이미지 없는 이전 글·관련 글)를 눈으로 본다.
+    src만 본다(TIS001과 같은 이유).
+    """
+    hit = False
+    if skin:
+        body = re.sub(r"<!--.*?-->", "", skin, flags=re.S)
+        tags = re.findall(r"<article\b[^>]*>", body)
+        entry = [t for t in tags if re.search(r'\bclass="[^"]*\bentry\b[^"]*"', t)]
+        if not entry:
+            hit = True
+            err("BND013", "skin.html에서 `<article class=\"entry\">`를 찾지 못했다 — 검사가 꺼진 것이지 통과가 아니다.",
+                "src/skin.html")
+        elif not any('data-cat="[##_article_rep_category_##]"' in t for t in entry):
+            hit = True
+            err("BND013", "`article.entry`에 `data-cat=\"[##_article_rep_category_##]\"`가 없다. 관련 글·이전/다음 상자가 "
+                "이 글의 카테고리 삽화 대신 전부 기본 삽화로 떨어진다 (이슈 #161).", "src/skin.html")
+    if src_css:
+        css = strip_comments(src_css)
+        norm = lambda sel: re.sub(r"\s+", " ", sel).strip()
+        base = [(norm(sel), blk) for sel, blk in css_rules(strip_media(css))]
+        every = [(norm(sel), blk) for sel, blk in css_rules(css)]
+        miss = [t for t in PH_TARGETS
+                if not any(sel == t and re.search(r"(?<![-\w])background-image\s*:\s*var\(\s*--ph-cat\b", blk)
+                           for sel, blk in base)]
+        short = sorted({sel for sel, blk in every
+                        if any(sel == t or sel.endswith(" " + t) or sel.endswith(">" + t) for t in PH_TARGETS)
+                        and re.search(r"(?<![-\w])background\s*:", blk)})
+        guards = [g for g, pat in PH_GUARDS if not any(sel == g and re.search(pat, blk) for sel, blk in base)]
+        parts = []
+        if miss:
+            parts.append("`background-image: var(--ph-cat…)`를 읽지 않는 자리: %s" % ", ".join(miss))
+        if short:
+            parts.append("`background` 단축형을 쓰는 규칙: %s — 삽화를 되돌리거나 WebP를 원본 크기로 깐다"
+                         % ", ".join(short[:4]))
+        if guards:
+            parts.append("대표이미지가 있으면 삽화를 끄는 `:has()` 가드가 없다: %s — 로딩 중 삽화가 비쳤다가 "
+                         "사진으로 바뀐다(결정 57 ②)" % ", ".join(guards))
+        if parts:
+            hit = True
+            err("BND013", "%s (이슈 #161, DESIGN §6.2)." % ". ".join(parts), "src/styles/components.css")
+    if not hit and skin and src_css:
+        info("카테고리 삽화: article.entry data-cat · 세 자리 var(--ph-cat) · 단축형 없음 · :has 가드 셋")
+
+
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
 
 def lint_robustness(js, skin):
@@ -1756,6 +1823,7 @@ def main():
     lint_hljs_scope(src_css)
     lint_hljs_tokens(src_css)
     lint_reading_fixed(src_css)
+    lint_placeholder_fill(skin, src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.

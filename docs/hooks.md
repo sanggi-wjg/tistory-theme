@@ -240,10 +240,10 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 ## 4. 글 페이지 — `article.entry`
 
 ```html
-<article class="entry" data-cat="아키텍처/원칙">   <!-- [##_article_rep_category_##] — 관련 글·이전/다음 삽화(#161) -->
+<article class="entry" data-cat="인프라/MSA">   <!-- [##_article_rep_category_##] — 관련 글·이전/다음 삽화(#161) -->
   <div class="reading-progress" id="reading-progress"><span class="reading-progress-bar"></span></div>
   <header class="entry-head">
-    <a class="entry-cat" href="…">Infrastructure/MSA</a>
+    <a class="entry-cat" href="…">인프라/MSA</a>
     <h1 class="entry-title">…</h1>
     <div class="entry-meta"><time class="entry-date">…</time>
       <!-- .entry-rp는 <s_rp_count> 안이고 라벨이 마크업에 있다 -->
@@ -270,7 +270,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 
 | 훅 | 메모 |
 |---|---|
-| `.entry[data-cat]` | 이 글의 카테고리(`[##_article_rep_category_##]`, 홈 카드 `.post[data-cat]`와 같은 값 형식). `.related-thumb`·`.postnav-thumb`가 대표이미지 없을 때 그 카테고리 삽화를 깐다(#161, 결정 5·57). 이전/다음 글은 같은 카테고리 안에서만 움직인다는 라이브 실측(2026-10-11, 5편)에 기댄다 — 다른 카테고리로 넘어가면 그 카드의 삽화가 글과 어긋난다 |
+| `.entry[data-cat]` | 이 글의 카테고리(`[##_article_rep_category_##]`, 홈 카드 `.post[data-cat]`와 같은 값 형식). `.related-thumb`·`.postnav-thumb`가 대표이미지 없을 때 그 카테고리 삽화를 깐다(#161, 결정 5·57). 이전/다음 글은 같은 카테고리 안에서만 움직인다는 라이브 실측(2026-10-11, 상위 12개 카테고리 글의 이전/다음 24/24, 하위까지 일치)에 기댄다 — 다른 카테고리로 넘어가면 그 카드의 삽화가 글과 어긋난다 |
 | `.entry-head` `.entry-cat` `.entry-title` `.entry-meta` `.entry-date` `.entry-rp` | display-lg 제목 |
 | `.entry-layout` | 본문 + 목차 2칸. 1399px 이하에서 1칸으로(목차는 본문 위 접이식). **DOM은 목차(`.entry-aside`)가 먼저다** — 1399px 이하에서는 화면 순서와 같고, 1400px 이상에서는 CSS `order`로 목차가 오른쪽 열에 서지만 Tab·낭독은 목차를 먼저 지난다(결정 64). DOM 순서를 다시 뒤집지 않는다 |
 | `.entry-main` | 본문 칸. **`min-width: 0`을 반드시 준다** — 안 주면 1,777자짜리 코드 줄이 그리드를 밀어 페이지가 가로 스크롤한다 |

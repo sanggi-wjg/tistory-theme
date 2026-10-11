@@ -343,6 +343,41 @@ def c_typ003_print(root):
     return bool(lint_codes(root, "TYP003"))
 
 
+# ── BND013 ──
+# 2026-10-11 #161 체크포인트가 «되돌려도 check 사슬이 초록»이라고 재현한 변이 넷(M4~M7) 그대로다.
+@case("BND013 기준선 — entry data-cat · 세 자리 var(--ph-cat) · 단축형 없음 · :has 가드 셋", False)
+def c_bnd013_base(root):
+    return bool(lint_codes(root, "BND013"))
+
+
+@case("BND013 article.entry에서 data-cat을 지우면 잡는다(M4 — BND001은 .post 쪽으로 만족된다)", True)
+def c_bnd013_markup(root):
+    edit(root, "src/skin.html", lambda s: s.replace(
+        '<article class="entry" data-cat="[##_article_rep_category_##]">', '<article class="entry">'))
+    return any("data-cat" in m for m in lint_codes(root, "BND013"))
+
+
+@case("BND013 공용 규칙에서 상자 선택자를 빼면 잡는다(M5)", True)
+def c_bnd013_target(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(
+        r"\.post \.thumb::before,\s*\.related-thumb,\s*\.postnav-thumb\s*\{", ".post .thumb::before {", s, count=1))
+    return any(".related-thumb" in m for m in lint_codes(root, "BND013"))
+
+
+@case("BND013 background 단축형으로 되돌리면 잡는다(M6)", True)
+def c_bnd013_shorthand(root):
+    edit(root, "src/styles/components.css",
+         lambda s: s + "\n.postnav-thumb { background: var(--ph-cat) center / cover no-repeat; }\n")
+    return any("단축형" in m for m in lint_codes(root, "BND013"))
+
+
+@case("BND013 :has 가드를 지우면 잡는다(M7 — 결정 57 ②)", True)
+def c_bnd013_guard(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(
+        r"\.related-thumb:has\(> \.related-thumb-img\),\s*", "", s, count=1))
+    return any("related-thumb:has" in m for m in lint_codes(root, "BND013"))
+
+
 # ── DOC001 ──
 @case("DOC001 기준선 — 사본의 문서에 줄번호 인용이 없다", False)
 def c_doc_base(root):
