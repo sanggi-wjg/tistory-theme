@@ -12,6 +12,7 @@
   TIS007  lint.py                 인쇄 블록에서 본문 안 광고 그릇을 빼기·ins의 !important 떼기·뒤에서 되살리기·조건 붙은 print 질의로 옮기기를 잡는다 (결정 73)
   TYP001~003 lint.py              인라인 코드 break-all·코드 합자·640px 이하 관련 글 2줄의 값 되돌림·우회 경로를 잡는다 (결정 71)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
+  DOC002  lint.py                 없는 결정 번호를 가리키면 잡고, 날짜·`36-b`·표로 정의된 결정은 안 잡는다 (이슈 #166)
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
 규칙을 썼다는 것과 그 규칙이 조건을 재현한다는 것은 다르다(결정 40). 변형은 **append·삭제**
@@ -43,6 +44,8 @@ def make_copy():
     os.makedirs(os.path.join(tmp, ".claude", "skills", "skin-qa-check", "scripts"))
     for rel in (LINT_REL, CODES_REL, SKILL_REL):
         shutil.copy(os.path.join(ROOT, rel), os.path.join(tmp, rel))
+    # DOC002가 정의 쪽으로 읽는다. 없으면 그 검사는 조용히 물러나 기준선·변이가 둘 다 「안 켜짐」이 된다.
+    shutil.copy(os.path.join(ROOT, "DECISIONS.md"), os.path.join(tmp, "DECISIONS.md"))
     if os.path.isdir(os.path.join(ROOT, "dist")):
         shutil.copytree(os.path.join(ROOT, "dist"), os.path.join(tmp, "dist"))
     os.symlink(os.path.join(ROOT, "node_modules"), os.path.join(tmp, "node_modules"))
@@ -518,6 +521,48 @@ def c_tis007_second(root):
 def c_tis007_list(root):
     edit(root, "src/styles/components.css", lambda s: s + "\n@media screen, print { .revenue_unit_wrap { display: block; } }\n")
     return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
+
+
+# ── DOC002 ──
+@case("DOC002 기준선 — 소스·문서가 가리키는 결정이 전부 DECISIONS.md에 있다", False)
+def c_doc002_base(root):
+    return bool(lint_codes(root, "DOC002"))
+
+
+@case("DOC002 없는 결정을 가리키면 잡는다", True)
+def c_doc002_hit(root):
+    # 번호를 서식으로 넣는다 — 이 파일 자체가 DOC002의 검사 대상이라 리터럴로 쓰면 실저장소 린트가 빨개진다.
+    ref = "결정 %d" % 999
+    edit(root, "docs/hooks.md", lambda s: s + "\n이 규칙은 %s를 따른다.\n" % ref)
+    return any(ref in m for m in lint_codes(root, "DOC002"))
+
+
+@case("DOC002 굵은 머리(`**결정 N —`)를 지우면 그 번호를 가리키는 곳을 잡는다", True)
+def c_doc002_heading(root):
+    n = max(int(x) for x in re.findall(r"^\*\*결정 (\d+) —", open(os.path.join(root, "DECISIONS.md"), encoding="utf-8").read(), re.M))
+    edit(root, "DECISIONS.md", lambda s: s.replace("**결정 %d —" % n, "**결정 —", 1))
+    edit(root, "docs/hooks.md", lambda s: s + "\n결정 %d을 본다.\n" % n)
+    return any("결정 %d」" % n in m for m in lint_codes(root, "DOC002"))
+
+
+@case("DOC002 오탐 방지 — 날짜(`결정 2026-10-08`)·`결정 36-b`·표로 정의된 결정은 정상", False)
+def c_doc002_ok(root):
+    edit(root, "docs/hooks.md", lambda s: s + "\n사용자 결정 2026-10-08 · 결정 36-b · 결정 5 · 결정 47\n")
+    return bool(lint_codes(root, "DOC002"))
+
+
+@case("DOC002 여러 번호를 한 번에 쓴 참조(`결정 30·N`)의 둘째 번호도 잡는다", True)
+def c_doc002_multi(root):
+    n = 998   # 서식으로 넣는다 — 이 파일도 DOC002의 검사 대상이다
+    edit(root, "docs/hooks.md", lambda s: s + "\n이 규칙은 결정 30·%d을 따른다.\n" % n)
+    return any("「결정 %d」" % n in m for m in lint_codes(root, "DOC002"))
+
+
+@case("DOC002 결정 표에서 행을 지우면 그 번호를 가리키는 곳을 잡는다", True)
+def c_doc002_table(root):
+    edit(root, "DECISIONS.md", lambda s: re.sub(r"^\| 47 \|[^\n]*\n", "", s, count=1, flags=re.M))
+    edit(root, "docs/hooks.md", lambda s: s + "\n버전 규칙은 결정 47이다.\n")
+    return any("결정 47」" in m for m in lint_codes(root, "DOC002"))
 
 
 # ── DOC001 ──
