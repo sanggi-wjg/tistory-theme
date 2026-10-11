@@ -18,6 +18,7 @@
 //
 // 아래 파서(childrenByTag · pickList · ownAnchor · labelOf · decodePath · onPath · isHere)는
 // cat-chips.js도 쓴다(결정 50). 트리를 읽는 규칙이 한 벌이어야 레일과 칩이 같은 목록을 낸다.
+// decodePath · bare는 related.js도 쓴다 — 관련 글과 이전/다음 글이 같은 글인지 재는 규칙(#162).
 
 import { uniqueId } from './util.js'
 
@@ -111,7 +112,7 @@ export function onPath(here, path) {
 }
 
 /** 끝 '/'를 뗀 경로. /category/IT/ 와 /category/IT 를 같게 본다. */
-function bare(p) {
+export function bare(p) {
   return p.length > 1 ? p.replace(/\/+$/, '') : p
 }
 

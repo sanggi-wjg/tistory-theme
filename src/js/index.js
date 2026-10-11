@@ -11,6 +11,7 @@ import initLinks from './links.js'
 import initLightbox from './lightbox.js'
 import initToc from './toc.js'
 import initHeadingAnchor from './heading-anchor.js'
+import initRelated from './related.js'
 import initCategory from './category.js'
 import initCatChips from './cat-chips.js'
 import initCards from './cards.js'
@@ -40,6 +41,8 @@ function boot() {
   // 목차 뒤에 둔다. 둘은 서로를 필요로 하지 않지만(소제목 3개 미만이면 목차만 없다),
   // 목차가 실패해도 앵커는 남아야 하므로 순서가 아니라 safe()가 그것을 보장한다.
   safe('heading-anchor', initHeadingAnchor)
+  // 글 끝 관련 글에서 이전/다음 글과 겹치는 줄을 뺀다(#162). 문서 높이를 줄이므로 진행바보다 먼저
+  safe('related', initRelated)
   // 사이드바 높이를 바꾸므로 문서 높이를 재는 진행바보다 먼저 돈다
   safe('category', initCategory)
   // 같은 트리를 읽어 헤더 안 칩을 채운다(결정 50). 헤더 높이를 바꾸므로 진행바보다 먼저

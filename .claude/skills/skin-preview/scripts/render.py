@@ -904,7 +904,11 @@ def handle_group(name, attrs, inner, ctx, page, posts):
                                 else REACT_BOX % "댓글"}) + '</div>')
         return R(inner)
     if name == "s_article_related_rep":
-        return repeat(inner, posts[3:8], "article_related_rep", ctx, page, posts)
+        # 라이브는 이전/다음 글을 관련 글 목록에도 넣는다(2026-10-11, 5편 전부 — #162).
+        # 관련 글 링크에만 ?category=<번호>가 붙고 이전/다음 링크에는 없다. 그 모양 그대로 —
+        # 겹치지 않는 목록을 그리면 중복 제거 JS가 없어도 프리뷰가 멀쩡해 보인다.
+        buf = repeat(inner, [posts[1], posts[2], posts[3], posts[4]], "article_related_rep", ctx, page, posts)
+        return re.sub(r'(href="/entry/post-\d+)"', r'\1?category=1325373"', buf)
 
     # 사이드바
     if name in ("s_sidebar", "s_sidebar_element", "s_search", "s_rp_count"):

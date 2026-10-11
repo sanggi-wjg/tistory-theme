@@ -730,6 +730,11 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 
 `body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
 
+**`.related[hidden]` — 관련 글이 이전/다음 글과 전부 겹칠 때.** 클래스가 아니라 속성이라 위 표에 넣지 않는다. related.js가 `.related-item` 중
+`.related-link`가 `.postnav-item`과 **같은 경로**(쿼리·해시 무시, 디코딩, 끝 `/` 제거 — `category.decodePath`·`bare`)인 줄을 DOM에서
+떼고(감추지 않는다), 남은 줄이 0이면 섹션에 `hidden`을 단다(이슈 #162). `.related`에 `display` 규칙이 생기면 UA의 `[hidden]`이 진다 —
+그때는 `.related[hidden] { display: none }`이 같이 있어야 한다. 검사는 `npm run test:related`(`scripts/test-related-dedup.mjs`).
+
 **`aria-current` — 색으로만 보이던 「현재 위치」를 스크린리더에도 알리는 자리.** 클래스가 아니라 속성이라
 위 표에 넣지 않는다(표 첫 칸은 린트 `BND006`·`BND007`이 우리 JS가 만드는 **클래스**로 읽는다).
 **`"page"`는 그 링크가 지금 페이지 자체일 때만 쓴다**(레일·칩 공통, 판정은 `category.isHere()` — 디코딩하고 끝 `/`를 뗀
