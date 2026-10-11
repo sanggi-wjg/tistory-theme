@@ -10,6 +10,7 @@
   BND012  lint.py                 공지 본문 그릇에서 contents_style을 빼거나 그릇 이름을 바꾸면 잡는다 (이슈 #97)
   TIS006  lint.py                 네이버 광고 카드 바탕 지우기·다크/회색 재정의·한 테마에만·print 질의로·되돌리기(not print 포함)·빈 그릇 장식(가상 요소 포함)을 잡는다 (결정 72)
   TIS007  lint.py                 인쇄 블록에서 본문 안 광고 그릇을 빼기·ins의 !important 떼기·뒤에서 되살리기·조건 붙은 print 질의로 옮기기를 잡는다 (결정 73)
+  TIS008  lint.py                 카테고리 토글 자리의 미리 비우기 삭제·:not(.cat-tree)·알약 보정·간격 토큰·손으로 쓴 28px·24px를 잡는다 (결정 74)
   TYP001~003 lint.py              인라인 코드 break-all·코드 합자·640px 이하 관련 글 2줄의 값 되돌림·우회 경로를 잡는다 (결정 71)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   DOC002  lint.py                 없는 결정 번호를 가리키면 잡고, 날짜·`36-b`·표로 정의된 결정은 안 잡는다 (이슈 #166)
@@ -521,6 +522,53 @@ def c_tis007_second(root):
 def c_tis007_list(root):
     edit(root, "src/styles/components.css", lambda s: s + "\n@media screen, print { .revenue_unit_wrap { display: block; } }\n")
     return any("되살리는 규칙" in m for m in lint_codes(root, "TIS007"))
+
+
+# ── TIS008 ──
+# 앵커는 토큰 이름과 `.js` 접두·`.cat-toggle` 클래스다 — 규칙 순서·주석이 바뀌어도 변이가 같은 곳을 친다.
+@case("TIS008 기준선 — 토글 자리를 첫 페인트부터 같은 토큰으로 비운다", False)
+def c_tis008_base(root):
+    return bool(lint_codes(root, "TIS008"))
+
+
+@case("TIS008 미리 비우기(`.js …`)를 지우면 잡는다", True)
+def c_tis008_pre(root):
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(r"(?m)^\.js (\.side-category[^{]*> a\s*\{)", r".nojs \1", s))
+    return any("미리 비우는" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 JS 이후 규칙에 28px를 손으로 되돌려 적으면 잡는다", True)
+def c_tis008_literal(root):
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(
+        r"(\.cat-tree\s*>\s*li:not\(\.has-toggle\)\s*>\s*a\s*\{[^}]*?padding-right\s*:\s*)[^;}]+", r"\g<1>28px", s, count=1))
+    return any("28px" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 토글 상자 폭을 토큰 대신 숫자로 쓰면 잡는다", True)
+def c_tis008_toggle(root):
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(
+        r"(\.cat-toggle\s*\{[^}]*?width\s*:\s*)var\(\s*--cat-toggle-size\s*\)", r"\g<1>24px", s, count=1))
+    return any(".cat-toggle" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 미리 비우기에서 `:not(.cat-tree)`를 빼면(JS 뒤에도 예약이 남는다) 잡는다", True)
+def c_tis008_cattree(root):
+    edit(root, "src/styles/tistory.css", lambda s: s.replace(":only-of-type:not(.cat-tree) >", ":only-of-type >", 1))
+    return any(":not(.cat-tree)" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 토글 간격을 토큰 대신 다른 값으로 쓰면 잡는다", True)
+def c_tis008_gap(root):
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(
+        r"(\.cat-toggle\s*\{[^}]*?margin-left\s*:\s*)var\(\s*--cat-toggle-gap\s*\)", r"\g<1>var(--sp-2)", s, count=1))
+    return any("margin-left" in m for m in lint_codes(root, "TIS008"))
+
+
+@case("TIS008 미리 비우기의 알약 보정을 빼면 잡는다", True)
+def c_tis008_pill(root):
+    edit(root, "src/styles/tistory.css", lambda s: re.sub(
+        r"(margin-right\s*:\s*calc\(\s*var\(\s*--cat-toggle-reserve\s*\))\s*-\s*var\(\s*--cat-pill-x[^)]*\)", r"\1", s, count=1))
+    return any("알약 보정" in m for m in lint_codes(root, "TIS008"))
 
 
 # ── DOC002 ──

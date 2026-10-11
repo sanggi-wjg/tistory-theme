@@ -284,6 +284,16 @@
        index.css가 함께 들어 있다. 그 절을 바꾸면 다시 잰다 — 어긋나도 화면에 신호가 없다. */
   --comment-app-h: 238.98px;
 
+  /* 카테고리 토글 자리(tistory.css 「접기/펼치기」) — 결정 74. 위 셋과 축이 다르다 — 높이가 아니라 **가로**다.
+     category.js가 상위 줄에 토글을 달면 링크가 그만큼 줄어 글 수 배지가 28px 왼쪽으로 움직였다(이슈 #169).
+     토글 상자(.cat-toggle의 폭·높이·margin-left)와 그 자리 예약(토글 없는 줄의 padding, 첫 페인트의 비움)이 이 토큰을
+     같이 쓴다 — 식의 항까지 이름으로 묶어 한쪽만 바꿀 수 없게 했다(간격을 --sp-1로 따로 적었을 때 margin-left만
+     --sp-2로 바꾸면 토글 줄 배지가 JS 뒤 4px 움직였다 — QA 변이 실측).
+       --cat-toggle-reserve = 폭 --cat-toggle-size + margin-left --cat-toggle-gap = 24 + 4 = 28px */
+  --cat-toggle-size:    24px;   /* WCAG 2.5.8 최소 타깃 */
+  --cat-toggle-gap:     var(--sp-1);
+  --cat-toggle-reserve: calc(var(--cat-toggle-size) + var(--cat-toggle-gap));
+
   /* ── 떠 있는 버튼 : 오른쪽 아래에 쌓는 둘 (결정 65) ─────────────
      「맨 위로」(지름)와 떠 있는 목차 버튼(알약 높이)이 같은 값을 쓴다. 목차 버튼은 맨 위로
      **바로 위**에 서고, 맨 위로가 아직 안 보여도 같은 자리다(위치가 뛰지 않게).

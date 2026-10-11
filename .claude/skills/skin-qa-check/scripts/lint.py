@@ -1805,6 +1805,75 @@ def lint_print_ads(src_css):
         info("인쇄 본문 광고: NaverAd 그릇 · .revenue_unit_wrap · ins.adsbygoogle(!important) 모두 인쇄에서 지움, 되살리는 규칙 없음")
 
 
+# ─────────────────────────── 5g. 카테고리 토글 자리 (TIS008) ───────────────────────────
+
+def lint_cat_toggle_reserve(src_css):
+    """카테고리 레일의 토글 자리를 첫 페인트부터 비우고, 그 폭을 토글 상자와 **같은 토큰**으로 쓰는가 — TIS008 (결정 74, 이슈 #169).
+
+    `category.js`가 상위 줄에 접기 버튼(`.cat-toggle`, 24px + 왼쪽 여백 4px)을 달고, 토글 없는 줄에는 `.cat-tree`로 같은
+    28px를 비운다 — 둘 다 JS가 붙이는 클래스라 첫 페인트에는 없어, 1025px 이상 모든 페이지에서 글 수 배지가 JS 뒤 28px 왼쪽으로
+    움직였다(프리뷰 실측 240.3 → 212.3). 결정 62의 방식대로 `html.js`일 때 CSS가 그 자리를 미리 비운다.
+
+    «예약 = 실물»을 정적으로 볼 수 있는 자리를 본다:
+      ① 토큰 사슬 — `--cat-toggle-reserve`가 `var(--cat-toggle-size)`와 `var(--cat-toggle-gap)`에서 나온다
+      ② `.cat-toggle`의 width·height가 `var(--cat-toggle-size)`, margin-left가 `var(--cat-toggle-gap)` — 상자와 식의 항이 같은 이름이다
+         (margin-left만 바꾸면 JS 뒤 4px 움직였다 — 체크포인트 변이 실측)
+      ③ **`@media` 밖**의 `.js`로 시작하는 미리 비우기 둘 — 토글이 올 줄 `> a`의 `margin-right: calc(reserve − pill)`(목록이
+         `:not(.cat-tree)`일 때만 — 빠지면 JS 뒤에도 예약이 남아 토글 줄 배지가 28px 더 들어간다), 토글이 안 올 줄 `> a`의
+         `padding-right: calc(reserve + pill)` — 알약 보정 `var(--cat-pill-x…)`가 빠지면 현재 줄에서 8px 움직였다
+      ④ JS 이후의 `.cat-tree > li:not(.has-toggle) > a`도 `padding-right`에 reserve와 pill을 쓴다
+    그리고 `tistory.css`에 손으로 적은 `28px` 예약(`padding-right: 28px`·`calc(28px`)이 남지 않았는지. 결정 62 — «손으로 맞춘
+    두 숫자는 갈라진다».
+    ⚠ **못 보는 것** — 선택자 구조가 실제 트리를 잡는지(구조를 바꿔 아무것도 못 잡게 해도 선언은 남는다), 첫 페인트와 JS 뒤의 위치가
+      실제로 같은지(기하 — 브라우저 검사 단계는 미뤄 둔 상태).
+    """
+    if not src_css:
+        return
+    body = strip_comments(src_css)
+    rules = css_rules(body)
+    R = r"var\(\s*--cat-toggle-reserve\s*\)"
+    PILL = r"var\(\s*--cat-pill-x"
+    problems = []
+    defs = re.findall(r"(?<![-\w])--cat-toggle-reserve\s*:\s*([^;}]+)", body)
+    if not re.search(r"(?<![-\w])--cat-toggle-size\s*:", body) or not re.search(r"(?<![-\w])--cat-toggle-gap\s*:", body) or not defs:
+        problems.append("토큰 `--cat-toggle-size`·`--cat-toggle-gap`·`--cat-toggle-reserve` 정의가 없다")
+    elif not all(re.search(r"var\(\s*--cat-toggle-size\s*\)", d) and re.search(r"var\(\s*--cat-toggle-gap\s*\)", d) for d in defs):
+        problems.append("`--cat-toggle-reserve`가 `var(--cat-toggle-size)` + `var(--cat-toggle-gap)`에서 나오지 않는다(%s)" % defs[0].strip())
+    toggle = [blk for sel, blk in rules if sel.strip() == ".cat-toggle"]
+    want = (("width", "--cat-toggle-size"), ("height", "--cat-toggle-size"), ("margin-left", "--cat-toggle-gap"))
+    bad = [p for p, tok in want
+           if not any(re.search(r"(?<![-\w])%s\s*:\s*var\(\s*%s\s*\)" % (p, tok), b) for b in toggle)]
+    if not toggle or bad:
+        problems.append("`.cat-toggle`의 %s가 토큰이 아니다(width·height `--cat-toggle-size`, margin-left `--cat-toggle-gap`)"
+                        % ("·".join(bad) or "규칙"))
+    pre = [(sel.strip(), blk) for sel, blk in css_rules(strip_media(body))
+           if sel.strip().startswith(".js ") and ".side-category" in sel and sel.strip().endswith("> a")]
+    m_rules = [(sel, b) for sel, b in pre if re.search(r"(?<![-\w])margin-right\s*:[^;}]*" + R, b)]
+    p_rules = [(sel, b) for sel, b in pre if re.search(r"(?<![-\w])padding-right\s*:[^;}]*" + R, b)]
+    if not m_rules:
+        problems.append("`@media` 밖에 토글이 올 줄을 미리 비우는 `.js …> a { margin-right: …var(--cat-toggle-reserve)… }`가 없다")
+    else:
+        if not any(":not(.cat-tree)" in sel for sel, _ in m_rules):
+            problems.append("토글이 올 줄의 미리 비우기가 목록 `:not(.cat-tree)`로 풀리지 않는다 — JS 뒤에도 예약이 남아 토글과 겹친다")
+        if not any(re.search(r"margin-right\s*:[^;}]*-\s*" + PILL, b) for _, b in m_rules):
+            problems.append("토글이 올 줄의 미리 비우기에 알약 보정(`- var(--cat-pill-x…)`)이 없다")
+    if not p_rules:
+        problems.append("`@media` 밖에 토글이 안 올 줄을 미리 비우는 `.js …> a { padding-right: …var(--cat-toggle-reserve)… }`가 없다")
+    elif not any(re.search(r"padding-right\s*:[^;}]*\+\s*" + PILL, b) for _, b in p_rules):
+        problems.append("토글이 안 올 줄의 미리 비우기에 알약 보정(`+ var(--cat-pill-x…)`)이 없다")
+    post = [blk for sel, blk in rules if re.search(r"\.cat-tree\s*>\s*li:not\(\.has-toggle\)\s*>\s*a$", sel.strip())]
+    if not any(re.search(r"(?<![-\w])padding-right\s*:[^;}]*" + R + r"[^;}]*" + PILL, b) for b in post):
+        problems.append("`.cat-tree > li:not(.has-toggle) > a`의 padding-right가 reserve + pill이 아니다")
+    lit = re.findall(r"padding-right\s*:\s*28px|calc\(\s*28px", body)
+    if lit:
+        problems.append("손으로 적은 28px 예약이 %d곳 남았다" % len(lit))
+    if problems:
+        err("TIS008", "카테고리 토글 자리: %s. 첫 페인트와 category.js 뒤가 갈라져 글 수 배지가 옆으로 움직이거나, 상자 폭과 "
+            "예약 폭이 따로 놀아 조용히 어긋난다 (결정 62·74, 이슈 #169)." % "; ".join(problems), "src/styles/tistory.css")
+    else:
+        info("카테고리 토글 자리: size+gap → reserve, .cat-toggle·미리 비우기 둘(:not(.cat-tree)·알약 보정)·.cat-tree 모두 같은 토큰")
+
+
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
 
 def lint_robustness(js, skin):
@@ -2141,6 +2210,7 @@ def main():
     lint_placeholder_fill(skin, src_css)
 
     lint_naverad_surface(src_css)
+    lint_cat_toggle_reserve(src_css)
     lint_print_ads(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
