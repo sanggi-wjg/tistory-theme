@@ -741,10 +741,12 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 
 `body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
 
-**`.related[hidden]` — 관련 글이 이전/다음 글과 전부 겹칠 때.** 클래스가 아니라 속성이라 위 표에 넣지 않는다. related.js가 `.related-item` 중
+**관련 글이 이전/다음 글과 겹칠 때 — 상태 표식 없이 DOM에서 뗀다.** 붙이는 클래스·속성이 없어 위 표에 넣지 않는다. related.js가 `.related-item` 중
 `.related-link`가 `.postnav-item`과 **같은 경로**(쿼리·해시 무시, 디코딩, 끝 `/` 제거 — `category.decodePath`·`bare`)인 줄을 DOM에서
-떼고(감추지 않는다), 남은 줄이 0이면 섹션에 `hidden`을 단다(이슈 #162). `.related`에 `display` 규칙이 생기면 UA의 `[hidden]`이 진다 —
-그때는 `.related[hidden] { display: none }`이 같이 있어야 한다. 검사는 `npm run test:related`(`scripts/test-related-dedup.mjs`).
+떼고, 남은 줄이 0이면 `.related` 섹션째 뗀다(이슈 #162). 감추지 않으므로 **CSS의 `display` 규칙과 무관하다** — `hidden`으로 감추던
+2차 체크포인트 판은 `.related`에 `display` 규칙이 생기면 UA의 `[hidden]`이 지고, 그걸 막는 `.related[hidden]` 가드도 뒤에 오는 같은
+특이도 규칙에 져서 빈 섹션이 조용히 돌아올 수 있었다. 검사는 `npm run test:related`(`scripts/test-related-dedup.mjs`) — 감추는 쪽으로
+되돌리면 「섹션째 뗀다」 단언이 빨간불이다.
 
 **`aria-current` — 색으로만 보이던 「현재 위치」를 스크린리더에도 알리는 자리.** 클래스가 아니라 속성이라
 위 표에 넣지 않는다(표 첫 칸은 린트 `BND006`·`BND007`이 우리 JS가 만드는 **클래스**로 읽는다).

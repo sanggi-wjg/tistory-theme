@@ -3,13 +3,15 @@
 // 티스토리의 이전/다음 글은 **같은 카테고리 안에서만** 움직이고, 바로 위 「'카테고리'의 다른 글」
 // 4줄에는 그 이웃이 늘 들어 있었다(2026-10-11 라이브 5편 전부). 그래서 글 끝에서 같은 제목이 두 번 보인다.
 // 이전/다음 카드는 「이전 글」·「다음 글」이라는 방향을 말하므로 그쪽을 남기고 관련 글 쪽을 뺀다.
-// 다 빠지면 섹션째 감춘다 — 제목과 「카테고리 전체 보기」만 남은 빈 목록이 된다.
+// 다 빠지면 섹션째 DOM에서 뗀다 — 남겨 두면 제목과 「카테고리 전체 보기」만 남은 빈 목록이 된다.
+// `hidden`으로 감추지 않는 이유: UA의 `[hidden]`은 `.related`에 display 규칙이 생기는 순간 지고, 그걸 지키는
+// `.related[hidden]` 가드도 뒤에 오는 같은 특이도 규칙에 진다 — 어느 쪽이든 조용히 빈 섹션이 돌아온다(#162 2차 QA).
 //
 // 비교는 경로로만 한다. 관련 글 링크에만 `?category=<번호>`가 붙고 이전/다음 링크에는 없다(라이브 실측).
 // 쿼리·해시를 버리고, 퍼센트 인코딩을 벗기고(대소문자·원문 한글 차이를 없앤다), 끝 '/'를 뗀다 —
 // category.js의 decodePath·bare를 그대로 쓴다. 레일·칩이 「같은 경로」를 재는 규칙과 한 벌이다.
 //
-// JS가 안 돌면 중복이 남을 뿐 아무것도 깨지지 않는다. 줄은 감추지 않고 DOM에서 뗀다 —
+// JS가 안 돌면 중복이 남을 뿐 아무것도 깨지지 않는다. 줄도 감추지 않고 DOM에서 뗀다 —
 // 남은 줄의 :first-child·:last-child가 실제 모양과 어긋나지 않게.
 
 import { decodePath, bare } from './category.js'
@@ -71,5 +73,5 @@ export default function initRelated() {
     items[i].parentNode.removeChild(items[i])
   })
   // 링크를 못 읽은 줄은 drop에 들지 않으므로, 같아지는 것은 전부 뺐을 때뿐이다
-  if (drop.length === items.length) section.hidden = true
+  if (drop.length === items.length && section.parentNode) section.parentNode.removeChild(section)
 }

@@ -69,7 +69,6 @@ function node(classes, attrs = {}, children = []) {
     classes: set,
     children,
     parentNode: null,
-    hidden: false,
     getAttribute: (k) => (k in attrs ? attrs[k] : null),
     removeChild(c) {
       n.children = n.children.filter((x) => x !== c)
@@ -99,27 +98,33 @@ function run(section, navs) {
   }
 }
 
+// 섹션은 부모(글 그릇) 안에 둔다 — 「섹션째 뗐는가」를 부모의 자식 목록으로 본다
 function fakeSection(hrefs) {
   const lis = hrefs.map((h) => node(['related-item'], {}, [node(['related-link'], { href: h })]))
-  return node(['related'], {}, [node(['related-list'], {}, lis)])
+  const s = node(['related'], {}, [node(['related-list'], {}, lis)])
+  node(['entry-main'], {}, [s])
+  return s
 }
+// 붙어 있다 = 부모가 있고 그 부모의 자식에 있다. hidden 같은 감춤 표식은 보지 않는다 — 감추는 쪽으로
+// 되돌리면 섹션이 붙은 채라 빨간불이어야 한다
+const attached = (s) => !!s.parentNode && s.parentNode.children.includes(s)
 const navOf = (hrefs) => hrefs.map((h) => node(['postnav-item'], { href: h }))
 
 {
   const s = fakeSection(['/entry/a?category=1', '/entry/b?category=1'])
   run(s, navOf(['/entry/a', '/entry/b']))
-  ok(s.querySelectorAll('.related-item').length === 0 && s.hidden, '전부 겹치면 줄을 다 빼고 섹션을 감춘다')
+  ok(s.querySelectorAll('.related-item').length === 0 && !attached(s), '전부 겹치면 줄을 다 빼고 섹션째 DOM에서 뗀다')
 }
 {
   const s = fakeSection(['/entry/a?category=1', '/entry/b?category=1'])
   run(s, [])
-  ok(s.querySelectorAll('.related-item').length === 2 && !s.hidden, '이전/다음이 없으면 손대지 않는다')
+  ok(s.querySelectorAll('.related-item').length === 2 && attached(s), '이전/다음이 없으면 손대지 않는다')
 }
 {
   const s = fakeSection(['/entry/a?category=1', '/entry/b?category=1'])
   s.children[0].children[1].children = [] // 둘째 줄의 링크가 없다
   run(s, navOf(['/entry/a', '/entry/b']))
-  ok(s.querySelectorAll('.related-item').length === 1 && !s.hidden, '링크를 못 읽은 줄은 남기고 섹션도 감추지 않는다')
+  ok(s.querySelectorAll('.related-item').length === 1 && attached(s), '링크를 못 읽은 줄은 남기고 섹션도 떼지 않는다')
 }
 
 /* ── ② 프리뷰가 낸 실제 글 마크업 ── */
@@ -151,7 +156,7 @@ for (const page of ['page', 'page_toc']) {
   const left = s.querySelectorAll('.related-link').map((a) => a.getAttribute('href'))
   ok(left.length === relHrefs.length - dup.length && !left.some((h) => navSet.has(norm(h))),
     `${page} — JS 뒤 겹치는 줄 0, ${left.length}줄 남는다`)
-  ok(!s.hidden, `${page} — 남은 줄이 있으니 섹션은 보인다`)
+  ok(attached(s), `${page} — 남은 줄이 있으니 섹션은 남는다`)
 }
 
 {

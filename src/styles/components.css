@@ -856,11 +856,6 @@
   border-top: 1px solid var(--hairline);
 }
 
-/* 관련 글이 전부 이전/다음과 겹치면 related.js가 섹션에 hidden을 단다(이슈 #162, hooks.md §8).
-   지금은 .related에 display 규칙이 없어 UA 기본이 듣지만, 누가 display를 주는 순간 hidden이 지고
-   제목과 「카테고리 전체 보기」만 남은 빈 섹션이 보인다(1차 체크포인트에서 display: flex로 재현) — 미리 막는다. */
-.related[hidden] { display: none; }
-
 .related-title {
   margin-bottom: var(--sp-3);
   font-size: var(--fs-display-sm);
