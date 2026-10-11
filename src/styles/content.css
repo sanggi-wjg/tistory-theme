@@ -148,7 +148,13 @@
   color: inherit;
 }
 
-/* ── 인라인 코드 : 본문의 1급 시민 (DESIGN.md §5.1) ─────────────── */
+/* ── 인라인 코드 : 본문의 1급 시민 (DESIGN.md §5.1) ───────────────
+   영숫자 사이(토큰 한가운데)는 «넘칠 때만» 끊는다(#156). `break-all`이던 때는 안 넘치는
+   식별자도 한가운데서 끊겨 조각마다 상자를 가졌다 — 소제목의 `==`가 `=` 상자 둘로
+   갈렸다(라이브 390px 「타이밍 어택」 24개 중 5개). 하이픈·공백 뒤는 `normal`에서도 원래
+   줄바꿈 자리라 줄 끝에 오면 안 넘쳐도 갈린다(360px `--ink-|body`) — 그것만 막고 비상
+   줄바꿈은 살리는 값이 없어 남긴다. `anywhere`는 `break-word`와 달리 min-content에도
+   들어가 표 칸 안의 긴 URL이 표를 밀지 않는다. 합자는 아래 pre와 같은 이유로 끈다. */
 .contents_style code {
   font-family: var(--font-mono);
   font-size: 0.88em;
@@ -157,12 +163,19 @@
   border-radius: var(--radius-sm);
   padding: 1px 5px;
   color: var(--ink);
-  word-break: break-all;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  font-variant-ligatures: none;
 }
 
 /* ── 코드블록 (DESIGN.md §6.3) ──────────────────────────────────
    줄바꿈하지 않는다. 가장 긴 줄이 1,777자다 — 접으면 읽을 수 없다.
-   대신 블록 스스로 가로 스크롤한다. 페이지 본문은 스크롤되지 않는다. */
+   대신 블록 스스로 가로 스크롤한다. 페이지 본문은 스크롤되지 않는다.
+
+   합자를 끈다(#158, 결정 71). JetBrains Mono 기본값이면 `!=`가 `≠`로, `==`가 긴 등호 한
+   글자로 그려진다 — 비교 연산자를 가르치는 글에서 원문과 다른 글자를 보인다. 그 합자는
+   `calt`라 `no-common-ligatures`로는 안 꺼지고 `none`은 끈다(헤드리스 Chrome 실측:
+   `none` = `"calt" 0`). 상속되므로 안의 <code>·hljs span도 따른다. */
 .contents_style pre {
   font-family: var(--font-mono);
   font-size: var(--fs-mono);
@@ -178,11 +191,14 @@
   white-space: pre;
   word-break: normal;
   overflow-wrap: normal;
+  font-variant-ligatures: none;
   tab-size: 2;
   -webkit-overflow-scrolling: touch;
 }
 
-/* 코드블록 안의 <code>는 인라인 코드 장식을 벗는다 */
+/* 코드블록 안의 <code>는 인라인 코드 장식을 벗는다. `overflow-wrap`은 pre를 따른다 — 위
+   인라인 규칙의 `anywhere`는 `white-space: pre`에서 효력이 없지만, pre의 값을 바꾸는 날
+   끼어들지 않게 끊어 둔다. `word-break`는 인라인 규칙의 `normal`이 그대로 온다(pre와 같다). */
 .contents_style pre code {
   font: inherit;
   background: none;
@@ -191,7 +207,7 @@
   padding: 0;
   color: inherit;
   white-space: inherit;
-  word-break: normal;
+  overflow-wrap: inherit;
 }
 
 /* ── 이미지 ─────────────────────────────────────────────────────
