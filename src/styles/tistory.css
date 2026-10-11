@@ -149,7 +149,10 @@
    붙이지 않는 것은 아래 미리 접기·접기 규칙이 가지를 펼치지 않게 하려는 것이다 — 가지는 접힌 채
    상위 줄 알약만 보인다. `"true"`로 좁히고 `[aria-current]`로 넓히지 않는다: `"page"`는 category.js가
    li.selected 안의 링크에만 붙이므로(결정 63) 이미 위 규칙이 칠하고 있다.
-   특이도는 li.selected 줄과 같은 (0,2,2)/(0,3,2)다 — `> a`를 `li > a`로 적어 맞췄다. */
+   특이도는 li.selected 줄과 같은 (0,2,2)/(0,3,2)다 — `> a`를 `li > a`로 적어 맞췄다.
+
+   알약의 좌우 여백 --cat-pill-x는 아래 「토글 자리」가 다시 읽는다 — 음수 마진만큼 오른쪽을 더 비워야 글 수가
+   형제와 같은 선에 선다. 알약이 아닌 줄에는 이 값이 없어 fallback 0이다. */
 .tt_category li.selected > a,
 .tt_category li > a[aria-current="true"] {
   color: var(--link);
@@ -163,8 +166,9 @@
 .tt_category .sub_category_list > li.selected > a,
 .tt_category .category_list > li > a[aria-current="true"],
 .tt_category .sub_category_list > li > a[aria-current="true"] {
-  margin: 0 calc(var(--sp-2) * -1);
-  padding: 6px var(--sp-2);
+  --cat-pill-x: var(--sp-2);
+  margin: 0 calc(var(--cat-pill-x) * -1);
+  padding: 6px var(--cat-pill-x);
   background: var(--canvas-soft-2);
   border-radius: var(--radius-md);
 }
@@ -240,9 +244,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;              /* WCAG 2.5.8 최소 타깃 */
-  height: 24px;
-  margin-left: var(--sp-1);
+  width: var(--cat-toggle-size);    /* 폭 + margin-left = --cat-toggle-reserve (tokens.css) */
+  height: var(--cat-toggle-size);
+  margin-left: var(--cat-toggle-gap);
   padding: 0;
   background: none;
   border: 0;
@@ -262,19 +266,36 @@
   transform: rotate(90deg);
 }
 
-/* 토글이 없는 형제 항목의 글 수도 같은 선에 세운다.
-   (버튼 24px + 왼쪽 여백 4px = 28px) */
+/* 토글이 없는 형제 항목의 글 수도 같은 선에 세운다 — 토글 자리(--cat-toggle-reserve 28px)만큼 오른쪽을 비운다.
+   현재 줄의 알약은 오른쪽으로 --cat-pill-x만큼 음수 마진을 내므로(위 「현재 보고 있는 카테고리」) 그만큼 더
+   비운다 — 안 더하면 하위가 없는 상위(AI·Go·기록 등)가 현재일 때 상자만 8px 넓어지고 글 수가 8px 오른쪽으로
+   빠진다. 특이도 (0,3,2)가 알약의 padding과 같아 순서로 이긴다 — 단 `html.js`인 동안은 아래 「미리 비우기」의
+   padding 규칙(특이도가 훨씬 높다)이 JS 뒤에도 같은 값으로 남아 실제로는 그쪽이 정한다. 이 줄의 padding-right를
+   바꿀 일이 있으면 두 규칙을 같이 바꾼다(린트 TIS008이 둘 다 같은 토큰 식인지 본다). 토글이 있는 줄은 이 규칙을 안 받아 그대로 맞다. */
 .side-category .cat-tree > li:not(.has-toggle) > a {
-  padding-right: 28px;
+  padding-right: calc(var(--cat-toggle-reserve) + var(--cat-pill-x, 0px));
 }
 
-/* 현재 줄의 알약은 오른쪽으로 --sp-2만큼 음수 마진을 낸다(위 「현재 보고 있는 카테고리」).
-   위 28px이 그 알약의 6px var(--sp-2)를 순서로 덮으면(둘 다 (0,3,2)) 상자는 8px 넓어졌는데 오른쪽
-   여백은 그대로라 글 수만 8px 오른쪽으로 빠진다 — 하위가 없는 상위(AI·Go·기록 등)가 현재일 때.
-   마진만큼 더해 글 수를 형제와 같은 선에 돌려놓는다. 토글이 있는 줄은 28px 규칙을 안 받아 그대로 맞다. */
-.side-category .cat-tree > li.selected:not(.has-toggle) > a,
-.side-category .cat-tree > li:not(.has-toggle) > a[aria-current="true"] {
-  padding-right: calc(28px + var(--sp-2));
+/* ── 토글 자리 미리 비우기 (결정 74, 이슈 #169) ────────────────────
+   토글(.cat-toggle)과 위 padding은 category.js가 붙이는 클래스에 걸려 첫 페인트에는 없다 — 1025px~ 모든 페이지에서
+   상위 줄 글 수 배지가 script.js 뒤 28px 왼쪽으로 움직였다(프리뷰 1280px 240.3 → 212.3, 세로는 그대로).
+   `html.js`이면 그 자리를 첫 페인트부터 비운다(결정 62). 대상은 「미리 접기」와 같은 구조 선택자(pickList)다.
+     · 토글이 올 줄(하위 ul을 가진 li)은 링크를 토글 자리만큼 **margin**으로 비켜 세운다. 토글이 붙은 뒤 flex가
+       링크를 줄이는 모양 그대로라 글자·배지뿐 아니라 링크 상자와 현재 줄 알약의 오른쪽 끝까지 같다(알약은 음수
+       마진만큼 덜 비킨다). category.js가 토글을 다 달고 목록에 `.cat-tree`를 붙이면 빠지고 토글이 그 자리를
+       갖는다(같은 동기 실행 안이라 사이에 페인트가 없다). `.has-toggle`이 아니라 `.cat-tree`로 푸는 것은 토글을
+       못 단 줄이 위 `.cat-tree` padding과 겹쳐 56px을 비우지 않게 하려는 것이다.
+     · 토글이 안 올 줄은 위 `.cat-tree` 규칙과 같은 padding이다. 하위가 하나도 없는 블로그에는 JS가 토글도
+       `.cat-tree`도 안 붙이므로, 목록에 하위 ul을 가진 li가 있을 때만(:has) 비운다.
+   실패 방향은 미리 접기와 같다. category.js가 실행 중 죽어 html.js만 남으면 예약만 남는다 — 배지는 JS가 돈 뒤의
+   자리에 서고 토글 자리는 빈칸이다. 구조가 다르거나 :has()를 모르면 아무것도 못 잡아 오늘처럼 JS 뒤에 한 번
+   움직인다. :has() 없는 위 규칙과 한 목록으로 묶지 않는다 — 모르는 브라우저가 목록째 버린다(결정 57). */
+.js .side-category .side-body > ul > li:only-child > ul:only-of-type:not(.cat-tree) > li:has(> ul) > a {
+  margin-right: calc(var(--cat-toggle-reserve) - var(--cat-pill-x, 0px));
+}
+
+.js .side-category .side-body > ul > li:only-child > ul:only-of-type:has(> li > ul) > li:not(:has(> ul)) > a {
+  padding-right: calc(var(--cat-toggle-reserve) + var(--cat-pill-x, 0px));
 }
 
 /* ══════════ 에디터 컴포넌트 (data-ke-*) ════════════════════════
