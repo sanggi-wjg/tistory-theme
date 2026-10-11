@@ -16,8 +16,9 @@
 //   상위 카테고리 링크도 실제로 이동하는 링크다(/category/IT). 클릭을 가로채면
 //   "상위 카테고리 글 전체 보기"로 가는 길이 사라진다. 접기/펼치기는 별도의 버튼이다.
 //
-// 아래 파서(childrenByTag · pickList · ownAnchor · labelOf · decodePath · onPath · isHere)는
-// cat-chips.js도 쓴다(결정 50). 트리를 읽는 규칙이 한 벌이어야 레일과 칩이 같은 목록을 낸다.
+// 아래 파서(childrenByTag · pickList · ownAnchor · labelOf · decodePath · onPath · isHere ·
+// postCategory · postCategoryHits)는 cat-chips.js도 쓴다(결정 50). 트리를 읽는 규칙이
+// 한 벌이어야 레일과 칩이 같은 목록을 낸다.
 // decodePath · bare는 related.js도 쓴다 — 관련 글과 이전/다음 글이 같은 글인지 재는 규칙(#162).
 
 import { uniqueId } from './util.js'
@@ -101,10 +102,10 @@ export function decodePath(p) {
  * 가지를 펼친다. 경계를 '/'로 끊어 /category/IT 가 /category/ITSM 에 걸리지 않게 한다.
  *
  * 둘을 다 두는 이유: selected는 카테고리 페이지에만 붙는다. **글 페이지에서는
- * 안 붙는다** — 그런데 좌측 레일은 이제 글 페이지에도 있다(결정 30). 글을 읽는
- * 동안 그 글이 속한 가지를 펼쳐 두려면 URL 대조가 필요하다... 고 하기엔 글 URL은
- * /entry/... 라 카테고리 경로와 겹치지 않는다. 그래서 글 페이지에서는 둘 다 안 걸리고
- * 트리는 접힌 채로 시작한다. 의도한 동작이다.
+ * 안 붙는다** — 그런데 좌측 레일은 이제 글 페이지에도 있다(결정 30). 글 URL은
+ * /entry/... 라 URL 대조에도 안 걸린다. 그래서 글 페이지에서는 이 함수로 가지를 펼치지 않고,
+ * 글 머리 .entry-cat이 주는 카테고리 경로로 **표시만** 한다(postCategoryHits, 이슈 #163).
+ * 펼치지 않는 것은 의도다 — 첫 페인트 뒤 가지를 펴면 아래 최근 글·인기 글이 밀린다(결정 62).
  */
 export function onPath(here, path) {
   if (!path || path === '/') return false
@@ -144,6 +145,71 @@ function markCurrent(rootUl) {
   }
 }
 
+/**
+ * 이 글이 속한 카테고리 경로 — 글 머리 `.entry-cat`의 href([##_article_rep_category_link_##]).
+ * 글 페이지에만 있는 링크라, 없으면 ''(글 페이지가 아니다)를 돌려준다.
+ */
+export function postCategory() {
+  const a = document.querySelector('.entry-cat')
+  if (!a || !a.getAttribute('href')) return ''
+  return bare(decodePath(a.pathname))
+}
+
+/**
+ * 상위 카테고리 한 줄이 이 글의 카테고리를 품는가 — 글 페이지의 현재 표시(이슈 #163).
+ * 레일(markPostCategory)과 칩(cat-chips.js)이 **같은 이 함수**로 판정한다.
+ *
+ *   cat      이 글의 카테고리 경로(postCategory). 비었으면 아무것도 안 걸린다
+ *   topPath  상위 링크의 pathname
+ *   subPaths 하위 링크들의 pathname
+ *
+ * 돌려주는 것: { top, subs } — top은 상위 줄을 켤지, subs는 켤 하위 링크의 번호.
+ * 하위는 이 글의 카테고리이거나 그 위(onPath)일 때 켜진다. 상위는 글의 카테고리가 그 아래이거나,
+ * 하위 중 하나가 켜졌을 때 켜진다 — 하위 URL이 계층 없이 와도 상위가 따라 켜지게(펼치는 쪽과 같은 대비).
+ * 문자열만 받는 순수 함수다 — scripts/test-post-category.mjs가 DOM 없이 본다.
+ */
+export function postCategoryHits(cat, topPath, subPaths) {
+  const subs = []
+  if (!cat) return { top: false, subs: subs }
+  const c = bare(decodePath(cat))
+  for (let i = 0; i < subPaths.length; i++) {
+    if (onPath(c, bare(decodePath(subPaths[i])))) subs.push(i)
+  }
+  return { top: subs.length > 0 || onPath(c, bare(decodePath(topPath))), subs: subs }
+}
+
+/**
+ * 글 페이지에서 이 글의 카테고리를 레일에 표시한다 — 상위 줄과 하위 줄 링크 둘 다 aria-current="true".
+ *
+ * "page"가 아니다 — 그 링크는 지금 페이지가 아니라 지금 글이 속한 곳이다(결정 63).
+ * **li.selected·is-expanded를 붙이지 않고 aria-expanded도 건드리지 않는다** — tistory.css의 미리 접기
+ * 규칙이 selected·is-expanded를 보고 가지를 펴는데, 펴면 첫 페인트 뒤 아래 모듈이 밀린다(결정 62).
+ * 가지는 접힌 채이고, 독자가 펼치면 하위 줄의 표시가 보인다.
+ * 티스토리가 selected를 붙인 페이지(카테고리 페이지)에서는 물러난다 — 거기는 markCurrent의 몫이다.
+ */
+function markPostCategory(rootUl, items) {
+  if (rootUl.querySelector('.selected')) return
+  const cat = postCategory()
+  if (!cat) return
+  items.forEach(function (li) {
+    const sub = childrenByTag(li, 'UL')[0]
+    const top = sub ? ownAnchor(li, sub) : childrenByTag(li, 'A')[0]
+    if (!top || !top.getAttribute('href')) return
+    const subLinks = sub ? Array.prototype.slice.call(sub.getElementsByTagName('a')) : []
+    const hits = postCategoryHits(
+      cat,
+      top.pathname,
+      subLinks.map(function (a) {
+        return a.getAttribute('href') ? a.pathname : ''
+      })
+    )
+    if (hits.top) top.setAttribute('aria-current', 'true')
+    hits.subs.forEach(function (i) {
+      subLinks[i].setAttribute('aria-current', 'true')
+    })
+  })
+}
+
 export default function initCategory() {
   // .side-category · .side-body는 skin.html이 보장하는 우리 훅이다(hooks.md §6).
   const box = document.querySelector('.side-category .side-body')
@@ -164,6 +230,12 @@ export default function initCategory() {
   const list = pickList(rootUl)
   const items = childrenByTag(list, 'LI')
   if (!items.length) return
+
+  try {
+    markPostCategory(rootUl, items)
+  } catch (e) {
+    /* 글의 카테고리 표시가 실패해도 접기는 단다 */
+  }
 
   const here = decodePath(window.location.pathname)
   const made = []

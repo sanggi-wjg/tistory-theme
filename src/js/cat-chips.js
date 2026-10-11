@@ -14,7 +14,17 @@
 // 둘이 각자 파싱하면 한쪽만 고쳤을 때 레일과 칩이 다른 목록을 내는데, 화면에는 신호가
 // 없다 — 결정 38(목차·앵커가 같은 목록을 봐야 한다)과 같은 이유다.
 
-import { childrenByTag, decodePath, isHere, labelOf, onPath, ownAnchor, pickList } from './category.js'
+import {
+  childrenByTag,
+  decodePath,
+  isHere,
+  labelOf,
+  onPath,
+  ownAnchor,
+  pickList,
+  postCategory,
+  postCategoryHits,
+} from './category.js'
 
 /**
  * 앵커 안 글 수 배지. 렌더 예 `<a> 인프라 <span>(42)</span> </a>` — 요소 자식의
@@ -70,6 +80,9 @@ function fill(nav) {
   if (!items.length) return
 
   const here = decodePath(window.location.pathname)
+  // 글 페이지면 이 글의 카테고리(.entry-cat). 티스토리가 selected를 붙인 페이지에서는 쓰지 않는다 —
+  // 레일(category.js markPostCategory)과 같은 조건이다.
+  const cat = rootUl.querySelector('.selected') ? '' : postCategory()
   const frag = document.createDocumentFragment()
 
   // 「전체」 — 래퍼 li("분류 전체보기")의 링크. 래퍼가 없는 트리면 만들지 않는다.
@@ -103,12 +116,24 @@ function fill(nav) {
           }
         }
       }
-      if (on) {
+      // 글 페이지 — 이 글이 속한 가지. 판정은 레일과 같은 postCategoryHits다(이슈 #163).
+      // 레일과 달리 칩에는 하위가 없으니 상위 줄이 켜지는지만 본다.
+      let post = false
+      if (!on && cat) {
+        const subPaths = []
+        const subLinks = sub ? sub.getElementsByTagName('a') : []
+        for (let i = 0; i < subLinks.length; i++) {
+          subPaths.push(subLinks[i].getAttribute('href') ? subLinks[i].pathname : '')
+        }
+        post = postCategoryHits(cat, link.pathname, subPaths).top
+      }
+      if (on || post) {
         c.classList.add('is-current')
         // 색은 가지 일치로 켜지만 aria-current의 뜻은 둘로 가른다(결정 63) — 칩 링크가 지금
         // 페이지 자체면 "page", 하위 카테고리 페이지라서 이 가지가 현재인 것뿐이면 "true".
+        // 글 페이지에서는 칩 링크가 지금 페이지일 수 없으니 언제나 "true"다.
         // 「이 페이지」 판정은 레일(category.js markCurrent)과 같은 isHere다.
-        c.setAttribute('aria-current', isHere(link) ? 'page' : 'true')
+        c.setAttribute('aria-current', on && isHere(link) ? 'page' : 'true')
         current = c
       }
       frag.appendChild(c)

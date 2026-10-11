@@ -240,10 +240,10 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 ## 4. 글 페이지 — `article.entry`
 
 ```html
-<article class="entry">
+<article class="entry" data-cat="인프라/MSA">   <!-- [##_article_rep_category_##] — 관련 글·이전/다음 삽화(#161) -->
   <div class="reading-progress" id="reading-progress"><span class="reading-progress-bar"></span></div>
   <header class="entry-head">
-    <a class="entry-cat" href="…">Infrastructure/MSA</a>
+    <a class="entry-cat" href="…">인프라/MSA</a>
     <h1 class="entry-title">…</h1>
     <div class="entry-meta"><time class="entry-date">…</time>
       <!-- .entry-rp는 <s_rp_count> 안이고 라벨이 마크업에 있다 -->
@@ -270,6 +270,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 
 | 훅 | 메모 |
 |---|---|
+| `.entry[data-cat]` | 이 글의 카테고리(`[##_article_rep_category_##]`, 홈 카드 `.post[data-cat]`와 같은 값 형식). `.related-thumb`·`.postnav-thumb`가 대표이미지 없을 때 그 카테고리 삽화를 깐다(#161, 결정 5·57). 이전/다음 글은 같은 카테고리 안에서만 움직인다는 라이브 실측(2026-10-11, 상위 12개 카테고리 글의 이전/다음 24/24, 하위까지 일치)에 기댄다 — 다른 카테고리로 넘어가면 그 카드의 삽화가 글과 어긋난다 |
 | `.entry-head` `.entry-cat` `.entry-title` `.entry-meta` `.entry-date` `.entry-rp` | display-lg 제목 |
 | `.entry-layout` | 본문 + 목차 2칸. 1399px 이하에서 1칸으로(목차는 본문 위 접이식). **DOM은 목차(`.entry-aside`)가 먼저다** — 1399px 이하에서는 화면 순서와 같고, 1400px 이상에서는 CSS `order`로 목차가 오른쪽 열에 서지만 Tab·낭독은 목차를 먼저 지난다(결정 64). DOM 순서를 다시 뒤집지 않는다 |
 | `.entry-main` | 본문 칸. **`min-width: 0`을 반드시 준다** — 안 주면 1,777자짜리 코드 줄이 그리드를 밀어 페이지가 가로 스크롤한다 |
@@ -524,7 +525,17 @@ CSS에서 이 폭을 바꾸면 index.xml도 같이 바꿔야 하고, **index.xml
 (접기는 별도 버튼). 현재 보고 있는 가지는 펼친 채로 시작한다 — **`li.selected`를 먼저 보고**,
 없으면 `location.pathname`과 링크 `href`를 대조한다. 둘 다 두는 이유는 `selected`가
 카테고리 페이지에만 붙기 때문이다. 글 페이지 URL(`/entry/…`)은 카테고리 경로와 겹치지 않아
-둘 다 안 걸리고, 그때는 트리가 접힌 채로 시작한다 — 의도한 동작이다.
+둘 다 안 걸리고, 그때는 트리가 접힌 채로 시작한다.
+
+**글 페이지의 현재 카테고리 — 표시만, 접힌 채** (이슈 #163). 글 페이지에는 `li.selected`가 없지만
+같은 페이지의 `a.entry-cat`(`[##_article_rep_category_link_##]`, §3)이 이 글의 카테고리 경로를 준다.
+category.js가 그 경로로 **상위 줄 링크와 하위 줄 링크 둘 다**에 `aria-current="true"`를 붙인다 — `"page"`가
+아니다(그 링크는 이 페이지가 아니라 이 글이 속한 곳이다, 결정 63). **`li.selected`·`is-expanded`를 붙이지
+않고 `aria-expanded`도 바꾸지 않는다** — 위 3번 미리 접기 규칙이 그 둘을 보고 가지를 펴는데, 첫 페인트 뒤
+펴면 아래 최근 글·인기 글이 밀린다(결정 62). 가지는 접힌 채이고, 독자가 펼치면 하위 줄의 표시가 보인다.
+판정은 칩과 같은 `postCategoryHits()`(하위가 글의 카테고리면 그 하위와 상위 둘 다, 상위에 바로 속한 글이면
+상위만). 트리에 `.selected`가 하나라도 있으면(카테고리 페이지) 돌지 않고, `.entry-cat`이 없으면 아무것도 안 한다.
+검사 `npm run test:post-cat` — 판정 함수와, 가짜 DOM에서 `initCategory`·`initCatChips`를 그대로 돌린 연결(글·카테고리·홈 페이지).
 
 **현재 카테고리의 `aria-current="page"`** — 티스토리가 붙인 `li.selected` 중 **그 `li` 자신의 링크가
 지금 경로를 가리킬 때만**(`isHere()` — 끝 `/`를 뗀 디코딩 경로가 같을 때, 칩과 같은 함수) 그 링크에 붙인다. 하위 카테고리 페이지의
@@ -598,8 +609,8 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | 출처 | 사이드바 트리(`.side-category .side-body ul`) — **`category.js`와 같은 파서**(`pickList`·`ownAnchor`·`labelOf`). 둘이 각자 세면 레일과 칩이 다른 목록을 낼 수 있고 화면에 신호가 없다 |
 | 렌더 조건 | 트리를 못 찾으면(폴더형·구조 다름) **아무것도 넣지 않고 그릇에 `.is-off`를 붙인다**(결정 62). 칩을 하나도 못 넣고 끝나는 경로는 전부 같다 — 조기 반환이든 모듈 안 예외든(`try…finally`로 한 곳에서). 그릇은 비어 있고 CSS가 감춘다 |
 | CSS 기본값 | `.cat-chips { display: none }` → `@media (max-width: 1024px)`에서 `.cat-chips:not(:empty)`만 flex. **`html.js`이면 빈 그릇에도 칩 줄 높이를 미리 잡는다 — `.js .cat-chips:empty:not(.is-off)`**(결정 62). 빈 `<nav>`를 페인트 뒤에 채우며 헤더가 55px 늘던 것을 막는다. `.is-off`가 붙으면 예약을 풀어 다시 감춘다 — 그때 한 번 밀리는 것은 실패 경로뿐이다. `script.js` 로드가 실패하면 `js`가 지워져 예약도 풀린다(§5.4). **1025px~에서는 항상 감춤**(레일이 있다). DOM은 폭과 무관하게 항상 만든다 |
-| 현재 가지 | 티스토리 `li.selected`(카테고리 페이지) 또는 URL 대조 → `.is-current` + `aria-current`. 하위 카테고리 페이지에서는 **그 상위 칩**이 켜진다. `aria-current`는 칩 링크가 **지금 페이지 자체**면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`다 — 「이 페이지」 판정은 레일과 같은 `category.isHere()`(결정 63). 글 페이지에서는 아무것도 안 켜진다(URL이 `/entry/…`) |
-| 스크롤 | 현재 칩이 오른쪽 밖이면 `nav.scrollLeft`만 옮긴다. `scrollIntoView`는 쓰지 않는다 — 페이지를 세로로 움직일 수 있다 |
+| 현재 가지 | 티스토리 `li.selected`(카테고리 페이지) 또는 URL 대조 → `.is-current` + `aria-current`. 하위 카테고리 페이지에서는 **그 상위 칩**이 켜진다. `aria-current`는 칩 링크가 **지금 페이지 자체**면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`다 — 「이 페이지」 판정은 레일과 같은 `category.isHere()`(결정 63). **글 페이지에서는 `a.entry-cat`의 경로로 그 글의 상위 칩을 켠다** — `.is-current` + `aria-current="true"`(이슈 #163). 판정은 레일과 같은 `category.postCategoryHits()`이고, 트리에 `.selected`가 있으면 쓰지 않는다 |
+| 스크롤 | 현재 칩이 오른쪽 밖이면 `nav.scrollLeft`만 옮긴다(카테고리 페이지·글 페이지 공통). `scrollIntoView`는 쓰지 않는다 — 페이지를 세로로 움직일 수 있다 |
 | 왜 마크업에 그릇을 두나 | §5 원칙. JS가 `<nav>`째 만들면 CSS가 붙잡을 자리를 JS가 정하는 셈이고, 실패 시 흔적 없이 사라져 "원래 없던 것"과 구분이 안 된다 |
 
 ⚠ **`:empty` 가드는 여는 태그와 닫는 태그가 붙어 있을 때만 참이다** — 사이에 줄바꿈을 넣는
@@ -725,7 +736,7 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `.heading-anchor` | 본문 `h2`/`h3` **안쪽 끝** | heading-anchor.js (**상태가 아니라 새 요소다.** 조건 없이 항상 붙는다) |
 | `li.has-toggle` · `li.is-collapsed` / `li.is-expanded` | 사이드바 카테고리 `li` | category.js |
 | `.cat-tree` | 상위 카테고리가 늘어선 `ul` | category.js |
-| `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조. `aria-current`도 같이 — 자기 링크가 지금 페이지면 `"page"`, 가지만 맞으면 `"true"`) |
+| `.cat-chip.is-current` | 모바일 카테고리 칩 | cat-chips.js (현재 가지 — `li.selected` 또는 URL 대조, 글 페이지면 `a.entry-cat` 경로. `aria-current`도 같이 — 자기 링크가 지금 페이지면 `"page"`, 가지만 맞거나 글 페이지면 `"true"`) |
 | `.cat-chips.is-off` | `#cat-chips` 그릇 | cat-chips.js (**칩을 하나도 못 넣고 끝날 때** — 트리를 못 읽었거나 모듈 안 예외. CSS 칩 줄 예약 `.js .cat-chips:empty:not(.is-off)`를 푸는 신호, §5.9·결정 62) |
 
 `body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
@@ -739,12 +750,13 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 위 표에 넣지 않는다(표 첫 칸은 린트 `BND006`·`BND007`이 우리 JS가 만드는 **클래스**로 읽는다).
 **`"page"`는 그 링크가 지금 페이지 자체일 때만 쓴다**(레일·칩 공통, 판정은 `category.isHere()` — 디코딩하고 끝 `/`를 뗀
 경로가 같을 때). 지금 페이지를 품은 가지는 `"page"`가 아니다 — 칩은 하위가 없어 상위 칩이 가지를 대표하므로 `"true"`,
-레일은 하위 링크가 따로 있어 상위 링크에는 붙이지 않는다(결정 63).
+레일은 하위 링크가 따로 있어 상위 링크에는 붙이지 않는다(결정 63). 글 페이지는 다르다 — 지금 페이지가 어느 링크도
+아니라 「이 글이 속한 곳」을 `"true"`로 상위·하위 줄 둘 다에 단다(가지가 접혀 있어 상위 줄만 보이므로, 이슈 #163).
 
 - 목차 — `.toc-link.is-current`와 같은 링크에 `aria-current="location"`. toc.js 스크롤스파이가 둘을 같은 자리에서 옮긴다(§5.1). 떠 있는 목차 시트의 같은 번호 링크도 함께(§5.1b)
-- 사이드바 카테고리 — 티스토리 `li.selected` 중 **자기 링크가 지금 경로인 `li`의 그 링크**에 `aria-current="page"`. category.js(§5.6 「JS가 지키는 것」). URL 대조로 펼친 가지·하위 페이지의 상위 링크에는 붙이지 않는다
+- 사이드바 카테고리 — 티스토리 `li.selected` 중 **자기 링크가 지금 경로인 `li`의 그 링크**에 `aria-current="page"`. category.js(§5.6 「JS가 지키는 것」). URL 대조로 펼친 가지·하위 페이지의 상위 링크에는 붙이지 않는다. **글 페이지에서는** `a.entry-cat` 경로가 가리키는 하위 줄 링크와 그 상위 줄 링크에 `aria-current="true"`(이슈 #163, §5.6) — 가지는 펼치지 않는다
 - 목록 페이징 — 티스토리 `span.selected`(현재 페이지 표시, 결정 53)를 품은 `.paging` 안의 앵커에 `aria-current="page"`. paging.js
-- 모바일 카테고리 칩 — `.cat-chip.is-current`와 함께 `aria-current`. 칩 링크가 지금 페이지면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`. cat-chips.js(§5.9, 위 표)
+- 모바일 카테고리 칩 — `.cat-chip.is-current`와 함께 `aria-current`. 칩 링크가 지금 페이지면 `"page"`, 하위 카테고리 페이지라서 가지만 현재면 `"true"`, 글 페이지에서 그 글의 상위 칩이면 `"true"`. cat-chips.js(§5.9, 위 표)
 
 ### `.toc-toggle`의 `aria-expanded` — 뷰포트에 따라 존재 자체가 달라진다
 

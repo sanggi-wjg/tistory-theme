@@ -141,16 +141,28 @@
 
    li에 붙는 클래스라 자식 ul(하위 목록)까지 물들지 않도록 > a로 한정한다.
    "분류 전체보기"(.link_tit)는 아래 두 목록 어디에도 없어 알약이 붙지 않는다 —
-   그 줄은 border-bottom 구분선을 갖고 있어 알약과 겹친다. 색·굵기만 바뀐다. */
-.tt_category li.selected > a {
+   그 줄은 border-bottom 구분선을 갖고 있어 알약과 겹친다. 색·굵기만 바뀐다.
+
+   **글 페이지에서도 같은 알약을 붙인다** (이슈 #163). 티스토리는 글 페이지에 selected를 안 붙인다 —
+   category.js가 `.entry-cat`의 카테고리 경로로 그 글의 상위·하위 줄 링크에 `aria-current="true"`를
+   붙이고(hooks.md §5.6), 여기서는 그것을 li.selected와 같은 모양으로 받는다. li에 selected·is-expanded를
+   붙이지 않는 것은 아래 미리 접기·접기 규칙이 가지를 펼치지 않게 하려는 것이다 — 가지는 접힌 채
+   상위 줄 알약만 보인다. `"true"`로 좁히고 `[aria-current]`로 넓히지 않는다: `"page"`는 category.js가
+   li.selected 안의 링크에만 붙이므로(결정 63) 이미 위 규칙이 칠하고 있다.
+   특이도는 li.selected 줄과 같은 (0,2,2)/(0,3,2)다 — `> a`를 `li > a`로 적어 맞췄다. */
+.tt_category li.selected > a,
+.tt_category li > a[aria-current="true"] {
   color: var(--link);
   font-weight: 600;
 }
 
-.tt_category li.selected > a .c_cnt { color: var(--link); }
+.tt_category li.selected > a .c_cnt,
+.tt_category li > a[aria-current="true"] .c_cnt { color: var(--link); }
 
 .tt_category .category_list > li.selected > a,
-.tt_category .sub_category_list > li.selected > a {
+.tt_category .sub_category_list > li.selected > a,
+.tt_category .category_list > li > a[aria-current="true"],
+.tt_category .sub_category_list > li > a[aria-current="true"] {
   margin: 0 calc(var(--sp-2) * -1);
   padding: 6px var(--sp-2);
   background: var(--canvas-soft-2);
@@ -254,6 +266,15 @@
    (버튼 24px + 왼쪽 여백 4px = 28px) */
 .side-category .cat-tree > li:not(.has-toggle) > a {
   padding-right: 28px;
+}
+
+/* 현재 줄의 알약은 오른쪽으로 --sp-2만큼 음수 마진을 낸다(위 「현재 보고 있는 카테고리」).
+   위 28px이 그 알약의 6px var(--sp-2)를 순서로 덮으면(둘 다 (0,3,2)) 상자는 8px 넓어졌는데 오른쪽
+   여백은 그대로라 글 수만 8px 오른쪽으로 빠진다 — 하위가 없는 상위(AI·Go·기록 등)가 현재일 때.
+   마진만큼 더해 글 수를 형제와 같은 선에 돌려놓는다. 토글이 있는 줄은 28px 규칙을 안 받아 그대로 맞다. */
+.side-category .cat-tree > li.selected:not(.has-toggle) > a,
+.side-category .cat-tree > li:not(.has-toggle) > a[aria-current="true"] {
+  padding-right: calc(28px + var(--sp-2));
 }
 
 /* ══════════ 에디터 컴포넌트 (data-ke-*) ════════════════════════

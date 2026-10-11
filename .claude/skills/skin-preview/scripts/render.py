@@ -893,7 +893,12 @@ def handle_group(name, attrs, inner, ctx, page, posts):
         if page == "page_bare" and name in BARE_EMPTY_AREAS:
             return ""
         if name == "s_article_prev":
-            return R(inner, {**ctx, **item_scope(posts[1], "article_prev", page)})
+            # page_toc는 대표이미지 없는 이전 글을 그린다 — 빈 상자를 카테고리 삽화로 채우는 경우(#161).
+            # page는 대표이미지 있는 경우 그대로. 둘 다 없으면 한쪽 경우가 프리뷰에서 사라진다.
+            prev = posts[1]
+            if page == "page_toc":
+                prev = next((q for q in posts[1:] if not q["hasThumbnail"]), prev)
+            return R(inner, {**ctx, **item_scope(prev, "article_prev", page)})
         if name == "s_article_next":
             return R(inner, {**ctx, **item_scope(posts[2], "article_next", page)})
         if name == "s_rp":
