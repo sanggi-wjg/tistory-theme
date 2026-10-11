@@ -1670,6 +1670,36 @@ skin-style의 넓은 표본(글 8편·태그 × 3폭 = 27경우, 폰트를 막�
 **다시 열 근거.** 티스토리 관리 화면의 페이지당 글 수가 바뀌어 1 + 6의 배수(3열·2열을 둘 다 채우는 수)가 깨질 때. 그때 1페이지로 한정하려면
 `#tt-body-index:has(.paging-prev.no-more-prev)`가 CSS 단독 경로다(1페이지에서만 붙는 클래스, 결정 53 — 반복 치환자는 페이지 번호를 주지 않는다).
 
+**결정 71 — 코드블록과 인라인 코드의 합자를 끈다. 인라인 코드는 토큰 한가운데서 끊지 않는다 (2026-10-11).**
+
+이슈 #158 `code-ligatures` · #156 `inline-code-break-all`. 2026-10-11 UI/UX 검토(라이브, 헤드리스 Chrome)에서 찾았고, 둘 다 정해진 적 없는 값이었다.
+
+**합자.** JetBrains Mono는 기본으로 `calt` 합자를 켠다. 「타이밍 어택, 어디까지 막아야 할까?」 첫 코드블록의
+`if request_value != secret_value:`가 `≠`로, `if __name__ == "__main__"`의 `==`가 긴 등호 한 글자로 그려졌다. 비교 연산자를
+설명하는 글에서 독자가 보는 글자가 원문과 다르고, 복사하면 원문이 나와 화면과 붙여넣기가 어긋난다. 표본 7편의 코드블록 43개 중 13개에
+그런 연산자(`->` `!=` `==` `=>` `&&` `?:`)가 있었다. 취향이 갈리는 값이라 사용자에게 넘겼고 **사용자가 끄는 쪽으로 정했다**(2026-10-11).
+`content.css`의 `.contents_style pre`·`.contents_style code`에 `font-variant-ligatures: none`을 둔다. 이 합자는 `calt`라 `no-common-ligatures`로는
+꺼지지 않는다 — 헤드리스 Chrome에서 `none`과 `font-feature-settings: "calt" 0`의 렌더가 같았고 `no-common-ligatures`는 기본값과 같았다.
+
+**인라인 코드 줄바꿈.** `.contents_style code`의 `word-break: break-all`이 한 줄에 들어가는 식별자도 한가운데서 끊어, 조각마다 상자를
+가졌다. 「타이밍 어택」 첫 `h2`의 `==`가 `=` 상자 둘로 갈렸다(라이브 390px 인라인 코드 24개 중 5개, 1440px에서도 1개, DI 글은 `Le|g`·`Bio|nicArm`).
+`word-break: normal` + `overflow-wrap: anywhere`로 바꿨다. 영숫자 사이는 한 줄을 못 넘을 때(긴 URL·경로)만 끊기고, `break-word`와 달리
+min-content에 들어가 표 칸 안에서도 표를 밀지 않는다. **하이픈·공백 뒤는 원래 줄바꿈 자리라 넘치지 않아도 갈린다**(360px `--ink-|body`) —
+그것만 막고 비상 줄바꿈은 살리는 CSS 값이 없어 받아들였다. 코드블록 안 `<code>`는 줄바꿈 값(`word-break`·`overflow-wrap`)을 `pre`에서 물려받게
+끊어 둔다(`inherit`) — 첫 판은 `pre code`의 `word-break`를 지워 인라인 규칙 값이 코드블록으로 새는 결합이 생겼고, 인쇄(`pre-wrap`)에서 1,777자 줄이
+어디서 접히는지를 그 값이 정한다(코드 리뷰). 체크포인트 실측: 쪼개진 인라인 코드 「타이밍 어택」 390px 5 → 0 · 1440px 1 → 0, DI 3 → 0,
+가로 넘침은 360~1440px 전부 0.
+
+같은 PR에서 640px 이하 「'카테고리'의 다른 글」 제목을 2줄로 늘렸다(이슈 #157 `related-title-clamp-mobile`). 결정이 아니라 문턱 하나라 DESIGN §4 표에 적었다.
+
+**못 본 것.** Safari·Firefox의 `font-variant-ligatures: none`(스펙상 `calt`까지 끈다). Safari 15.4 미만은 `overflow-wrap: anywhere`를 버리고
+`body`의 `break-word`로 물러난다 — `break-word`는 min-content를 낮추지 않아, 그 브라우저에서는 표 칸 안 긴 URL 인라인 코드가 표를 넓힌다(`break-all` 때는 끊겼다).
+
+**지키는 검사.** 체크포인트가 «셋 중 무엇을 되돌려도 `npm run check`가 초록»임을 재현했다 — 프리뷰 픽스처에 그릴 내용이 없었고
+속성을 보는 규칙도 없었다. 그래서 린트 `TYP001`(인라인 코드 `break-all`)·`TYP002`(합자 선언)·`TYP003`(640px 이하 관련 글 2줄)을 내고
+`test-syntax-checks.py`에 기준선 1·변이 9를 붙였다 — 첫 판은 기본 규칙의 선언만 봐서, 코드 리뷰가 낸 우회 경로(더 구체적인 `code` 선택자, 합자를 `normal`로 되돌리는 `font` 단축·`font: inherit`, `print and` 질의)와 값 되돌림(clamp 1·그리드 제거)도 잡게 넓혔다. 프리뷰 본문에는 kotlin 코드블록(`!=` `==` `->`)과 인라인 `==`·짧은 식별자·긴 URL,
+소제목 안 인라인 코드를 넣었다(이슈 #165 `code-fixture-ligature-wrap`). 린트는 **선언이 있는가**까지만 본다 — 이기는지는 프리뷰에서 눈으로 본다.
+
 ---
 
 ## 2. 플랫폼 제약 (사실)

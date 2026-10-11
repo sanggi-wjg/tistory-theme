@@ -60,6 +60,12 @@ open _preview/index.html
 - **마크다운 펜스 3종** — `<code class="language-python">`(칠하고 라벨) ·
   `language-typescript`(번들에 없어 **라벨만**) · `language-info`(언어가 아니라
   표식·오타 부류라 **라벨도 안 붙는다**). 결정 43의 세 갈래를 화면에서 가른다
+- **합자·줄바꿈 표본** — `language-kotlin` 블록에 `!=` `==` `&&` `>=` `->` `..`, 그 앞 문단에 인라인
+  `==`·`!=`·짧은 식별자(`BionicArm`·`WheelLegAdapter`)·긴 URL, 소제목 `<code>maxLifetime</code>`.
+  연산자가 한 글자(`≠`·긴 등호·화살표)로 그려지면 합자가 켜진 것이고, 짧은 식별자가 한가운데서 끊기면
+  인라인 코드가 `break-all`로 돌아간 것이다(결정 71). 긴 URL은 줄 끝에서 끊기고 390px 가로 넘침은 0이어야 한다.
+  2026-10-11까지 픽스처에 합자 연산자가 없어 「타이밍 어택」 글의 `≠`가 라이브에서만 보였다. 되돌림은 린트
+  `TYP001`·`TYP002`가 막는다(이슈 #165)
 - **12줄짜리 코드블록** — `code.js`의 `LINES_FOR_NUMBERS`(8)를 넘겨 줄번호 거터를
   켠다. 2026-08-27까지 픽스처 최대가 5줄이라 `.code-wrap.has-lines`와
   `.code-lines`의 CSS `counter` 번호가 **로컬에서 한 번도 그려진 적이 없었다**
