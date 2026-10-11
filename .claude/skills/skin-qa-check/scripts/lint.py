@@ -1872,6 +1872,103 @@ def lint_doc_line_refs(root):
                         "%s %d행" % (rel, i))
 
 
+
+# 결정 번호 참조 — `결정 36-b`의 36은 잡고, `사용자 결정 2026-10-08` 같은 날짜는 안 잡는다. 여러 번호를 한 번에 쓴
+# `결정 5·6`·`결정 53·68`·`결정 63~68`(범위는 양 끝)도 번호마다 본다 — 첫 번호만 보면 둘째 이후가 빠진다(코드 리뷰).
+DECISION_REF = re.compile(r"결정\s*(\d{1,3}(?:\s*[·,~]\s*\d{1,3})*)(?!\d|-\d)")
+# 참조를 찾는 파일 — 문서와 코드 주석이 결정을 가리킨다.
+DECISION_REF_EXT = (".md", ".css", ".js", ".mjs", ".py", ".html", ".xml", ".json", ".txt")
+# `posts/`는 블로그 원고, `worktrees`는 Claude Code가 `.claude/worktrees/`에 두는 **다른 브랜치의** 체크아웃이다 —
+# 거기서 먼저 적은 결정이 이 체크아웃엔 없어 로컬에서만 빨개진다(CI엔 그 폴더가 없다).
+DECISION_REF_SKIP_DIRS = DOC_SKIP_DIRS | {"posts", "worktrees"}
+# blog-census가 크롤로 쓰는 파일 — 글 제목·카테고리 이름 같은 산문이라 「결정」이 섞일 수 있다.
+DECISION_REF_SKIP_FILES = {os.path.join("data", "posts.json"), os.path.join("data", "categories.json")}
+
+
+def defined_decisions(text):
+    """`DECISIONS.md`가 **정의한** 결정 번호 — §1(`## 2.` 앞)만 본다.
+
+    정의 형식이 둘이다 — 결정 표의 행(머리 첫 칸이 `#`인 표의 첫 칸, 결정 1~38·46·47)과 굵은 머리 `**결정 N — …`
+    (결정 36·39 이후). 머리 첫 칸이 `#`가 아닌 표(같은 절의 폭 실측 `| 1240 | 24 | …`)는 결정이 아니다. §1 밖의 굵은 머리
+    (§4 미결의 후보 같은 것)는 정해지지 않은 것이라 세지 않는다.
+    """
+    head = text.split("\n## 2.", 1)[0]
+    found, table = set(), None   # table: None = 표 밖, True/False = 결정 표인가
+    for line in head.split("\n"):
+        if not line.startswith("|"):
+            table = None
+            continue
+        first = line.strip().strip("|").split("|")[0].strip()
+        if table is None:
+            table = first == "#"   # 머리 행에서 이 표가 결정 표인지 정한다
+        elif table and re.fullmatch(r"\d+", first):
+            found.add(int(first))
+    found |= {int(n) for n in re.findall(r"^\*\*결정 (\d+) —", head, re.M)}
+    return found
+
+
+def decision_numbers(ref):
+    """`5·6` → [5, 6], `63~68` → [63, 68](범위는 양 끝만 — 사이의 걷은 번호 23·24가 범위 안에 있어도 탓하지 않는다)."""
+    return [int(n) for n in re.findall(r"\d+", ref)]
+
+
+def lint_decision_refs(root):
+    """소스·문서가 가리키는 `결정 N`이 `DECISIONS.md`에 정의돼 있는가 — DOC002 (이슈 #166).
+
+    2026-10-11 `code-wrap-related-clamp` 체크포인트에서 `content.css` 주석과 `DESIGN.md` 세 곳이 「결정 71」을 가리키는데
+    `DECISIONS.md`는 결정 70에서 끝나 있었고, `npm run check`는 19단계 모두 초록이었다. 결정 번호는 여러 브랜치가 동시에
+    붙이면 겹치고(CLAUDE.md 「번호로 식별하는 목록」), 결정을 적기 전에 코드가 먼저 그 번호를 가리키는 부류도 생긴다 —
+    둘 다 «없는 결정을 가리키는» 같은 모양으로 드러난다.
+
+    ⚠ **번호가 있는가**만 본다. 그 결정이 그 문장의 내용과 맞는지(엉뚱한 번호를 가리키는지)는 모른다.
+      걷어 낸 번호(23·24 — 재사용하지 않는다)를 가리키면 그것도 잡힌다 — 걷은 결정을 아직 근거로 대는 문장이다.
+      UTF-8이 아닌 파일은 깨진 글자를 버리고 읽는다 — 한 파일 때문에 린트 전체가 죽지 않게.
+    """
+    dec = read(os.path.join(root, "DECISIONS.md"))
+    if not dec:
+        return
+    defined = defined_decisions(dec)
+    if not defined:
+        err("DOC002", "`DECISIONS.md` §1에서 정의된 결정을 하나도 못 찾았다 — 정의 형식(머리 첫 칸이 `#`인 결정 표·"
+            "`**결정 N —`)이 바뀌었으면 이 검사도 같이 옮긴다.", "DECISIONS.md")
+        return
+    bad = {}
+    for dirpath, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if d not in DECISION_REF_SKIP_DIRS and not d.startswith("_workspace"))
+        for f in sorted(files):
+            path = os.path.join(dirpath, f)
+            rel = os.path.relpath(path, root)
+            if not f.endswith(DECISION_REF_EXT) or rel in DECISION_REF_SKIP_FILES:
+                continue
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+            for i, line in enumerate(text.split("\n"), 1):
+                for m in DECISION_REF.finditer(line):
+                    for n in decision_numbers(m.group(1)):
+                        if n not in defined:
+                            bad.setdefault(n, []).append("%s %d행" % (rel, i))
+    for n in sorted(bad):
+        err("DOC002", "「결정 %d」을 가리키는데 `DECISIONS.md`에 그 결정이 없다(정의된 최대 %d) — 결정을 먼저 적거나 참조를 "
+            "고친다. 동시 작업이 같은 번호를 집었을 수도 있다: %s%s"
+            % (n, max(defined), ", ".join(bad[n][:4]), " 외 %d곳" % (len(bad[n]) - 4) if len(bad[n]) > 4 else ""),
+            bad[n][0])
+
+
+def emit_and_exit(as_json):
+    """결과를 내고 끝낸다 — 스킨이 없어 문서 규칙만 돈 경로와 전체 경로가 같은 형식을 쓴다."""
+    if as_json:
+        print(json.dumps({"errors": ERRORS, "warnings": WARNINGS, "info": INFO},
+                         ensure_ascii=False, indent=1))
+    else:
+        for it in ERRORS:
+            print("❌ [%s] %s\n     %s" % (it["code"], it["message"], it["where"]))
+        for it in WARNINGS:
+            print("⚠️  [%s] %s\n     %s" % (it["code"], it["message"], it["where"]))
+        for m in INFO:
+            print("ℹ️  %s" % m)
+        print("\n오류 %d · 경고 %d" % (len(ERRORS), len(WARNINGS)))
+    sys.exit(1 if ERRORS else 0)
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
@@ -1881,9 +1978,12 @@ def main():
     xml = read(os.path.join(SRC, "index.xml"))
     if skin is None:
         # 검사할 대상이 없는 것은 실패가 아니다. 구현 전에도 npm run check가 통과해야
-        # 문서·인프라 변경을 커밋할 수 있다.
-        print("ℹ️  src/skin.html이 없어 검사할 대상이 없다. 아직 구현 전이면 정상이다.")
-        sys.exit(0)
+        # 문서·인프라 변경을 커밋할 수 있다. 다만 문서 규칙(DOC001·DOC002)은 스킨이 없어도 돈다 —
+        # 전에는 여기서 바로 빠져나가 「skin.html이 없어도 돈다」던 SKILL.md 문장이 거짓이었다.
+        lint_doc_line_refs(ROOT)
+        lint_decision_refs(ROOT)
+        info("src/skin.html이 없어 스킨 규칙은 건너뛰었다(문서 규칙만 돌았다). 아직 구현 전이면 정상이다.")
+        emit_and_exit(args.json)
 
     # src/styles와 dist/style.css를 모두 읽는다.
     # 인라인 스타일 보정 규칙은 빌드가 data/inline-styles.json에서 생성해
@@ -1947,20 +2047,9 @@ def main():
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.
     lint_doc_line_refs(ROOT)
+    lint_decision_refs(ROOT)
 
-    if args.json:
-        print(json.dumps({"errors": ERRORS, "warnings": WARNINGS, "info": INFO},
-                         ensure_ascii=False, indent=1))
-    else:
-        for it in ERRORS:
-            print("❌ [%s] %s\n     %s" % (it["code"], it["message"], it["where"]))
-        for it in WARNINGS:
-            print("⚠️  [%s] %s\n     %s" % (it["code"], it["message"], it["where"]))
-        for m in INFO:
-            print("ℹ️  %s" % m)
-        print("\n오류 %d · 경고 %d" % (len(ERRORS), len(WARNINGS)))
-
-    sys.exit(1 if ERRORS else 0)
+    emit_and_exit(args.json)
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py   # TIS005 (
 python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py       # TOK007
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
-python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·SYN003·BND004·BND010③·BND011·BND012·BND013·TIS006·TYP001~003·DOC001·test:codes
+python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·SYN003·BND004·BND010③·BND011·BND012·BND013·TIS006·TYP001~003·DOC001·DOC002·test:codes
 ```
 
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다
@@ -91,7 +91,8 @@ python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·
 | `TYP003` | **640px 이하 「'카테고리'의 다른 글」 제목이 2줄이고 날짜가 아래 줄인가 (오류).** 화면에 걸리는 `(max-width: 640px)` 질의 안에 `.related-text` `-webkit-line-clamp: 2`·`.related-link` `display: grid`·`.related-thumb` `grid-row: span 2`가 있고, 기본 `.related-text`가 clamp가 듣는 `display: -webkit-box`·`-webkit-box-orient: vertical`인지 본다. `print and …`·`… and (hover: hover)` 질의는 인정하지 않는다. 1줄이면 390px에서 제목 칸이 205px라 연재 편이 같은 문장으로 잘렸다(이슈 #157, DESIGN §4 문턱 표). TYP001~003은 **선언이 있는가**까지만 본다 — 특이도는 재지 않고, 화면에서 이기는지는 프리뷰 본문 픽스처(`==`·`!=`·긴 URL 인라인 코드, kotlin 코드블록)를 눈으로 본다. 2026-10-11 체크포인트가 «셋 중 무엇을 되돌려도 `npm run check`가 초록»임을 재현해 낸 규칙이고(이슈 #165), 우회 경로는 같은 날 코드 리뷰가 낸 것을 막았다. 변이 4(규칙 사라짐·clamp 1·그리드 제거·`print and`) |
 | `ROB001~002`, `A11Y001~002` | `localStorage` try/catch, `MutationObserver`, `lang`, viewport |
 | `SEO001~005` | 반복 블록 안의 `h1`, 내부링크 치환자 누락, `<title>` 템플릿, `img` alt, `BreadcrumbList` |
-| `DOC001` | **문서(`*.md` 전부)의 `파일:줄번호` 인용 (오류).** 줄번호는 그 위에 한 줄만 들어가도 조용히 다른 줄을 가리킨다 — 2026-08-26 한 세션에서 5건이 썩어 있었고 그중 둘은 **쓴 PR에서 리뷰가 놓쳤다**, 2026-08-27 전체 대조에서 20건 중 1건. `` `code.js`의 `LANGS` `` 같은 심볼 인용은 줄이 밀려도 안 썩는다. **심볼의 존재는 검사하지 않는다** — 이름을 바꾸면 저장소 전체를 훑는 규범(CLAUDE.md)이 이미 있고, 검증기 비용이 남은 인용 수를 넘는다. 스킨이 아니라 문서를 보는 유일한 규칙이라 `skin.html`이 없어도 돈다. `test-syntax-checks.py`에 켜지는 케이스 2·오탐 케이스 1 (결정 54) |
+| `DOC001` | **문서(`*.md` 전부)의 `파일:줄번호` 인용 (오류).** 줄번호는 그 위에 한 줄만 들어가도 조용히 다른 줄을 가리킨다 — 2026-08-26 한 세션에서 5건이 썩어 있었고 그중 둘은 **쓴 PR에서 리뷰가 놓쳤다**, 2026-08-27 전체 대조에서 20건 중 1건. `` `code.js`의 `LANGS` `` 같은 심볼 인용은 줄이 밀려도 안 썩는다. **심볼의 존재는 검사하지 않는다** — 이름을 바꾸면 저장소 전체를 훑는 규범(CLAUDE.md)이 이미 있고, 검증기 비용이 남은 인용 수를 넘는다. 스킨이 아니라 문서를 보는 규칙이라(`DOC002`도 같다) `skin.html`이 없어도 돈다. `test-syntax-checks.py`에 켜지는 케이스 2·오탐 케이스 1 (결정 54) |
+| `DOC002` | **소스·문서가 가리키는 `결정 N`이 `DECISIONS.md`에 정의돼 있는가 (오류).** 정의는 §1(`## 2.` 앞)의 결정 표(머리 첫 칸이 `#`인 표의 첫 칸)와 굵은 머리 `**결정 N —`, 둘 다 센다 — §4 미결의 굵은 머리는 정해진 것이 아니라 안 센다. 저장소 전체(`.claude/` 포함, `posts/`·`.claude/worktrees/`·`node_modules`·`dist`·`_preview`·`_workspace*`, 크롤 산출물 `data/posts.json`·`categories.json` 제외)의 `.md`·`.css`·`.js`·`.mjs`·`.py`·`.html`·`.xml`·`.json`·`.txt`에서 `결정 N`을 찾는다 — `결정 5·6`·`결정 63~68`(범위는 양 끝)처럼 여러 번호도 번호마다, `결정 36-b`의 36은 잡고 날짜(`결정 2026-10-08`)는 안 잡는다. UTF-8이 아닌 파일은 깨진 글자를 버리고 읽는다. 2026-10-11 `content.css`·`DESIGN.md`가 아직 안 적힌 「결정 71」을 가리키는데 `npm run check`가 초록이었다(이슈 #166). 결정 번호는 여러 브랜치가 동시에 붙이면 겹치고, 결정을 적기 전에 코드가 먼저 가리키는 부류도 같은 모양이다. 걷은 번호(23·24)를 가리켜도 잡는다. **번호가 있는가**만 보고 그 결정이 문장 내용과 맞는지는 모른다. `test-syntax-checks.py`에 기준선 1·변이 4(없는 번호·굵은 머리 삭제·둘째 번호·표 행 삭제)·오탐 방지 1 — 변이 번호는 서식으로 넣는다(그 파일도 검사 대상이다) |
 
 ## SEO 규칙 — 화면으로는 절대 안 보이는 것
 
