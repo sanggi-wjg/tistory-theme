@@ -8,6 +8,7 @@
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
   BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
   BND012  lint.py                 공지 본문 그릇에서 contents_style을 빼거나 그릇 이름을 바꾸면 잡는다 (이슈 #97)
+  TYP001~003 lint.py              인라인 코드 break-all·코드 합자·640px 이하 관련 글 2줄의 값 되돌림·우회 경로를 잡는다 (결정 71)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
@@ -255,6 +256,91 @@ def c_notice_hit(root):
 def c_notice_gone(root):
     edit(root, "src/skin.html", lambda s: re.sub(r"\bnotice-body\b", "notice-text", s))
     return any("찾지 못했다" in m for m in lint_codes(root, "BND012"))
+
+
+# ── TYP001~003 ──
+# 앵커는 속성 이름·클래스 토큰·640px 질의뿐이다 — 규칙을 쪼개거나 옮겨도 변이가 같은 곳을 친다.
+# 값 되돌림과 우회 경로(더 구체적인 선택자·font 단축·화면에 안 걸리는 질의)는 2026-10-11 코드 리뷰가 낸 것이다 —
+# 「규칙이 사라짐」만 시험하면 값이 1로 돌아가도 검사가 잡는지 증명하지 못한다.
+def edit_640_block(s, needle, fn):
+    """`(max-width: 640px)` 블록 중 needle을 담은 첫 블록의 (질의, 본문)을 fn으로 바꾼다."""
+    for m in re.finditer(r"@media\s*([^{]+)\{", s):
+        if re.sub(r"\s+", "", m.group(1)) != "(max-width:640px)":
+            continue
+        depth, i = 1, m.end()
+        while i < len(s) and depth:
+            depth += {"{": 1, "}": -1}.get(s[i], 0)
+            i += 1
+        inner = s[m.end():i - 1]
+        if needle in inner:
+            q, inner = fn(m.group(1), inner)
+            return s[:m.start()] + "@media " + q + "{" + inner + "}" + s[i:]
+    return s
+
+
+TYP = ("TYP001", "TYP002", "TYP003")
+
+
+@case("TYP001~003 기준선 — 인라인 코드 break-all 없음·합자 끔·640px 이하 관련 글 2줄", False)
+def c_typ_base(root):
+    return any(lint_codes(root, c) for c in TYP)
+
+
+@case("TYP001 인라인 코드에 break-all을 되돌리면 잡는다", True)
+def c_typ001_hit(root):
+    edit(root, "src/styles/content.css", lambda s: s + "\n.contents_style code { word-break: break-all; }\n")
+    return any("break-all" in m for m in lint_codes(root, "TYP001"))
+
+
+@case("TYP001 더 구체적인 선택자(`:not(pre) > code`)로 되살려도 잡는다", True)
+def c_typ001_specific(root):
+    edit(root, "src/styles/content.css", lambda s: s + "\n.contents_style :not(pre) > code { word-break: break-all; }\n")
+    return any(":not(pre)" in m for m in lint_codes(root, "TYP001"))
+
+
+@case("TYP002 합자 선언을 지우면 잡는다", True)
+def c_typ002_hit(root):
+    edit(root, "src/styles/content.css", lambda s: re.sub(r"font-variant-ligatures\s*:\s*none\s*;?", "", s))
+    return any(".contents_style pre" in m for m in lint_codes(root, "TYP002"))
+
+
+@case("TYP002 다른 규칙이 합자를 normal로 되돌리면 잡는다", True)
+def c_typ002_undo(root):
+    edit(root, "src/styles/content.css", lambda s: s + "\n.contents_style h3 code { font-variant-ligatures: normal; }\n")
+    return any("h3 code" in m for m in lint_codes(root, "TYP002"))
+
+
+@case("TYP002 font 단축(소제목 code의 font: inherit)이 합자를 되돌리면 잡는다", True)
+def c_typ002_font(root):
+    edit(root, "src/styles/content.css", lambda s: s + "\n.contents_style h2 code { font: inherit; }\n")
+    return any("h2 code" in m for m in lint_codes(root, "TYP002"))
+
+
+@case("TYP003 640px 이하 관련 글 제목 규칙이 사라지면 잡는다", True)
+def c_typ003_hit(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(r"\.related-text\b", ".related-txt", s))
+    return bool(lint_codes(root, "TYP003"))
+
+
+@case("TYP003 640px 질의 안 clamp를 1로 되돌리면 잡는다", True)
+def c_typ003_value(root):
+    edit(root, "src/styles/components.css", lambda s: edit_640_block(
+        s, ".related-text", lambda q, b: (q, re.sub(r"(-webkit-line-clamp\s*:\s*)2", r"\g<1>1", b))))
+    return any("line-clamp" in m for m in lint_codes(root, "TYP003"))
+
+
+@case("TYP003 640px 질의 안 그리드를 지우면(날짜가 제목 옆으로) 잡는다", True)
+def c_typ003_grid(root):
+    edit(root, "src/styles/components.css", lambda s: edit_640_block(
+        s, ".related-text", lambda q, b: (q, re.sub(r"display\s*:\s*grid", "display: flex", b))))
+    return any("display: grid" in m for m in lint_codes(root, "TYP003"))
+
+
+@case("TYP003 질의를 화면에 안 걸리는 `print and`로 옮기면 잡는다", True)
+def c_typ003_print(root):
+    edit(root, "src/styles/components.css", lambda s: edit_640_block(
+        s, ".related-text", lambda q, b: ("print and " + q, b)))
+    return bool(lint_codes(root, "TYP003"))
 
 
 # ── DOC001 ──

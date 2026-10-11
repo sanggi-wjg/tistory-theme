@@ -418,7 +418,7 @@ Total: reserved=2841MB, committed=1974MB
 -  Internal (reserved=612MB, committed=612MB)
 -      Thread (reserved=318MB, committed=318MB)</code></pre>
 <p><figure class="imageblock alignCenter" data-ke-mobileStyle="widthOrigin" data-origin-width="800" data-origin-height="450"><span data-url="https://placehold.co/800x450/eeeeee/999999?text=original+800" data-phocus="https://placehold.co/800x450/eeeeee/999999?text=original+800"><img src="https://placehold.co/800x450/eeeeee/999999?text=original+800" srcset="https://placehold.co/400x225/eeeeee/999999?text=srcset+thumb+400" alt="" loading="lazy" width="800" height="450" data-origin-width="800" data-origin-height="450"></span><figcaption>논힙 메모리 추이</figcaption></figure></p>
-<h2 data-ke-size="size26"><span style="color: #252525;">maxLifetime 조정과 검증</span></h2>
+<h2 data-ke-size="size26"><span style="color: #252525;"><code>maxLifetime</code> 조정과 검증</span></h2>
 <p data-ke-size="size16" style="background-color: #f8f8f8;">설정을 바꾼 뒤 24시간 동안 RSS 추이를 관찰했다. 증가 곡선이 사라졌다.</p>
 <table><thead><tr><th>항목</th><th>변경 전</th><th>변경 후</th><th>비고</th></tr></thead>
 <tbody><tr><td>maxLifetime</td><td>1800s</td><td>240s</td><td>wait_timeout 300s</td></tr>
@@ -443,6 +443,11 @@ Total: reserved=2841MB, committed=1974MB
   return (bytes / 1024 / 1024).toFixed(1) + "MB"
 }</code></pre>
 <pre><code class="language-info">이건 언어 이름이 아니다. 펜스에는 표식이나 오타도 들어오므로 라벨이 붙으면 안 된다.</code></pre>
+<p data-ke-size="size16">비교는 <code>==</code>나 <code>!=</code>가 아니라 <code>hmac.compare_digest()</code>로 한다. 아래 블록의 연산자가 한 글자(≠·긴 등호·화살표)로 그려지면 합자가 켜진 것이다 (결정 71). 긴 경로 <code>https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing#the-formula-for-pool-size</code>는 줄 끝에서만 끊겨야 하고, 짧은 식별자 <code>BionicArm</code>·<code>WheelLegAdapter</code>는 한가운데서 끊기면 안 된다.</p>
+<pre><code class="language-kotlin">if (requestValue != secretValue) throw SecurityException("mismatch")
+check(pool.size == 10 &amp;&amp; pool.idle &gt;= 2)
+val toMb: (Long) -&gt; Double = { it / 1024.0 / 1024.0 }
+val label = when (count) { in 0..9 -&gt; "한 자리" else -&gt; "그 밖" }</code></pre>
 <p data-ke-size="size16"><a href="https://github.com/brettwooldridge/HikariCP">HikariCP 공식 문서</a>와 <a href="https://sanggi-jayg.tistory.com/entry/prev">1편</a>을 함께 보면 좋다.</p>
 <p data-ke-size="size16"><span style="color: #eeffff;">라이트 모드에서 안 보이는 색으로 쓴 문장이다.</span></p>
 <p data-ke-size="size16">아래 두 색은 <strong>강조색</strong>이라 빌드 생성기가 죽이지 않고 <strong>토큰으로 옮긴다</strong> — 나머지 색은 전부 <code>--ink-body</code>로 눌린다. 이 두 갈래 중 강조 쪽이 프리뷰에 없어서, 결정 44가 <code>--error</code>를 "쓰는 데가 없다"고 잘못 적었다: <span style="color: #006dd7;">파랑 강조 #006dd7는 다크에서 --link로 간다 (실측 12곳).</span> <span style="color: #ee2323;">빨강 강조 #ee2323는 다크에서 --error로 간다 (실측 10곳) — <strong>--error의 유일한 사용처다.</strong></span></p>
