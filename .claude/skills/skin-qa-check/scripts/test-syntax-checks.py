@@ -8,6 +8,7 @@
   BND011  lint.py                 썸네일 그룹 안에 상자(span)를 넣으면 잡는다 (결정 57)
   BND010③ lint.py                목차 aside를 main 뒤로 되돌리거나 3단 order를 지우면 잡는다 (결정 64)
   BND012  lint.py                 공지 본문 그릇에서 contents_style을 빼거나 그릇 이름을 바꾸면 잡는다 (이슈 #97)
+  TYP001~003 lint.py              인라인 코드 break-all·코드 합자·640px 이하 관련 글 2줄을 되돌리면 잡는다 (결정 71)
   DOC001  lint.py                 문서에 `파일:줄` 인용을 넣으면 잡고, URL·심볼 인용은 안 잡는다
   test:codes                      lint.py에서 호출을 지우면 빨간불
 
@@ -255,6 +256,31 @@ def c_notice_hit(root):
 def c_notice_gone(root):
     edit(root, "src/skin.html", lambda s: re.sub(r"\bnotice-body\b", "notice-text", s))
     return any("찾지 못했다" in m for m in lint_codes(root, "BND012"))
+
+
+# ── TYP001~003 ──
+# 앵커는 속성 이름과 클래스 토큰뿐이다 — 규칙을 쪼개거나 옮겨도 변이가 같은 곳을 친다.
+@case("TYP001~003 기준선 — 인라인 코드 break-all 없음·합자 끔·640px 이하 관련 글 2줄", False)
+def c_typ_base(root):
+    return any(lint_codes(root, c) for c in ("TYP001", "TYP002", "TYP003"))
+
+
+@case("TYP001 인라인 코드에 break-all을 되돌리면 잡는다", True)
+def c_typ001_hit(root):
+    edit(root, "src/styles/content.css", lambda s: s + "\n.contents_style code { word-break: break-all; }\n")
+    return any("break-all" in m for m in lint_codes(root, "TYP001"))
+
+
+@case("TYP002 합자 선언을 지우면 잡는다", True)
+def c_typ002_hit(root):
+    edit(root, "src/styles/content.css", lambda s: re.sub(r"font-variant-ligatures\s*:\s*none\s*;?", "", s))
+    return any(".contents_style pre" in m for m in lint_codes(root, "TYP002"))
+
+
+@case("TYP003 640px 이하 관련 글 제목 규칙이 사라지면 잡는다", True)
+def c_typ003_hit(root):
+    edit(root, "src/styles/components.css", lambda s: re.sub(r"\.related-text\b", ".related-txt", s))
+    return bool(lint_codes(root, "TYP003"))
 
 
 # ── DOC001 ──

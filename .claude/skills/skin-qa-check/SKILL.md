@@ -31,7 +31,7 @@ python3 .claude/skills/skin-qa-check/scripts/test-namecard-scope.py   # TIS005 (
 python3 .claude/skills/skin-qa-check/scripts/test-markup-css.py       # BND009
 python3 .claude/skills/skin-qa-check/scripts/test-image-refs.py       # TOK007
 python3 .claude/skills/skin-qa-check/scripts/test-lint-codes.py       # 이 표 자신
-python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·SYN003·BND004·BND010③·BND011·BND012·DOC001·test:codes
+python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·SYN002·SYN003·BND004·BND010③·BND011·BND012·TYP001~003·DOC001·test:codes
 ```
 
 `BND006`·`BND007`은 저장소 사본을 **일부러 망가뜨려** 그 코드가 뜨는지 확인한다
@@ -84,6 +84,9 @@ python3 .claude/skills/skin-qa-check/scripts/test-syntax-checks.py    # SYN001·
 | `TIS004` | **티스토리가 색이 아닌 속성을 덮는 자리에 (1,2,1) 짝이 있는가 (오류).** `TIS001`과 상대는 같은 시트인데 축을 나눈 이유는 **드러나는 방식**이다 — 색은 다크에서 "안 보인다"로 신고되지만 굵기·크기는 **두 테마 모두 멀쩡해 보인다.** 우리 값이 그냥 반영되지 않을 뿐이라 보고 있어도 모른다. **속성 선택자만 뗀 모양은 따로 잡는다** — `[data-ke-size]`를 떼면 (1,1,1)로 내려가 상대와 같아지고, 「썼는데 지는」 상태는 아예 없는 것보다 나쁘다 (결정 36-b) |
 | `HLJS002` | 구문 색이 **코드 전용 토큰**(`--code-*`)을 쓰는가 (오류). 범용 토큰을 빌려 쓰면 누가 그것을 다른 이유로 조정할 때 코드블록이 조용히 같이 움직인다 — `--link`를 "링크니까 흰 배경 기준으로" 잡았다가 코드블록 위에서 AA 미달이 드러난 전례가 있다(§8.1). **무채색으로 남기기로 한 자리**(`--ink-body` 속성·변수, `--ink-mute` 메타·태그)만 예외다. 결정 44 |
 | `HLJS001` | `.hljs-*` 구문 색 선택자에 `.hljs ` 접두가 있는가. 없으면 나중에 실리는 `atom-one-light`이 순서로 이겨 팔레트가 통째로 무효가 된다 |
+| `TYP001` | **인라인 코드(`.contents_style code`)에 `word-break: break-all`이 없는가 (오류).** 있으면 한 줄에 들어가는 식별자도 한가운데서 끊겨 조각마다 상자를 가진다 — 「타이밍 어택」 첫 `h2`의 `==`가 `=` 상자 둘로 갈렸다(라이브 390px 24개 중 5개, 결정 71). 규칙을 못 찾아도 오류다. `test-syntax-checks.py`에 기준선 1(셋 공통)·켜지는 변이 1 |
+| `TYP002` | **코드블록(`.contents_style pre`)과 인라인 코드가 `font-variant-ligatures: none`을 선언하는가 (오류).** 없으면 JetBrains Mono의 `calt` 합자가 `!=`를 `≠`로, `==`를 긴 등호로 그려 원문과 다른 글자가 보인다(결정 71). `no-common-ligatures`로는 안 꺼지므로 `none`만 인정한다. 켜지는 변이 1 |
+| `TYP003` | **640px 이하 `@media`에서 `.related-text`가 `-webkit-line-clamp: 2`인가 (오류).** 1줄이면 390px에서 「'카테고리'의 다른 글」 제목 칸이 205px라 연재 편이 같은 문장으로 잘렸다(이슈 #157, DESIGN §4 문턱 표). TYP001~003은 셋 다 **선언이 있는가**만 본다 — 화면에서 이기는지는 프리뷰 본문 픽스처(`==`·`!=`·긴 URL 인라인 코드, kotlin 코드블록)를 눈으로 본다. 2026-10-11 체크포인트가 «셋 중 무엇을 되돌려도 `npm run check`가 초록»임을 재현해 낸 규칙이다(이슈 #165). 켜지는 변이 1 |
 | `ROB001~002`, `A11Y001~002` | `localStorage` try/catch, `MutationObserver`, `lang`, viewport |
 | `SEO001~005` | 반복 블록 안의 `h1`, 내부링크 치환자 누락, `<title>` 템플릿, `img` alt, `BreadcrumbList` |
 | `DOC001` | **문서(`*.md` 전부)의 `파일:줄번호` 인용 (오류).** 줄번호는 그 위에 한 줄만 들어가도 조용히 다른 줄을 가리킨다 — 2026-08-26 한 세션에서 5건이 썩어 있었고 그중 둘은 **쓴 PR에서 리뷰가 놓쳤다**, 2026-08-27 전체 대조에서 20건 중 1건. `` `code.js`의 `LANGS` `` 같은 심볼 인용은 줄이 밀려도 안 썩는다. **심볼의 존재는 검사하지 않는다** — 이름을 바꾸면 저장소 전체를 훑는 규범(CLAUDE.md)이 이미 있고, 검증기 비용이 남은 인용 수를 넘는다. 스킨이 아니라 문서를 보는 유일한 규칙이라 `skin.html`이 없어도 돈다. `test-syntax-checks.py`에 켜지는 케이스 2·오탐 케이스 1 (결정 54) |

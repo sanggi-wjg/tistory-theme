@@ -1373,6 +1373,63 @@ def lint_hljs_tokens(css):
         info("구문 색: 유채색 자리 전부 --code-* 토큰")
 
 
+# ─────────────────────────── 5c. 읽기 고정값 (TYP001~003) ───────────────────────────
+
+def lint_reading_fixed(src_css):
+    """되돌려도 아무 검사도 켜지지 않던 읽기 고정값 셋을 본다 (결정 71, 이슈 #157·#165).
+
+    TYP001  인라인 코드에 `word-break: break-all`이 없다. 있으면 안 넘치는 식별자도 한가운데서
+            끊겨 조각마다 상자를 가진다 — 「타이밍 어택」 h2의 `==`가 `=` 상자 둘(라이브 390px 24개 중 5개).
+    TYP002  코드블록·인라인 코드가 `font-variant-ligatures: none`을 선언한다. 없으면 JetBrains Mono의
+            `calt`가 `!=`를 `≠`로 그린다. `no-common-ligatures`로는 안 꺼지므로 `none`만 인정한다.
+    TYP003  640px 이하에서 「'카테고리'의 다른 글」 제목이 2줄이다. 1줄이면 390px 제목 칸 205px에서
+            연재 편이 같은 문장으로 잘렸다(K8s 4편 글 끝 4줄 중 3줄).
+
+    셋 다 2026-10-11 체크포인트가 «무엇을 되돌려도 `npm run check`가 초록»이라고 재현했다.
+
+    ⚠ **선언이 있는가**만 본다. 그 선언이 화면에서 이기는지는 프리뷰 본문 픽스처(`render.py`의
+      `==`·`!=`·긴 URL 인라인 코드, kotlin 코드블록)를 눈으로 본다 — 이 검사는 되돌림을 막는다.
+    src만 본다 — dist는 사본이라 낡은 dist에 옛 규칙이 남으면 통과한다(TIS001과 같은 이유).
+    """
+    if not src_css:
+        return
+    body = strip_comments(src_css)
+    code_blocks = selector_blocks(body, ".contents_style code")
+    pre_blocks = selector_blocks(body, ".contents_style pre")
+    hit = False
+
+    if not code_blocks:
+        hit = True
+        err("TYP001", "`.contents_style code` 규칙을 찾지 못했다 — 인라인 코드의 줄바꿈·합자 규칙이 "
+            "어디로 갔는지 모른다. 선택자를 바꿨다면 이 검사도 같이 옮긴다.", "src/styles/content.css")
+    elif any(re.search(r"(?<![-\w])word-break\s*:\s*break-all", b) for b in code_blocks):
+        hit = True
+        err("TYP001", "인라인 코드(`.contents_style code`)에 `word-break: break-all`이 있다. 한 줄에 "
+            "들어가는 식별자도 한가운데서 끊겨 조각마다 상자를 가진다(소제목의 `==`가 `=` 상자 둘). "
+            "`normal` + `overflow-wrap: anywhere`면 넘칠 때만 끊긴다 (결정 71).", "src/styles/content.css")
+
+    lack = [name for name, blocks in ((".contents_style pre", pre_blocks), (".contents_style code", code_blocks))
+            if not any(re.search(r"(?<![-\w])font-variant-ligatures\s*:\s*none\b", b) for b in blocks)]
+    if lack:
+        hit = True
+        err("TYP002", "합자를 끄지 않은 코드 규칙: %s. JetBrains Mono의 `calt`가 `!=`를 `≠`로, `==`를 "
+            "긴 등호로 그려 원문과 다른 글자가 보인다. `font-variant-ligatures: none` — "
+            "`no-common-ligatures`로는 안 꺼진다 (결정 71)." % ", ".join(lack), "src/styles/content.css")
+
+    clamp2 = any(re.search(r"(?<![-\w])-webkit-line-clamp\s*:\s*2\b", b)
+                 for q, mbody in media_blocks(body)
+                 if re.search(r"max-width\s*:\s*640px", q) and "min-width" not in q
+                 for b in selector_blocks(mbody, ".related-text"))
+    if not clamp2:
+        hit = True
+        err("TYP003", "640px 이하 `@media`에서 `.related-text`가 `-webkit-line-clamp: 2`가 아니다. "
+            "한 줄이면 390px에서 제목 칸이 205px라 연재 편이 같은 문장으로 잘린다 (이슈 #157, "
+            "DESIGN §4 문턱 표).", "src/styles/components.css")
+
+    if not hit:
+        info("읽기 고정값: 인라인 코드 break-all 없음 · 코드 합자 끔 · 640px 이하 관련 글 2줄")
+
+
 # ─────────────────────────── 6. 접근성·안정성 ───────────────────────────
 
 def lint_robustness(js, skin):
@@ -1605,6 +1662,7 @@ def main():
     lint_tistory_typography(src_css)
     lint_hljs_scope(src_css)
     lint_hljs_tokens(src_css)
+    lint_reading_fixed(src_css)
     lint_robustness(js, skin)
     lint_seo(skin)
     # 문서는 skin.html이 없어도 검사한다 — 인용이 썩는 것은 구현 여부와 무관하다.

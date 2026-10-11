@@ -1691,7 +1691,12 @@ min-content에 들어가 표 칸 안에서도 표를 밀지 않는다. **하이�
 같은 PR에서 640px 이하 「'카테고리'의 다른 글」 제목을 2줄로 늘렸다(이슈 #157 `related-title-clamp-mobile`). 결정이 아니라 문턱 하나라 DESIGN §4 표에 적었다.
 
 **못 본 것.** Safari·Firefox의 `font-variant-ligatures: none`(스펙상 `calt`까지 끈다). Safari 15.4 미만은 `overflow-wrap: anywhere`를 버리고
-`body`의 `break-word`로 물러난다. 세 변경 모두 지금은 어떤 검사도 되돌림을 잡지 못한다 — 프리뷰 픽스처에 그릴 내용이 없다(이슈 #165 `code-fixture-ligature-wrap`).
+`body`의 `break-word`로 물러난다.
+
+**지키는 검사.** 체크포인트가 «셋 중 무엇을 되돌려도 `npm run check`가 초록»임을 재현했다 — 프리뷰 픽스처에 그릴 내용이 없었고
+속성을 보는 규칙도 없었다. 그래서 린트 `TYP001`(인라인 코드 `break-all`)·`TYP002`(합자 선언)·`TYP003`(640px 이하 관련 글 2줄)을 내고
+`test-syntax-checks.py`에 기준선 1·변이 3을 붙였다. 프리뷰 본문에는 kotlin 코드블록(`!=` `==` `->`)과 인라인 `==`·짧은 식별자·긴 URL,
+소제목 안 인라인 코드를 넣었다(이슈 #165 `code-fixture-ligature-wrap`). 린트는 **선언이 있는가**까지만 본다 — 이기는지는 프리뷰에서 눈으로 본다.
 
 ---
 
