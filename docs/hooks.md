@@ -278,7 +278,7 @@ CSS에서 `display: block` / `flex` / `grid`를 직접 지정해서 쓴다.
 | `.entry-aside` | 목차 칸. **DOM에서 `.entry-main` 앞** — 1400px 이상에서 CSS `order`로 오른쪽 열(결정 64). `position: sticky`는 여기 또는 `.toc`에 |
 | `.entry-tags` | 안의 `<a>`는 티스토리가 만든다 (`[##_tag_label_rep_##]`). `.entry-tags a`로 스타일 |
 | `.entry-admin` | 관리자 전용 링크 줄. 조용히 작게 |
-| `.related` `.related-title` `.related-list` `.related-item` `.related-link` `.related-thumb` `.related-thumb-img` `.related-text` `.related-date` `.related-more` | 같은 카테고리 다른 글. `.related-item`에 티스토리가 주는 `text_type` / `thumb_type` 클래스가 **함께** 붙는다. `.related-thumb` 상자는 **항상 있고** `.related-thumb-img`만 대표이미지가 있을 때 존재한다 — 홈 카드 `.thumb`/`.thumb-img`와 같은 구조(결정 57) |
+| `.related` `.related-title` `.related-list` `.related-item` `.related-link` `.related-thumb` `.related-thumb-img` `.related-text` `.related-date` `.related-more` | 같은 카테고리 다른 글. `.related-item`에 티스토리가 주는 `text_type` / `thumb_type` 클래스가 **함께** 붙는다. `.related-thumb` 상자는 **항상 있고** `.related-thumb-img`만 대표이미지가 있을 때 존재한다 — 홈 카드 `.thumb`/`.thumb-img`와 같은 구조(결정 57). **`related.js`가 `.related-link`와 `.postnav-item`의 경로를 대조해 겹치는 줄을 뗀다**(이슈 #162, §8) — 두 클래스 이름을 바꾸면 중복 제거가 조용히 꺼진다 |
 | `.postnav` `.postnav-item` `.postnav-prev` `.postnav-next` `.postnav-label` `.postnav-title` `.postnav-thumb` `.postnav-thumb-img` | 이전/다음 글. `.postnav-item`에도 `text_type`/`thumb_type`이 붙지만 칸을 그걸로 켜고 끄지 않는다 — `.postnav-thumb` 상자는 **항상 있고** `.postnav-thumb-img`만 대표이미지가 있을 때 존재한다(결정 57, 린트 `BND011`) |
 | `.comments` `#comments` | `[##_comment_group_##]` 한 줄. 안은 전부 `tt-*` (DESIGN §5.4) |
 | *(없음)* `.menu_toolbar` | **스킨 마크업이 아니다.** 티스토리가 **모든 페이지**에서 우리 `script.js` 태그 뒤에 서버 HTML로 넣는 툴바(「구독하기」 알약 `.btn_subscription` + ⋮ `#menubar_wrapper[data-tistory-react-app="Menubar"]`, ⋮만 React가 채운다). 규칙은 티스토리 `static/style/tistory.css` — `position: fixed; top: 20px; right: 20px; z-index: 9999`, `max-width: 1260px`에서 숨김. 우리는 툴바를 꾸미지 않고 **헤더가 자리를 비운다**(`.header-inner`의 1261px~ `padding-right`, 토큰 `--tt-toolbar-reserve`, 결정 59). 인쇄에서는 `components.css` 인쇄 블록이 지운다. 클래스 이름 `#menubar`는 리터럴 `#`이 붙은 class 값이다(id 아님) |
@@ -740,6 +740,13 @@ img에 직접 걸어 자기 뷰어(phocus)를 띄운다. 이미지블록은 2019
 | `.cat-chips.is-off` | `#cat-chips` 그릇 | cat-chips.js (**칩을 하나도 못 넣고 끝날 때** — 트리를 못 읽었거나 모듈 안 예외. CSS 칩 줄 예약 `.js .cat-chips:empty:not(.is-off)`를 푸는 신호, §5.9·결정 62) |
 
 `body.with-phocus`는 이 표에 없다 — 티스토리 phocus 뷰어가 붙이고 `lightbox.js`는 **읽기만** 한다(§5.6 「라이트박스 — phocus가 먼저」, 결정 60).
+
+**관련 글이 이전/다음 글과 겹칠 때 — 상태 표식 없이 DOM에서 뗀다.** 붙이는 클래스·속성이 없어 위 표에 넣지 않는다. related.js가 `.related-item` 중
+`.related-link`가 `.postnav-item`과 **같은 경로**(쿼리·해시 무시, 디코딩, 끝 `/` 제거 — `category.decodePath`·`bare`)인 줄을 DOM에서
+떼고, 남은 줄이 0이면 `.related` 섹션째 뗀다(이슈 #162). 감추지 않으므로 **CSS의 `display` 규칙과 무관하다** — `hidden`으로 감추던
+2차 체크포인트 판은 `.related`에 `display` 규칙이 생기면 UA의 `[hidden]`이 지고, 그걸 막는 `.related[hidden]` 가드도 뒤에 오는 같은
+특이도 규칙에 져서 빈 섹션이 조용히 돌아올 수 있었다. 검사는 `npm run test:related`(`scripts/test-related-dedup.mjs`) — 감추는 쪽으로
+되돌리면 「섹션째 뗀다」 단언이 빨간불이다.
 
 **`aria-current` — 색으로만 보이던 「현재 위치」를 스크린리더에도 알리는 자리.** 클래스가 아니라 속성이라
 위 표에 넣지 않는다(표 첫 칸은 린트 `BND006`·`BND007`이 우리 JS가 만드는 **클래스**로 읽는다).
