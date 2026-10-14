@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>개인정보 보유 썸네일</title>
+<style>
+  /* 색은 데드락·Git Worktree·좋은 엔지니어 썸네일과 같다 — 대표이미지끼리 같은 그림체로 */
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  svg { display: block; width: 1600px; height: 1000px; }
+</style>
+</head>
+<body>
+<svg id="s" viewBox="0 0 1600 1000"></svg>
+<script>
+// 글 「대 AI 에이전트 시대, 사기업이 개인정보를 계속 보유해야 할까?」의 대표이미지(= og:image) (2026-10-14).
+// 글의 결론 — 「가장 확실한 방어는 애초에 안 가지고 있는 것」 — 을 DB 둘로.
+// 다시 찍기: Chrome --headless=new --force-device-scale-factor=1 --window-size=1600,1000 --screenshot=thumbnail.png thumbnail.html
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function text(x, y, s, style) {
+  return '<text x="' + x + '" y="' + y + '" style="' + style + '">' + esc(s) + '</text>';
+}
+function defs() {
+  return '<defs>' +
+    '<marker id="mb" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="28" markerHeight="28" orient="auto">' +
+    '<path d="M0,0 L10,5 L0,10 z" style="fill:var(--b)"/></marker>' +
+    '<marker id="mm" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="28" markerHeight="28" orient="auto">' +
+    '<path d="M0,0 L10,5 L0,10 z" style="fill:var(--mute)"/></marker></defs>';
+}
+
+// 원통 — 윗면 타원 중심 (cx, top), 높이 h. 몸통을 먼저 그리고 윗면을 덮는다
+function cyl(cx, top, h, rx, ry, fill, stroke, dash) {
+  var line = 'stroke:' + stroke + ';stroke-width:5' + (dash ? ';stroke-dasharray:16 12' : '');
+  var l = cx - rx, r = cx + rx, b = top + h;
+  return '<path d="M' + l + ',' + top + ' L' + l + ',' + b + ' A' + rx + ',' + ry + ' 0 0 0 ' + r + ',' + b + ' L' + r + ',' + top + '"' +
+    ' style="fill:' + fill + ';' + line + '"/>' +
+    '<ellipse cx="' + cx + '" cy="' + top + '" rx="' + rx + '" ry="' + ry + '" style="fill:' + fill + ';' + line + '"/>';
+}
+
+function diagram() {
+  var out = [], TOP = 440, H = 290, RX = 130, RY = 34, FULL = 1010, EMPTY = 1350;
+
+  // 공격하는 쪽
+  out.push('<rect x="1030" y="150" width="300" height="96" rx="20" style="fill:var(--a-soft);stroke:var(--a);stroke-width:5"/>');
+  out.push(text(1180, 212, 'AI 에이전트', 'fill:var(--a);font-size:40px;font-weight:800;text-anchor:middle'));
+
+  // 화살표를 먼저 — 원통 윗면이 끝을 덮지 않게 윗면 위에서 멈춘다
+  out.push('<path d="M1120,252 L1030,380" marker-end="url(#mb)" style="fill:none;stroke:var(--b);stroke-width:6;stroke-linecap:round"/>');
+  out.push('<path d="M1240,252 L1330,380" marker-end="url(#mm)" style="fill:none;stroke:var(--mute);stroke-width:6;stroke-linecap:round"/>');
+
+  // 가득 찬 DB — 이름·연락처·주소
+  out.push(cyl(FULL, TOP, H, RX, RY, 'var(--b-soft)', 'var(--b)', false));
+  ['이름', '연락처', '주소'].forEach(function (s, i) {
+    var y = TOP + 50 + i * 78;
+    out.push('<rect x="' + (FULL - 90) + '" y="' + y + '" width="180" height="58" rx="29" style="fill:var(--surface);stroke:var(--b);stroke-width:3"/>');
+    out.push(text(FULL, y + 40, s, 'fill:var(--b);font-size:30px;font-weight:700;text-anchor:middle'));
+  });
+
+  // 빈 DB
+  out.push(cyl(EMPTY, TOP, H, RX, RY, 'var(--surface)', 'var(--ok)', true));
+  out.push(text(EMPTY, TOP + 160, '비어 있음', 'fill:var(--mute);font-size:30px;font-weight:700;text-anchor:middle'));
+
+  var LY = TOP + H + RY + 76;
+  out.push(text(FULL, LY, '털림', 'fill:var(--b);font-size:40px;font-weight:800;text-anchor:middle'));
+  out.push(text(EMPTY, LY, '털릴 게 없음', 'fill:var(--ok);font-size:40px;font-weight:800;text-anchor:middle'));
+  return out.join('');
+}
+
+var out = defs() + '<rect width="1600" height="1000" style="fill:var(--bg)"/>';
+out += text(130, 300, '기록', 'fill:var(--mute);font-size:36px;font-weight:600');
+out += text(124, 420, '개인정보,', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+out += text(124, 540, '계속 들고', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+out += text(124, 660, '있어야 할까?', 'fill:var(--ink);font-size:96px;font-weight:800;letter-spacing:-2px');
+out += text(130, 740, '대 AI 에이전트 시대', 'fill:var(--ink-body);font-size:44px;font-weight:700');
+out += diagram();
+document.getElementById('s').innerHTML = out;
+</script>
+</body>
+</html>
