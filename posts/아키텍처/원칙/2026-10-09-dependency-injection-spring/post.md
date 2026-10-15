@@ -56,7 +56,75 @@ class OrderFacadeService(
 
 스프링은 IoC 컨테이너를 사용하여 인스턴스 생성, 연결, 수명 주기, 스코프를 관리하고 생성자 주입(권장 방법. 세터, 필드 주입도 가능)을 통해 의존성 관리를 한다. DI 덕분에 로직 수정 없이 구현체 변경이 가능해지고 IoC 컨테이너 덕분에 생성 및 제어를 직접 할 필요가 없어진다.
 
-## BeanFactory
+### BeanFactory와 ApplicationContext
+
+스프링 IoC 컨테이너의 중심에는 두 인터페이스가 있다.
+
+- **BeanFactory**: 빈을 등록하고, 만들고, 주입하고, 꺼내는 기본 컨테이너
+- **ApplicationContext**: BeanFactory를 상속하고 애플리케이션에 필요한 기능을 더한 확장 컨테이너
+
+보통 "스프링 컨테이너"라고 하면 ApplicationContext를 말한다.
+
+**상속하면서, 안에 들고 있다**
+
+ApplicationContext는 BeanFactory를 상속한다(is-a). 그래서 `context.getBean()`을 바로 부를 수 있다. 그런데 구현체인 `GenericApplicationContext`는 빈 관리를 직접 하지 않고, 안에 들고 있는 `DefaultListableBeanFactory`에 맡긴다(has-a). 아래 테스트의 `context.beanFactory.shouldBeInstanceOf<DefaultListableBeanFactory>()`가 이 구조를 확인한다.
+
+**ApplicationContext가 더하는 것**
+
+| 상속한 인터페이스 | 하는 일 | 다시 나오는 곳 |
+|---|---|---|
+| `ListableBeanFactory` | 타입으로 빈을 여러 개 조회 | 2절 List·Map으로 전부 받기 |
+| `HierarchicalBeanFactory` | 부모 컨텍스트 | - |
+| `EnvironmentCapable` | 프로퍼티, 프로필 | 1편 마무리의 `@Profile` |
+| `MessageSource` | 다국어 메시지 | - |
+| `ApplicationEventPublisher` | 이벤트 발행 | 위의 IoC 구현 사례: 옵저버 패턴 |
+| `ResourcePatternResolver` | `classpath*:` 같은 패턴으로 리소스 찾기 | 컴포넌트 스캔이 이 기능으로 클래스 파일을 찾는다 |
+
+**언제 만들고, 누가 후처리하나**
+
+기능 목록보다 실무에서 더 와닿는 차이는 이쪽이다.
+
+- **빈을 만드는 시점**: BeanFactory만 쓰면 `getBean()`을 부를 때 빈을 만든다. ApplicationContext는 `refresh()`에서 싱글톤 빈을 미리 만들어 둔다. 그래서 설정이 잘못되면 요청이 들어온 뒤가 아니라 애플리케이션이 뜰 때 실패한다.
+- **후처리기 등록**: ApplicationContext는 `BeanFactoryPostProcessor`와 `BeanPostProcessor`를 알아서 등록하고 실행한다. BeanFactory만 쓰면 직접 등록해야 하고, 빠뜨리면 `@Autowired` 어노테이션 처리나 `@Transactional` 같은 기능이 동작하지 않는다.
+
+**실무에서는**
+
+BeanFactory를 직접 쓸 일은 거의 없다. 스프링 부트가 ApplicationContext를 만들어 주고, [스프링 공식 문서](https://docs.spring.io/spring-framework/reference/core/beans/introduction.html)도 특별한 이유가 없다면 ApplicationContext를 쓰라고 권한다. BeanFactory는 직접 쓰는 것이라기보다 ApplicationContext 안에서 실제 일을 하는 부품이다.
+
+아래는 스프링 부트 없이 `GenericApplicationContext`를 직접 써 본 테스트다.
+
+```kotlin
+class ApplicationContextTest :
+    FunSpec({
+        test("GenericApplicationContext 테스트") {
+            // given
+            val context = GenericApplicationContext()
+            // 의존성의 끝단은 가짜로 채운다
+            context.registerBean<DistributedLockExecutor> { mockk() }
+            context.registerBean<PaymentClient> { mockk() }
+            context.registerBean<OrderRepository> { mockk() }
+            context.registerBean<UserRepository> { mockk() }
+            context.registerBean<ProductRepository> { mockk() }
+            context.registerBean<OrderService>()
+            context.registerBean<OrderFacadeService>()
+
+            // when
+            context.refresh()
+
+            // then
+            context.beanDefinitionCount shouldBe 7
+            context.beanFactory.shouldBeInstanceOf<DefaultListableBeanFactory>()
+            context.getBean<OrderFacadeService>() shouldBeSameInstanceAs context.getBean<OrderFacadeService>()
+            context.beanFactory.getDependenciesForBean(OrderFacadeService::class.java.name) shouldContainExactlyInAnyOrder arrayOf(
+                DistributedLockExecutor::class.java.name,
+                PaymentClient::class.java.name,
+                OrderService::class.java.name,
+            )
+        }
+    })
+```
+
+#### BeanFactory
 
 ```java
 public interface BeanFactory {
@@ -81,33 +149,9 @@ public interface BeanFactory {
 
     String[] getAliases(String name);
 }
-
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
-		implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
-    ...
-
-    @Override
-	public <T> T getBean(Class<T> requiredType) throws BeansException {
-		return getBean(requiredType, (Object[]) null);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T getBean(Class<T> requiredType, @Nullable Object @Nullable ... args) throws BeansException {
-		Assert.notNull(requiredType, "Required type must not be null");
-		Object resolved = resolveBean(ResolvableType.forRawClass(requiredType), args, false);
-		if (resolved == null) {
-			throw new NoSuchBeanDefinitionException(requiredType);
-		}
-		return (T) resolved;
-	}
-    ...
-}
 ```
 
-## ApplicationContext
-
-
+#### ApplicationContext
 
 ```java
 public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
@@ -180,6 +224,119 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	}
 }
 ```
+
+### 경량 IoC 컨테이너 직접 만들어 보기
+
+```kotlin
+interface BeanFactory {
+    fun <T : Any> getBean(type: KClass<T>): T
+    fun getBeanNamesForType(type: KClass<*>): Set<String>
+}
+
+interface BeanDefinitionRegistry {
+    val beanDefinitionMap: Map<String, KClass<*>>
+}
+
+interface SingletonBeanRegistry {
+    fun containsSingleton(beanName: String): Boolean
+}
+
+
+class BeanDefinitionOverrideException(
+    beanName: String,
+) : RuntimeException("Cannot register bean definition $beanName")
+
+class NoSuchBeanDefinitionException(
+    beanName: String,
+) : RuntimeException("No bean named $beanName")
+
+class NoUniqueBeanDefinitionException(
+    beanName: String,
+    foundBeanNames: Set<String>,
+) : RuntimeException("No unique bean definition found for bean name '$beanName', found: $foundBeanNames")
+
+
+class DefaultBeanFactory(
+    vararg classes: KClass<*>,
+) : BeanFactory,
+    BeanDefinitionRegistry,
+    SingletonBeanRegistry {
+
+    private val singletonObjects = mutableMapOf<String, Any>()
+
+    override val beanDefinitionMap: Map<String, KClass<*>> = buildMap {
+        classes.forEach { type ->
+            val beanName = type.simpleName!! // 간소화: 클래스 이름 그대로 빈 이름으로 사용
+            if (beanName in this) throw BeanDefinitionOverrideException(beanName)
+            put(beanName, type)
+        }
+    }
+
+    /** 타입으로 빈을 찾는다. 인터페이스로 찾아도 되고, 처음 찾는 빈이면 만들어서 캐시에 넣어 둔다. */
+    override fun <T : Any> getBean(type: KClass<T>): T {
+        val beanName = type.simpleName!!
+        val beanNames = getBeanNamesForType(type)
+        if (beanNames.isEmpty()) throw NoSuchBeanDefinitionException(beanName)
+        if (beanNames.size > 1) throw NoUniqueBeanDefinitionException(beanName, beanNames)
+
+        val targetBeanName = beanNames.first()
+        val bean = singletonObjects.getOrPut(targetBeanName) {
+            createBean(targetBeanName)
+        }
+        return type.cast(bean)
+    }
+
+    /** 이 타입으로 꺼낼 수 있는 빈 이름을 모두 찾는다. */
+    override fun getBeanNamesForType(type: KClass<*>): Set<String> {
+        return beanDefinitionMap.filter { it.value.isSubclassOf(type) }.keys
+    }
+
+    /** 이미 만들어 둔 빈인지 확인한다. */
+    override fun containsSingleton(beanName: String): Boolean {
+        return singletonObjects.containsKey(beanName)
+    }
+
+    /** 등록된 빈을 전부 미리 만들어 둔다. */
+    fun preInstantiateSingletons() {
+        beanDefinitionMap.values.forEach { getBean(it) }
+    }
+
+    /** 주 생성자로 빈을 만든다. 생성자에 필요한 빈은 getBean으로 가져온다. */
+    private fun createBean(beanName: String): Any {
+        val constructor = beanDefinitionMap.getValue(beanName).primaryConstructor!!
+        val arguments = constructor.parameters.map { getBean(it.type.classifier as KClass<*>) }
+        return constructor.call(*arguments.toTypedArray())
+    }
+}
+```
+
+```kotlin
+interface ApplicationContext : BeanFactory {
+    fun refresh()
+}
+
+class GenericApplicationContext(
+    vararg classes: KClass<*>,
+) : ApplicationContext {
+
+    val beanFactory: DefaultBeanFactory = DefaultBeanFactory(*classes)
+
+    override fun <T : Any> getBean(type: KClass<T>): T {
+        return this.beanFactory.getBean(type)
+    }
+
+    override fun getBeanNamesForType(type: KClass<*>): Set<String> {
+        return this.beanFactory.getBeanNamesForType(type)
+    }
+
+    /** 빈을 미리 다 만들어 둔다. 실제 일은 beanFactory가 한다. */
+    override fun refresh() {
+        this.beanFactory.preInstantiateSingletons()
+    }
+}
+```
+
+### 실제 스프링에서는: refresh()부터 따라가기
 
 ```java
 public abstract class AbstractApplicationContext extends DefaultResourceLoader
@@ -269,16 +426,33 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 }
 ```
 
-
-### 경량 IoC 컨테이너 직접 만들어 보기
-
-- 핵심 흐름만: 설계도 모으기(`beanDefinitionMap`) → `getBean`으로 꺼낼 때 생성 → 생성자 인자를 재귀로 채우기 → 만든 빈은 `singletonObjects`에
-- 이름은 스프링과 맞춘다 — 아래 소주제와 힙 덤프에서 같은 이름을 다시 만난다
-- 하지 않는 것: 컴포넌트 스캔(클래스 목록을 직접 넘긴다), 스코프, 프록시, `@Qualifier`·`@Primary` → 아래 소주제와 2·3절에서 스프링이 어떻게 하는지 본다
-
 ### 무엇을 만들지 모으기: 컴포넌트 스캔 → BeanDefinition
 
 ### 만들고 주입하기: getBean → createBean → 생성자 인자 해석
+
+```java
+public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
+		implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
+    ...
+
+    @Override
+	public <T> T getBean(Class<T> requiredType) throws BeansException {
+		return getBean(requiredType, (Object[]) null);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getBean(Class<T> requiredType, @Nullable Object @Nullable ... args) throws BeansException {
+		Assert.notNull(requiredType, "Required type must not be null");
+		Object resolved = resolveBean(ResolvableType.forRawClass(requiredType), args, false);
+		if (resolved == null) {
+			throw new NoSuchBeanDefinitionException(requiredType);
+		}
+		return (T) resolved;
+	}
+    ...
+}
+```
 
 ### 감싸기: initializeBean → BeanPostProcessor
 
