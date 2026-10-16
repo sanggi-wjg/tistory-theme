@@ -1,0 +1,9 @@
+{
+  // 마크다운을 저장할 때 markdownlint가 고칠 수 있는 것은 고친다.
+  // 검사 대상과 규칙은 .markdownlint-cli2.jsonc — 원고(posts/)만 본다.
+  "[markdown]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+// 블로그 원고(posts/) 마크다운 린트 설정.
+// VS Code 확장 markdownlint(DavidAnson.vscode-markdownlint)와 markdownlint-cli2가 함께 읽는다.
+{
+  // 원고만 검사한다. 저장소 문서(CLAUDE.md·DECISIONS.md·docs/ …)는 형식 관례가 달라 뺀다.
+  "ignores": [
+    "*.md",
+    ".claude/**",
+    ".github/**",
+    "docs/**",
+    "data/**",
+    "src/**",
+    "scripts/**",
+    "node_modules/**",
+    "dist/**",
+    "_preview/**",
+    "_workspace*/**",
+    "backup/**"
+  ],
+  "config": {
+    "default": true,
+    // 줄 길이 — 한국어 장문은 한 문단이 한 줄이다
+    "MD013": false,
+    // 인라인 HTML — 본문에 HTML 조각과 주석이 들어간다
+    "MD033": false,
+    // 맨 URL — 「참고」 목록은 URL만 적는다. 자동 수정이 <…>로 감싸 버린다
+    "MD034": false,
+    // 굵은 글씨 한 줄 — 원고가 소제목 대신 쓴다
+    "MD036": false,
+    // 첫 줄 h1 — 글 제목은 티스토리 제목 칸에 따로 넣는다
+    "MD041": false,
+    // 같은 이름 소제목 — 다른 절 아래에서는 허용한다
+    "MD024": { "siblings_only": true },
+    // 탭 — 코드 블록 안까지 공백 4칸으로 바꾼다. 붙여 넣은 스프링 소스가 탭이라 블로그에서 들여쓰기가 틀어진다
+    "MD010": { "spaces_per_tab": 4 }
+  }
+}
