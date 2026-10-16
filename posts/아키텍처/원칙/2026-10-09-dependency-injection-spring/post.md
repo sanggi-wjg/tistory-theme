@@ -1,10 +1,8 @@
----
-제목: 의존성 주입(DI) 2편: 스프링은 무엇을 대신 해 주나
----
+# 의존성 주입(DI) 2편: 스프링은 무엇을 대신 해 주나
 
-1편에서는 의존성 주입이 무엇이고 왜 필요한지 봤다. 이번에는 스프링 프레임워크가 그 일을 어떻게 대신 해 주고 있는지 확인해보자.
+앞서 1편에서는 의존성 주입이 무엇이고 왜 필요한지 봤다. 이번에는 스프링 프레임워크가 그 일을 어떻게 대신 해 주고 있는지 확인해보자.
 
-## 진행 버전
+## 확인 버전
 - Spring Boot 4.1 (Spring Framework 7.0.9)
 - Kotlin 2.3 (JDK 25)
 
@@ -12,23 +10,23 @@
 
 ## 스프링 컨테이너가 대신 해 주는 것
 
-**IoC(Inversion of Control) 제어의 역전**: 프로그램의 흐름을 내 코드가 아니라 프레임워크가 쥐는 설계 원칙이다. 내가 프레임워크를 부르는 것이 아니라 프레임워크가 내 코드를 부른다.
+### IoC(Inversion of Control) 제어의 역전
+프로그램의 흐름을 내 코드가 아니라 프레임워크가 쥐는 설계 원칙이다. 내가 프레임워크를 부르는 것이 아니라 프레임워크가 내 코드를 부른다.
 
 `IoC`라는 용어는 1988년 Ralph E. Johnson과 Brian Foote가 Journal of Object-Oriented Programming에 게재한 Designing Reusable Classes에서 처음 사용되었다고 한다. (개념 자체는 그 이전에도 있었다고 한다.)
 
-[Designing Reusable Classes](https://www.laputan.org/drc/drc.html)
-> One important characteristic of a framework is that the methods defined by the user to tailor the framework will often be called from within the framework itself, rather than from the user's application code. The framework often plays the role of the main program in coordinating and sequencing application activity. This inversion of control gives frameworks the power to serve as extensible skeletons. The methods supplied by the user tailor the generic algorithms defined in the framework for a particular application.
-> 
+> One important characteristic of a framework is that the methods defined by the user to tailor the framework will often be called from within the framework itself, rather than from the user's application code. The framework often plays the role of the main program in coordinating and sequencing application activity. This inversion of control gives frameworks the power to serve as extensible skeletons. The methods supplied by the user tailor the generic algorithms defined in the framework for a particular application. 
 > 프레임워크의 중요한 특징 중 하나는, 사용자가 프레임워크를 자기 용도에 맞추려고 정의한 메소드를 애플리케이션 코드가 아니라 프레임워크가 호출하는 경우가 많다는 것이다. 프레임워크는 흔히 메인 프로그램 역할을 맡아 애플리케이션의 동작을 조율하고 실행 순서를 정한다. 이 제어의 역전 덕분에 프레임워크는 확장 가능한 뼈대 역할을 할 수 있다. 사용자가 작성한 메소드는 프레임워크에 정의된 범용 알고리즘을 각 애플리케이션에 맞게 다듬는다.
 
-**DI(Dependency Injection) 의존성 주입**: IoC를 구현하는 방법 중 하나다. 객체가 필요한 의존성을 스스로 생성하는게 아니라 외부에서 받는 방식이다. 
+### DI(Dependency Injection) 의존성 주입
+IoC를 구현하는 방법 중 하나다. 객체가 필요한 의존성을 스스로 생성하는게 아니라 외부에서 받는 방식이다. 
 
 ```kotlin
 // DI 사용하지 않을 시
 @Service
 class OrderFacadeService(
-	// 개발자가 직접 생성하여 제어
-	private val redisClient: RedisClient= RedisClient()
+    // 개발자가 직접 생성하여 제어
+    private val redisClient: RedisClient= RedisClient()
     private val lockExecutor: DistributedLockExecutor = DistributedLockExecutor(redisClient)
     private val paymentClient: PaymentClient = PaymentClient()
     private val orderRepository: OrderRepository = OrderRepository()
@@ -53,28 +51,24 @@ class OrderFacadeService(
 
 스프링은 `IoC` 컨테이너를 사용하여 객체의 생성, 연결, 수명 주기, 스코프를 관리하고 생성자 주입(생성자 주입이 권장방법 이다. 세터, 필드 주입도 가능)을 통해 의존성 관리를 한다. `DI` 덕분에 로직 수정 없이 구현체 변경이 가능해지고 `IoC` 컨테이너 덕분에 생성 및 제어를 직접 할 필요가 없어진다.
 
-스프링 IoC 컨테이너의 핵심에는 `BeanFactory`와 `ApplicationContext`라는 두 인터페이스가 있다.
+스프링 `IoC` 컨테이너 핵심에는 `BeanFactory`와 `ApplicationContext`라는 두 인터페이스가 있다.
 
-[Spring Framework 문서: Introduction to the Spring IoC Container and Beans](https://docs.spring.io/spring-framework/reference/core/beans/introduction.html)
 > The BeanFactory interface provides an advanced configuration mechanism capable of managing any type of object. ApplicationContext is a sub-interface of BeanFactory. It adds:  
 > - Easier integration with Spring’s AOP features
 > - Message resource handling (for use in internationalization)
 > - Event publication
 > - Application-layer specific contexts such as the WebApplicationContext for use in web applications.
-> 
 > In short, the BeanFactory provides the configuration framework and basic functionality, and the ApplicationContext adds more enterprise-specific functionality.
-> 
 > BeanFactory 인터페이스는 어떤 종류의 객체든 관리할 수 있는 고급 설정 메커니즘을 제공한다. ApplicationContext는 BeanFactory의 하위 인터페이스로, 다음을 더한다.  
 > - 스프링 AOP 기능과의 손쉬운 통합
 > - 메시지 리소스 처리(국제화용)
 > - 이벤트 발행
 > - 웹 애플리케이션용 WebApplicationContext 같은 애플리케이션 계층 전용 컨텍스트
-> 
 > BeanFactory는 설정 프레임워크와 기본 기능을 제공하고, ApplicationContext는 엔터프라이즈 환경에 필요한 기능을 더한다.
 
-### BeanFactory
+## BeanFactory
 
-**BeanFactory**: 빈을 꺼내 주는 컨테이너다. 빈 생성과 의존성 주입은 구현 클래스 `DefaultListableBeanFactory`가 한다.
+빈을 꺼내 주는 컨테이너다. 빈 생성과 의존성 주입은 구현 클래스 `DefaultListableBeanFactory`가 한다.
 
 ```java
 public interface BeanFactory {
@@ -101,16 +95,72 @@ public interface BeanFactory {
 }
 ```
 
-`BeanFactory`의 구현 클래스인 `DefaultListableBeanFactory`는 빈 정의를 등록받는 인터페이스 `BeanDefinitionRegistry`를 구현하고, 객체를 만들고 의존성을 주입하는 추상 클래스 `AbstractAutowireCapableBeanFactory`를 상속받는다.
+`BeanFactory`의 구현 클래스 `DefaultListableBeanFactory`는 빈 정의를 등록받는 인터페이스 `BeanDefinitionRegistry`를 구현하고, 객체를 만들고 의존성을 주입하는 추상 클래스 `AbstractAutowireCapableBeanFactory`를 상속받는다.
 
 ```java
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
-		implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
+        implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
+    // ...
+}
+
+public interface BeanDefinitionRegistry extends AliasRegistry {
+    void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException;
+	BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException;
+	// ...
+}
+
+public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory
+		implements AutowireCapableBeanFactory {
+
+	// ...
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T> T createBean(Class<T> beanClass) throws BeansException {
+		// Use non-singleton bean definition, to avoid registering bean as dependent bean.
+		RootBeanDefinition bd = new CreateFromClassBeanDefinition(beanClass);
+		bd.setScope(SCOPE_PROTOTYPE);
+		bd.allowCaching = ClassUtils.isCacheSafe(beanClass, getBeanClassLoader());
+		return (T) createBean(beanClass.getName(), bd, null);
+	}
+
+	@Override
+	public void autowireBean(Object existingBean) {
+		// Use non-singleton bean definition, to avoid registering bean as dependent bean.
+		RootBeanDefinition bd = new RootBeanDefinition(ClassUtils.getUserClass(existingBean));
+		bd.setScope(SCOPE_PROTOTYPE);
+		bd.allowCaching = ClassUtils.isCacheSafe(bd.getBeanClass(), getBeanClassLoader());
+		BeanWrapper bw = new BeanWrapperImpl(existingBean);
+		initBeanWrapper(bw);
+		populateBean(bd.getBeanClass().getName(), bd, bw);
+	}
+
+	@Override
+	public Object configureBean(Object existingBean, String beanName) throws BeansException {
+		markBeanAsCreated(beanName);
+		BeanDefinition mbd = getMergedBeanDefinition(beanName);
+		RootBeanDefinition bd = null;
+		if (mbd instanceof RootBeanDefinition rbd) {
+			bd = (rbd.isPrototype() ? rbd : rbd.cloneBeanDefinition());
+		}
+		if (bd == null) {
+			bd = new RootBeanDefinition(mbd);
+		}
+		if (!bd.isPrototype()) {
+			bd.setScope(SCOPE_PROTOTYPE);
+			bd.allowCaching = ClassUtils.isCacheSafe(ClassUtils.getUserClass(existingBean), getBeanClassLoader());
+		}
+		BeanWrapper bw = new BeanWrapperImpl(existingBean);
+		initBeanWrapper(bw);
+		populateBean(beanName, bd, bw);
+		return initializeBean(beanName, existingBean, bd);
+	}
+
 	// ...
 }
 ```
 
-### ApplicationContext
+## ApplicationContext
 
 `BeanFactory`를 상속하고 애플리케이션에 필요한 기능을 더한 확장 컨테이너다. 보통 "스프링 컨테이너"라고 하면 `ApplicationContext`를 가리킨다.
 
@@ -118,74 +168,72 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 ```java
 public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
-		MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
+        MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
 
-	@Nullable String getId();
-	String getApplicationName();
-	String getDisplayName();
-	long getStartupDate();
+    @Nullable String getId();
+    String getApplicationName();
+    String getDisplayName();
+    long getStartupDate();
 
-	@Nullable ApplicationContext getParent();
-	AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException;
-}
-
-public interface ListableBeanFactory extends BeanFactory {
-	// ...
-}
-
-public interface HierarchicalBeanFactory extends BeanFactory {
-	// ...
+    @Nullable ApplicationContext getParent();
+    AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException;
 }
 ```
 
-`ApplicationContext`의 구현 클래스로 `GenericApplicationContext`는 `DefaultListableBeanFactory`를 `beanFactory` 멤버 변수로 가지고 있고, 빈 등록과 관리를 이 객체에 맡긴다. `context.getBean()`도 컨텍스트가 직접 처리하지 않고 이 `beanFactory`멤버 변수에 그대로 넘긴다. `GenericApplicationContext`는 `BeanFactory`를 상속 받아서 `BeanFactory` 타입이면서 동시에 `BeanFactory`를 멤버 변수로 가지고 사용하는 구조다. 스프링 부트가 띄우는 컨텍스트들도 이 구현 클래스를 상속한다. (서블릿: `AnnotationConfigServletWebServerApplicationContext`, WebFlux: `AnnotationConfigReactiveWebServerApplicationContext`)
+![alt text](image.png)
+
+`ApplicationContext`의 구현 클래스로 `GenericApplicationContext`는 `DefaultListableBeanFactory`를 `beanFactory` 멤버 변수로 가지고 있고, 빈 등록과 관리를 이 객체에 맡긴다. `context.getBean()`도 컨텍스트가 직접 처리하지 않고 이 `beanFactory`멤버 변수에 그대로 넘긴다. `GenericApplicationContext`는 `BeanFactory`를 상속 받아서 `BeanFactory` 타입이면서 동시에 `BeanFactory`를 멤버 변수로 가지고 사용하는 구조다. 스프링 부트가 띄우는 컨텍스트들도 이 구현 클래스를 상속한다. (Servlet: `AnnotationConfigServletWebServerApplicationContext`, WebFlux: `AnnotationConfigReactiveWebServerApplicationContext`)
+
+BeanFactory만 쓰면 `getBean()`을 호출시 빈을 생성한다. ApplicationContext는 `refresh()`메소드에서 싱글톤 빈을 미리 생성한다. 그래서 빈 설정이 잘못되었으면 애플리케이션이 뜰 때 바로 실패한다(Fail-Fast).
+
+BeanFactory는 직접 쓸 일은 거의 없다. 스프링 부트가 ApplicationContext를 만들어 주고, 스프링 문서도 특별한 이유가 없다면 ApplicationContext를 쓰라고 권한다. 
 
 ```java
 public class GenericApplicationContext extends AbstractApplicationContext implements BeanDefinitionRegistry {
 
-	private final DefaultListableBeanFactory beanFactory;
+    private final DefaultListableBeanFactory beanFactory;
+        // 생성자에서 DefaultListableBeanFactory를 생성
+    public GenericApplicationContext() {
+        this.beanFactory = new DefaultListableBeanFactory();
+    }
+        // 생성자에서 DefaultListableBeanFactory를 주입
+    public GenericApplicationContext(DefaultListableBeanFactory beanFactory) {
+        Assert.notNull(beanFactory, "BeanFactory must not be null");
+        this.beanFactory = beanFactory;
+    }
 
-	public GenericApplicationContext() {
-		this.beanFactory = new DefaultListableBeanFactory();
-	}
+    @Override
+    public final ConfigurableListableBeanFactory getBeanFactory() {
+        return this.beanFactory;
+    }
 
-	public GenericApplicationContext(DefaultListableBeanFactory beanFactory) {
-		Assert.notNull(beanFactory, "BeanFactory must not be null");
-		this.beanFactory = beanFactory;
-	}
+    @Override
+    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
+            throws BeanDefinitionStoreException {
+        this.beanFactory.registerBeanDefinition(beanName, beanDefinition);
+    }
 
-	@Override
-	public final ConfigurableListableBeanFactory getBeanFactory() {
-		return this.beanFactory;
-	}
+    public <T> void registerBean(@Nullable String beanName, Class<T> beanClass,
+            @Nullable Supplier<T> supplier, BeanDefinitionCustomizer... customizers) {
+        ClassDerivedBeanDefinition beanDefinition = new ClassDerivedBeanDefinition(beanClass);
+        if (supplier != null) {
+            beanDefinition.setInstanceSupplier(supplier);
+        }
+        for (BeanDefinitionCustomizer customizer : customizers) {
+            customizer.customize(beanDefinition);
+        }
 
-	@Override
-	public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
-			throws BeanDefinitionStoreException {
+        String nameToUse = (beanName != null ? beanName : beanClass.getName());
+        registerBeanDefinition(nameToUse, beanDefinition);
+    }
 
-		this.beanFactory.registerBeanDefinition(beanName, beanDefinition);
-	}
-
-	public <T> void registerBean(@Nullable String beanName, Class<T> beanClass,
-			@Nullable Supplier<T> supplier, BeanDefinitionCustomizer... customizers) {
-
-		ClassDerivedBeanDefinition beanDefinition = new ClassDerivedBeanDefinition(beanClass);
-		if (supplier != null) {
-			beanDefinition.setInstanceSupplier(supplier);
-		}
-		for (BeanDefinitionCustomizer customizer : customizers) {
-			customizer.customize(beanDefinition);
-		}
-
-		String nameToUse = (beanName != null ? beanName : beanClass.getName());
-		registerBeanDefinition(nameToUse, beanDefinition);
-	}
-
-	// ...
+    // ...
 }
 ```
 
-아래는 스프링 부트 없이 GenericApplicationContext를 직접 써 본 테스트다.
+![alt text](image-1.png)
+
+아래는 GenericApplicationContext 동작에 대한 테스트다.
 
 ```kotlin
 class ApplicationContextTest :
@@ -205,8 +253,8 @@ class ApplicationContextTest :
             // when
             context.refresh()
 
-            // then 
-			// 등록한 빈 7개 검증
+            // then
+            // 등록한 빈 7개 검증
             context.beanDefinitionCount shouldBe 7
             // ApplicationContext에서 beanFactory로 DefaultListableBeanFactory를 사용 검증
             context.beanFactory.shouldBeInstanceOf<DefaultListableBeanFactory>()
@@ -221,6 +269,109 @@ class ApplicationContextTest :
         }
     })
 ```
+
+### 스프링 실행시 컨테이너
+
+앞에서 말한 IoC가 실제로 일어나는 곳이 여기다. `main()`에서 `runApplication()`을 부르면 스프링 부트가 `ApplicationContext`를 생성 후 `refresh()` 메소드를 호출한다. 이 과정으로 우리는 개발하면서 객체 관리를 별도로 하지 않아도 되게 되는 부분이 이 부분이다.
+```
+main() → runApplication() → ApplicationContext 생성 → refresh()
+  → 빈 정의 모으기 → 객체 생성 및 의존성 주입 → 후처리 → singletonObjects에 보관
+```
+
+이 부분은 `AbstractApplicationContext`의 `refresh()` 메소드에 있다. `GenericApplicationContext`이 이 클래스를 상속하고 있다.
+(중요한 부분이라 그런지 라인 바이 라인으로 주석이 있더라)
+
+`refresh()`에서 빈을 실제로 만드는 줄은 `finishBeanFactoryInitialization(beanFactory)`메소드다. 이 메소드가 `DefaultListableBeanFactory`의 `preInstantiateSingletons()`를 호출한다. 주석 "Instantiate all remaining (non-lazy-init) singletons."대로, 앞 단계에서 먼저 만든 후처리기 빈을 뺀 나머지 싱글톤 중 non-lazy-init이 아닌 것을 여기서 생성한다.
+
+```java
+public abstract class AbstractApplicationContext extends DefaultResourceLoader
+        implements ConfigurableApplicationContext {
+
+    @Override
+    public void refresh() throws BeansException, IllegalStateException {
+        this.startupShutdownLock.lock();
+        try {
+            this.startupShutdownThread = Thread.currentThread();
+
+            StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
+
+            // Prepare this context for refreshing.
+            prepareRefresh();
+
+            // Tell the subclass to refresh the internal bean factory.
+            ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+
+            // Prepare the bean factory for use in this context.
+            prepareBeanFactory(beanFactory);
+
+            try {
+                // Allows post-processing of the bean factory in context subclasses.
+                postProcessBeanFactory(beanFactory);
+
+                StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
+                // Invoke factory processors registered as beans in the context.
+                invokeBeanFactoryPostProcessors(beanFactory);
+                // Register bean processors that intercept bean creation.
+                registerBeanPostProcessors(beanFactory);
+                beanPostProcess.end();
+
+                // Initialize message source for this context.
+                initMessageSource();
+
+                // Initialize event multicaster for this context.
+                initApplicationEventMulticaster();
+
+                // Initialize other special beans in specific context subclasses.
+                onRefresh();
+
+                // Check for listener beans and register them.
+                registerListeners();
+
+                // Instantiate all remaining (non-lazy-init) singletons.
+                finishBeanFactoryInitialization(beanFactory);
+
+                // Last step: publish corresponding event.
+                finishRefresh();
+            }
+
+            catch (RuntimeException | Error ex) {
+                if (logger.isWarnEnabled()) {
+                    logger.warn("Exception encountered during context initialization - " +
+                            "cancelling refresh attempt: " + ex);
+                }
+
+                // Stop already started Lifecycle beans to avoid dangling resources.
+                if (this.lifecycleProcessor != null && this.lifecycleProcessor.isRunning()) {
+                    try {
+                        this.lifecycleProcessor.stop();
+                    }
+                    catch (Throwable ex2) {
+                        logger.warn("Exception thrown from LifecycleProcessor on cancelled refresh", ex2);
+                    }
+                }
+
+                // Destroy already created singletons to avoid dangling resources.
+                destroyBeans();
+
+                // Reset 'active' flag.
+                cancelRefresh(ex);
+
+                // Propagate exception to caller.
+                throw ex;
+            }
+
+            finally {
+                contextRefresh.end();
+            }
+        }
+        finally {
+            this.startupShutdownThread = null;
+            this.startupShutdownLock.unlock();
+        }
+    }
+}
+```
+
 
 ### ApplicationContext를 쓰는 이점
 
@@ -317,17 +468,17 @@ context.getResources("classpath*:com/example/**/*.class")
 
 ```java
 public interface ResourcePatternResolver extends ResourceLoader {
-	String CLASSPATH_ALL_URL_PREFIX = "classpath*:";
-	Resource[] getResources(String locationPattern) throws IOException;
+    String CLASSPATH_ALL_URL_PREFIX = "classpath*:";
+    Resource[] getResources(String locationPattern) throws IOException;
 }
 ```
 
-**빈을 만드는 시점**
-BeanFactory만 쓰면 `getBean()`을 호출시 빈을 생성한다. ApplicationContext는 `refresh()`에서 싱글톤 빈을 미리 생성한다. 그래서 빈 설정이 잘못되었으면 애플리케이션이 뜰 때 바로 실패한다(Fail-Fast).
 
-BeanFactory를 직접 쓸 일은 거의 없다. 스프링 부트가 ApplicationContext를 만들어 주고, 스프링 문서도 특별한 이유가 없다면 ApplicationContext를 쓰라고 권한다. 
 
-### 경량 IoC 컨테이너 직접 만들어 보기
+## 경량 IoC 컨테이너 직접 만들어 보기
+
+
+### Interface
 
 ```kotlin
 interface BeanFactory {
@@ -343,7 +494,14 @@ interface SingletonBeanRegistry {
     fun containsSingleton(beanName: String): Boolean
 }
 
+interface ApplicationContext : BeanFactory {
+    fun refresh()
+}
+```
 
+### Exception
+
+```kotlin
 class BeanDefinitionOverrideException(
     beanName: String,
 ) : RuntimeException("Cannot register bean definition $beanName")
@@ -356,8 +514,11 @@ class NoUniqueBeanDefinitionException(
     beanName: String,
     foundBeanNames: Set<String>,
 ) : RuntimeException("No unique bean definition found for bean name '$beanName', found: $foundBeanNames")
+```
 
+### BeanFactory Concrete Class
 
+```kotlin
 class DefaultBeanFactory(
     vararg classes: KClass<*>,
 ) : BeanFactory,
@@ -412,11 +573,8 @@ class DefaultBeanFactory(
 }
 ```
 
+### ApplicationContext Concrete Class
 ```kotlin
-interface ApplicationContext : BeanFactory {
-    fun refresh()
-}
-
 class GenericApplicationContext(
     vararg classes: KClass<*>,
 ) : ApplicationContext {
@@ -437,217 +595,6 @@ class GenericApplicationContext(
     }
 }
 ```
-
-### 실제 스프링에서는: refresh()부터 따라가기
-
-```java
-public abstract class AbstractApplicationContext extends DefaultResourceLoader
-		implements ConfigurableApplicationContext {
-	@Override
-	public void refresh() throws BeansException, IllegalStateException {
-		this.startupShutdownLock.lock();
-		try {
-			this.startupShutdownThread = Thread.currentThread();
-
-			StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
-
-			// Prepare this context for refreshing.
-			prepareRefresh();
-
-			// Tell the subclass to refresh the internal bean factory.
-			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
-
-			// Prepare the bean factory for use in this context.
-			prepareBeanFactory(beanFactory);
-
-			try {
-				// Allows post-processing of the bean factory in context subclasses.
-				postProcessBeanFactory(beanFactory);
-
-				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
-				// Invoke factory processors registered as beans in the context.
-				invokeBeanFactoryPostProcessors(beanFactory);
-				// Register bean processors that intercept bean creation.
-				registerBeanPostProcessors(beanFactory);
-				beanPostProcess.end();
-
-				// Initialize message source for this context.
-				initMessageSource();
-
-				// Initialize event multicaster for this context.
-				initApplicationEventMulticaster();
-
-				// Initialize other special beans in specific context subclasses.
-				onRefresh();
-
-				// Check for listener beans and register them.
-				registerListeners();
-
-				// Instantiate all remaining (non-lazy-init) singletons.
-				finishBeanFactoryInitialization(beanFactory);
-
-				// Last step: publish corresponding event.
-				finishRefresh();
-			}
-
-			catch (RuntimeException | Error ex) {
-				if (logger.isWarnEnabled()) {
-					logger.warn("Exception encountered during context initialization - " +
-							"cancelling refresh attempt: " + ex);
-				}
-
-				// Stop already started Lifecycle beans to avoid dangling resources.
-				if (this.lifecycleProcessor != null && this.lifecycleProcessor.isRunning()) {
-					try {
-						this.lifecycleProcessor.stop();
-					}
-					catch (Throwable ex2) {
-						logger.warn("Exception thrown from LifecycleProcessor on cancelled refresh", ex2);
-					}
-				}
-
-				// Destroy already created singletons to avoid dangling resources.
-				destroyBeans();
-
-				// Reset 'active' flag.
-				cancelRefresh(ex);
-
-				// Propagate exception to caller.
-				throw ex;
-			}
-
-			finally {
-				contextRefresh.end();
-			}
-		}
-		finally {
-			this.startupShutdownThread = null;
-			this.startupShutdownLock.unlock();
-		}
-	}
-}
-```
-
-`refresh()`에서 빈을 실제로 만드는 줄은 `finishBeanFactoryInitialization(beanFactory)`다. 이 메소드가 `DefaultListableBeanFactory`의 `preInstantiateSingletons()`를 호출한다. 주석 "Instantiate all remaining (non-lazy-init) singletons."대로, 앞 단계에서 먼저 만든 후처리기 빈을 뺀 나머지 싱글톤 중 지연 초기화(lazy-init)가 아닌 것을 여기서 만든다.
-
-```java
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
-		implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
-	// ...
-
-	@Override
-	public void preInstantiateSingletons() throws BeansException {
-		if (logger.isTraceEnabled()) {
-			logger.trace("Pre-instantiating singletons in " + this);
-		}
-
-		// Iterate over a copy to allow for init methods which in turn register new bean definitions.
-		// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
-		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
-
-		// Trigger initialization of all non-lazy singleton beans...
-		this.preInstantiationThread.set(PreInstantiation.MAIN);
-		if (this.mainThreadPrefix == null) {
-			this.mainThreadPrefix = getThreadNamePrefix();
-		}
-		try {
-			List<CompletableFuture<?>> futures = new ArrayList<>();
-			for (String beanName : beanNames) {
-				RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
-
-				// 싱글톤만 생성
-				if (!mbd.isAbstract() && mbd.isSingleton()) { 
-					CompletableFuture<?> future = preInstantiateSingleton(beanName, mbd);
-					if (future != null) {
-						futures.add(future);
-					}
-				}
-			}
-			if (!futures.isEmpty()) {
-				try {
-					CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0])).join();
-				}
-				catch (CompletionException ex) {
-					ReflectionUtils.rethrowRuntimeException(ex.getCause());
-				}
-			}
-		}
-		finally {
-			this.mainThreadPrefix = null;
-			this.preInstantiationThread.remove();
-		}
-
-		// Trigger post-initialization callback for all applicable beans...
-		for (String beanName : beanNames) {
-			Object singletonInstance = getSingleton(beanName, false);
-			if (singletonInstance instanceof SmartInitializingSingleton smartSingleton) {
-				StartupStep smartInitialize = getApplicationStartup().start("spring.beans.smart-initialize")
-						.tag("beanName", beanName);
-				smartSingleton.afterSingletonsInstantiated();
-				smartInitialize.end();
-			}
-		}
-	}
-}
-```
-
-### 무엇을 만들지 모으기: 컴포넌트 스캔 → BeanDefinition
-
-### 만들고 주입하기: getBean → createBean → 생성자 인자 해석
-
-```java
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
-		implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
-	// ...
-
-    @Override
-	public <T> T getBean(Class<T> requiredType) throws BeansException {
-		return getBean(requiredType, (Object[]) null);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T getBean(Class<T> requiredType, @Nullable Object @Nullable ... args) throws BeansException {
-		Assert.notNull(requiredType, "Required type must not be null");
-		Object resolved = resolveBean(ResolvableType.forRawClass(requiredType), args, false);
-		if (resolved == null) {
-			throw new NoSuchBeanDefinitionException(requiredType);
-		}
-		return (T) resolved;
-	}
-    
-	// ...
-}
-```
-
-### 감싸기: initializeBean → BeanPostProcessor
-
-### 다 만든 빈은 singletonObjects로
-
----
-
-## 같은 인터페이스의 구현이 여럿일 때
-
-### 후보 찾기
-
-### 후보가 여럿일 때 고르는 순서
-
-### List·Map으로 전부 받기
-
----
-
-## 힙에서 확인하기
-
-### 설계도와 실물: beanDefinitionMap · singletonObjects
-
-### 스프링이 기록해 둔 의존 관계: dependentBeanMap
-
-### List로 받은 빈
-
-### @Configuration 클래스도 프록시다
-
-### @Transactional 빈은 객체가 둘이다
-
 
 ---
 
