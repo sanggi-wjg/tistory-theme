@@ -208,7 +208,7 @@ BeanFactory만 쓰면 `getBean()` 메소드 호출시 빈을 생성한다. Appli
 
 `ApplicationContext`의 구현 클래스로 `GenericApplicationContext`는 `DefaultListableBeanFactory`를 `beanFactory` 멤버 변수로 가지고 있고, 빈 등록과 관리를 이 객체에 맡긴다. `context.getBean()`도 컨텍스트가 직접 처리하지 않고 이 `beanFactory` 멤버 변수에 그대로 넘긴다. `GenericApplicationContext`는 `BeanFactory`를 구현해서 `BeanFactory` 타입이면서 동시에 `BeanFactory`를 멤버 변수로 가지고 사용하는 구조다. 스프링 부트가 띄우는 컨텍스트들도 이 구현 클래스를 상속한다. (Servlet: `AnnotationConfigServletWebServerApplicationContext`, WebFlux: `AnnotationConfigReactiveWebServerApplicationContext`)
 
-<!-- TODO 도식(정적 PNG): GenericApplicationContext 위임 구조 — BeanFactory를 상속하면서(is-a) DefaultListableBeanFactory를 beanFactory 멤버로 가진다(has-a). context.getBean() → beanFactory.getBean() 위임 화살표. 아래 IntelliJ 캡처는 상속만 보여 준다 -->
+![GenericApplicationContext는 BeanFactory 타입이면서 DefaultListableBeanFactory를 필드로 가지고 getBean()을 넘긴다](assets/spring-context-delegation.png)
 
 ```java
 public class GenericApplicationContext extends AbstractApplicationContext implements BeanDefinitionRegistry {
@@ -301,7 +301,7 @@ main() → runApplication() → ApplicationContext 생성 → refresh()
   → 빈 정의 모으기 → 객체 생성 및 의존성 주입 → 후처리 → singletonObjects에 보관
 ```
 
-<!-- TODO 애니메이션(GIF): refresh() 흐름 — 빈 정의가 beanDefinitionMap에 쌓임 → OrderService 생성 → OrderFacadeService 생성자에 주입 → singletonObjects에 보관. 빈 이름은 위 테스트 코드와 맞춘다 -->
+![refresh(): 빈은 의존성부터 만들어지고, 후처리를 지나 singletonObjects에 보관된다](assets/refresh-bean-creation.gif)
 
 이 부분은 `AbstractApplicationContext`의 `refresh()` 메소드에 있다. `GenericApplicationContext`가 이 클래스를 상속하고 있다.
 (중요한 부분이라 그런지 라인 바이 라인으로 주석이 있더라)
@@ -501,7 +501,6 @@ public interface ResourcePatternResolver extends ResourceLoader {
 
 스프링 `IoC` 컨테이너의 핵심 기능만 추려서 구현해보면 아래 정도로 정리된다.
 
-<!-- TODO 도식: 경량 IoC 컨테이너 구조 — GenericApplicationContext가 DefaultBeanFactory를 들고 위임, DefaultBeanFactory가 BeanFactory·BeanDefinitionRegistry·SingletonBeanRegistry를 구현, beanDefinitionMap → createBean → singletonObjects 흐름 -->
 ![경량 IoC 컨테이너 구조](assets/mini-ioc-container.png)
 
 ### 인터페이스

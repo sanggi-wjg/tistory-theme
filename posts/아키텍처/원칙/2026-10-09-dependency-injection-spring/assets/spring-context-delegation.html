@@ -113,14 +113,14 @@
     line(box.x, box.end, box.right, box.end, 'var(--b)');
     function pill(x, w, label, bold) {
       rect(x, y, w, h, bold ? 'var(--b-soft)' : 'var(--bg)', bold ? 'var(--b)' : 'var(--hair-strong)');
-      text(x + w / 2, y + 17, label, 'fill:' + (bold ? 'var(--b)' : 'var(--ink-body)') + ';font-size:12px;font-weight:600;text-anchor:middle', 'mono');
+      text(x + w / 2, y + 17, label, 'fill:' + (bold ? 'var(--b)' : 'var(--ink-body)') + ';font-size:11px;font-weight:600;text-anchor:middle', 'mono');
     }
     var x0 = box.x + 12;
-    pill(x0, 132, 'beanDefinitionMap');
-    path([[x0 + 134, y + 13], [x0 + 154, y + 13]], 'var(--ink-body)', false, 'open');
-    pill(x0 + 158, 100, created, true);
-    path([[x0 + 260, y + 13], [x0 + 280, y + 13]], 'var(--ink-body)', false, 'open');
-    pill(x0 + 284, 92, 'singleton…');
+    pill(x0, 124, 'beanDefinitionMap');
+    path([[x0 + 126, y + 13], [x0 + 144, y + 13]], 'var(--ink-body)', false, 'open');
+    pill(x0 + 148, 88, created, true);
+    path([[x0 + 238, y + 13], [x0 + 256, y + 13]], 'var(--ink-body)', false, 'open');
+    pill(x0 + 260, 116, 'singletonObjects');
     text(box.x + 12, y + h + 22, 'getBean(): singletonObjects에 있으면 꺼내고, 없으면 정의로 만들어 넣는다',
       'fill:var(--mute);font-size:11.5px');
   }
@@ -165,7 +165,7 @@
   text(470, 146, 'is-a', 'fill:var(--a);font-size:12px;font-weight:700');
   text(600, 142, 'is-a', 'fill:var(--a);font-size:12px;font-weight:700;text-anchor:end');
   inherit([[ac.cx, aac.y], [ac.cx, ac.bottom]], 'var(--a)', true);
-  inherit([[aac.cx, gac.y], [aac.cx, aac.bottom]], 'var(--hair-strong)', false);
+  inherit([[aac.cx, gac.y], [aac.cx, aac.bottom]], 'var(--a)', false);
 
   // ── has-a: 컨텍스트가 BeanFactory를 필드로 가진다
   var hasY = gac.rows[0][0];
