@@ -1,4 +1,4 @@
-# 의존성 주입(DI) 2편: 스프링은 무엇을 대신해 주나
+# 스프링 IoC 컨테이너: BeanFactory와 ApplicationContext
 
 앞서 1편에서는 의존성 주입이 무엇이고 왜 필요한지 봤다. 이번에는 스프링 프레임워크가 그 일을 어떻게 대신해 주고 있는지 확인해보자.
 
@@ -20,6 +20,8 @@
 > One important characteristic of a framework is that the methods defined by the user to tailor the framework will often be called from within the framework itself, rather than from the user's application code. The framework often plays the role of the main program in coordinating and sequencing application activity. This inversion of control gives frameworks the power to serve as extensible skeletons. The methods supplied by the user tailor the generic algorithms defined in the framework for a particular application.
 >
 > 프레임워크의 중요한 특징 중 하나는, 사용자가 프레임워크를 자기 용도에 맞추려고 정의한 메소드를 애플리케이션 코드가 아니라 프레임워크가 호출하는 경우가 많다는 것이다. 프레임워크는 흔히 메인 프로그램 역할을 맡아 애플리케이션의 동작을 조율하고 실행 순서를 정한다. 이 제어의 역전 덕분에 프레임워크는 확장 가능한 뼈대 역할을 할 수 있다. 사용자가 작성한 메소드는 프레임워크에 정의된 범용 알고리즘을 각 애플리케이션에 맞게 다듬는다.
+
+![라이브러리는 내 main()이 실행 순서를 정하고, 프레임워크는 스프링이 순서를 정하며 내 코드를 부른다](assets/ioc-call-direction.gif)
 
 ### DI(Dependency Injection) 의존성 주입
 
