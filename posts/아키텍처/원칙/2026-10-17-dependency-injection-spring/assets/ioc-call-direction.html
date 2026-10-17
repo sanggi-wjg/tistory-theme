@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IoC 호출 방향</title>
+<style>
+  /* 바탕·글자 회색은 DESIGN.md 토큰이다. --a·--b·--err·--ok와 옅은 면(-soft)은 이 그림용으로 따로 정했다 —
+     라이트에서 각 색 글자가 자기 옅은 면 위 4.5:1을 넘도록 토큰보다 어둡게 잡았다(SKILL.md 「그리기 규칙」) */
+  :root {
+    --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
+    --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+    --err: #c00000; --err-soft: #ffe1e1;
+    --ok: #0b6b4b; --ok-soft: #d6f5ea;
+  }
+  :root[data-theme="dark"] {
+    --page: #0a0a0a; --bg: #121212; --surface: #1a1a1a;
+    --hair: #2e2e2e; --hair-strong: #454545;
+    --ink: #ededed; --ink-body: #b0b0b0; --mute: #8f8f8f;
+    --a: #3291ff; --a-soft: #10233f;
+    --b: #f7b955; --b-soft: #3a2a0e;
+    --err: #ff6166; --err-soft: #3d1416;
+    --ok: #50e3c2; --ok-soft: #0f2e27;
+  }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; padding: 16px; }
+  .stage { max-width: 760px; margin: 0 auto; }
+  svg { display: block; width: 100%; height: auto; }
+  .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .controls { display: flex; gap: 12px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--ink-body); }
+  .controls input[type=range] { flex: 1; }
+  .controls button, .controls select { font: inherit; padding: 4px 10px; }
+  /* 캡처 모드: 조작 막대를 숨기고 장면만 남긴다 (render-gif.mjs가 body.capture를 확인한다) */
+  /* 캡처 모드에서는 판 폭 제한을 푼다 — W를 바꿔도 .stage가 760에 묶여 작게 찍히지 않게 */
+  body.capture { padding: 0; }
+  body.capture .stage { max-width: none; }
+  body.capture .controls { display: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- aria-label에는 장면 전체를 한 문장으로. GIF로 구우면 사라지지만 HTML로 볼 때를 위해 둔다 -->
+  <svg id="scene" viewBox="0 0 760 400" role="img" aria-label="제어의 역전: 실행 중인 줄이 코드 사이를 옮겨 다닌다. 라이브러리를 쓸 때는 내 main()이 실행 순서를 정하고, readValue() 줄에서 Jackson을 불렀다가 내 코드의 다음 줄로 돌아온다. 프레임워크를 쓸 때는 main()이 runApplication()만 부르고 실행이 스프링으로 넘어간다. 이후 순서는 스프링이 정한다 — 빈을 만들 때 내 OrderFacadeService 생성자를 부르고, 이벤트가 오면 내 handle()을 부른다. 실행 순서를 쥔 쪽이 내 코드에서 스프링으로 바뀐다."></svg>
+  <div class="controls">
+    <button id="play" type="button">일시정지</button>
+    <input id="scrub" type="range" min="0" step="0.01">
+    <span id="clock" class="mono">0.0s</span>
+    <select id="theme"><option value="light">라이트</option><option value="dark">다크</option></select>
+  </div>
+</div>
+<script>
+(function () {
+  var W = 760, H = 400;   // viewBox와 같아야 한다
+
+  // ════════════════════════════════════════════════════════════
+  // 장면 — 여기부터 바꾼다
+  // ════════════════════════════════════════════════════════════
+
+  // 실행 중인 줄(▶)이 코드 사이를 옮겨 다닌다. A는 라이브러리, B는 프레임워크.
+  // 핵심은 「실행 순서(대본)가 어느 상자에 있나」 — A에선 내 main()에, B에선 스프링에 있다.
+  // 위치는 { c: 'L' | 'R', i: 줄 번호 }. L = 내 코드, R = Jackson 또는 스프링.
+
+  // 처음 상태. 매 프레임 여기서 출발해 단계를 다시 쌓는다 (그래서 render(t)가 t만의 함수가 된다)
+  function initial() {
+    return { scene: 'A', cur: null, from: null, keys: [], arrows: [], owner: null, final: false, fresh: null };
+  }
+
+  // 단계마다 새로 시작하는 값. 엔진이 각 단계의 fn 직전에 부른다 — 「그 단계에서만 보이는 것」을 여기서 지운다
+  // from = 이전 단계가 끝난 자리. ▶는 거기서 이번 단계의 첫 자리로 미끄러진다
+  function eachStep(s) { s.fresh = null; s.from = s.cur; s.keys = []; s.arrows = []; }
+
+  function L(i) { return { c: 'L', i: i }; }
+  function R(i) { return { c: 'R', i: i }; }
+  // keys: [[p, 위치], …] — p(0→1)에 ▶가 그 자리로 간다. 마지막 자리가 다음 단계의 출발점이 된다
+  function go(s, keys) { s.keys = keys; s.cur = keys[keys.length - 1][1]; }
+  // 호출 화살표: p0에 나타난다. kind = 'call' | 'ret'
+  function call(s, from, to, p0, kind) { s.arrows.push({ from: from, to: to, p0: p0, kind: kind || 'call' }); }
+
+  // 단계: d = 기준 박자(초), cap = 아래 캡션, tone = 'err' | 'ok' | 생략, fn = 상태를 바꾼다.
+  // fn에서 s.fresh를 세우면 그 단계 동안 draw()가 p(0→1)로 나타나기 효과를 줄 수 있다.
+  var STEPS = [
+    { d: 2.4, cap: '라이브러리: 실행 순서는 내 main()이 정한다', fn: function (s) {
+      s.owner = 'L'; s.fresh = 'owner';
+      go(s, [[0, L(0)], [0.5, L(1)]]);
+    } },
+    { d: 2.6, cap: '필요한 곳에서 내가 Jackson을 부른다', fn: function (s) {
+      call(s, L(2), R(0), 0.3);
+      go(s, [[0, L(2)], [0.35, R(0)], [0.6, R(1)], [0.82, R(2)]]);
+    } },
+    { d: 2.4, cap: '끝나면 내 코드의 다음 줄로 돌아온다', fn: function (s) {
+      call(s, R(2), L(3), 0, 'ret');
+      go(s, [[0.05, L(3)], [0.6, L(4)]]);
+    } },
+    { d: 2.8, cap: '프레임워크: main()은 runApplication()만 부르고 실행을 넘긴다', fn: function (s) {
+      s.scene = 'B'; s.owner = null; s.from = null; s.fresh = 'sceneB';
+      call(s, L(0), R(0), 0.5);
+      go(s, [[0.25, L(0)], [0.55, R(0)]]);
+    } },
+    { d: 2.4, cap: '이제 실행 순서는 스프링 코드가 정한다', fn: function (s) {
+      s.owner = 'R'; s.fresh = 'owner';
+      go(s, [[0.15, R(1)], [0.6, R(2)]]);
+    } },
+    { d: 2.8, cap: '빈을 만들 때 스프링이 내 생성자를 부른다', fn: function (s) {
+      call(s, R(2), L(1), 0.15);
+      call(s, L(1), R(2), 0.6, 'ret');
+      go(s, [[0.2, L(1)], [0.65, R(2)], [0.85, R(3)]]);
+    } },
+    { d: 2.8, cap: '이벤트가 오면 스프링이 내 handle()을 부른다', fn: function (s) {
+      call(s, R(4), L(2), 0.35);
+      call(s, L(2), R(4), 0.75, 'ret');
+      go(s, [[0.05, R(4)], [0.4, L(2)], [0.8, R(4)]]);
+    } },
+    { d: 3.4, cap: '실행 순서를 쥔 쪽이 바뀌었다 — 제어의 역전', tone: 'ok', fn: function (s) {
+      s.final = true; s.fresh = 'final';
+      call(s, R(2), L(1), -1);
+      call(s, R(4), L(2), -1);
+      go(s, [[0, R(4)]]);
+    } }
+  ];
+
+  // 판 배치
+  var COL = { L: { x: 30, w: 320 }, R: { x: 440, w: 290 } };
+  var BOX_Y = 80, BOX_H = 236;
+  var SCENES = {
+    A: {
+      tag: 'A. 라이브러리를 쓸 때',
+      L: { name: '내 코드', ys: [136, 166, 196, 226, 256],
+        lines: ['fun main() {', '    val json = readFile()', '    val order = mapper.readValue(json)', '    save(order)', '}'] },
+      R: { name: 'Jackson', ys: [196, 222, 248, 274], top: 150, h: 140, stroke: 'var(--hair-strong)', ink: 'var(--ink)',
+        lines: ['fun readValue(json) {', '    // JSON 파싱 → Order', '    return order', '}'] }
+    },
+    B: {
+      tag: 'B. 프레임워크를 쓸 때',
+      L: { name: '내 코드', ys: [136, 206, 286], notes: [[182, '@Service'], [262, '@EventListener']],
+        lines: ['fun main() = runApplication<App>()', 'class OrderFacadeService(…)', 'fun handle(e: OrderCreatedEvent)'] },
+      R: { name: '스프링', ys: [136, 171, 206, 246, 286], stroke: 'var(--b)', ink: 'var(--b)', sans: true,
+        lines: ['1  ApplicationContext 생성', '2  빈 정의 모으기', '3  빈 생성 → 생성자 호출', '4  웹 서버 시작', '5  이벤트 발생 → 리스너 호출'] }
+    }
+  };
+
+  function seg(p, a, b) { return ease((p - a) / (b - a)); }
+  function lerp(a, b, k) { return a + (b - a) * k; }
+
+  // 줄 하나의 하이라이트 자리
+  function slot(sc, pos) {
+    var col = COL[pos.c];
+    return { x: col.x + 10, y: SCENES[sc][pos.c].ys[pos.i] - 17, w: col.w - 20 };
+  }
+  // ▶의 현재 자리: 지난 키에서 이번 키로 0.12 동안 미끄러진다
+  function cursorAt(s, p) {
+    var prev = s.from ? slot(s.scene, s.from) : null, cur = prev, k = 1;
+    for (var i = 0; i < s.keys.length; i++) {
+      if (p < s.keys[i][0]) break;
+      prev = cur;
+      cur = slot(s.scene, s.keys[i][1]);
+      k = seg(p, s.keys[i][0], s.keys[i][0] + 0.12);
+    }
+    if (!cur) return null;
+    // 상자를 건너는 이동은 미끄러지지 않고 새 자리에서 나타난다 — 미끄러지면 두 상자에 걸친 틀로 보인다
+    if (!prev || prev.x !== cur.x) return { x: cur.x, y: cur.y, w: cur.w, o: k };
+    return { x: lerp(prev.x, cur.x, k), y: lerp(prev.y, cur.y, k), w: lerp(prev.w, cur.w, k), o: 1 };
+  }
+  function onLine(s, p, c, i) {
+    var cu = cursorAt(s, p);
+    if (!cu) return false;
+    var sl = slot(s.scene, { c: c, i: i });
+    return Math.abs(cu.y - sl.y) < 6 && Math.abs(cu.x - sl.x) < 6;
+  }
+
+  function column(s, p, c) {
+    var sc = SCENES[s.scene], d = sc[c], col = COL[c], out = [];
+    var top = d.top || BOX_Y, h = d.h || BOX_H;
+    var stroke = d.stroke || 'var(--a)', ink = d.ink || 'var(--a)';
+    var own = s.owner === c;
+    out.push('<rect x="' + col.x + '" y="' + top + '" width="' + col.w + '" height="' + h + '" rx="8" style="fill:var(--surface);stroke:' +
+      stroke + ';stroke-width:' + (own && s.final ? 3 : 1.5) + '"/>');
+    out.push(text(col.x + 14, top + 24, d.name, 'fill:' + ink + ';font-size:14px;font-weight:700'));
+    (d.notes || []).forEach(function (n) {
+      out.push(text(col.x + 26, n[0], n[1], 'fill:var(--mute);font-size:11.5px', 'mono'));
+    });
+    d.lines.forEach(function (ln, i) {
+      var hi = !s.final && onLine(s, p, c, i);
+      // SVG는 앞 공백을 접으므로 들여쓰기는 x로 준다
+      var indent = (ln.match(/^ */)[0].length) * 7;
+      out.push(text(col.x + 26 + indent, d.ys[i], ln.trim(), 'fill:' + (hi ? 'var(--ink)' : 'var(--ink-body)') +
+        ';font-size:12px;font-weight:' + (hi ? 700 : 500), d.sans ? null : 'mono'));
+    });
+    if (own) {
+      var oo = s.fresh === 'owner' ? seg(p, 0, 0.3) : 1;
+      var bx = col.x + col.w - 128;
+      out.push('<rect x="' + bx + '" y="' + (top + 10) + '" width="116" height="20" rx="10" style="fill:var(--ink);opacity:' + oo + '"/>');
+      out.push(text(bx + 58, top + 24, '실행 순서를 정한다', 'fill:var(--page);font-size:11px;font-weight:700;text-anchor:middle;opacity:' + oo));
+    }
+    return out.join('');
+  }
+
+  function draw(r, t) {
+    var s = r.s, p = r.p, out = [];
+    var sc = SCENES[s.scene];
+    var fade = s.fresh === 'sceneB' ? seg(p, 0, 0.2) : 1;
+    out.push(title('제어의 역전 — 실행 순서는 누가 정하나'));
+
+    var g = [];
+    g.push(text(30, 64, sc.tag, 'fill:var(--ink);font-size:13px;font-weight:700'));
+    g.push(column(s, p, 'L'));
+    g.push(column(s, p, 'R'));
+
+    // 호출 화살표 — 부르는 쪽의 색. 돌아오는 길은 회색 점선
+    s.arrows.forEach(function (a) {
+      var ao = a.p0 < 0 ? 1 : seg(p, a.p0, a.p0 + 0.12);
+      if (ao <= 0) return;
+      var y1 = sc[a.from.c].ys[a.from.i] - 4, y2 = sc[a.to.c].ys[a.to.i] - 4;
+      var x1 = a.from.c === 'L' ? COL.L.x + COL.L.w + 4 : COL.R.x - 4;
+      var x2 = a.to.c === 'L' ? COL.L.x + COL.L.w + 4 : COL.R.x - 4;
+      if (a.kind === 'ret') g.push(arrow(x1, y1 + 8, x2, y2 + 8, '--mute', { dash: true, t: t, w: 1.5, o: ao }));
+      else g.push(arrow(x1, y1, x2, y2, a.from.c === 'L' ? '--a' : '--b', { w: s.final ? 3 : 2, o: ao }));
+    });
+
+    // ▶ 실행 중인 줄
+    var cu = cursorAt(s, p);
+    if (cu && !s.final) {
+      g.push('<rect x="' + cu.x.toFixed(1) + '" y="' + cu.y.toFixed(1) + '" width="' + cu.w.toFixed(1) + '" height="24" rx="5"' +
+        ' style="fill:none;stroke:var(--ink);stroke-width:1.5;opacity:' + cu.o.toFixed(3) + '"/>');
+      g.push(text((cu.x + 4).toFixed(1), (cu.y + 17).toFixed(1), '▶', 'fill:var(--ink);font-size:10px;opacity:' + cu.o.toFixed(3)));
+    }
+
+    // 마지막: 내 코드는 불려 갈 조각뿐이다
+    if (s.final) {
+      var fo = seg(p, 0, 0.25);
+      g.push(text(COL.L.x + COL.L.w / 2, BOX_Y + BOX_H + 20, '내 코드 = 스프링이 부를 조각', 'fill:var(--a);font-size:12px;font-weight:700;text-anchor:middle;opacity:' + fo));
+      g.push(text(COL.R.x + COL.R.w / 2, BOX_Y + BOX_H + 20, '스프링 = 실행 순서(대본)', 'fill:var(--b);font-size:12px;font-weight:700;text-anchor:middle;opacity:' + fo));
+    }
+
+    out.push('<g style="opacity:' + fade.toFixed(3) + '">' + g.join('') + '</g>');
+    out.push(caption(r.step));
+    return out;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 엔진 — 보통은 손대지 않는다
+  // ════════════════════════════════════════════════════════════
+
+  // 실제 재생은 기준 박자의 SLOW배. 처음 컷은 사용자가 "빠르다"고 해 1.5로 맞췄다(2026-10-08)
+  var SLOW = 1.5;
+  STEPS.forEach(function (st) { st.d *= SLOW; });
+  var TOTAL = STEPS.reduce(function (n, st) { return n + st.d; }, 0);
+
+  function stateAt(t) {
+    var s = initial(), acc = 0;
+    for (var i = 0; i < STEPS.length; i++) {
+      eachStep(s);
+      STEPS[i].fn(s);
+      if (t < acc + STEPS[i].d || i === STEPS.length - 1) {
+        return { s: s, step: STEPS[i], p: Math.max(0, Math.min(1, (t - acc) / STEPS[i].d)) };
+      }
+      acc += STEPS[i].d;
+    }
+  }
+
+  function ease(p) { p = Math.max(0, Math.min(1, p)); return p * p * (3 - 2 * p); }
+  // 글자는 innerHTML로 들어가므로 이스케이프한다 — 'WHERE id < 10' 같은 캡션이 태그로 읽혀 조용히 잘린다
+  function esc(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function text(x, y, str, style, cls) {
+    return '<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="' + style + '">' + esc(str) + '</text>';
+  }
+  function box(x, y, w, h, fill, stroke, o) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="8" style="fill:' + fill +
+      ';stroke:' + stroke + ';stroke-width:1.5;opacity:' + (o == null ? 1 : o) + '"/>';
+  }
+  // 점선의 흐름도 t로 민다 — CSS 애니메이션을 쓰면 GIF에 안 찍힌다
+  function arrow(x1, y1, x2, y2, color, opts) {
+    opts = opts || {};
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+      ' style="stroke:var(' + color + ');stroke-width:' + (opts.w || 2) + ';opacity:' + (opts.o == null ? 1 : opts.o) + '"' +
+      (opts.dash ? ' stroke-dasharray="6 5" stroke-dashoffset="' + (-(opts.t || 0) * 18 / SLOW).toFixed(1) + '"' : '') +
+      ' marker-end="url(#m' + color.slice(2) + ')"/>';
+  }
+  function title(str) {
+    return text(W / 2, 30, str, 'fill:var(--ink);font-size:15px;font-weight:700;text-anchor:middle');
+  }
+  function caption(step) {
+    var tone = step.tone;
+    var f = tone === 'err' ? '--err-soft' : tone === 'ok' ? '--ok-soft' : '--surface';
+    var c = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--hair';
+    var tc = tone === 'err' ? '--err' : tone === 'ok' ? '--ok' : '--ink';
+    return '<rect x="20" y="' + (H - 50) + '" width="' + (W - 40) + '" height="36" rx="8" style="fill:var(' + f + ');stroke:var(' + c + ')"/>' +
+      text(W / 2, H - 27, step.cap, 'fill:var(' + tc + ');font-size:14px;font-weight:' + (tone ? 700 : 500) + ';text-anchor:middle');
+  }
+  function defs() {
+    return '<defs>' + ['--a', '--b', '--err', '--ok', '--mute'].map(function (c) {
+      return '<marker id="m' + c.slice(2) + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+        '<path d="M0,0 L10,5 L0,10 z" style="fill:var(' + c + ')"/></marker>';
+    }).join('') + '</defs>';
+  }
+
+  function render(t) {
+    var r = stateAt(t);
+    var bg = '<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="12" style="fill:var(--bg);stroke:var(--hair)"/>';
+    document.getElementById('scene').innerHTML = defs() + bg + draw(r, t).join('');
+  }
+
+  // ── 캡처 계약: render-gif.mjs가 이 셋과 body.capture를 확인한다
+  window.__total = TOTAL;
+  window.__render = render;
+  window.__size = [W, H];
+
+  var q = new URLSearchParams(location.search);
+  var root = document.documentElement, themeSel = document.getElementById('theme');
+  root.dataset.theme = q.get('theme') || 'light';   // 라이트가 기본 (사용자 결정 2026-10-08)
+  themeSel.value = root.dataset.theme;
+  themeSel.onchange = function () { root.dataset.theme = themeSel.value; };
+
+  if (q.has('capture')) {
+    document.body.classList.add('capture');
+    render(parseFloat(q.get('t') || '0'));
+    return;
+  }
+
+  var scrub = document.getElementById('scrub'), clock = document.getElementById('clock'), btn = document.getElementById('play');
+  scrub.max = TOTAL.toFixed(2);
+  var playing = true, t = 0, last = null;
+  btn.onclick = function () { playing = !playing; btn.textContent = playing ? '일시정지' : '재생'; last = null; };
+  scrub.oninput = function () { t = parseFloat(scrub.value); render(t); clock.textContent = t.toFixed(1) + 's'; };
+  function tick(now) {
+    if (playing) {
+      if (last != null) t = (t + (now - last) / 1000) % TOTAL;
+      last = now;
+      render(t);
+      scrub.value = t; clock.textContent = t.toFixed(1) + 's';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
