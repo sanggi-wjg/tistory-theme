@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GenericApplicationContext 위임 구조</title>
+<style>
+  /* 색은 blog-animation 템플릿과 같은 값이다 — 글 안의 애니메이션과 한 벌로 보이게 */
+  :root {
+    --page: #ffffff; --bg: #fafafa; --surface: #ffffff;
+    --hair: #ebebeb; --hair-strong: #a1a1a1;
+    --ink: #171717; --ink-body: #4d4d4d; --mute: #707070;
+    --a: #0057c2; --a-soft: #d3e5ff;
+    --b: #945800; --b-soft: #fdebc8;
+  }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  svg { display: block; }
+  .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<svg id="scene" role="img"
+  aria-label="GenericApplicationContext는 AbstractApplicationContext와 ApplicationContext를 거쳐 BeanFactory 타입이면서, DefaultListableBeanFactory를 beanFactory 필드로 가진다. getBean() 호출은 AbstractApplicationContext가 getBeanFactory().getBean()으로 넘기고, DefaultListableBeanFactory가 singletonObjects에서 꺼내거나 beanDefinitionMap의 정의로 만든다. mini-ioc-container.png와 같은 배치다."></svg>
+<script>
+(function () {
+  // 배치는 mini-ioc-container.html과 같다 — 두 그림을 이어 볼 때 눈이 같은 곳을 보게
+  var W = 1140, H = 640;
+  var svg = document.getElementById('scene');
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  var out = [];
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function text(x, y, s, style, cls) {
+    out.push('<text x="' + x + '" y="' + y + '"' + (cls ? ' class="' + cls + '"' : '') + ' style="white-space:pre;' + style + '">' + esc(s) + '</text>');
+  }
+  function rect(x, y, w, h, fill, stroke, dash) {
+    out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6" style="fill:' + fill +
+      ';stroke:' + stroke + ';stroke-width:1.5"' + (dash ? ' stroke-dasharray="5 4"' : '') + '/>');
+  }
+  function line(x1, y1, x2, y2, color, dash) {
+    out.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" style="stroke:' + color + ';stroke-width:1.5"' +
+      (dash ? ' stroke-dasharray="6 4"' : '') + '/>');
+  }
+  function path(pts, color, dash, marker) {
+    out.push('<polyline points="' + pts.map(function (p) { return p.join(','); }).join(' ') + '" style="fill:none;stroke:' + color +
+      ';stroke-width:1.5"' + (dash ? ' stroke-dasharray="6 4"' : '') + (marker ? ' marker-end="url(#' + marker + ')"' : '') + '/>');
+  }
+  // 빈 삼각형: 끝점 (x, y)이 위쪽 상자를 가리킨다 — 상속·구현의 화살촉
+  function triUp(x, y, color) {
+    out.push('<polygon points="' + x + ',' + y + ' ' + (x - 8) + ',' + (y + 14) + ' ' + (x + 8) + ',' + (y + 14) +
+      '" style="fill:var(--surface);stroke:' + color + ';stroke-width:1.5"/>');
+  }
+  // 위로 올라가 상자에 닿는 상속(solid)·구현(dash) 선. pts의 마지막 점이 상자 아래 변이다
+  function inherit(pts, color, dash) {
+    var last = pts[pts.length - 1];
+    var body = pts.slice(0, -1).concat([[last[0], last[1] + 14]]);
+    path(body, color, dash);
+    triUp(last[0], last[1], color);
+  }
+  // 합성: 시작점에 채운 마름모(가진 쪽)
+  function compose(pts, color) {
+    var a = pts[0], b = pts[1];
+    var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+    var rad = ang * Math.PI / 180;
+    path([[a[0] + Math.cos(rad) * 20, a[1] + Math.sin(rad) * 20]].concat(pts.slice(1)), color, false, 'open');
+    out.push('<g transform="translate(' + a[0] + ',' + a[1] + ') rotate(' + ang.toFixed(2) + ')">' +
+      '<polygon points="0,0 10,-6 20,0 10,6" style="fill:' + color + ';stroke:' + color + ';stroke-width:1;stroke-linejoin:round"/></g>');
+  }
+
+  // 클래스 상자: 머리(스테레오타입·이름) + 칸(멤버 줄 목록)들. rows[칸][줄] = 그 줄의 가운데 y
+  // kind: 'interface' | 'abstract' | 'class' | 'factory'(실제 일을 하는 BeanFactory 구현)
+  function cls(x, y, w, name, kind, sections, extra) {
+    var stereo = kind === 'interface' ? '«interface»' : kind === 'abstract' ? '«abstract»' : null;
+    var headH = stereo ? 44 : 30;
+    var h = headH;
+    sections = sections || [];
+    sections.forEach(function (sec) { h += sec.length * 18 + 12; });
+    h += extra || 0;
+    var color = kind === 'interface' ? 'var(--a)' : kind === 'factory' ? 'var(--b)' : 'var(--hair-strong)';
+    var head = kind === 'interface' ? 'var(--a-soft)' : kind === 'factory' ? 'var(--b-soft)' : 'var(--surface)';
+    rect(x, y, w, h, 'var(--surface)', color);
+    out.push('<path d="M' + (x + 6) + ',' + y + ' H' + (x + w - 6) + ' Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + 6) +
+      ' V' + (y + headH) + ' H' + x + ' V' + (y + 6) + ' Q' + x + ',' + y + ' ' + (x + 6) + ',' + y + ' Z" style="fill:' + head + ';stroke:none"/>');
+    rect(x, y, w, h, 'none', color);
+    var nameColor = kind === 'interface' ? 'var(--a)' : kind === 'factory' ? 'var(--b)' : 'var(--ink)';
+    var nameStyle = 'fill:' + nameColor + ';font-size:14px;font-weight:700;text-anchor:middle' + (kind === 'abstract' ? ';font-style:italic' : '');
+    if (stereo) {
+      text(x + w / 2, y + 17, stereo, 'fill:var(--mute);font-size:11px;text-anchor:middle');
+      text(x + w / 2, y + 35, name, nameStyle);
+    } else {
+      text(x + w / 2, y + 20, name, nameStyle);
+    }
+    var cy = y + headH, rows = [];
+    sections.forEach(function (sec) {
+      line(x, cy, x + w, cy, color);
+      rows.push(sec.map(function (m, i) {
+        // 화살표로 시작하는 줄은 바로 위 메소드가 하는 일이다 — 흐리게
+        var sub = /^\s*→/.test(m);
+        text(x + 10, cy + 19 + i * 18, m, 'fill:' + (sub ? 'var(--mute)' : 'var(--ink-body)') + ';font-size:12px', 'mono');
+        return cy + 15 + i * 18;
+      }));
+      cy += sec.length * 18 + 12;
+    });
+    return { x: x, y: y, w: w, h: h, cx: x + w / 2, bottom: y + h, right: x + w, rows: rows, end: cy };
+  }
+
+  // 상자 안 흐름 띠: 정의 → createBean → 보관
+  function flow(box, created) {
+    var y = box.end + 14, h = 26;
+    line(box.x, box.end, box.right, box.end, 'var(--b)');
+    function pill(x, w, label, bold) {
+      rect(x, y, w, h, bold ? 'var(--b-soft)' : 'var(--bg)', bold ? 'var(--b)' : 'var(--hair-strong)');
+      text(x + w / 2, y + 17, label, 'fill:' + (bold ? 'var(--b)' : 'var(--ink-body)') + ';font-size:12px;font-weight:600;text-anchor:middle', 'mono');
+    }
+    var x0 = box.x + 12;
+    pill(x0, 132, 'beanDefinitionMap');
+    path([[x0 + 134, y + 13], [x0 + 154, y + 13]], 'var(--ink-body)', false, 'open');
+    pill(x0 + 158, 100, created, true);
+    path([[x0 + 260, y + 13], [x0 + 280, y + 13]], 'var(--ink-body)', false, 'open');
+    pill(x0 + 284, 92, 'singleton…');
+    text(box.x + 12, y + h + 22, 'getBean(): singletonObjects에 있으면 꺼내고, 없으면 정의로 만들어 넣는다',
+      'fill:var(--mute);font-size:11.5px');
+  }
+
+  out.push('<defs>' +
+    '<marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">' +
+    '<path d="M0,0 L10,5 L0,10" style="fill:none;stroke:var(--ink-body);stroke-width:1.5"/></marker>' +
+    '<marker id="del" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">' +
+    '<path d="M0,0 L10,5 L0,10 z" style="fill:var(--b)"/></marker>' +
+    '</defs>');
+  out.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" rx="12" style="fill:var(--bg);stroke:var(--hair)"/>');
+  text(40, 46, 'Spring Framework 7.0', 'fill:var(--mute);font-size:13px;font-weight:700');
+  text(40, 66, '중간 인터페이스·클래스는 생략', 'fill:var(--mute);font-size:11.5px');
+
+  // ── 위: BeanFactory
+  var bf = cls(400, 24, 280, 'BeanFactory', 'interface', [['+ getBean(name): Object', '+ getBean(type): T']]);
+
+  // ── 왼쪽: 컨텍스트 쪽
+  var ac = cls(40, 160, 360, 'ApplicationContext', 'interface');
+  var aac = cls(40, 250, 360, 'AbstractApplicationContext', 'abstract', [[
+    '+ getBean(name): Object',
+    '    → getBeanFactory().getBean(name)',
+    '+ getBeanFactory()  «abstract»',
+    '+ refresh()'
+  ]]);
+  var gac = cls(40, 410, 360, 'GenericApplicationContext', 'class', [
+    ['- beanFactory: DefaultListableBeanFactory'],
+    ['+ getBeanFactory()', '    → beanFactory', '+ registerBeanDefinition(name, bd)', '    → beanFactory.registerBeanDefinition(…)']
+  ]);
+
+  // ── 오른쪽: 실제 일을 하는 BeanFactory 구현
+  var dl = cls(710, 200, 400, 'DefaultListableBeanFactory', 'factory', [
+    ['- beanDefinitionMap: Map<String, BeanDefinition>', '- singletonObjects: Map<String, Object>  ※'],
+    ['+ getBean(name): Object', '+ registerBeanDefinition(name, bd)', '+ preInstantiateSingletons()']
+  ], 86);
+  flow(dl, 'createBean()');
+  text(710, dl.bottom + 20, '※ 부모 클래스 DefaultSingletonBeanRegistry의 필드', 'fill:var(--mute);font-size:11.5px');
+
+  // ── is-a: 양쪽 다 BeanFactory 타입이다
+  inherit([[ac.right, ac.y + 22], [460, ac.y + 22], [460, bf.bottom]], 'var(--a)', false);
+  inherit([[740, dl.y], [740, 150], [640, 150], [640, bf.bottom]], 'var(--a)', true);
+  text(470, 146, 'is-a', 'fill:var(--a);font-size:12px;font-weight:700');
+  text(600, 142, 'is-a', 'fill:var(--a);font-size:12px;font-weight:700;text-anchor:end');
+  inherit([[ac.cx, aac.y], [ac.cx, ac.bottom]], 'var(--a)', true);
+  inherit([[aac.cx, gac.y], [aac.cx, aac.bottom]], 'var(--hair-strong)', false);
+
+  // ── has-a: 컨텍스트가 BeanFactory를 필드로 가진다
+  var hasY = gac.rows[0][0];
+  compose([[gac.right, hasY], [672, hasY], [672, dl.rows[1][2]], [dl.x - 2, dl.rows[1][2]]], 'var(--ink-body)');
+  text(420, hasY - 8, 'has-a  beanFactory', 'fill:var(--ink);font-size:12px;font-weight:700');
+
+  // ── 위임: getBean()을 받은 쪽은 AbstractApplicationContext다
+  var delY = aac.rows[0][1], dstY = dl.rows[1][0];
+  path([[aac.right, delY], [560, delY], [560, dstY], [dl.x - 3, dstY]], 'var(--b)', true, 'del');
+  text(414, delY - 8, 'getBean() 위임', 'fill:var(--b);font-size:12px;font-weight:700');
+
+  // ── 범례
+  var LY = H - 34, lx = 40;
+  text(lx, LY + 4, '범례', 'fill:var(--ink);font-size:12px;font-weight:700');
+  lx += 44;
+  line(lx, LY, lx + 34, LY, 'var(--a)'); out.push('<polygon points="' + (lx + 46) + ',' + LY + ' ' + (lx + 34) + ',' + (LY - 7) + ' ' + (lx + 34) + ',' + (LY + 7) + '" style="fill:var(--surface);stroke:var(--a);stroke-width:1.5"/>');
+  text(lx + 56, LY + 4, '상속', 'fill:var(--ink-body);font-size:12px');
+  lx += 110;
+  line(lx, LY, lx + 34, LY, 'var(--a)', true); out.push('<polygon points="' + (lx + 46) + ',' + LY + ' ' + (lx + 34) + ',' + (LY - 7) + ' ' + (lx + 34) + ',' + (LY + 7) + '" style="fill:var(--surface);stroke:var(--a);stroke-width:1.5"/>');
+  text(lx + 56, LY + 4, '구현', 'fill:var(--ink-body);font-size:12px');
+  lx += 110;
+  out.push('<polygon points="' + lx + ',' + LY + ' ' + (lx + 10) + ',' + (LY - 6) + ' ' + (lx + 20) + ',' + LY + ' ' + (lx + 10) + ',' + (LY + 6) + '" style="fill:var(--ink-body)"/>');
+  path([[lx + 20, LY], [lx + 46, LY]], 'var(--ink-body)', false, 'open');
+  text(lx + 56, LY + 4, '필드로 가진다', 'fill:var(--ink-body);font-size:12px');
+  lx += 150;
+  path([[lx, LY], [lx + 46, LY]], 'var(--b)', true, 'del');
+  text(lx + 56, LY + 4, '호출을 넘긴다', 'fill:var(--ink-body);font-size:12px');
+
+  svg.innerHTML = out.join('');
+})();
+</script>
+</body>
+</html>
